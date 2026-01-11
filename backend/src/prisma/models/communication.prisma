@@ -1,0 +1,102 @@
+model Chat {
+  id            Int          @id @default(autoincrement())
+  boatId        String?
+  carId         String?
+  motorcycleId  String?
+  realEstateId  String?
+  marketplaceId String?
+  traktorId     String?
+  senderId      String
+  receiverId    String
+  isArchived    Boolean      @default(false)
+  archivedAt    DateTime?
+  archivedBy    String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  lastMessageAt DateTime?
+  boat          Boat?        @relation(fields: [boatId], references: [id])
+  car           Car?         @relation(fields: [carId], references: [id])
+  marketplace   Marketplace? @relation(fields: [marketplaceId], references: [id])
+  motorcycle    Motorcycle?  @relation(fields: [motorcycleId], references: [id])
+  realEstate    RealEstate?  @relation(fields: [realEstateId], references: [id])
+  receiver      User         @relation("receiverChats", fields: [receiverId], references: [id])
+  sender        User         @relation("senderChats", fields: [senderId], references: [id])
+  traktor       Traktor?     @relation(fields: [traktorId], references: [id])
+  messages      Message[]
+
+  @@unique([senderId, receiverId, boatId])
+  @@unique([senderId, receiverId, carId])
+  @@unique([senderId, receiverId, motorcycleId])
+  @@unique([senderId, receiverId, realEstateId])
+  @@unique([senderId, receiverId, marketplaceId])
+  @@unique([senderId, receiverId, traktorId])
+  @@index([senderId, receiverId])
+  @@index([updatedAt])
+  @@index([isArchived])
+}
+
+model Message {
+  id           Int           @id @default(autoincrement())
+  chatId       Int
+  senderId     String
+  receiverId   String
+  content      String
+  imageUrl     String?
+  read         Boolean       @default(false)
+  readAt       DateTime?
+  edited       Boolean       @default(false)
+  editedAt     DateTime?
+  deleted      Boolean       @default(false)
+  deletedAt    DateTime?
+  deletedBy    String?
+  replyToId    Int?
+  timestamp    DateTime      @default(now())
+  chat         Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  receiver     User          @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  replyTo      Message?      @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies      Message[]     @relation("MessageReplies")
+  sender       User          @relation("SentMessages", fields: [senderId], references: [id])
+  marketplaces Marketplace[] @relation("MarketplaceToMessage")
+  realEstates  RealEstate[]  @relation("MessageToRealEstate")
+
+  @@index([chatId])
+  @@index([senderId])
+  @@index([receiverId, read])
+  @@index([timestamp])
+  @@index([chatId, timestamp])
+}
+
+model CustomerSupportTicket {
+  id          Int             @id @default(autoincrement())
+  senderName  String
+  senderEmail String
+  subject     String
+  body        String
+  status      Status          @default(NEW)
+  priority    String          @default("NORMAL")
+  adminReply  String?
+  assignedTo  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  messages    TicketMessage[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model TicketMessage {
+  id          Int                   @id @default(autoincrement())
+  ticketId    Int
+  senderRole  Role                  @default(USER)
+  senderName  String
+  senderEmail String
+  body        String
+  attachments Json?
+  createdAt   DateTime              @default(now())
+  ticket      CustomerSupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([createdAt])
+}

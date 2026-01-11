@@ -1,0 +1,62 @@
+model User {
+  id                String          @id @default(uuid())
+  cognitoId         String?         @unique
+  username          String
+  password          String
+  email             String?         @unique
+  profileImage      String?
+  phone             String?
+  isAdmin           Boolean         @default(false)
+  isManager         Boolean         @default(false)
+  isSupport         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  lastSeenAt        DateTime?       @updatedAt
+  agencies          Agency[]        @relation("UserAgencies")
+  advertisements    Advertisement[]
+  boats             Boat[]          @relation("UserBoats")
+  cars              Car[]           @relation("UserCars")
+  receivedChats     Chat[]          @relation("receiverChats")
+  sentChats         Chat[]          @relation("senderChats")
+  cookies           Cookie?         @relation("UserCookies")
+  favorites         Favorite[]      @relation("UserFavorites")
+  feeChangeLogs     FeeChangeLog[]
+  marketplaces      Marketplace[]   @relation("UserMarketplaces")
+  receivedMessages  Message[]       @relation("ReceivedMessages")
+  sentMessages      Message[]       @relation("SentMessages")
+  motorcycles       Motorcycle[]    @relation("UserMotorcycles")
+  sentNotifications Notification[]  @relation("NotificationSender")
+  notifications     Notification[]  @relation("NotificationReceiver")
+  payments          Payment[]
+  realEstates       RealEstate[]    @relation("UserRealEstates")
+  subscriptions     Subscription[]
+  traktors          Traktor[]       @relation("UserTraktors")
+
+  @@index([email])
+  @@index([username])
+  @@index([createdAt])
+}
+
+model Visitor {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  ipAddress String?
+  userAgent String?
+  visitedAt DateTime @default(now())
+
+  @@index([visitedAt])
+  @@index([ipAddress])
+}
+
+model Cookie {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation("UserCookies", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+}

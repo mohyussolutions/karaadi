@@ -1,0 +1,78 @@
+import prisma from "core/utils/db.ts";
+import { Request, Response } from "express";
+import { v4 as uuid } from "uuid";
+
+export const trackVisitor = async (req: Request, res: Response) => {
+  try {
+    let visitorId = req.cookies?.visitor_id;
+    const ipAddress = req.ip || req.socket.remoteAddress || "Unknown";
+
+    if (!visitorId) {
+      visitorId = uuid();
+      res.cookie("visitor_id", visitorId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 365 * 24 * 60 * 60 * 1000,
+      });
+    }
+
+    const visitor = await prisma.visitor.upsert({
+      where: { userId: visitorId },
+      update: {
+        visitedAt: new Date(),
+        ipAddress: ipAddress,
+      },
+      create: {
+        userId: visitorId,
+        visitedAt: new Date(),
+        ipAddress: ipAddress,
+      },
+    });
+
+    return res.json({ tracked: true, visitor });
+  } catch (err: any) {
+    console.error("Prisma Error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const getAllVisitors = async (_req: Request, res: Response) => {
+  try {
+    const visitors = await prisma.visitor.findMany({
+      orderBy: { visitedAt: "desc" },
+    });
+    return res.json({ total: visitors.length, visitors });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const updateVisitor = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const dataToUpdate = req.body;
+
+  if (!userId) return res.status(400).json({ error: "userId required" });
+
+  try {
+    const updatedVisitor = await prisma.visitor.update({
+      where: { userId },
+      data: dataToUpdate,
+    });
+    return res.json(updatedVisitor);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const deleteVisitor = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  if (!userId) return res.status(400).json({ error: "userId required" });
+
+  try {
+    await prisma.visitor.delete({ where: { userId } });
+    return res.json({ message: "Deleted" });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};

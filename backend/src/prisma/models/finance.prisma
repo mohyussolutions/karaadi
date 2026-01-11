@@ -1,0 +1,106 @@
+model Payment{
+  id             String         @id @default(cuid())
+  userId         String
+  carId          String?
+  realEstateId   String?
+  boatId         String?
+  motorcycleId   String?
+  traktorId      String?
+  marketplaceId  String?
+  subscriptionId String?
+  listingType    ListingType    @default(FEE)
+  paymentMethod  String?
+  transactionId  String?        @unique
+  baseFee        Float          @default(0.00)
+  taxAmount      Float          @default(0.00)
+  platformFee    Float          @default(0.00)
+  totalAmount    Float          @default(0.00)
+  currency       String         @default("USD")
+  status         PaymentStatus  @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  paidAt         DateTime?
+  feeAmount      Float          @default(0.00)
+  notifications  Notification[] @relation("PaymentNotifications")
+  boat           Boat?          @relation(fields: [boatId], references: [id])
+  car            Car?           @relation(fields: [carId], references: [id])
+  marketplace    Marketplace?   @relation(fields: [marketplaceId], references: [id])
+  motorcycle     Motorcycle?    @relation(fields: [motorcycleId], references: [id])
+  realEstate     RealEstate?    @relation(fields: [realEstateId], references: [id])
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
+  traktor        Traktor?       @relation(fields: [traktorId], references: [id])
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([transactionId])
+  @@index([createdAt])
+  @@index([paymentMethod])
+}
+
+model FeeConfig {
+  id              String         @id @default(cuid())
+  art             Float          @default(0.0)
+  electronics     Float          @default(0.0)
+  animal          Float          @default(0.0)
+  sports          Float          @default(0.0)
+  furniture       Float          @default(0.0)
+  fashion         Float          @default(0.0)
+  rent            Float          @default(0.0)
+  sale            Float          @default(0.0)
+  land            Float          @default(0.0)
+  farm            Float          @default(0.0)
+  business        Float          @default(0.0)
+  carSale         Float          @default(0.0)
+  carRent         Float          @default(0.0)
+  trailer         Float          @default(0.0)
+  carParts        Float          @default(0.0)
+  truck           Float          @default(0.0)
+  electricCar     Float          @default(0.0)
+  boatSale        Float          @default(0.0)
+  boatRent        Float          @default(0.0)
+  boatEngine      Float          @default(0.0)
+  boatParts       Float          @default(0.0)
+  tractorSale     Float          @default(0.0)
+  agriTool        Float          @default(0.0)
+  fertilizer      Float          @default(0.0)
+  harvester       Float          @default(0.0)
+  motoSale        Float          @default(0.0)
+  motoRent        Float          @default(0.0)
+  motoParts       Float          @default(0.0)
+  motoOther       Float          @default(0.0)
+  fullTime        Float          @default(0.0)
+  partTime        Float          @default(0.0)
+  freelance       Float          @default(0.0)
+  subStandard     Float          @default(0.0)
+  subStandard60   Float          @default(0.0)
+  subPremium      Float          @default(0.0)
+  subSixMonth     Float          @default(0.0)
+  subPremiumYear  Float          @default(0.0)
+  taxRate         Float          @default(0.0)
+  waafi           Float          @default(0.0)
+  platformFee     Float          @default(0.0)
+  currency        String         @default("USD")
+  isActive        Boolean        @default(true)
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime       @default(now())
+  feeChangeLogs   FeeChangeLog[]
+}
+
+model FeeChangeLog {
+  id             String    @id @default(cuid())
+  feeConfigId    String
+  changedBy      String
+  changes        Json
+  previousValues Json
+  newValues      Json
+  reason         String?
+  createdAt      DateTime  @default(now())
+  changedByUser  User      @relation(fields: [changedBy], references: [id])
+  feeConfig      FeeConfig @relation(fields: [feeConfigId], references: [id], onDelete: Cascade)
+
+  @@index([feeConfigId])
+}
+
+
+

@@ -1,0 +1,37 @@
+enum ItemCategory {
+  CAR
+  REAL_ESTATE
+  BOAT
+  MOTORCYCLE
+  TRAKTOR
+  MARKETPLACE
+  SUBSCRIPTION
+}
+
+enum Status {
+  NEW
+  IN_PROGRESS
+  DONE
+  RESOLVED
+  CLOSED
+}
+
+enum Role {
+  USER
+  SUPPORT_MANAGER
+  ADMIN
+}
+
+enum ListingType {
+  FREE
+  FEE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+

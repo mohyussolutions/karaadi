@@ -1,0 +1,86 @@
+model Subscription {
+  id                String    @id @default(cuid())
+  userId            String
+  title             String
+  category          String
+  subCategory       String?
+  priceMin          Int?
+  priceMax          Int?
+  region            String
+  city              String
+  description       String?
+  condition         String?
+  brand             String?
+  model             String?
+  specificFeatures  String?
+  isActive          Boolean   @default(true)
+  status            String    @default("active")
+  lastNotified      DateTime?
+  read              Boolean   @default(false)
+  notificationCount Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  isPaid            Boolean   @default(false)  
+  payments          Payment[]
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([category, subCategory])
+  @@index([isActive])
+  @@index([status])
+  @@index([region])
+  @@index([createdAt])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  senderId    String
+  paymentId   String?
+  title       String
+  message     String?
+  category    String
+  subCategory String?
+  itemId      String?
+  itemType    String?
+  region      String?
+  city        String?
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  actionUrl   String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  payment     Payment?  @relation("PaymentNotifications", fields: [paymentId], references: [id])
+  sender      User      @relation("NotificationSender", fields: [senderId], references: [id])
+  user        User      @relation("NotificationReceiver", fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@index([category])
+}
+
+model Favorite {
+  id          String   @id @default(cuid())
+  userId      String
+  itemId      String?
+  title       String
+  description String
+  price       String?
+  image       String?
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Recommendation {
+  id         Int    @id @default(autoincrement())
+  externalId String
+  source     String
+  category   String
+  title      String
+  price      String
+  views      Int    @default(0)
+}
