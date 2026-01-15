@@ -1,6 +1,7 @@
 "use client";
 
-import { realEstateSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
+
+import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import React, { useEffect, useState } from "react";
 
 export default function RealEstatePage() {
@@ -88,7 +89,7 @@ export default function RealEstatePage() {
         {realEstateSubCategories.map((cat) => (
           <button
             key={cat.so}
-            onClick={() => setActiveCategory(cat.so)}
+            onClick={() => setActiveCategory(cat.so || "")}
             className={`px-3 py-2 rounded-lg border text-sm transition text-center ${
               activeCategory === cat.so
                 ? "bg-blue-600 text-white border-blue-600"

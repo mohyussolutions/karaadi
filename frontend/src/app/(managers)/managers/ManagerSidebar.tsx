@@ -1,162 +1,131 @@
 "use client";
 
-import { useLogout } from "@/app/(dashboard)/dashboard/navbar/Navbar";
-import {
-  managerManagementLinks,
-  managerNavItems,
-  managerAccountLinks,
-} from "@/app/(links)/managmentLinks/managerLinks";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import {
-  FaChevronDown,
-  FaChevronRight,
-  FaUserCircle,
-  FaSpinner,
-} from "react-icons/fa";
+import { FaUserCircle, FaSignOutAlt, FaCircle, FaLifeRing } from "react-icons/fa";
+import { managerTotalLinks } from "@/app/(links)/managmentLinks/managerLinks";
+import { useLogout } from "@/app/(dashboard)/dashboard/navbar/Navbar";
+import { apiService } from "@/actions/core/authAction";
 
-interface ManagerSidebarProps {
-  userRole: "admin" | "manager" | "support";
-}
-
-export default function ManagerSidebar({ userRole }: ManagerSidebarProps) {
+export default function ManagerSidebar() {
   const pathname = usePathname();
   const logout = useLogout();
-  const [isLoading, setIsLoading] = useState(false);
-  const [openSections, setOpenSections] = useState({
-    management: true,
-    analytics: false,
-  });
+  const [hasMounted, setHasMounted] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  };
+  useEffect(() => {
+    setHasMounted(true);
+    const getSession = async () => {
+      const session = await apiService.verifySession();
+      setUser(session);
+    };
+    getSession();
+  }, []);
 
-  const handleLogout = async () => {
-    if (isLoading) return;
-
-    setIsLoading(true);
-    try {
-      // Call logout hook if it exists
-      if (logout && typeof logout === "function") {
-        await logout();
-      }
-
-      // Clear local storage
-      localStorage.clear();
-
-      // Redirect to home page
-      window.location.href = "/";
-    } catch (error) {
-      // If anything fails, still redirect to home
-      localStorage.clear();
-      window.location.href = "/";
-    }
-  };
+  if (!hasMounted) return null;
 
   return (
-    <div className="w-64 bg-gray-900 text-white h-screen flex flex-col shadow-xl">
-      <div className="p-6 border-b border-gray-800">
-        <div className="flex items-center gap-3">
-          <FaUserCircle className="w-10 h-10 text-blue-400" />
-          <div className="overflow-hidden">
-            <h1 className="text-lg font-bold truncate">Manager Portal</h1>
-            <p className="text-xs text-gray-400 capitalize">
-              {userRole} Access
-            </p>
+    <aside className="w-80 h-screen bg-[#0f172a] text-slate-200 flex flex-col border-r border-slate-800 shadow-2xl">
+      <div className="p-8">
+        <div className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-slate-800/40 border border-white/5 shadow-inner">
+          <div className="relative">
+            <FaUserCircle className="w-16 h-16 text-blue-500 shadow-lg" />
+            <FaCircle className="absolute bottom-1 right-1 text-emerald-500 border-4 border-[#1e293b] rounded-full text-[10px]" />
+          </div>
+          
+          <div className="text-center w-full">
+            {user && (
+              <div className="space-y-1">
+                <h2 className="text-lg font-bold text-white truncate px-2">
+                  {user.username || user.email?.split('@')[0]}
+                </h2>
+                <span className="inline-block text-[9px] bg-blue-500/20 text-blue-400 px-3 py-0.5 rounded-full font-black tracking-widest uppercase border border-blue-500/30">
+                  {user.isAdmin ? "Admin" : user.isManager ? "Manager" : "Support"}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-        <div>
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest px-3 py-2 font-bold">
-            Main Menu
-          </p>
-          <div className="space-y-1">
-            {managerNavItems.map((item) => (
+      <div className="flex-1 px-6 space-y-8 overflow-y-auto pb-10">
+        <section className="space-y-1">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-4 mb-2">Core</p>
+          {managerTotalLinks.filter(i => i.category === "core").map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
+                pathname === item.href
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                  : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+              }`}
+            >
+              <item.icon className="size-5" />
+              <span>{item.name}</span>
+            </Link>
+          ))}
+        </section>
+
+        <section className="space-y-1">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-4 mb-2">Backoffice</p>
+          {managerTotalLinks.filter(i => i.category === "backoffice").map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
+                pathname === item.href
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+              }`}
+            >
+              <item.icon className="size-5" />
+              <span>{item.name}</span>
+            </Link>
+          ))}
+        </section>
+
+        <section className="space-y-1">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-4 mb-2">Access</p>
+          <Link
+            href="/support"
+            className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
+              pathname?.startsWith("/support")
+                ? "bg-blue-600 text-white shadow-lg"
+                : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+            }`}
+          >
+            <FaLifeRing className="size-5" />
+            <span>Support Panel</span>
+          </Link>
+        </section>
+
+        <section className="space-y-1 pt-4 border-t border-slate-800/50">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-4 mb-2">System</p>
+          {managerTotalLinks
+            .filter(i => i.category === "system" || i.category === "navigation")
+            .filter(i => i.action !== "logout") 
+            .map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 p-3 rounded-lg transition text-sm ${
-                  pathname === item.href
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-blue-900/30 text-gray-300 hover:text-white"
-                }`}
+                className="flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all"
               >
-                <item.icon className="w-4 h-4" />
+                <item.icon className="size-5" />
                 <span>{item.name}</span>
               </Link>
             ))}
-          </div>
-        </div>
 
-        <div>
           <button
-            onClick={() => toggleSection("management")}
-            className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-gray-800 transition text-sm text-gray-300 hover:text-white"
+            onClick={logout}
+            className="flex w-full items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all mt-4"
           >
-            <span className="font-medium">Manage Items</span>
-            {openSections.management ? (
-              <FaChevronDown size={12} />
-            ) : (
-              <FaChevronRight size={12} />
-            )}
+            <FaSignOutAlt className="size-5" />
+            <span>Logout</span>
           </button>
-
-          {openSections.management && (
-            <div className="ml-4 mt-1 border-l border-gray-800 pl-2 space-y-1">
-              {managerManagementLinks.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 p-2 rounded-lg transition text-xs ${
-                    pathname === item.href
-                      ? "text-blue-400 font-bold"
-                      : "text-gray-400 hover:text-white hover:bg-gray-800"
-                  }`}
-                >
-                  <item.icon className="w-3 h-3" />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="pt-4 border-t border-gray-800">
-          {managerAccountLinks.map((item) => (
-            <button
-              key={item.name}
-              disabled={isLoading}
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full p-3 rounded-lg text-gray-400 hover:bg-red-400/10 hover:text-red-400 transition text-sm disabled:opacity-50"
-            >
-              {isLoading ? (
-                <FaSpinner className="animate-spin w-4 h-4" />
-              ) : (
-                <item.icon className="w-4 h-4" />
-              )}
-              <span>{isLoading ? "Signing out..." : item.name}</span>
-            </button>
-          ))}
-        </div>
+        </section>
       </div>
-
-      <div className="p-4 border-t border-gray-800 bg-gray-950">
-        <button
-          onClick={handleLogout}
-          disabled={isLoading}
-          className="flex items-center gap-3 w-full p-3 rounded-lg text-red-400 hover:bg-red-400/10 transition font-medium text-sm text-left disabled:opacity-50"
-        >
-          {isLoading ? (
-            <FaSpinner className="animate-spin w-4 h-4" />
-          ) : (
-            "Logout"
-          )}
-        </button>
-      </div>
-    </div>
+    </aside>
   );
 }

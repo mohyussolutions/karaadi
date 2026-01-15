@@ -15,13 +15,10 @@ import {
   Districts,
   regions,
 } from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
-import {
-  carsNestedCategoriesMap,
-  CarSubCategory,
-} from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForCars";
-import { carsSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
-import { allCategories } from "@/app/(storeFront)/links/categories";
+
 import { apiService } from "@/actions/core/authAction";
+import { carsNestedCategoriesMap, carsSubCategories, CarSubCategory } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import { allCategories } from "@/app/(links)/dashboardLinks/categories";
 
 const CarsForSellOrBuy = () => {
   const router = useRouter();
@@ -245,7 +242,7 @@ const CarsForSellOrBuy = () => {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
-        mainCategory: formData.mainCategory,
+        mainCategory: mainCategory,
         category: formData.category,
         subCategory: formData.subCategory,
         listingType: formData.listingType,

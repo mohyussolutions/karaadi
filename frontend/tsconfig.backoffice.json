@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/app/(backoffice)/Backoffice/**/*"],
+  "exclude": ["node_modules"]
+}

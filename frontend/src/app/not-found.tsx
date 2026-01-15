@@ -12,7 +12,6 @@ const NotFound = () => {
       y: 0,
       transition: {
         duration: 0.6,
-        // FIX: Replaced string "easeOut" with a valid cubic-bezier array [x1, y1, x2, y2]
         ease: [0.4, 0, 0.2, 1],
         staggerChildren: 0.15,
       },

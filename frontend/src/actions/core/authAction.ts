@@ -13,6 +13,7 @@ interface User {
   isManager: boolean;
   accessToken?: string;
   phone: string;
+  phoneVerified?: boolean;
   token: string;
 }
 
@@ -81,10 +82,11 @@ export const apiService = {
 
       const user = {
         _id: u.sub || u.id || u._id,
-        username: u.preferred_username || u.username || u.email?.split("@")[0],
+        username: u.preferred_username,
         email: u.email,
         profileImage: u.profileImage,
         phone: u.phone,
+
         token: data.token || accessToken,
         accessToken: data.accessToken || accessToken,
         isAdmin: toBool(u["custom:isAdmin"]) || toBool(u.isAdmin),
@@ -202,8 +204,10 @@ export const apiService = {
       credentials: "include",
       headers,
     });
-    if (!response.ok) throw new Error("Failed to fetch users");
+   if (!response.ok) return []; 
+    
     return response.json();
+
   },
 
   async getUserById(id: string, accessToken?: string): Promise<User> {

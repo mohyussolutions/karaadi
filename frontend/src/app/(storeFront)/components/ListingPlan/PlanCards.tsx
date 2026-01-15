@@ -1,7 +1,8 @@
 "use client";
 import { FeeConfig } from "@/actions/categories/feeAction";
+import { B2B_PLAN_CONFIG } from "@/app/(links)/dashboardLinks/PlanLinks";
 import React from "react";
-import { B2B_PLAN_CONFIG } from "../../links/PlanLinks";
+
 
 interface PlanCardsProps {
   selectedPlan: string;

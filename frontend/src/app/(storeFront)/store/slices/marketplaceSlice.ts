@@ -27,7 +27,7 @@ export type RealEstateItem = {
   extra?: Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
-  maGaday: boolean; // <- Halkan waxaa jira
+  maGaday: boolean; 
 };
 
 export type CreateRealEstateItemInput = Omit<

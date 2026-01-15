@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { apiUrls } from "@/actions/constant/constant";
 
 interface User {
   id: string;
@@ -16,7 +17,7 @@ const UserPage = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/users/all-users", {
+      const res = await fetch(`${apiUrls.USERS.BASE}/all-users`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch users");
@@ -32,7 +33,7 @@ const UserPage = () => {
   const deleteUser = async (id: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
     try {
-      const res = await fetch(`http://localhost:8080/api/users/${id}`, {
+      const res = await fetch(apiUrls.USERS.BY_ID(id), {
         method: "DELETE",
         credentials: "include",
       });
@@ -47,7 +48,7 @@ const UserPage = () => {
     const newUsername = prompt("Enter new username:");
     if (!newUsername) return;
     try {
-      const res = await fetch(`http://localhost:8080/api/users/${id}`, {
+      const res = await fetch(apiUrls.USERS.BY_ID(id), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

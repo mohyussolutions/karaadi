@@ -1,8 +1,7 @@
 "use client";
 
-import { traktorSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
+import { traktorSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import React, { useEffect, useState } from "react";
-
 export default function TraktorsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

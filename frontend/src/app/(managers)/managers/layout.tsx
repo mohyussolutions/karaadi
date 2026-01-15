@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import ProtectedRoute from "@/app/ProtectedRoute/ProtectedRoute";
-import ManagerNavbar from "@/app/(dashboard)/dashboard/managment/ManagerNavbar";
-import ManagerSidebar from "@/app/(dashboard)/dashboard/managment/ManagerSidebar";
+import ManagerNavbar from "@/app/(backoffice)/Backoffice/ManagerNavbar";
+import ManagerSidebar from "@/app/(managers)/managers/ManagerSidebar";
 
 export default function ManagerLayout({
   children,
@@ -26,18 +26,9 @@ export default function ManagerLayout({
           />
         )}
 
-        <aside
-          className={`
-            fixed top-0 left-0 z-40
-            h-screen w-72 
-            bg-white shadow-2xl border-r border-gray-200 
-            transform transition-transform duration-300 ease-in-out
-            md:static md:translate-x-0 md:flex-shrink-0
-            ${open ? "translate-x-0" : "-translate-x-full"}
-          `}
-        >
-          <ManagerSidebar userRole="manager" />
-        </aside>
+
+          <ManagerSidebar/>
+  
 
         <div className="flex flex-col flex-1 min-w-0 h-screen overflow-hidden">
           <ManagerNavbar

@@ -1,89 +1,160 @@
 "use client";
 
-import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FiCalendar, FiBarChart2 } from "react-icons/fi";
+import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 
 function SupportCard({
   title,
   icon,
+  onClick,
+  count = 0,
 }: {
   title: string;
   icon: React.ReactNode;
+  onClick: () => void;
+  count?: number;
 }) {
   return (
-    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-200 hover:shadow-2xl hover:-translate-y-1 transition-all flex flex-col gap-4">
-      <div className="text-gray-700">{icon}</div>
-      <h2 className="text-xl font-semibold">Support {title}</h2>
-      <p className="text-gray-500 text-sm">
-        Manage {title.toLowerCase()} settings and data.
-      </p>
-    </div>
-  );
-}
-
-function DateInput({ label, value, onChange }: any) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      <div className="flex items-center bg-gray-100 px-3 py-2 rounded-xl gap-2">
-        <FiCalendar className="text-gray-500" />
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="bg-transparent outline-none text-sm w-full"
-        />
+    <div 
+      onClick={onClick}
+      className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-indigo-100 transition-all flex items-center gap-6 cursor-pointer group"
+    >
+      <div className="p-4 bg-slate-50 rounded-2xl text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h2 className="text-lg font-black text-slate-900 truncate">{title}</h2>
+        <p className="text-sm text-slate-500 font-bold">{count} active items</p>
       </div>
     </div>
   );
 }
 
-export default function SupportPage() {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+export default function StreamlinedDashboard() {
+  const router = useRouter();
+  const [sections, setSections] = useState<Record<string, any[]>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const map: Record<string, any[]> = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith("support:")) {
+          const section = key.split(":")[1] || "general";
+          map[section] = JSON.parse(localStorage.getItem(key) || "[]");
+        }
+      }
+    } catch (err) { console.error(err); }
+    setSections(map);
+  }, []);
+
+  const totalItems = Object.values(sections).reduce((s, a) => s + a.length, 0);
+  const entries = Object.entries(sections).sort((a, b) => b[1].length - a[1].length);
 
   return (
-    <div className="flex flex-col gap-12">
-      <div>
-        <h1 className="text-4xl font-extrabold tracking-tight">
-          Support Dashboard
-        </h1>
-        <p className="text-gray-600 text-lg">
-          Tools to manage the platform effectively.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-        {SUPPORT_LINKS.map((link) => (
-          <SupportCard
-            key={link.label}
-            title={link.label}
-            icon={link.dashboardIcon || link.icon}
-          />
-        ))}
-      </div>
-
-      <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-200 flex flex-col gap-8">
-        <div className="flex items-center gap-3">
-          <FiBarChart2 size={24} className="text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900">
-            Filter Chart by Date
-          </h2>
+    <div className="flex flex-col gap-10 p-10 w-full">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-black tracking-tight text-slate-900">Support Overview</h1>
+          <p className="text-lg text-slate-500 font-medium">Real-time status of platform management.</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <DateInput label="From" value={from} onChange={setFrom} />
-          <DateInput label="To" value={to} onChange={setTo} />
-          <div className="flex items-end">
-            <button className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">
-              Apply Filter
-            </button>
+        <div className="flex items-center gap-4 bg-white p-2 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="px-6 py-3 text-center border-r border-slate-100">
+            <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">Total Items</p>
+            <p className="text-3xl font-black text-indigo-600">{totalItems}</p>
+          </div>
+          <div className="px-6 py-3 text-center">
+            <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">Active Sections</p>
+            <p className="text-3xl font-black text-slate-900">{Object.keys(sections).length}</p>
           </div>
         </div>
+      </div>
 
-        <div className="h-64 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500">
-          Chart will appear here…
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {SUPPORT_LINKS
+          .filter((link) => {
+            const title = link.label || link.name || "";
+            return title.toLowerCase() !== "home";
+          })
+          .map((link: any) => {
+            const title = link.label || link.name;
+            const IconContent = link.dashboardIcon || link.icon;
+            const count = sections[title.toLowerCase()]?.length || 0;
+
+            return (
+              <SupportCard
+                key={title}
+                title={title}
+                count={count}
+                onClick={() => router.push(link.href)}
+                icon={
+                  typeof IconContent === "function" ? (
+                    <IconContent size={28} />
+                  ) : React.isValidElement(IconContent) ? (
+                    React.cloneElement(IconContent as React.ReactElement<any>, { size: 28 })
+                  ) : (
+                    IconContent
+                  )
+                }
+              />
+            );
+          })}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+        <div className="xl:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-black text-slate-900">Recent Activity</h2>
+            <div className="flex gap-3">
+              <input type="date" className="text-sm border-slate-200 border rounded-xl px-4 py-2 outline-none focus:ring-2 ring-indigo-500/20" />
+              <button className="text-sm font-black text-indigo-600 px-5 py-2 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition">Filter Data</button>
+            </div>
+          </div>
+          <ul className="divide-y divide-slate-50">
+            {Object.entries(sections)
+              .flatMap(([section, arr]) => arr.map((it: any) => ({ ...it, section })))
+              .sort((a, b) => (b.createdAt || "") > (a.createdAt || "") ? 1 : -1)
+              .slice(0, 6)
+              .map((item: any, idx) => (
+                <li key={item.id || idx} className="py-6 flex justify-between items-center group">
+                  <div className="flex items-center gap-6">
+                    <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]" />
+                    <div>
+                      <p className="text-lg font-bold text-slate-800">{item.title || "Request Update"}</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">Section: <span className="text-indigo-500">{item.section}</span></p>
+                    </div>
+                  </div>
+                  <button className="text-sm font-black text-slate-400 opacity-0 group-hover:opacity-100 transition hover:text-indigo-600 bg-slate-50 px-4 py-2 rounded-lg">View Details</button>
+                </li>
+              ))}
+          </ul>
+        </div>
+
+        <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
+            <h2 className="text-2xl font-black text-slate-900 mb-8">Distribution</h2>
+            <div className="space-y-8 flex-1">
+              {entries.slice(0, 6).map(([section, arr]) => (
+                <div key={section}>
+                  <div className="flex justify-between text-xs font-black uppercase text-slate-400 mb-3 tracking-widest">
+                    <span>{section}</span>
+                    <span className="text-slate-900">{arr.length}</span>
+                  </div>
+                  <div className="h-3 bg-slate-50 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-indigo-500 transition-all duration-1000" 
+                      style={{ width: `${(arr.length / (entries[0][1].length || 1)) * 100}%` }} 
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="w-full mt-10 py-5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-black transition shadow-xl shadow-slate-200">
+              Download Full Report
+            </button>
         </div>
       </div>
     </div>

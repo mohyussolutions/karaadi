@@ -16,7 +16,6 @@ import {
   FaBriefcase,
   FaArrowLeft,
   FaClipboardList,
-  FaPlane,
   FaMobileAlt,
   FaTruck,
   FaLaptop,
@@ -24,68 +23,40 @@ import {
   FaBicycle,
   FaSignOutAlt,
 } from "react-icons/fa";
+import { IoCreate } from "react-icons/io5";
 
-export const managerNavItems = [
-  { name: "Dashboard", icon: FaTachometerAlt, href: "/managers" },
-  { name: "Teams", icon: FaUsers, href: "/managers/menu/teams" },
-  { name: "Projects", icon: FaProjectDiagram, href: "/managers/menu/projects" },
-  { name: "Documents", icon: FaFileAlt, href: "/managers/menu/documents" },
-  { name: "Resources", icon: FaFolder, href: "/managers/menu/resources" },
-  { name: "Approvals", icon: FaCheckCircle, href: "/managers/menu/approvals" },
-  { name: "Settings", icon: FaCog, href: "/managers/menu/settings" },
-  { name: "System", icon: FaServer, href: "/managers/menu/system" },
-];
+export const managerTotalLinks = [
 
-export const managerManagementLinks = [
-  { name: "Boat", icon: FaShip, href: "/dashboard/managment/boat" },
-  { name: "Car", icon: FaCar, href: "/dashboard/managment/car" },
-  {
-    name: "Real Estate",
-    icon: FaHome,
-    href: "/dashboard/managment/RealEstate",
-  },
-  {
-    name: "Motorcycles",
-    icon: FaMotorcycle,
-    href: "/dashboard/managment/Motorcycles",
-  },
-  { name: "Tractor", icon: FaTractor, href: "/dashboard/managment/tractor" },
-  { name: "Jobs", icon: FaBriefcase, href: "/dashboard/managment/jobs" },
-  { name: "Trucks", icon: FaTruck, href: "/dashboard/managment/trucks" },
-  { name: "Phones", icon: FaMobileAlt, href: "/dashboard/managment/phones" },
-  {
-    name: "Electronics",
-    icon: FaLaptop,
-    href: "/dashboard/managment/electronics",
-  },
-  {
-    name: "Bicycles",
-    icon: FaBicycle,
-    href: "/dashboard/managment/bicycles",
-  },
-  {
-    name: "Equipment",
-    icon: FaTools,
-    href: "/dashboard/managment/equipment",
-  },
-];
+  { name: "Dashboard", icon: FaTachometerAlt, href: "/managers", category: "core" },
+  { name: "Teams", icon: FaUsers, href: "/managers/teams", category: "core" },
+  { name: "Projects", icon: FaProjectDiagram, href: "/managers/projects", category: "core" },
+  { name: "Documents", icon: FaFileAlt, href: "/managers/documents", category: "core" },
+  { name: "Resources", icon: FaFolder, href: "/managers/resources", category: "core" },
+  { name: "Approvals", icon: FaCheckCircle, href: "/managers/approvals", category: "core" },
 
-export const managerAnalyticsLinks = [
-  { name: "Overview", icon: FaChartBar, href: "/managers/analytics" },
-  { name: "Reports", icon: FaFileAlt, href: "/managers/reports" },
-  { name: "Performance", icon: FaCheckCircle, href: "/managers/performance" },
-];
 
-export const backToLinks = [
-  { name: "Back to Dashboard", icon: FaArrowLeft, href: "/dashboard" },
-  {
-    name: "Back to Management",
-    icon: FaClipboardList,
-    href: "/dashboard/managment",
-  },
-  { name: "Back to Support", icon: FaUsers, href: "/support" },
-];
+  { name: "Boat", icon: FaShip, href: "/managers/boat", category: "inventory" },
+  { name: "Car", icon: FaCar, href: "/managers/car", category: "inventory" },
+  { name: "Real Estate", icon: FaHome, href: "/managers/real-estate", category: "inventory" },
+  { name: "Motorcycles", icon: FaMotorcycle, href: "/managers/motorcycles", category: "inventory" },
+  { name: "Tractor", icon: FaTractor, href: "/managers/tractor", category: "inventory" },
+  { name: "Jobs", icon: FaBriefcase, href: "/managers/jobs", category: "inventory" },
+  { name: "Trucks", icon: FaTruck, href: "/managers/trucks", category: "inventory" },
+  { name: "Phones", icon: FaMobileAlt, href: "/managers/phones", category: "inventory" },
+  { name: "Electronics", icon: FaLaptop, href: "/managers/electronics", category: "inventory" },
+  { name: "Bicycles", icon: FaBicycle, href: "/managers/bicycles", category: "inventory" },
+  { name: "Equipment", icon: FaTools, href: "/managers/equipment", category: "inventory" },
 
-export const managerAccountLinks = [
-  { name: "Sign Out", icon: FaSignOutAlt, href: "#", action: "logout" },
+
+  { name: "Backoffice", icon: IoCreate, href: "/Backoffice", category: "backoffice" },
+
+
+  { name: "Overview", icon: FaChartBar, href: "/managers/analytics", category: "analytics" },
+  { name: "Reports", icon: FaFileAlt, href: "/managers/reports", category: "analytics" },
+  { name: "Performance", icon: FaCheckCircle, href: "/managers/performance", category: "analytics" },
+
+
+  { name: "Settings", icon: FaCog, href: "/managers/settings", category: "system" },
+  { name: "System", icon: FaServer, href: "/managers/system", category: "system" },
+  { name: "Sign Out", icon: FaSignOutAlt, href: "#", action: "logout", category: "system" },
 ];

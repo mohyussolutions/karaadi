@@ -184,11 +184,7 @@ export const sidebarLinks: SidebarLink[] = [
   { name: "Payments", icon: FaMoneyBillWave, link: "/dashboard/payments" },
   { name: "Settings", icon: FaCog, link: "/dashboard/settings" },
 
-  {
-    name: "managment",
-    icon: IoCreate,
-    link: "/dashboard/managment",
-  },
+  { name: "Backoffice", icon: IoCreate, link: "/Backoffice" },
 ];
 
 export const settingLinks: SettingLink[] = [

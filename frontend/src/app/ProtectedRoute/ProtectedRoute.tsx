@@ -37,9 +37,15 @@ export default function ProtectedRoute({
           return;
         }
 
-        if (admin && !user.isAdmin) return window.location.replace("/");
-        if (manager && !user.isManager) return window.location.replace("/");
-        if (support && !user.isSupport) return window.location.replace("/");
+        if (!isStorefront) {
+          const hasAdminAccess = admin && user.isAdmin;
+          const hasManagerAccess = manager && user.isManager;
+          const hasSupportAccess = support && user.isSupport;
+
+          if (!hasAdminAccess && !hasManagerAccess && !hasSupportAccess) {
+            return window.location.replace("/");
+          }
+        }
 
         if (isStorefront) {
           if (user.isAdmin) return window.location.replace("/dashboard");
@@ -61,8 +67,11 @@ export default function ProtectedRoute({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
+      <div className="fixed inset-0 flex items-center justify-center bg-[#09090b]/10 backdrop-blur-md z-50">
+        <div className="relative">
+          <div className="h-12 w-12 rounded-full border-t-2 border-b-2 border-indigo-500 animate-spin"></div>
+          <div className="absolute inset-0 h-12 w-12 rounded-full border-l-2 border-r-2 border-indigo-200/20 animate-pulse"></div>
+        </div>
       </div>
     );
   }

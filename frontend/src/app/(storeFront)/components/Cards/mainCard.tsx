@@ -1,18 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import Loading from "../shared/Loading/Loading";
 import SeeEmore from "../shared/search/SeeEmore";
 import RealEstateCard from "./RealEstateCard";
 import VehicleCard from "./VehicleCard";
 import CardItem from "./CardItem";
-import { useGetMarketplaceItemsQuery } from "../../store/slices/marketplaceSlice";
-import { useGetRealEstateItemsQuery } from "../../store/slices/realtStateSlice";
-import { useGetCarsQuery } from "../../store/slices/carsSlice";
-import { useGetBoatsQuery } from "../../store/slices/boatsSlice";
-import { useGetMotorcyclesQuery } from "../../store/slices/motorcyclesSlice";
-import { useGetTractorsQuery } from "../../store/slices/tractorsSlice";
+const BASE_URL = "http://localhost:8080";
+
+// We'll fetch directly from the backend endpoints instead of using Redux here
 
 type NormalizedItem = {
   id: string;
@@ -39,16 +36,58 @@ const MAX_ITEMS = 100;
 function ItemsGrid() {
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
 
-  const { data: marketplaceItems = [], isLoading: isLoadingMarketplace } =
-    useGetMarketplaceItemsQuery();
-  const { data: realEstateItems = [], isLoading: isLoadingRealEstate } =
-    useGetRealEstateItemsQuery();
-  const { data: cars = [], isLoading: isLoadingCars } = useGetCarsQuery();
-  const { data: boats = [], isLoading: isLoadingBoats } = useGetBoatsQuery();
-  const { data: motorcycles = [], isLoading: isLoadingMotorcycles } =
-    useGetMotorcyclesQuery();
-  const { data: tractors = [], isLoading: isLoadingTractors } =
-    useGetTractorsQuery();
+  const [marketplaceItems, setMarketplaceItems] = useState<any[]>([]);
+  const [realEstateItems, setRealEstateItems] = useState<any[]>([]);
+  const [cars, setCars] = useState<any[]>([]);
+  const [boats, setBoats] = useState<any[]>([]);
+  const [motorcycles, setMotorcycles] = useState<any[]>([]);
+  const [tractors, setTractors] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchAll = async () => {
+      setIsLoading(true);
+      try {
+        const [mpRes, reRes, carsRes, boatsRes, mcRes, trRes] = await Promise.all([
+          fetch(`${BASE_URL}/api/marketplace`),
+          fetch(`${BASE_URL}/api/real-estate`),
+          fetch(`${BASE_URL}/api/cars`),
+          fetch(`${BASE_URL}/api/boats`),
+          fetch(`${BASE_URL}/api/motorcycles`),
+          fetch(`${BASE_URL}/api/traktor`),
+        ]);
+
+        const [mpJson, reJson, carsJson, boatsJson, mcJson, trJson] = await Promise.all([
+          mpRes.ok ? mpRes.json() : [],
+          reRes.ok ? reRes.json() : [],
+          carsRes.ok ? carsRes.json() : [],
+          boatsRes.ok ? boatsRes.json() : [],
+          mcRes.ok ? mcRes.json() : [],
+          trRes.ok ? trRes.json() : [],
+        ]);
+
+        if (!mounted) return;
+
+        setMarketplaceItems(Array.isArray(mpJson) ? mpJson : []);
+        setRealEstateItems(Array.isArray(reJson) ? reJson : []);
+        setCars(Array.isArray(carsJson) ? carsJson : []);
+        setBoats(Array.isArray(boatsJson) ? boatsJson : []);
+        setMotorcycles(Array.isArray(mcJson) ? mcJson : []);
+        setTractors(Array.isArray(trJson) ? trJson : []);
+      } catch (err) {
+        console.error("Error fetching items for main card:", err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    fetchAll();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const normalizeMarketplace = (items: any[]): NormalizedItem[] =>
     items.map((item) => ({
@@ -119,13 +158,7 @@ function ItemsGrid() {
     ...tractorsNormalized,
   ];
 
-  const isLoading =
-    isLoadingMarketplace ||
-    isLoadingRealEstate ||
-    isLoadingCars ||
-    isLoadingBoats ||
-    isLoadingMotorcycles ||
-    isLoadingTractors;
+  // `isLoading` state above covers all fetches
 
   const itemsToShow = allItems.slice(0, Math.min(visibleCount, MAX_ITEMS));
 
@@ -142,7 +175,7 @@ function ItemsGrid() {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
-        {itemsToShow.map((item, index) => {
+        {itemsToShow.map((item: NormalizedItem, index: number) => {
           const uniqueKey = item.id
             ? `${item.category}-${item.id}`
             : `${item.category}-${index}`;

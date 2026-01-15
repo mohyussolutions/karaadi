@@ -15,17 +15,17 @@ import {
   useCreateMarketplaceItemMutation,
 } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 
-import { marketplaceSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
-import {
-  AntiquesAndArtNestedSub,
+
+
+import { apiService } from "@/actions/core/authAction";
+import { allCategories } from "@/app/(links)/dashboardLinks/categories";
+import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import {  AntiquesAndArtNestedSub,
   ElectronicsNestedSub,
   AnimalAndSuppliesNestedSub,
   SportsAndOutdoorsNestedSub,
   FurnitureNestedSub,
-  FashionNestedSub,
-} from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMarketplace";
-import { allCategories } from "@/app/(storeFront)/links/categories";
-import { apiService } from "@/actions/core/authAction";
+  FashionNestedSub,} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
 
 interface User {
   _id: string;
@@ -72,6 +72,7 @@ const MarketplaceAdForm = () => {
     district: "",
     subDistrict: "",
     extra: {},
+    maGaday: false,
   });
 
   const [mainCategory, setMainCategory] = useState(

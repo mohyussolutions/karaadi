@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FaBell, FaBars, FaCog, FaUserCircle } from "react-icons/fa";
 import Sidebar from "./Sidebar/Sidebar";
 import { backToDashboard } from "@/app/(links)/devicesLinks/devicesLinks";
+import ProtectedRoute from "@/app/ProtectedRoute/ProtectedRoute";
 
 interface DevicesLayoutProps {
   children: ReactNode;
@@ -14,7 +15,8 @@ export default function DevicesLayout({ children }: DevicesLayoutProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-gray-100">
+    <ProtectedRoute admin>
+      <div className="h-screen w-full flex overflow-hidden bg-gray-100">
       <Sidebar open={open} setOpen={setOpen} />
 
       <div className="flex-1 flex flex-col h-full md:ml-64 transition-all duration-300">
@@ -64,5 +66,6 @@ export default function DevicesLayout({ children }: DevicesLayoutProps) {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

@@ -2,6 +2,7 @@
 
 import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
 import React, { useEffect, useState } from "react";
+import { apiUrls } from "@/actions/constant/constant";
 export default function TotalUsers() {
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -10,7 +11,7 @@ export default function TotalUsers() {
   useEffect(() => {
     const fetchTotalUsers = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/users/total-users", {
+        const res = await fetch(`${apiUrls.USERS.BASE}/total-users`, {
           method: "GET",
           credentials: "include",
         });

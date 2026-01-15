@@ -1,107 +1,25 @@
-import React from "react";
-import {
-  FiCpu,
-  FiServer,
-  FiHardDrive,
-  FiAlertTriangle,
-  FiCheckCircle,
-  FiUpload,
-  FiDownload,
-} from "react-icons/fi";
-
-const systemData = [
-  {
-    id: "SYS001",
-    metric: "Main Server Uptime",
-    value: "99.99%",
-    status: "Operational",
-    icon: FiServer,
-  },
-  {
-    id: "SYS002",
-    metric: "Database Latency",
-    value: "15 ms",
-    status: "Good",
-    icon: FiHardDrive,
-  },
-  {
-    id: "SYS003",
-    metric: "Current Error Rate",
-    value: "0.01%",
-    status: "Good",
-    icon: FiAlertTriangle,
-  },
-  {
-    id: "SYS004",
-    metric: "Scheduled Maintenance",
-    value: "None",
-    status: "Clear",
-    icon: FiCpu,
-  },
-  {
-    id: "SYS005",
-    metric: "Data Upload Speed",
-    value: "150 Mbps",
-    status: "Good",
-    icon: FiUpload,
-  },
-  {
-    id: "SYS006",
-    metric: "Data Download Speed",
-    value: "450 Mbps",
-    status: "Operational",
-    icon: FiDownload,
-  },
-];
-
-// Helper for status styling
-const getSystemStatusClasses = (status: string) => {
-  switch (status) {
-    case "Operational":
-    case "Good":
-    case "Clear":
-      return "bg-green-100 text-green-800 border-green-300";
-    case "Warning":
-      return "bg-yellow-100 text-yellow-800 border-yellow-300";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-300";
-  }
-};
-
-function System() {
+export default function Page() {
+  const title = "system".charAt(0).toUpperCase() + "system".slice(1);
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">
-        System Health & Operational Status
-      </h1>
+    <div className="p-10 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">
+          {title}
+        </h1>
+        <p className="text-slate-500 font-medium text-sm">
+          Management module for active {title.toLowerCase()} records.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {systemData.map((item) => (
-          <div
-            key={item.id}
-            className={`p-6 rounded-xl shadow-lg border-l-4 ${getSystemStatusClasses(
-              item.status
-            )}`}
-          >
-            <div className="flex items-center justify-between">
-              <item.icon className="h-8 w-8 text-gray-600" />
-              <div className="text-sm font-medium text-gray-600">
-                {item.metric}
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="text-3xl font-extrabold text-gray-900">
-                {item.value}
-              </p>
-              <p className="mt-1 text-sm font-semibold">
-                Status: <span className="font-bold">{item.status}</span>
-              </p>
-            </div>
-          </div>
-        ))}
+      <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] h-[60vh] flex flex-col items-center justify-center">
+        <div className="bg-slate-50 p-6 rounded-3xl mb-4">
+          <div className="w-10 h-10 bg-slate-200 rounded-full animate-pulse" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-700">Module Initialized</h2>
+        <p className="text-slate-400 max-w-xs text-center mt-2 font-medium">
+          The database for this section is connected. Ready for data entry.
+        </p>
       </div>
     </div>
   );
 }
-
-export default System;

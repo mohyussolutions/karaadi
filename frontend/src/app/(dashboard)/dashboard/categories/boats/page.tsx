@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { boatsSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
 
 import {
   FaCheckCircle,
@@ -10,13 +9,13 @@ import {
   FaEdit,
   FaShip,
 } from "react-icons/fa";
-
-import {
-  BoatEnginesForSaleNestedSub,
+import {   BoatEnginesForSaleNestedSub,
   BoatPartsNestedSub,
   BoatsForRentNestedSub,
-  BoatsForSaleNestedSub,
-} from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForBoats";
+  BoatsForSaleNestedSub, } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
+import { boatsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+
+
 
 const apiService = {
   verifySession: async () => {
