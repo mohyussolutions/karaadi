@@ -4,22 +4,28 @@ import React, { useState } from "react";
 import ManagerNavbar from "./ManagerNavbar";
 import ManagerSidebar from "./ManagerSidebar";
 import { usePathname } from "next/navigation";
-import ProtectedRoute from "@/app/ProtectedRoute/ProtectedRoute";
+import { AdminRoute } from "@/app/ProtectedRoute/ProtectedRoute";
 
-export default function ManagementLayout({ children }: { children: React.ReactNode }) {
+export default function ManagementLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  const userRole: "devices" | "manager" | "support" = pathname?.startsWith("/devices")
+  const userRole: "devices" | "manager" | "support" = pathname?.startsWith(
+    "/devices",
+  )
     ? "devices"
     : pathname?.startsWith("/managers")
-    ? "manager"
-    : pathname?.startsWith("/support")
-    ? "support"
-    : "manager";
+      ? "manager"
+      : pathname?.startsWith("/support")
+        ? "support"
+        : "manager";
 
   return (
-    <ProtectedRoute admin={true} manager={true} support={true}>
+    <AdminRoute>
       <div className="flex min-h-screen bg-slate-50 overflow-hidden">
         <aside
           id="backoffice-sidebar"
@@ -51,15 +57,16 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
         )}
 
         <div className="flex flex-col flex-1 min-w-0">
-          <ManagerNavbar userRole={userRole} onMenuClick={() => setOpen((v) => !v)} />
-          
+          <ManagerNavbar
+            userRole={userRole}
+            onMenuClick={() => setOpen((v) => !v)}
+          />
+
           <main className="flex-1 overflow-y-auto p-4 md:p-8">
-            <div className="w-full">
-              {children}
-            </div>
+            <div className="w-full">{children}</div>
           </main>
         </div>
       </div>
-    </ProtectedRoute>
+    </AdminRoute>
   );
 }

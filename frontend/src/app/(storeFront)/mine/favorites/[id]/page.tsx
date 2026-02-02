@@ -1,46 +1,42 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BsHeartFill } from "react-icons/bs";
 import { FiArrowLeft, FiTrash2 } from "react-icons/fi";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import {
-  getFavoriteById,
-  removeFavorite,
-} from "@/actions/categories/favoriteAction";
+import { removeFavorite } from "@/actions/categories/favoriteAction";
 import { FavoriteItem } from "@/app/utils/types/favorite";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
-const FavoriteDetailPage = () => {
-  const params = useParams();
+interface FavoriteDetailClientProps {
+  favorite?: FavoriteItem;
+}
+
+const FavoriteDetailClient: React.FC<FavoriteDetailClientProps> = ({
+  favorite,
+}) => {
   const router = useRouter();
-  const id = params?.id as string;
-
-  const [favorite, setFavorite] = useState<FavoriteItem | null>(null);
-  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchFavorite = async () => {
-      try {
-        if (!id) {
-          setError("No favorite ID provided");
-          return;
-        }
-
-        const data = await getFavoriteById(id);
-        setFavorite(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to load favorite");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFavorite();
-  }, [id]);
+  // Handle missing favorite
+  if (!favorite) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center py-10">
+          <h2 className="text-xl font-bold text-red-600 mb-2">
+            Favorite not found
+          </h2>
+          <button
+            onClick={() => router.push("/mine/favorites")}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            Back to Favorites
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to remove this item from favorites?")) {
@@ -49,7 +45,7 @@ const FavoriteDetailPage = () => {
 
     try {
       setDeleting(true);
-      await removeFavorite(id);
+      await removeFavorite(favorite.id);
       handleViewAllFavorites();
     } catch (err: any) {
       alert(err.message || "Failed to delete favorite");
@@ -95,9 +91,16 @@ const FavoriteDetailPage = () => {
     return isNaN(numPrice) ? price : `$${numPrice.toLocaleString()}`;
   };
 
-  if (loading) return <Loading />;
-  if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
-  if (!favorite) return <p className="text-center mt-10">Favorite not found</p>;
+  const isValidImageUrl = (url: string | null | undefined): url is string => {
+    if (!url || typeof url !== "string") return false;
+
+    try {
+      new URL(url);
+      return url.startsWith("http") || url.startsWith("/");
+    } catch {
+      return false;
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6">
@@ -113,14 +116,18 @@ const FavoriteDetailPage = () => {
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="relative h-64 md:h-80 w-full bg-gray-100">
-          {favorite.image ? (
+          {isValidImageUrl(favorite.image) ? (
             <Image
               src={favorite.image}
-              alt={favorite.title}
+              alt={favorite.title || "Favorite item"}
               fill
               className="object-cover"
               sizes="100vw"
               priority
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+              }}
             />
           ) : (
             <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-100 to-gray-200">
@@ -146,10 +153,10 @@ const FavoriteDetailPage = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
             <div className="flex-1">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                {favorite.title}
+                {favorite.title || "Untitled"}
               </h1>
               <p className="text-gray-600 text-base md:text-lg">
-                {favorite.description}
+                {favorite.description || "No description"}
               </p>
             </div>
 
@@ -207,11 +214,11 @@ const FavoriteDetailPage = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-gray-700 mb-3">Saved By</h3>
               <div className="flex items-center gap-3">
-                {favorite.user?.profileImage ? (
+                {isValidImageUrl(favorite.user?.profileImage) ? (
                   <div className="relative w-12 h-12 rounded-full overflow-hidden">
                     <Image
                       src={favorite.user.profileImage}
-                      alt={favorite.user.username}
+                      alt={favorite.user?.username || "User"}
                       fill
                       className="object-cover"
                       sizes="48px"
@@ -256,4 +263,4 @@ const FavoriteDetailPage = () => {
   );
 };
 
-export default FavoriteDetailPage;
+export default FavoriteDetailClient;

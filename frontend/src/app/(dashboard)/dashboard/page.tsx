@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAuth } from "./AuthProvider";
-import { regions, cities } from "./regions.and.cities";
 import { StatsCards } from "./analytics/StatsCards";
 import { DashboardChartBlock } from "./analytics/chars/DashboardChartBlock";
 import { RegionsAndCityCharts } from "./analytics/chars/RegionsAndCityCharts";
 import CategoryTotals from "./analytics/CategoryTotals";
-import AdminNavigationLinks from "@/app/(links)/dashboardLinks/AdminNavigationLinks";
+import {
+  cities,
+  regions,
+} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
 
 export default function DashboardPage() {
-  const { user, isLoading } = useAuth();
   const [regionData, setRegionData] = useState<any[]>([]);
   const [cityData, setCityData] = useState<any[]>([]);
 
@@ -32,11 +32,8 @@ export default function DashboardPage() {
     setCityData(generatedCities);
   }, []);
 
-  if (isLoading || !user) return null;
-
   return (
     <div className="flex flex-col gap-6 p-4">
-      <AdminNavigationLinks user={user} />
       <CategoryTotals />
       <StatsCards />
       <DashboardChartBlock />

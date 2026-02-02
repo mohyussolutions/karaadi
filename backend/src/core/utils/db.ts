@@ -3,19 +3,32 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+let prismaInstance: PrismaClient | null = null;
+let poolInstance: pg.Pool | null = null;
 
-const adapter = new PrismaPg(pool);
+export const getPrismaClient = () => {
+  if (!prismaInstance) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is not defined in environment variables");
+    }
 
-export const prisma = new PrismaClient({ adapter });
+    poolInstance = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
 
+    const adapter = new PrismaPg(poolInstance);
+    prismaInstance = new PrismaClient({ adapter });
+  }
+  return prismaInstance;
+};
+
+export const prisma = getPrismaClient();
 export default prisma;
 
 export const connectDb = async () => {
   try {
-    await prisma.$connect();
+    const client = getPrismaClient();
+    await client.$connect();
     console.log("DB connected!");
   } catch (err) {
     console.error("DB connection failed:", err);
@@ -25,7 +38,11 @@ export const connectDb = async () => {
 
 export const disconnectDb = async () => {
   try {
-    await pool.end();
+    if (poolInstance) {
+      await poolInstance.end();
+      poolInstance = null;
+      prismaInstance = null;
+    }
     console.log("DB disconnected!");
   } catch (err) {
     console.error("DB disconnection failed:", err);

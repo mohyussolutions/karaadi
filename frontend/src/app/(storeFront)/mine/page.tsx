@@ -6,8 +6,9 @@ import Link from "next/link";
 
 import ProfileCard from "./ProfileCard";
 import { User } from "../../utils/types/user";
-import { apiService } from "@/actions/core/authAction";
+
 import { accountOptions } from "@/app/(links)/storeFrontLinks/mineLinks";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function MyAccountCards() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,7 +17,7 @@ export default function MyAccountCards() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const user = await apiService.verifySession();
+        const user = await verifySession();
         if (!user) {
           router.replace("/");
         } else {

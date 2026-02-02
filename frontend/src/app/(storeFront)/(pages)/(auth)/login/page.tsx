@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import LoginLoading from "@/app/(storeFront)/components/shared/Loading/LoginLoading";
-import { apiService } from "@/actions/core/authAction";
+import { login, verifySession } from "@/actions/core/authAction";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -19,7 +19,7 @@ export default function LoginForm() {
   useEffect(() => {
     (async () => {
       try {
-        const userData = await apiService.verifySession();
+        const userData = await verifySession();
         setUser(userData);
         if (userData) router.push("/");
       } catch {
@@ -36,7 +36,7 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const user = await apiService.login(email, password);
+      const user = await login(email, password);
 
       console.log(user);
 

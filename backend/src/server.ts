@@ -8,7 +8,7 @@ import redisServer from "services/redisserver/redisServer.ts";
 import prisma from "core/utils/db.ts";
 
 dotenv.config();
-const PORT = Number(process.env.PORT || 9000);
+const PORT = Number(process.env.PORT || 8080);
 const server = http.createServer(app);
 socketServer(server);
 const startServer = async () => {
@@ -20,7 +20,7 @@ const startServer = async () => {
     if (redisStatus.isConnected) {
       console.log(chalk.green("✓ Redis connected"));
       console.log(
-        chalk.cyan(`  Memory: ${redisStatus.memoryUsage.used_memory_human}`)
+        chalk.cyan(`  Memory: ${redisStatus.memoryUsage.used_memory_human}`),
       );
     } else {
       console.log(chalk.yellow("⚠ Redis health check failed"));
@@ -40,7 +40,7 @@ const startServer = async () => {
   server.listen(PORT, () => {
     console.log(chalk.green(`✓ Server running on port ${PORT}`));
     console.log(
-      chalk.blue(`  Environment: ${process.env.NODE_ENV || "development"}`)
+      chalk.blue(`  Environment: ${process.env.NODE_ENV || "development"}`),
     );
   });
 };

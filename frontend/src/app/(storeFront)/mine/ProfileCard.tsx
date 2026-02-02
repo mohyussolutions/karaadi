@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import LoginLoading from "../components/shared/Loading/LoginLoading";
-import { apiService } from "@/actions/core/authAction";
 import { User } from "../../utils/types/user";
+import { logout } from "@/actions/core/authAction";
 
 interface ProfileCardProps {
   user: User | null;
@@ -21,9 +21,9 @@ const ProfileCard = ({ user }: ProfileCardProps) => {
       setIsLoggingOut(true);
       const accessToken = document.cookie.replace(
         /(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/,
-        "$1"
+        "$1",
       );
-      await apiService.logout(accessToken);
+      await logout(accessToken);
       window.location.href = "/";
     } catch (err) {
       window.location.href = "/";

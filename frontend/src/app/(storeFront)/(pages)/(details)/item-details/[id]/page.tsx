@@ -13,9 +13,9 @@ import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import UserCard from "@/app/(storeFront)/components/Cards/UserProfileCard";
-import { apiService } from "@/actions/core/authAction";
 import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
+import { verifySession } from "@/actions/core/authAction";
 
 type MarketplaceUser =
   | {
@@ -68,14 +68,14 @@ export default function ProductDetails() {
   const [showFullImage, setShowFullImage] = useState(false);
 
   const item: MarketplaceItem | undefined = marketplaceItems.find(
-    (i) => i.id === id
+    (i) => i.id === id,
   );
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const user = await apiService.verifySession();
+        const user = await verifySession();
         if (mounted) setCurrentUser(user);
       } catch (error) {
         console.error("Session check failed", error);
@@ -97,8 +97,8 @@ export default function ProductDetails() {
       (typeof rawUser === "object" && rawUser !== null
         ? rawUser.id
         : typeof rawUser === "string"
-        ? rawUser
-        : null);
+          ? rawUser
+          : null);
 
     if (!userId) return null;
 
@@ -186,7 +186,7 @@ export default function ProductDetails() {
 
   const handleModalConfirm = async () => {
     try {
-      const userData = await apiService.verifySession();
+      const userData = await verifySession();
       if (!userData) {
         router.push("/login");
         return;
@@ -221,11 +221,11 @@ export default function ProductDetails() {
 
   const showPreviousImage = () =>
     setSelectedImageIndex((prev) =>
-      prev === 0 ? images.length - 1 : prev - 1
+      prev === 0 ? images.length - 1 : prev - 1,
     );
   const showNextImage = () =>
     setSelectedImageIndex((prev) =>
-      prev === images.length - 1 ? 0 : prev + 1
+      prev === images.length - 1 ? 0 : prev + 1,
     );
 
   const renderMainImage = () => (
@@ -422,7 +422,7 @@ export default function ProductDetails() {
             <button
               onClick={() =>
                 setSelectedImageIndex((prev) =>
-                  prev === 0 ? images.length - 1 : prev - 1
+                  prev === 0 ? images.length - 1 : prev - 1,
                 )
               }
               className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/30 rounded-full hover:bg-white/50 z-20"
@@ -443,7 +443,7 @@ export default function ProductDetails() {
             <button
               onClick={() =>
                 setSelectedImageIndex((prev) =>
-                  prev === images.length - 1 ? 0 : prev + 1
+                  prev === images.length - 1 ? 0 : prev + 1,
                 )
               }
               className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/30 rounded-full hover:bg-white/50 z-20"

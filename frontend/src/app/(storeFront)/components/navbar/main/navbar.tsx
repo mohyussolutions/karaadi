@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import NavItems from "./MainLinks";
 import { User } from "@/app/utils/types/user";
-import { apiService } from "@/actions/core/authAction";
+import { verifySession } from "@/actions/core/authAction";
 
 const Navbar = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -12,7 +12,7 @@ const Navbar = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const userData = await apiService.verifySession();
+        const userData = await verifySession();
         setUser(userData);
       } catch {
         setUser(null);

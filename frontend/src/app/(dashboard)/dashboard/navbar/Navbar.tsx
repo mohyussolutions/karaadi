@@ -1,95 +1,90 @@
-import Link from "next/link";
-import React, { useState } from "react";
-import { FaBell, FaUser, FaBars } from "react-icons/fa";
+"use client";
+
+import { logout } from "@/actions/core/authAction";
 import SearchInput from "@/app/(storeFront)/components/shared/search/SearchInput";
-import { apiService } from "@/actions/core/authAction";
+import { User } from "@/app/(storeFront)/store/slices/boatsSlice";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { FaUser, FaBars } from "react-icons/fa";
 
 interface NavbarProps {
-  user: any;
   toggleSidebar: () => void;
   className?: string;
-}
-
-export function useLogout() {
-  return async () => {
-    await apiService.logout();
-    window.location.href = "/";
-  };
+  user?: User | null;
 }
 
 export default function Navbar({
-  user,
   toggleSidebar,
   className,
+  user,
 }: NavbarProps) {
-  const logout = useLogout();
   const [showDropdown, setShowDropdown] = useState(false);
+  const router = useRouter();
+
+  const handleLogged = async () => {
+    await logout();
+    router.push("/");
+  };
 
   return (
-    <header className={`bg-white p-4 transition-all duration-300 ${className}`}>
+    <header
+      className={`bg-white p-4 border-b border-gray-200 shadow-sm ${className}`}
+    >
       <div className="flex items-center justify-between mx-auto">
         <div className="flex items-center gap-4">
           <button
             onClick={toggleSidebar}
-            className="text-gray-600 transition-colors md:hidden p-1 rounded-md"
-            aria-label="Toggle Sidebar"
+            className="text-gray-600 md:hidden p-1 rounded-md hover:bg-gray-100"
           >
             <FaBars className="w-5 h-5" />
           </button>
-
           <h2 className="text-xl font-semibold text-gray-800 hidden sm:block">
-            Welcome,{" "}
-            <span className="text-indigo-600">{user?.email || "Admin"}</span>
+            Dashboard
           </h2>
+          <p className="text-black text-sm hidden sm:block px-2 py-1 rounded border border-green-500">
+            {user?.username || user?.email}
+          </p>
         </div>
 
-        <div className="flex items-center gap-6 text-gray-700">
-          <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-6">
+          <div className="px-2 py-1">
             <SearchInput />
           </div>
 
-          <button className="relative p-1 transition-colors hidden sm:block">
-            <FaBell className="w-5 h-5" />
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
-          </button>
-
-          <div
-            className="relative cursor-pointer p-1"
-            onClick={() => setShowDropdown(!showDropdown)}
-          >
-            <FaUser
-              className={`w-5 h-5 transition-colors ${
-                showDropdown ? "text-indigo-600" : "text-gray-700"
-              }`}
-            />
+          <div className="relative">
+            <div
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition cursor-pointer"
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
+              <FaUser className="w-4 h-4 text-gray-700" />
+            </div>
 
             <div
-              className={`absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-xl z-40 origin-top-right transition-all duration-200 
-                ${
-                  showDropdown
-                    ? "opacity-100 scale-100 visible"
-                    : "opacity-0 scale-95 invisible"
-                }
-              `}
+              className={`absolute right-0 mt-2 w-auto rounded-lg shadow-lg z-40 transition-all duration-150
+    ${showDropdown ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"}
+  `}
             >
-              <Link
-                href="/dashboard/profile"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Profile
-              </Link>
-              <Link
-                href="/dashboard/settings"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Settings
-              </Link>
-              <button
-                onClick={logout}
-                className="block px-4 py-2 text-sm text-red-500 border-t hover:bg-red-50 w-full text-left"
-              >
-                Logout
-              </button>
+              <div className="flex gap-2 p-2">
+                <Link
+                  href="/dashboard/profile"
+                  className="px-4 py-2 text-sm border border-green-500 text-black rounded hover:bg-green-50"
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/dashboard/settings"
+                  className="px-4 py-2 text-sm border border-green-500 text-black rounded hover:bg-green-50"
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={handleLogged}
+                  className="px-4 py-2 text-sm border border-green-500 text-black rounded hover:bg-green-50"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
