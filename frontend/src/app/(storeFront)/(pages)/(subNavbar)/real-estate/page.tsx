@@ -7,9 +7,9 @@ import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import { useGetRealEstateItemsQuery } from "@/app/(storeFront)/store/slices/realtStateSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import WantSell from "@/app/(storeFront)/components/shared/wantSellBtn/page";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-import { realEstateSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
+import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
 
 const iconMap: Record<string, JSX.Element> = {
   Apartment: <FaBuilding size={32} />,
@@ -31,7 +31,7 @@ function RealEstateLinks() {
 
   return (
     <>
-      <Search />
+      <SearchInput />
       <div className="px-2 py-2 sm:px-2 ">
         <PathSegmentsDisplay />
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 justify-items-center mt-4 sm:mt-6">

@@ -33,6 +33,7 @@ model Chat {
   @@index([senderId, receiverId])
   @@index([updatedAt])
   @@index([isArchived])
+  jobs Job[]
 }
 
 model Message {

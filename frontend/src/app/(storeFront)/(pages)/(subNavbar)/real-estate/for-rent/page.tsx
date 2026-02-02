@@ -8,7 +8,7 @@ import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { useGetRealEstateItemsQuery } from "@/app/(storeFront)/store/slices/realtStateSlice";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import { RealEstateForRentNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryProperties";
 
@@ -20,7 +20,7 @@ function ForRent() {
   const { data: items = [], isLoading, error } = useGetRealEstateItemsQuery();
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allForRentItems = useMemo(() => {
@@ -37,7 +37,7 @@ function ForRent() {
     return allForRentItems.filter((item: any) => {
       // Filter based on the Somali subcategory name (e.g., "Guri dabaq ah")
       return item.subcategory.some(
-        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory
+        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory,
       );
     });
   }, [allForRentItems, selectedSubcategory]);
@@ -47,7 +47,7 @@ function ForRent() {
       return "For Rent listings (Kirada)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory
+      (cat) => cat.so === selectedSubcategory,
     );
     // Display the Somali subcategory name followed by the English translation
     return foundCategory
@@ -73,7 +73,7 @@ function ForRent() {
   const handleCategoryClick = (subcategory: string) => {
     // Sets the Somali name as the selected filter
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

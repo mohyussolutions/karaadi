@@ -11,7 +11,7 @@ import {
   cities,
   Districts,
   regions,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import { User } from "@/app/utils/types/user";
 import {
   CreateBoatInput,
@@ -74,7 +74,7 @@ type BoatFormData = {
 
 const BoatForSellAndBuy = () => {
   const [mainCategory, setMainCategory] = useState(
-    allCategories[0]?.name || ""
+    allCategories[0]?.name || "",
   );
   const router = useRouter();
   const [createBoat, { isLoading }] = useCreateBoatMutation();
@@ -149,7 +149,7 @@ const BoatForSellAndBuy = () => {
       setShowNewCityInputs(false);
       const cityDistrictObj = Districts.find((d) => d.name === formData.city);
       setFilteredDistricts(
-        cityDistrictObj?.subDistricts.map((sd) => sd.name) || []
+        cityDistrictObj?.subDistricts.map((sd) => sd.name) || [],
       );
       handleInputChange("district", "");
       handleInputChange("subDistrict", "");
@@ -164,7 +164,7 @@ const BoatForSellAndBuy = () => {
   useEffect(() => {
     if (formData.category) {
       setFilteredSubcategories(
-        boatsNestedCategoriesMap[formData.category] || []
+        boatsNestedCategoriesMap[formData.category] || [],
       );
       handleInputChange("subCategory", "");
       handleInputChange("title", "");
@@ -176,7 +176,7 @@ const BoatForSellAndBuy = () => {
   useEffect(() => {
     if (formData.category && formData.subCategory) {
       const selectedSub = boatsNestedCategoriesMap[formData.category]?.find(
-        (sub) => sub.title === formData.subCategory
+        (sub) => sub.title === formData.subCategory,
       );
       handleInputChange("title", selectedSub?.so || "");
     }
@@ -249,8 +249,8 @@ const BoatForSellAndBuy = () => {
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(file);
-          })
-      )
+          }),
+      ),
     );
 
   const handleSubmit = async (e: React.FormEvent) => {

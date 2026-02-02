@@ -7,7 +7,7 @@ import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import CardItem from "@/app/(storeFront)/components/Cards/CardItem";
 import { SportsAndOutdoorsNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMarketplace";
@@ -43,12 +43,12 @@ function SportsAndOutdoors() {
   };
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allSportsAndOutdoorsItems = useMemo(() => {
     return items.filter(
-      (item) => item.category && item.category.includes("Sports & Outdoors")
+      (item) => item.category && item.category.includes("Sports & Outdoors"),
     );
   }, [items]);
 
@@ -58,7 +58,7 @@ function SportsAndOutdoors() {
     }
     return allSportsAndOutdoorsItems.filter(
       (item) =>
-        item.subcategory && item.subcategory.includes(selectedSubcategory)
+        item.subcategory && item.subcategory.includes(selectedSubcategory),
     );
   }, [allSportsAndOutdoorsItems, selectedSubcategory]);
 
@@ -81,7 +81,7 @@ function SportsAndOutdoors() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

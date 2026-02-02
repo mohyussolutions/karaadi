@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   cities,
   Districts,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import BusinessCourseFormView from "@/app/(storeFront)/components/forms/businnes/BusinessCourseFormView";
 
 const BusinessCourseForm = () => {
@@ -68,7 +68,7 @@ const BusinessCourseForm = () => {
       const cityDistrictObj = Districts.find((d) => d.name === city);
       if (cityDistrictObj?.subDistricts) {
         const districtsInCity = cityDistrictObj.subDistricts.map(
-          (sd) => sd.name
+          (sd) => sd.name,
         );
         setFilteredDistricts(districtsInCity);
       } else {
@@ -98,7 +98,7 @@ const BusinessCourseForm = () => {
     if (!trimmedNewType) return;
     if (
       !businessTypes.find(
-        (bt) => bt.title.toLowerCase() === trimmedNewType.toLowerCase()
+        (bt) => bt.title.toLowerCase() === trimmedNewType.toLowerCase(),
       )
     ) {
       setBusinessTypes((prev) => [...prev, { title: trimmedNewType }]);
@@ -165,7 +165,7 @@ const BusinessCourseForm = () => {
     e.preventDefault();
     if (!isFormValid()) {
       alert(
-        "Please fill out all required fields correctly and upload up to 10 images."
+        "Please fill out all required fields correctly and upload up to 10 images.",
       );
       return;
     }

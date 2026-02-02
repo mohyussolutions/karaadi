@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FIXED_USER_ID } from "../../lib/storage";
-import { apiService } from "@/actions/core/authAction";
+import { verifySession } from "@/actions/core/authAction";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 
 export default function MotorcycleCreate() {
@@ -36,15 +36,24 @@ export default function MotorcycleCreate() {
       title,
       transmission,
       mainCategory,
-      category: category.split(",").map((s)=>s.trim()).filter(Boolean),
-      subcategory: subcategory.split(",").map((s)=>s.trim()).filter(Boolean),
+      category: category
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      subcategory: subcategory
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
       price: parseFloat(price) || 0,
       so: so || null,
       region,
       city,
       district,
       subDistrict,
-      images: images.split(",").map((s)=>s.trim()).filter(Boolean),
+      images: images
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
       type: typeVal,
       make,
       modelName,
@@ -81,42 +90,155 @@ export default function MotorcycleCreate() {
     let mounted = true;
     (async () => {
       try {
-        const u = await apiService.verifySession();
+        const u = await verifySession();
         if (mounted) setCurrentUserId(u?._id ?? FIXED_USER_ID);
       } catch {
         if (mounted) setCurrentUserId(FIXED_USER_ID);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
     <div className="py-6">
       <h2 className="text-2xl font-bold mb-4">Create Motorcycle</h2>
       <form onSubmit={handleSubmit} className="space-y-3 max-w-2xl">
-        <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title" className="w-full p-2 border rounded" />
-        <input value={transmission} onChange={(e)=>setTransmission(e.target.value)} placeholder="Transmission" className="w-full p-2 border rounded" />
-        <input value={mainCategory} onChange={(e)=>setMainCategory(e.target.value)} placeholder="Main Category" className="w-full p-2 border rounded" />
-        <input value={category} onChange={(e)=>setCategory(e.target.value)} placeholder="Category (comma-separated)" className="w-full p-2 border rounded" />
-        <input value={subcategory} onChange={(e)=>setSubcategory(e.target.value)} placeholder="Subcategory (comma-separated)" className="w-full p-2 border rounded" />
-        <input value={price} onChange={(e)=>setPrice(e.target.value)} placeholder="Price" className="w-full p-2 border rounded" />
-        <input value={so} onChange={(e)=>setSo(e.target.value)} placeholder="SO (optional)" className="w-full p-2 border rounded" />
-        <input value={region} onChange={(e)=>setRegion(e.target.value)} placeholder="Region" className="w-full p-2 border rounded" />
-        <input value={city} onChange={(e)=>setCity(e.target.value)} placeholder="City" className="w-full p-2 border rounded" />
-        <input value={district} onChange={(e)=>setDistrict(e.target.value)} placeholder="District" className="w-full p-2 border rounded" />
-        <input value={subDistrict} onChange={(e)=>setSubDistrict(e.target.value)} placeholder="Sub District" className="w-full p-2 border rounded" />
-        <input value={images} onChange={(e)=>setImages(e.target.value)} placeholder="Images (comma-separated)" className="w-full p-2 border rounded" />
-        <input value={typeVal} onChange={(e)=>setTypeVal(e.target.value)} placeholder="Type" className="w-full p-2 border rounded" />
-        <input value={make} onChange={(e)=>setMake(e.target.value)} placeholder="Make" className="w-full p-2 border rounded" />
-        <input value={modelName} onChange={(e)=>setModelName(e.target.value)} placeholder="Model Name" className="w-full p-2 border rounded" />
-        <div className="grid grid-cols-2 gap-2"><input value={year} onChange={(e)=>setYear(e.target.value)} placeholder="Year" className="p-2 border rounded" /><input value={mileage} onChange={(e)=>setMileage(e.target.value)} placeholder="Mileage" className="p-2 border rounded" /></div>
-        <input value={engineSize} onChange={(e)=>setEngineSize(e.target.value)} placeholder="Engine Size" className="w-full p-2 border rounded" />
-        <input value={fuelType} onChange={(e)=>setFuelType(e.target.value)} placeholder="Fuel Type" className="w-full p-2 border rounded" />
-        <input value={color} onChange={(e)=>setColor(e.target.value)} placeholder="Color" className="w-full p-2 border rounded" />
-        <textarea value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Description" className="w-full p-2 border rounded" />
-        <div><button className="px-4 py-2 bg-blue-600 text-white rounded">Create</button></div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={transmission}
+          onChange={(e) => setTransmission(e.target.value)}
+          placeholder="Transmission"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={mainCategory}
+          onChange={(e) => setMainCategory(e.target.value)}
+          placeholder="Main Category"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          placeholder="Category (comma-separated)"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={subcategory}
+          onChange={(e) => setSubcategory(e.target.value)}
+          placeholder="Subcategory (comma-separated)"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Price"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={so}
+          onChange={(e) => setSo(e.target.value)}
+          placeholder="SO (optional)"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          placeholder="Region"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder="City"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={district}
+          onChange={(e) => setDistrict(e.target.value)}
+          placeholder="District"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={subDistrict}
+          onChange={(e) => setSubDistrict(e.target.value)}
+          placeholder="Sub District"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={images}
+          onChange={(e) => setImages(e.target.value)}
+          placeholder="Images (comma-separated)"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={typeVal}
+          onChange={(e) => setTypeVal(e.target.value)}
+          placeholder="Type"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={make}
+          onChange={(e) => setMake(e.target.value)}
+          placeholder="Make"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={modelName}
+          onChange={(e) => setModelName(e.target.value)}
+          placeholder="Model Name"
+          className="w-full p-2 border rounded"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            placeholder="Year"
+            className="p-2 border rounded"
+          />
+          <input
+            value={mileage}
+            onChange={(e) => setMileage(e.target.value)}
+            placeholder="Mileage"
+            className="p-2 border rounded"
+          />
+        </div>
+        <input
+          value={engineSize}
+          onChange={(e) => setEngineSize(e.target.value)}
+          placeholder="Engine Size"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={fuelType}
+          onChange={(e) => setFuelType(e.target.value)}
+          placeholder="Fuel Type"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+          placeholder="Color"
+          className="w-full p-2 border rounded"
+        />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description"
+          className="w-full p-2 border rounded"
+        />
+        <div>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded">
+            Create
+          </button>
+        </div>
       </form>
     </div>
   );
 }
-

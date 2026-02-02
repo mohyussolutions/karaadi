@@ -7,7 +7,7 @@ import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import CardItem from "@/app/(storeFront)/components/Cards/CardItem";
 import { ElectronicsNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMarketplace";
@@ -43,13 +43,13 @@ function ElectronicsLinks() {
   };
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allElectronicsItems = useMemo(() => {
     return items.filter(
       (item) =>
-        item.category && item.category.includes("Electronics & Home Goods")
+        item.category && item.category.includes("Electronics & Home Goods"),
     );
   }, [items]);
 
@@ -59,7 +59,7 @@ function ElectronicsLinks() {
     }
     return allElectronicsItems.filter(
       (item) =>
-        item.subcategory && item.subcategory.includes(selectedSubcategory)
+        item.subcategory && item.subcategory.includes(selectedSubcategory),
     );
   }, [allElectronicsItems, selectedSubcategory]);
 
@@ -82,7 +82,7 @@ function ElectronicsLinks() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

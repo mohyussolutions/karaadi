@@ -8,7 +8,7 @@ import CategoryTotals from "./analytics/CategoryTotals";
 import {
   cities,
   regions,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 
 export default function DashboardPage() {
   const [regionData, setRegionData] = useState<any[]>([]);

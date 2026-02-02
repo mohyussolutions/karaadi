@@ -7,7 +7,7 @@ import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import { useGetRealEstateItemsQuery } from "@/app/(storeFront)/store/slices/realtStateSlice";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import { RealEstateFarmForSaleNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryProperties";
@@ -21,7 +21,7 @@ function FarmForSale() {
   const { data: items = [], isLoading, error } = useGetRealEstateItemsQuery();
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allFarmItems = useMemo(() => {
@@ -39,7 +39,7 @@ function FarmForSale() {
 
     return allFarmItems.filter((item: any) => {
       return item.subcategory.some(
-        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory
+        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory,
       );
     });
   }, [allFarmItems, selectedSubcategory]);
@@ -49,7 +49,7 @@ function FarmForSale() {
       return "Farm Listings (Beero Iib ah)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory
+      (cat) => cat.so === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -71,7 +71,7 @@ function FarmForSale() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

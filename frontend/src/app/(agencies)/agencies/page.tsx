@@ -50,11 +50,7 @@ function Agencies() {
   }
 
   if (agencies.length === 0) {
-    return (
-      <div className="h-[400px] flex items-center justify-center text-gray-400">
-        No agencies found.
-      </div>
-    );
+    return null;
   }
 
   const current = agencies[currentIndex];

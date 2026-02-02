@@ -1,260 +1,180 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { BsHeartFill } from "react-icons/bs";
-import { FiArrowLeft, FiTrash2 } from "react-icons/fi";
-import { removeFavorite } from "@/actions/categories/favoriteAction";
+import { FiArrowLeft } from "react-icons/fi";
+import {
+  getFavoriteById,
+  removeFavorite,
+} from "@/actions/categories/favoriteAction";
 import { FavoriteItem } from "@/app/utils/types/favorite";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
-interface FavoriteDetailClientProps {
-  favorite?: FavoriteItem;
-}
-
-const FavoriteDetailClient: React.FC<FavoriteDetailClientProps> = ({
-  favorite,
-}) => {
+const FavoriteDetailPage = () => {
+  const params = useParams();
   const router = useRouter();
-  const [deleting, setDeleting] = useState(false);
+  const id = params?.id as string;
 
-  // Handle missing favorite
-  if (!favorite) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center py-10">
-          <h2 className="text-xl font-bold text-red-600 mb-2">
-            Favorite not found
-          </h2>
-          <button
-            onClick={() => router.push("/mine/favorites")}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            Back to Favorites
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const [favorite, setFavorite] = useState<FavoriteItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFavorite = async () => {
+      try {
+        if (!id) return;
+        const data = await getFavoriteById(id);
+        setFavorite(data);
+      } catch (err: any) {
+        setError(err.message || "Failed to load favorite");
+      }
+    };
+    fetchFavorite();
+  }, [id]);
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to remove this item from favorites?")) {
-      return;
-    }
+    if (!confirm("Remove this item from favorites?")) return;
 
     try {
       setDeleting(true);
-      await removeFavorite(favorite.id);
-      handleViewAllFavorites();
+      await removeFavorite(id);
+      router.push("/mine/favorites");
     } catch (err: any) {
       alert(err.message || "Failed to delete favorite");
-    } finally {
       setDeleting(false);
-    }
-  };
-
-  const handleBack = () => {
-    router.back();
-  };
-
-  const handleViewAllFavorites = () => {
-    router.push("/mine/favorites");
-  };
-
-  const handleBrowseMarketplace = () => {
-    if (favorite?.itemId) {
-      router.push(`/item-details/${favorite.itemId}`);
-    } else {
-      router.push("/");
     }
   };
 
   const formatDate = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
+      return new Date(dateString).toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
         year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
       });
     } catch {
       return dateString;
     }
   };
 
-  const formatPrice = (price: string | null) => {
-    if (!price) return "Not specified";
-    const numPrice = parseFloat(price);
-    return isNaN(numPrice) ? price : `$${numPrice.toLocaleString()}`;
-  };
-
-  const isValidImageUrl = (url: string | null | undefined): url is string => {
-    if (!url || typeof url !== "string") return false;
-
-    try {
-      new URL(url);
-      return url.startsWith("http") || url.startsWith("/");
-    } catch {
-      return false;
-    }
-  };
+  if (error)
+    return (
+      <div className="text-center mt-20 text-red-500 font-medium">{error}</div>
+    );
+  if (!favorite) return null;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6">
-      <div className="mb-6">
-        <button
-          onClick={handleBack}
-          className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
-        >
-          <FiArrowLeft className="w-4 h-4 mr-2" />
-          Back to Favorites
-        </button>
-      </div>
+    <div className="container mx-auto p-6 mt-10 max-w-6xl">
+      <button
+        onClick={() => router.back()}
+        className="group flex items-center text-gray-500 hover:text-gray-900 mb-8 transition-colors font-medium"
+      >
+        <FiArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+        Back
+      </button>
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="relative h-64 md:h-80 w-full bg-gray-100">
-          {isValidImageUrl(favorite.image) ? (
-            <Image
-              src={favorite.image}
-              alt={favorite.title || "Favorite item"}
-              fill
-              className="object-cover"
-              sizes="100vw"
-              priority
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
-            />
-          ) : (
-            <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-100 to-gray-200">
-              <BsHeartFill className="w-24 h-24 text-gray-400" />
-            </div>
-          )}
-
-          <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-            {favorite.category && (
-              <span className="px-3 py-1 bg-black/70 text-white text-sm rounded-full">
-                {favorite.category}
-              </span>
+      {/* Row Container */}
+      <div className="flex flex-col lg:flex-row gap-12 items-stretch">
+        {/* Left Column: Image Area */}
+        <div className="w-full lg:w-1/2">
+          <div className="relative aspect-square w-full bg-gray-50 rounded-[3rem] overflow-hidden border border-gray-100 shadow-sm transition-all hover:shadow-md">
+            {favorite.image ? (
+              <Image
+                src={favorite.image}
+                alt={favorite.title}
+                fill
+                className="object-contain p-12 rounded-[3rem]" /* Applied rounding to image itself */
+                priority
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <BsHeartFill className="w-20 h-20 text-gray-200" />
+              </div>
             )}
-            {favorite.price && (
-              <span className="px-3 py-1 bg-blue-600 text-white text-lg font-bold rounded-full">
-                {formatPrice(favorite.price)}
-              </span>
+
+            {favorite.category && (
+              <div className="absolute top-8 left-8">
+                <span className="px-5 py-2 bg-white/90 backdrop-blur-md border border-gray-100 text-gray-800 text-xs font-bold uppercase tracking-widest rounded-2xl shadow-sm">
+                  {favorite.category}
+                </span>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                {favorite.title || "Untitled"}
+        {/* Right Column: Details Area */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-between py-4">
+          <div>
+            <div className="mb-8">
+              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
+                {favorite.title}
               </h1>
-              <p className="text-gray-600 text-base md:text-lg">
-                {favorite.description || "No description"}
+              {favorite.price && (
+                <p className="text-3xl font-bold text-blue-600 mb-6">
+                  ${parseFloat(favorite.price).toLocaleString()}
+                </p>
+              )}
+              <div className="h-1 w-20 bg-gray-100 rounded-full mb-6" />
+              <p className="text-gray-600 text-lg leading-relaxed max-w-prose">
+                {favorite.description}
               </p>
             </div>
 
-            <div className="flex gap-2 flex-shrink-0">
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
-                aria-label="Delete favorite"
-              >
-                {deleting ? (
-                  <div className="w-5 h-5 border-2 border-red-300 border-t-red-600 rounded-full animate-spin"></div>
-                ) : (
-                  <FiTrash2 className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-700 mb-3">
-                Item Information
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Category:</span>
-                  <span className="font-medium">
-                    {favorite.category || "Not specified"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Price:</span>
-                  <span className="font-medium">
-                    {formatPrice(favorite.price)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Saved on:</span>
-                  <span className="font-medium">
-                    {formatDate(favorite.createdAt)}
-                  </span>
-                </div>
-                {favorite.updatedAt !== favorite.createdAt && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Last updated:</span>
-                    <span className="font-medium">
-                      {formatDate(favorite.updatedAt)}
-                    </span>
-                  </div>
-                )}
+            <div className="space-y-4 mb-10 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-50">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-400 font-medium">
+                  Added to Collection
+                </span>
+                <span className="text-gray-900 font-semibold">
+                  {formatDate(favorite.createdAt)}
+                </span>
               </div>
-            </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-700 mb-3">Saved By</h3>
-              <div className="flex items-center gap-3">
-                {isValidImageUrl(favorite.user?.profileImage) ? (
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden">
+              <div className="flex items-center gap-4 pt-2">
+                <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-blue-100 flex-shrink-0 border-2 border-white shadow-sm">
+                  {favorite.user?.profileImage ? (
                     <Image
                       src={favorite.user.profileImage}
-                      alt={favorite.user?.username || "User"}
+                      alt="User"
                       fill
                       className="object-cover"
-                      sizes="48px"
                     />
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg font-medium text-blue-600">
-                      {favorite.user?.username?.charAt(0)?.toUpperCase() || "U"}
-                    </span>
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold text-xl">
+                      {favorite.user?.username?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
                 <div>
-                  <p className="font-medium text-gray-900">
-                    {favorite.user?.username || "Unknown"}
+                  <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">
+                    Verified Seller
                   </p>
-                  <p className="text-sm text-gray-600">
-                    {favorite.user?.email || "No email provided"}
+                  <p className="text-gray-900 font-bold text-lg">
+                    {favorite.user?.username || "Merchant"}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
-              onClick={handleViewAllFavorites}
-              className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              onClick={() =>
+                favorite?.itemId
+                  ? router.push(`/item-details/${favorite.itemId}`)
+                  : router.push("/")
+              }
+              className="bg-gray-900 text-white font-bold py-5 rounded-[1.5rem] hover:bg-black transition-all shadow-xl shadow-gray-200 active:scale-95"
             >
-              View All Favorites
+              Marketplace View
             </button>
             <button
-              onClick={handleBrowseMarketplace}
-              className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-50 text-red-600 font-bold py-5 rounded-[1.5rem] hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
             >
-              Browse Marketplace
+              {deleting ? "Removing..." : "Delete Favorite"}
             </button>
           </div>
         </div>
@@ -263,4 +183,4 @@ const FavoriteDetailClient: React.FC<FavoriteDetailClientProps> = ({
   );
 };
 
-export default FavoriteDetailClient;
+export default FavoriteDetailPage;

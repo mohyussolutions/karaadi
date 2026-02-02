@@ -6,7 +6,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useGetRealEstateItemsQuery } from "@/app/(storeFront)/store/slices/realtStateSlice";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
@@ -19,7 +19,7 @@ function ForSale() {
   const { data: items = [], isLoading, error } = useGetRealEstateItemsQuery();
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allForSaleItems = useMemo(() => {
@@ -37,7 +37,7 @@ function ForSale() {
 
     return allForSaleItems.filter((item: any) => {
       return item.subcategory.some(
-        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory
+        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory,
       );
     });
   }, [allForSaleItems, selectedSubcategory]);
@@ -47,7 +47,7 @@ function ForSale() {
       return "For Sale Listings (Iib ah)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory
+      (cat) => cat.so === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -69,7 +69,7 @@ function ForSale() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

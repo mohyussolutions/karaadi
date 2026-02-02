@@ -13,9 +13,9 @@ import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import UserCard from "@/app/(storeFront)/components/Cards/UserProfileCard";
-import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { verifySession } from "@/actions/core/authAction";
+import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 type MarketplaceUser =
   | {

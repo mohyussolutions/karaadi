@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { regions } from "../../shared/SomaliMapRegionsAndCities/SomaliaRegions";
+import { regions } from "../../shared/SomLocs/SomaliaRegions";
 
 interface BusinessType {
   title: string;

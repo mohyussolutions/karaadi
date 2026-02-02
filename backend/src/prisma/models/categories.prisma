@@ -221,3 +221,28 @@ model Agency {
   createdAt DateTime @default(now())
  users User[] @relation("UserAgencies")
 }
+
+model Job {
+  id           String    @id @default(cuid())
+  userId       String
+  title        String
+  description  String
+  salary       Float
+  mainCategory String
+  category     String[]
+  subcategory  String[]
+  region       String
+  city         String
+  district     String
+  subDistrict  String?
+  employmentType String
+  experienceLevel String
+  images       String[]
+  maGaday      Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  isPaid       Boolean   @default(false)
+  user         User      @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
+  chats        Chat[]
+  Payment      Payment[]
+}

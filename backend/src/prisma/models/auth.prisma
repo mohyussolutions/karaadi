@@ -35,6 +35,7 @@ model User {
   @@index([email])
   @@index([username])
   @@index([createdAt])
+  jobs Job[] @relation("UserJobs")
 }
 
 model Visitor {

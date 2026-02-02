@@ -91,7 +91,7 @@ export async function updateSubscriptionStatus(
   data: {
     status: "active" | "inactive" | "paused";
     isActive?: boolean;
-  }
+  },
 ) {
   const res = await fetch(SUBS_ENDPOINTS.ADMIN_UPDATE_STATUS(id), {
     method: "PATCH",
@@ -164,7 +164,7 @@ export async function checkExistingSubscription(
   userId: string,
   category: string,
   region: string,
-  city: string
+  city: string,
 ) {
   try {
     const subscriptions = await getUserSubscriptions(userId);
@@ -174,7 +174,7 @@ export async function checkExistingSubscription(
           sub.category === category &&
           sub.region === region &&
           sub.city === city &&
-          sub.isActive === true
+          sub.isActive === true,
       ) || false
     );
   } catch (error) {

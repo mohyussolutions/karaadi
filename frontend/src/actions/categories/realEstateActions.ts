@@ -41,7 +41,7 @@ type CreateRealEstateData = {
   images: string[];
 };
 
-export async function getRealEstateListings(): Promise<RealEstate[] | null> {
+export async function getRealEstateListings(): Promise<RealEstate[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.RealEstate, {
       method: "GET",
@@ -49,12 +49,7 @@ export async function getRealEstateListings(): Promise<RealEstate[] | null> {
     });
 
     if (!response.ok) {
-      console.error(
-        "Failed to fetch real estate listings (Check URL in constants file):",
-        response.status,
-        response.statusText
-      );
-      return null;
+      return [];
     }
 
     const result = await response.json();
@@ -62,15 +57,11 @@ export async function getRealEstateListings(): Promise<RealEstate[] | null> {
     const listingList = Array.isArray(result)
       ? result
       : result && result.data && Array.isArray(result.data)
-      ? result.data
-      : [];
+        ? result.data
+        : [];
 
     if (!Array.isArray(listingList)) {
-      console.error(
-        "Real Estate API returned non-array data structure:",
-        result
-      );
-      return null;
+      return [];
     }
 
     return listingList.map((item: any) => ({
@@ -78,13 +69,12 @@ export async function getRealEstateListings(): Promise<RealEstate[] | null> {
       _id: item._id || item.id,
     })) as RealEstate[];
   } catch (error) {
-    console.error("Network error fetching real estate listings:", error);
-    return null;
+    return [];
   }
 }
 
 export async function getRealEstateById(
-  id: string
+  id: string,
 ): Promise<RealEstate | null> {
   try {
     const response = await fetch(
@@ -92,14 +82,14 @@ export async function getRealEstateById(
       {
         method: "GET",
         next: { tags: [`real-estate-${id}`], revalidate: 3600 },
-      }
+      },
     );
 
     if (!response.ok) {
       console.error(
         `Failed to fetch real estate listing ${id}:`,
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -117,7 +107,7 @@ export async function getRealEstateById(
 
 export async function createRealEstate(
   data: CreateRealEstateData,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.RealEstate, {
@@ -153,7 +143,7 @@ export async function createRealEstate(
 export async function updateRealEstate(
   id: string,
   data: Partial<CreateRealEstateData>,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(
@@ -165,7 +155,7 @@ export async function updateRealEstate(
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
-      }
+      },
     );
 
     const result = await response.json();
@@ -199,7 +189,7 @@ export async function deleteRealEstate(id: string, token: string) {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {

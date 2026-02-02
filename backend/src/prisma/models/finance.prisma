@@ -35,6 +35,7 @@ model Payment{
   @@index([transactionId])
   @@index([createdAt])
   @@index([paymentMethod])
+  jobs Job[]
 }
 
 model FeeConfig {

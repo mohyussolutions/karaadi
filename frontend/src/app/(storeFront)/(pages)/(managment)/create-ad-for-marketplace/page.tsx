@@ -9,23 +9,23 @@ import "react-toastify/dist/ReactToastify.css";
 import {
   Districts,
   regions,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import {
   CreateRealEstateItemInput,
   useCreateMarketplaceItemMutation,
 } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 
-
-
 import { apiService } from "@/actions/core/authAction";
 import { allCategories } from "@/app/(links)/dashboardLinks/categories";
 import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
-import {  AntiquesAndArtNestedSub,
+import {
+  AntiquesAndArtNestedSub,
   ElectronicsNestedSub,
   AnimalAndSuppliesNestedSub,
   SportsAndOutdoorsNestedSub,
   FurnitureNestedSub,
-  FashionNestedSub,} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
+  FashionNestedSub,
+} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
 
 interface User {
   _id: string;
@@ -76,7 +76,7 @@ const MarketplaceAdForm = () => {
   });
 
   const [mainCategory, setMainCategory] = useState(
-    allCategories[0]?.name || ""
+    allCategories[0]?.name || "",
   );
 
   const [images, setImages] = useState<File[]>([]);
@@ -105,7 +105,7 @@ const MarketplaceAdForm = () => {
   useEffect(() => {
     if (!formData.region) return;
     const citiesInRegion = Districts.filter(
-      (d) => d.regionId === formData.region
+      (d) => d.regionId === formData.region,
     ).map((d) => d.name);
     setFilteredCities(citiesInRegion);
     handleInputChange("city", "");
@@ -189,8 +189,8 @@ const MarketplaceAdForm = () => {
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(file);
-          })
-      )
+          }),
+      ),
     );
 
   const handleSubmit = async (e: React.FormEvent) => {

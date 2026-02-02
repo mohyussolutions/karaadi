@@ -6,7 +6,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
@@ -19,7 +19,7 @@ function ElectricCars() {
 
   const { data: items = [], isLoading, isError } = useGetCarsQuery();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allElectricItems = useMemo(() => {
@@ -48,7 +48,7 @@ function ElectricCars() {
       return "All Electric Cars (Dhammaan Gawaarida Korontada)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory
+      (cat) => cat.so === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -70,7 +70,7 @@ function ElectricCars() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

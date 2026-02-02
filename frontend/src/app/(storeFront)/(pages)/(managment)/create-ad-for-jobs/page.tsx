@@ -10,7 +10,7 @@ import { User } from "@/app/utils/types/user";
 import {
   regions,
   cities,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import { jobsSubCategories as jobsSubCategoriesFlat } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
 import {
   applicationMethods,
@@ -90,7 +90,7 @@ const CreateAdForJobs = () => {
   useEffect(() => {
     if (jobType) {
       const selectedJob = jobsSubCategoriesFlat.find(
-        (job) => job.key === jobType
+        (job) => job.key === jobType,
       );
       setJobField(selectedJob?.title || "");
 
@@ -473,18 +473,18 @@ const CreateAdForJobs = () => {
                 {applicationMethod === "email"
                   ? "Email Address"
                   : applicationMethod === "url"
-                  ? "Application URL"
-                  : applicationMethod === "phone"
-                  ? "Phone Number"
-                  : "Contact Detail"}
+                    ? "Application URL"
+                    : applicationMethod === "phone"
+                      ? "Phone Number"
+                      : "Contact Detail"}
               </label>
               <input
                 type={
                   applicationMethod === "email"
                     ? "email"
                     : applicationMethod === "url"
-                    ? "url"
-                    : "text"
+                      ? "url"
+                      : "text"
                 }
                 value={applicationContact}
                 onChange={(e) => setApplicationContact(e.target.value)}

@@ -7,7 +7,7 @@ import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { useGetTractorsQuery } from "@/app/(storeFront)/store/slices/tractorsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import { CarsForSaleNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForCars";
 
@@ -18,7 +18,7 @@ function TractorForSale() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allTractorItems = useMemo(() => {
@@ -44,7 +44,7 @@ function TractorForSale() {
       return "All Tractors for Sale (Dhammaan Traktorada Iibka)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory
+      (cat) => cat.so === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -65,7 +65,7 @@ function TractorForSale() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

@@ -37,7 +37,7 @@ type CreateMarketplaceData = {
   extra?: object;
 };
 
-export async function getMarketplaceItems(): Promise<MarketplaceItem[] | null> {
+export async function getMarketplaceItems(): Promise<MarketplaceItem[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Marketplace, {
       method: "GET",
@@ -45,44 +45,27 @@ export async function getMarketplaceItems(): Promise<MarketplaceItem[] | null> {
     });
 
     if (!response.ok) {
-      console.error(
-        "Failed to fetch marketplace items:",
-        response.status,
-        response.statusText
-      );
-      return null;
+      return [];
     }
 
     const result = await response.json();
-
-    // FIX: Safely extract the array from the response.
-    // It checks if 'result' is an array, or if 'result.data' is an array.
     const itemList = Array.isArray(result)
       ? result
       : result && result.data && Array.isArray(result.data)
-      ? result.data
-      : [];
+        ? result.data
+        : [];
 
-    if (!Array.isArray(itemList)) {
-      console.error(
-        "API response is not a valid array of items or a container object."
-      );
-      return null;
-    }
-
-    // Use the safely extracted array for mapping
     return itemList.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
     })) as MarketplaceItem[];
   } catch (error) {
-    console.error("Network error fetching marketplace items:", error);
-    return null;
+    return [];
   }
 }
 
 export async function getMarketplaceItemById(
-  id: string
+  id: string,
 ): Promise<MarketplaceItem | null> {
   try {
     const response = await fetch(
@@ -90,14 +73,14 @@ export async function getMarketplaceItemById(
       {
         method: "GET",
         next: { tags: [`marketplace-item-${id}`], revalidate: 3600 },
-      }
+      },
     );
 
     if (!response.ok) {
       console.error(
         `Failed to fetch marketplace item ${id}:`,
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -115,7 +98,7 @@ export async function getMarketplaceItemById(
 
 export async function createMarketplaceItem(
   data: CreateMarketplaceData,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Marketplace, {
@@ -151,7 +134,7 @@ export async function createMarketplaceItem(
 export async function updateMarketplaceItem(
   id: string,
   data: Partial<CreateMarketplaceData>,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(
@@ -163,7 +146,7 @@ export async function updateMarketplaceItem(
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
-      }
+      },
     );
 
     const result = await response.json();
@@ -197,7 +180,7 @@ export async function deleteMarketplaceItem(id: string, token: string) {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {

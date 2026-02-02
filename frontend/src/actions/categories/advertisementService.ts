@@ -19,7 +19,7 @@ export interface Advertisement {
 
 export const getAdvertisements = async (
   position?: string,
-  limit?: number
+  limit?: number,
 ): Promise<Advertisement[]> => {
   const url = new URL(ADVERTISEMENT_ENDPOINTS.GET_ALL);
   if (position) url.searchParams.append("position", position);
@@ -31,7 +31,7 @@ export const getAdvertisements = async (
 };
 
 export const getAdvertisementById = async (
-  id: string
+  id: string,
 ): Promise<Advertisement> => {
   const response = await fetch(ADVERTISEMENT_ENDPOINTS.GET_BY_ID(id));
   if (!response.ok) throw new Error("Failed to fetch advertisement");
@@ -49,7 +49,7 @@ export const trackAdClick = async (adId: string): Promise<void> => {
 };
 
 export const createAdvertisement = async (
-  data: Partial<Advertisement>
+  data: Partial<Advertisement>,
 ): Promise<Advertisement> => {
   const response = await fetch(ADVERTISEMENT_ENDPOINTS.CREATE, {
     method: "POST",
@@ -62,7 +62,7 @@ export const createAdvertisement = async (
 
 export const updateAdvertisement = async (
   id: string,
-  data: Partial<Advertisement>
+  data: Partial<Advertisement>,
 ): Promise<Advertisement> => {
   const response = await fetch(ADVERTISEMENT_ENDPOINTS.UPDATE(id), {
     method: "PUT",

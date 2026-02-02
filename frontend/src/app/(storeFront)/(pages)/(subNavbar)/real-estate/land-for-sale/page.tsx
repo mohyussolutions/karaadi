@@ -10,7 +10,7 @@ import { FaStore, FaTruckMoving } from "react-icons/fa";
 import { useGetRealEstateItemsQuery } from "@/app/(storeFront)/store/slices/realtStateSlice";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import { RealEstateLandForSaleNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryProperties";
@@ -23,7 +23,7 @@ function LandForSale() {
   const { data: items = [], isLoading, error } = useGetRealEstateItemsQuery();
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   // 1. Shaandhaynta alaabta guud ee "Land"
@@ -45,7 +45,7 @@ function LandForSale() {
     return allLandItems.filter((item: any) => {
       // Shaandhaynta ku salaysan magaca Soomaaliga ee subcategory-ga (item.subcategory array)
       return item.subcategory.some(
-        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory
+        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory,
       );
     });
   }, [allLandItems, selectedSubcategory]);
@@ -56,7 +56,7 @@ function LandForSale() {
       return "Land For Sale Listings (Dhul Iib ah)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory
+      (cat) => cat.so === selectedSubcategory,
     );
     // Muuji magaca Soomaaliga iyo Ingiriisiga
     return foundCategory
@@ -82,7 +82,7 @@ function LandForSale() {
   const handleCategoryClick = (subcategory: string) => {
     // Waxay doorataa magaca Soomaaliga ee subcategory-ga
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

@@ -6,7 +6,7 @@ import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import { useGetBoatsQuery } from "@/app/(storeFront)/store/slices/boatsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { BoatPartsNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForBoats";
@@ -16,14 +16,14 @@ export default function BoatParts() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: items = [], isLoading, isError } = useGetBoatsQuery();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allBoatPartsItems = useMemo(() => {
     return Array.isArray(items)
       ? items.filter(
           (item: any) =>
-            item.subCategory === "Boat Parts" || item.name === "qaybo doomo"
+            item.subCategory === "Boat Parts" || item.name === "qaybo doomo",
         )
       : [];
   }, [items]);
@@ -49,7 +49,7 @@ export default function BoatParts() {
       return "All Boat Parts (Dhammaan Qaybaha Doonyaha)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory
+      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -72,7 +72,7 @@ export default function BoatParts() {
   const handleCategoryClick = (categoryTitle: string) => {
     const normalizedTitle = categoryTitle.toLowerCase();
     setSelectedSubcategory((prev) =>
-      prev === normalizedTitle ? null : normalizedTitle
+      prev === normalizedTitle ? null : normalizedTitle,
     );
   };
 

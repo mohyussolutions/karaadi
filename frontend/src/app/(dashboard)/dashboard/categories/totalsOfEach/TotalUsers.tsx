@@ -1,8 +1,8 @@
 "use client";
 
+import { apiUrls } from "@/actions/constant/constant";
 import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
 import React, { useEffect, useState } from "react";
-import { apiUrls } from "@/actions/constant/constant";
 export default function TotalUsers() {
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);

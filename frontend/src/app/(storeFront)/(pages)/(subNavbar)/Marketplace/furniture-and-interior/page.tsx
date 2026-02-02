@@ -7,7 +7,7 @@ import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import CardItem from "@/app/(storeFront)/components/Cards/CardItem";
 import { FurnitureNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMarketplace";
@@ -43,12 +43,12 @@ function FurnitureAndInterior() {
   };
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allFurnitureItems = useMemo(() => {
     return items.filter(
-      (item) => item.category && item.category.includes("Furniture & Interior")
+      (item) => item.category && item.category.includes("Furniture & Interior"),
     );
   }, [items]);
 
@@ -58,7 +58,7 @@ function FurnitureAndInterior() {
     }
     return allFurnitureItems.filter(
       (item) =>
-        item.subcategory && item.subcategory.includes(selectedSubcategory)
+        item.subcategory && item.subcategory.includes(selectedSubcategory),
     );
   }, [allFurnitureItems, selectedSubcategory]);
 
@@ -81,7 +81,7 @@ function FurnitureAndInterior() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

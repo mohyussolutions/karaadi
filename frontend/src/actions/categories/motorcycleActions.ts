@@ -62,7 +62,7 @@ export async function getMotorcycles(): Promise<Motorcycle[]> {
       console.error(
         "Failed to fetch motorcycles:",
         response.status,
-        response.statusText
+        response.statusText,
       );
       return [];
     }
@@ -72,13 +72,13 @@ export async function getMotorcycles(): Promise<Motorcycle[]> {
     const motorcycleList = Array.isArray(result)
       ? result
       : result && result.data && Array.isArray(result.data)
-      ? result.data
-      : [];
+        ? result.data
+        : [];
 
     if (!Array.isArray(motorcycleList)) {
       console.error(
         "Motorcycles API returned non-array data structure:",
-        result
+        result,
       );
       return [];
     }
@@ -94,7 +94,7 @@ export async function getMotorcycles(): Promise<Motorcycle[]> {
 }
 
 export async function getMotorcycleById(
-  id: string
+  id: string,
 ): Promise<Motorcycle | null> {
   try {
     const response = await fetch(
@@ -102,14 +102,14 @@ export async function getMotorcycleById(
       {
         method: "GET",
         next: { tags: [`motorcycle-${id}`], revalidate: 3600 },
-      }
+      },
     );
 
     if (!response.ok) {
       console.error(
         `Failed to fetch motorcycle ${id}:`,
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -133,7 +133,7 @@ export async function getMotorcycleById(
 
 export async function createMotorcycle(
   data: CreateMotorcycleData,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Motorcycles, {
@@ -171,7 +171,7 @@ export async function createMotorcycle(
 export async function updateMotorcycle(
   id: string,
   data: Partial<CreateMotorcycleData>,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(
@@ -183,7 +183,7 @@ export async function updateMotorcycle(
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
-      }
+      },
     );
 
     const result = await response.json();
@@ -219,7 +219,7 @@ export async function deleteMotorcycle(id: string, token: string) {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {

@@ -49,7 +49,7 @@ type CreateCarData = {
   images: string[];
 };
 
-export async function getCars(): Promise<Car[] | null> {
+export async function getCars(): Promise<Car[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Cars, {
       method: "GET",
@@ -60,18 +60,31 @@ export async function getCars(): Promise<Car[] | null> {
       console.error(
         "Failed to fetch cars:",
         response.status,
-        response.statusText
+        response.statusText,
       );
-      return null;
+      return [];
     }
 
-    const result: any[] = await response.json();
-    return result.map((item) => ({
+    const result = await response.json();
+    const list = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.data)
+        ? result.data
+        : Array.isArray(result?.items)
+          ? result.items
+          : [];
+
+    if (!Array.isArray(list)) {
+      console.error("Cars API returned non-array data structure:", result);
+      return [];
+    }
+
+    return list.map((item: any) => ({
+      ...item,
       _id: item._id || item.id,
     })) as Car[];
   } catch (error) {
-    console.error("Network error fetching cars:", error);
-    return null;
+    return [];
   }
 }
 
@@ -86,7 +99,7 @@ export async function getCarById(id: string): Promise<Car | null> {
       console.error(
         `Failed to fetch car ${id}:`,
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -136,7 +149,7 @@ export async function createCar(data: CreateCarData, token: string) {
 export async function updateCar(
   id: string,
   data: Partial<CreateCarData>,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Cars}/${id}`, {

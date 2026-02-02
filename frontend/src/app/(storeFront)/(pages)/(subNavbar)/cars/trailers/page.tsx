@@ -7,7 +7,7 @@ import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import { TrailerNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForCars";
 
@@ -16,13 +16,14 @@ export default function Trailers() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: items = [], isLoading, isError } = useGetCarsQuery();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allTrailerItems = useMemo(() => {
     return Array.isArray(items)
       ? items.filter(
-          (item: any) => item.subCategory === "Trailers" || item.so === "Rimoor"
+          (item: any) =>
+            item.subCategory === "Trailers" || item.so === "Rimoor",
         )
       : [];
   }, [items]);
@@ -47,7 +48,7 @@ export default function Trailers() {
       return "All Trailers (Dhammaan Rimoorrada)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory
+      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -70,7 +71,7 @@ export default function Trailers() {
   const handleCategoryClick = (categoryTitle: string) => {
     const normalizedTitle = categoryTitle.toLowerCase();
     setSelectedSubcategory((prev) =>
-      prev === normalizedTitle ? null : normalizedTitle
+      prev === normalizedTitle ? null : normalizedTitle,
     );
   };
 

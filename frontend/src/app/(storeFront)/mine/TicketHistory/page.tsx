@@ -1,6 +1,5 @@
 "use client";
 
-import { apiService } from "@/actions/core/authAction";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   MdHistory,
@@ -13,6 +12,7 @@ import {
   MdSend,
 } from "react-icons/md";
 import Loading from "../../components/shared/Loading/Loading";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function TicketHistory() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -28,7 +28,7 @@ export default function TicketHistory() {
   useEffect(() => {
     const getSession = async () => {
       try {
-        const session = await apiService.verifySession();
+        const session = await verifySession();
         if (session) setUser(session);
       } catch (error) {
         console.error(error);
@@ -70,7 +70,7 @@ export default function TicketHistory() {
       if (res.ok) {
         const fullTicket = await res.json();
         setTickets((prev) =>
-          prev.map((t) => (t.id === ticketId ? fullTicket : t))
+          prev.map((t) => (t.id === ticketId ? fullTicket : t)),
         );
         setExpandedTicket(ticketId);
       }
@@ -95,18 +95,18 @@ export default function TicketHistory() {
             senderEmail: user?.email,
             senderRole: "USER",
           }),
-        }
+        },
       );
 
       if (res.ok) {
         setReplyText("");
         const updatedRes = await fetch(
-          `${BASE_URL}/apicontactUs/tickets/${ticketId}`
+          `${BASE_URL}/apicontactUs/tickets/${ticketId}`,
         );
         if (updatedRes.ok) {
           const updatedTicket = await updatedRes.json();
           setTickets((prev) =>
-            prev.map((t) => (t.id === ticketId ? updatedTicket : t))
+            prev.map((t) => (t.id === ticketId ? updatedTicket : t)),
           );
         }
       }
@@ -183,8 +183,8 @@ export default function TicketHistory() {
                       t.status === "DONE"
                         ? "bg-green-600 text-white"
                         : t.status === "IN_PROGRESS"
-                        ? "bg-blue-600 text-white"
-                        : "bg-red-500 text-white"
+                          ? "bg-blue-600 text-white"
+                          : "bg-red-500 text-white"
                     }`}
                   >
                     {t.status.replace("_", " ")}

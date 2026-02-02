@@ -1,3 +1,5 @@
+"use server";
+
 import { AGENCY_ENDPOINTS } from "../constant/constant";
 
 export const getAgencyStats = async () => {
@@ -6,6 +8,9 @@ export const getAgencyStats = async () => {
       credentials: "include",
       cache: "no-store",
     });
+    if (!response.ok) {
+      return { success: false, total: 0, verified: 0 };
+    }
     return await response.json();
   } catch (error) {
     return { success: false, total: 0, verified: 0 };
@@ -18,8 +23,18 @@ export const fetchAgencies = async () => {
       credentials: "include",
       cache: "no-store",
     });
+    if (!response.ok) {
+      return [];
+    }
     const data = await response.json();
-    return data.agencies || [];
+    const list = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.agencies)
+        ? data.agencies
+        : Array.isArray(data?.data)
+          ? data.data
+          : [];
+    return list;
   } catch (error) {
     return [];
   }

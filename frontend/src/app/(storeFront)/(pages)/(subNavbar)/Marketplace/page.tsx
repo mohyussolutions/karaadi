@@ -6,11 +6,11 @@ import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay
 
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import CardItem from "@/app/(storeFront)/components/Cards/CardItem";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
 
 function MarketplaceLinks() {
   const {
@@ -29,7 +29,7 @@ function MarketplaceLinks() {
 
   return (
     <div className="container mx-auto px-3 py-3">
-      <Search />
+      <SearchInput />
       <PathSegmentsDisplay />
 
       <div className="grid grid-cols-3 gap-2 px-4 py-6 sm:grid-cols-4 lg:grid-cols-4">

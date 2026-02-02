@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useGetMotorcyclesQuery } from "@/app/(storeFront)/store/slices/motorcyclesSlice";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
@@ -21,8 +21,8 @@ function OtherItems() {
 
   const filteredItems = items.filter((item) =>
     otherCategories.some(
-      (cat) => cat.title === item.subCategory || cat.so === item.subCategory
-    )
+      (cat) => cat.title === item.subCategory || cat.so === item.subCategory,
+    ),
   );
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -30,7 +30,7 @@ function OtherItems() {
   const finalItems = selectedCategory
     ? filteredItems.filter(
         (item) =>
-          item.title === selectedCategory || item.so === selectedCategory
+          item.title === selectedCategory || item.so === selectedCategory,
       )
     : filteredItems;
 
@@ -48,7 +48,7 @@ function OtherItems() {
 
   const handleCategoryClick = (categoryTitle: string) => {
     setSelectedCategory(
-      categoryTitle === selectedCategory ? null : categoryTitle
+      categoryTitle === selectedCategory ? null : categoryTitle,
     );
   };
 

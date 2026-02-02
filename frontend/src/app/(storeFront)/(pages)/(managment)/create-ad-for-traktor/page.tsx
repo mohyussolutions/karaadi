@@ -11,7 +11,7 @@ import {
   cities,
   Districts,
   regions,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import {
   TraktorSubCategoryItem,
   TraktorTopCategories,
@@ -36,7 +36,7 @@ const Traktor = () => {
   const [createTractor, { isLoading, isError, isSuccess }] =
     useCreateTractorMutation();
   const [mainCategory, setMainCategory] = useState(
-    allCategories.find((cat) => cat.key === "Traktor")?.name || ""
+    allCategories.find((cat) => cat.key === "Traktor")?.name || "",
   );
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
@@ -121,7 +121,7 @@ const Traktor = () => {
       const cityDistrictObj = Districts.find((d: any) => d.name === city);
       if (cityDistrictObj?.subDistricts) {
         setFilteredDistricts(
-          cityDistrictObj.subDistricts.map((sd: any) => sd.name)
+          cityDistrictObj.subDistricts.map((sd: any) => sd.name),
         );
       } else {
         setFilteredDistricts([]);
@@ -153,7 +153,7 @@ const Traktor = () => {
   useEffect(() => {
     if (category && subCategory) {
       const selectedSub = TraktorNestedSubCategoryMap[category]?.find(
-        (sub: TraktorSubCategoryItem) => sub.title === subCategory
+        (sub: TraktorSubCategoryItem) => sub.title === subCategory,
       );
       if (titleRef.current && selectedSub?.so) {
         titleRef.current.value = selectedSub.so;
@@ -192,8 +192,8 @@ const Traktor = () => {
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(file);
-          })
-      )
+          }),
+      ),
     );
   };
 
@@ -718,15 +718,15 @@ const Traktor = () => {
             isFormValid() && !isLoading && !isSuccess
               ? "bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg"
               : isSuccess
-              ? "bg-green-400 cursor-not-allowed"
-              : "bg-gray-400 cursor-not-allowed"
+                ? "bg-green-400 cursor-not-allowed"
+                : "bg-gray-400 cursor-not-allowed"
           }`}
         >
           {isLoading
             ? "Submitting..."
             : isSuccess
-            ? "Ad Submitted"
-            : "Submit Tractor Listing"}
+              ? "Ad Submitted"
+              : "Submit Tractor Listing"}
         </button>
 
         {isError && (

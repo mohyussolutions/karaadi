@@ -14,7 +14,7 @@ import { cities } from "@/app/(dashboard)/dashboard/regions.and.cities";
 import {
   Districts,
   regions,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import {
   RealEstateCommercialNestedSub,
   RealEstateFarmForSaleNestedSub,
@@ -74,7 +74,7 @@ const CreateRealEstate = () => {
   const [newDistrict, setNewDistrict] = useState("");
   const [showNewCityInputs, setShowNewCityInputs] = useState(false);
   const [mainCategory, setMainCategory] = useState(
-    allCategories.find((cat) => cat.key === "RealEstate")?.name || ""
+    allCategories.find((cat) => cat.key === "RealEstate")?.name || "",
   );
 
   useEffect(() => {
@@ -136,7 +136,7 @@ const CreateRealEstate = () => {
   useEffect(() => {
     if (category && subCategory) {
       const selectedSub = realEstateNestedCategoriesMap[category]?.find(
-        (sub) => sub.title === subCategory
+        (sub) => sub.title === subCategory,
       );
       // Ensure title is based on the Somali title (so) if available, otherwise use English title
       setTitle(selectedSub?.so || selectedSub?.title || "");
@@ -203,8 +203,8 @@ const CreateRealEstate = () => {
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(file);
-          })
-      )
+          }),
+      ),
     );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -559,16 +559,16 @@ const CreateRealEstate = () => {
             isFormValid() && !isLoading && !isSuccess
               ? "bg-green-600 hover:bg-green-700"
               : isSuccess
-              ? "bg-green-400 cursor-not-allowed" // Success/disabled state color
-              : "bg-gray-400 cursor-not-allowed" // Invalid/default disabled state color
+                ? "bg-green-400 cursor-not-allowed" // Success/disabled state color
+                : "bg-gray-400 cursor-not-allowed" // Invalid/default disabled state color
           }`}
         >
           {/* FIX: Correct button text based on state */}
           {isLoading
             ? "Submitting..."
             : isSuccess
-            ? "Ad Submitted"
-            : "Submit Real Estate Ad"}
+              ? "Ad Submitted"
+              : "Submit Real Estate Ad"}
         </button>
         {isSuccess && (
           <div className="text-green-600 bg-green-50 p-3 rounded-lg border border-green-200 mt-2 text-center">

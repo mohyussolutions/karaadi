@@ -14,6 +14,7 @@ interface CardItemProps {
   images?: string[] | null;
   jobType?: string;
   maGaday?: boolean;
+  category?: string;
 }
 
 const getValidSrc = (src?: string | null): string | null => {
@@ -31,10 +32,25 @@ export default function CardItem({
   price,
   images,
   maGaday,
+  category,
 }: CardItemProps) {
   const [imgError, setImgError] = useState(false);
   const primaryImage = getValidSrc(images?.[0]);
-  const url = `/item-details/${id}`;
+  const url = (() => {
+    switch (category) {
+      case "cars":
+      case "boats":
+      case "motorcycles":
+      case "tractors":
+        return `/vehicles/${id}`;
+      case "real-estate":
+        return `/real-estate/${id}`;
+      case "jobs":
+        return `/jobs/${id}`;
+      default:
+        return `/item-details/${id}`;
+    }
+  })();
   const MAX_LENGTH = 70;
 
   const getTruncatedDescription = () => {

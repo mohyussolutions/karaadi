@@ -160,10 +160,10 @@ export const deleteFee = async (id: string): Promise<boolean> => {
 
 export const getTotalFee = async (
   category: keyof AppCategories,
-  type: string
+  type: string,
 ): Promise<number> => {
   const response = await fetch(
-    `${FEE_ENDPOINTS.TOTAL_FEE}?category=${category}&type=${type}`
+    `${FEE_ENDPOINTS.TOTAL_FEE}?category=${category}&type=${type}`,
   );
   if (!response.ok)
     throw new Error(`HTTP ${response.status}: Failed to fetch total fee`);
@@ -178,7 +178,7 @@ export const getFeeStats = async (): Promise<Record<string, number>> => {
 };
 
 export const calculateApiFee = async (
-  params: CalculateFeePayload
+  params: CalculateFeePayload,
 ): Promise<CalculatedFee> => {
   const response = await fetch(FEE_ENDPOINTS.CALCULATE, {
     method: "POST",
@@ -200,7 +200,7 @@ export const calculateLocalFee = (
     | "subPremium"
     | "subSixMonth"
     | "subPremiumYear"
-  >
+  >,
 ): CalculatedFee => {
   const categoryLower = category.toLowerCase();
   const listingType = CATEGORY_MAP[category as keyof AppCategories];

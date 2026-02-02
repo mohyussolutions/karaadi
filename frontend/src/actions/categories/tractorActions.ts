@@ -47,7 +47,7 @@ type CreateTraktorData = {
   images: string[];
 };
 
-export async function getTraktors(): Promise<Traktor[] | null> {
+export async function getTraktors(): Promise<Traktor[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Traktors, {
       method: "GET",
@@ -55,22 +55,21 @@ export async function getTraktors(): Promise<Traktor[] | null> {
     });
 
     if (!response.ok) {
-      console.error(
-        "Failed to fetch tractors:",
-        response.status,
-        response.statusText
-      );
-      return null;
+      return [];
     }
 
-    const result: any[] = await response.json();
-    return result.map((item) => ({
+    const result = await response.json();
+    const list = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.data)
+        ? result.data
+        : [];
+    return list.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
     })) as Traktor[];
   } catch (error) {
-    console.error("Network error fetching tractors:", error);
-    return null;
+    return [];
   }
 }
 
@@ -85,7 +84,7 @@ export async function getTraktorById(id: string): Promise<Traktor | null> {
       console.error(
         `Failed to fetch tractor ${id}:`,
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -136,7 +135,7 @@ export async function createTraktor(data: CreateTraktorData, token: string) {
 export async function updateTraktor(
   id: string,
   data: Partial<CreateTraktorData>,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {

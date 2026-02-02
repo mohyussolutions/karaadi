@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
 
       setTimeout(
         () => router.push(`/reset-password?email=${encodeURIComponent(email)}`),
-        1500
+        1500,
       );
     } catch (err: any) {
       toast.error(err.message || "Something went wrong.");

@@ -6,7 +6,7 @@ export async function fetchNotifications(userId: string) {
     {
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
   if (!res.ok)
     throw new Error(`Failed to fetch notifications: ${await res.text()}`);
@@ -21,7 +21,7 @@ export async function markNotificationAsRead(id: string) {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
   if (!res.ok)
     throw new Error(`Failed to mark notification as read: ${await res.text()}`);
@@ -35,11 +35,11 @@ export async function markAllNotificationsAsRead(userId: string) {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
   if (!res.ok)
     throw new Error(
-      `Failed to mark all notifications as read: ${await res.text()}`
+      `Failed to mark all notifications as read: ${await res.text()}`,
     );
   return res.json();
 }
@@ -62,7 +62,7 @@ export async function clearAllNotifications(userId: string) {
       method: "DELETE",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
   if (!res.ok)
     throw new Error(`Failed to clear all notifications: ${await res.text()}`);
@@ -75,7 +75,7 @@ export async function getNotificationStats(userId: string) {
     {
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
   if (!res.ok)
     throw new Error(`Failed to fetch notification stats: ${await res.text()}`);

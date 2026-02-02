@@ -144,3 +144,24 @@ export const AGENCY_ENDPOINTS = {
   ADD_MEMBER: `${BASE_API_URL}/api/agencies/add-user`,
   BY_ID: (id: string) => `${BASE_API_URL}/api/agencies/${id}`,
 };
+export const REPORT_ENDPOINTS = {
+  CREATE: `${BASE_API_URL}/api/reports`,
+  GET_ALL: `${BASE_API_URL}/api/reports`,
+  GET_BY_ID: (id: string) => `${BASE_API_URL}/api/reports/${id}`,
+  UPDATE_STATUS: (id: string) => `${BASE_API_URL}/api/reports/${id}/status`,
+  DELETE: (id: string) => `${BASE_API_URL}/api/reports/${id}`,
+  STATS: `${BASE_API_URL}/api/reports/stats`,
+};
+export const SEARCH_ENDPOINTS = {
+  SEARCH: `${BASE_API_URL}/api/search`,
+};
+
+export const SUPPORT_ENDPOINTS = {
+  CREATE_TICKET: `${BASE_API_URL}/api/support/tickets`,
+  GET_TICKETS: `${BASE_API_URL}/api/support/tickets`,
+  GET_TICKET_BY_ID: (id: string) => `${BASE_API_URL}/api/support/tickets/${id}`,
+  ADD_MESSAGE: (id: string) =>
+    `${BASE_API_URL}/api/support/tickets/${id}/messages`,
+  CLOSE_TICKET: (id: string) =>
+    `${BASE_API_URL}/api/support/tickets/${id}/close`,
+};

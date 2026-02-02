@@ -7,7 +7,7 @@ import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { useGetBoatsQuery } from "@/app/(storeFront)/store/slices/boatsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import { BoatEnginesForSaleNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForBoats";
 
@@ -16,7 +16,7 @@ export default function BoatEnginesforSale() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: items = [], isLoading, isError } = useGetBoatsQuery();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allEngineItems = useMemo(() => {
@@ -24,7 +24,7 @@ export default function BoatEnginesforSale() {
       ? items.filter(
           (item: any) =>
             item.subCategory === "Boat Engines for Sale" ||
-            item.name === "Matoorada doomo iib ah"
+            item.name === "Matoorada doomo iib ah",
         )
       : [];
   }, [items]);
@@ -50,7 +50,7 @@ export default function BoatEnginesforSale() {
       return "All Boat Engines for Sale (Dhammaan Matoorada Doonyaha ee Iibka ah)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory
+      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -73,7 +73,7 @@ export default function BoatEnginesforSale() {
   const handleCategoryClick = (categoryTitle: string) => {
     const normalizedTitle = categoryTitle.toLowerCase();
     setSelectedSubcategory((prev) =>
-      prev === normalizedTitle ? null : normalizedTitle
+      prev === normalizedTitle ? null : normalizedTitle,
     );
   };
 

@@ -6,7 +6,7 @@ import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import { useGetBoatsQuery } from "@/app/(storeFront)/store/slices/boatsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { BoatsForSaleNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForBoats";
@@ -16,7 +16,7 @@ export default function BoatsForSale() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: items = [], isLoading, isError } = useGetBoatsQuery();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allBoatsForSaleItems = useMemo(() => {
@@ -24,7 +24,7 @@ export default function BoatsForSale() {
       ? items.filter(
           (item: any) =>
             item.subCategory === "Boats for Sale" ||
-            item.name === "Doomo iib ah"
+            item.name === "Doomo iib ah",
         )
       : [];
   }, [items]);
@@ -50,7 +50,7 @@ export default function BoatsForSale() {
       return "Doomo Iib Ah (All Boats for Sale)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory
+      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -73,7 +73,7 @@ export default function BoatsForSale() {
   const handleCategoryClick = (categoryTitle: string) => {
     const normalizedTitle = categoryTitle.toLowerCase();
     setSelectedSubcategory((prev) =>
-      prev === normalizedTitle ? null : normalizedTitle
+      prev === normalizedTitle ? null : normalizedTitle,
     );
   };
 

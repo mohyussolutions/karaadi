@@ -147,8 +147,8 @@ export default function AdminMonitor() {
       if (updatedMessage.chatId === selectedChat.id) {
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.id === updatedMessage.id ? updatedMessage : msg
-          )
+            msg.id === updatedMessage.id ? updatedMessage : msg,
+          ),
         );
       }
     };
@@ -672,7 +672,7 @@ export default function AdminMonitor() {
                       (c) =>
                         c.lastMessageAt &&
                         Date.now() - new Date(c.lastMessageAt).getTime() <
-                          3600000
+                          3600000,
                     ).length
                   }
                 </div>
@@ -684,7 +684,7 @@ export default function AdminMonitor() {
                 <div className="text-purple-600 font-bold text-lg md:text-xl">
                   {chats.reduce(
                     (acc, chat) => acc + (chat.messages?.length || 0),
-                    0
+                    0,
                   )}
                 </div>
                 <div className="text-slate-600 text-xs md:text-sm">

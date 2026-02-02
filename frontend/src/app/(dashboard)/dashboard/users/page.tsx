@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
 import { apiUrls } from "@/actions/constant/constant";
+import React, { useEffect, useState } from "react";
 
 interface User {
   id: string;
@@ -60,8 +60,8 @@ const UserPage = () => {
       const updatedUser = await res.json();
       setUsers(
         users.map((user) =>
-          user.id === id ? { ...user, username: updatedUser.username } : user
-        )
+          user.id === id ? { ...user, username: updatedUser.username } : user,
+        ),
       );
     } catch (err: any) {
       alert(err.message || "Failed to update user");

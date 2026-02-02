@@ -6,10 +6,10 @@ import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
 import { carsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
 
 function CarLinks() {
   const carLinks = carsSubCategories;
@@ -39,7 +39,7 @@ function CarLinks() {
   return (
     <div className="container mx-auto px-4 py-4">
       <PathSegmentsDisplay />
-      <Search />
+      <SearchInput />
 
       {/* Category Links Grid: 2 columns with new styling */}
       <div className="grid grid-cols-2 gap-4 px-4 py-6">

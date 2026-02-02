@@ -122,7 +122,7 @@ export interface PaginatedPayments {
 }
 
 export const createPayment = async (
-  data: CreatePaymentData
+  data: CreatePaymentData,
 ): Promise<Payment> => {
   const response = await fetch(PAYMENT_ENDPOINTS.CREATE, {
     method: "POST",
@@ -190,7 +190,7 @@ export const getPaymentsByUser = async (
   params?: {
     status?: PaymentStatus;
     limit?: number;
-  }
+  },
 ): Promise<{
   payments: Payment[];
   summary: {
@@ -266,7 +266,7 @@ export const getRecentPayments = async (limit?: number): Promise<Payment[]> => {
 
 export const updatePaymentStatus = async (
   id: string,
-  data: UpdatePaymentStatusData
+  data: UpdatePaymentStatusData,
 ): Promise<Payment> => {
   const response = await fetch(PAYMENT_ENDPOINTS.UPDATE_STATUS(id), {
     method: "PUT",
@@ -303,7 +303,7 @@ export const deletePayment = async (id: string): Promise<any> => {
 
 export const verifyPayment = async (
   transactionId: string,
-  paymentMethod: PaymentMethod
+  paymentMethod: PaymentMethod,
 ): Promise<{
   valid: boolean;
   payment?: Payment;

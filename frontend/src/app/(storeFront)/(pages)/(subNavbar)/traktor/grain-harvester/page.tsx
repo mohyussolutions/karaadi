@@ -8,7 +8,7 @@ import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import { useGetTractorsQuery } from "@/app/(storeFront)/store/slices/tractorsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import {
@@ -29,7 +29,7 @@ function Grainharvester() {
           (item: any) =>
             item.category &&
             Array.isArray(item.category) &&
-            item.category.includes("Grain Harvester")
+            item.category.includes("Grain Harvester"),
         )
       : [];
   }, [items]);
@@ -47,7 +47,7 @@ function Grainharvester() {
         item.subcategory &&
         Array.isArray(item.subcategory) &&
         item.subcategory.some(
-          (sub: string) => sub.toLowerCase() === normalizedSelectedCategory
+          (sub: string) => sub.toLowerCase() === normalizedSelectedCategory,
         )
       );
     });
@@ -58,7 +58,7 @@ function Grainharvester() {
   const handleCategoryClick = (title: string) => {
     const normalizedTitle = title.toLowerCase();
     setSelectedCategory((prev) =>
-      prev === normalizedTitle ? null : normalizedTitle
+      prev === normalizedTitle ? null : normalizedTitle,
     );
   };
 
@@ -68,7 +68,7 @@ function Grainharvester() {
       return "All Grain Harvesters (Dhammaan Makiinada Goosashada Badarka)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.title.toLowerCase() === selectedCategory
+      (cat) => cat.title.toLowerCase() === selectedCategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`

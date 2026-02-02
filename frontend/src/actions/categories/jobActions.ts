@@ -23,7 +23,7 @@ type CreateJobData = {
   type: "Full-time" | "Part-time" | "Contract" | "Remote";
 };
 
-export async function getJobs(): Promise<Job[] | null> {
+export async function getJobs(): Promise<Job[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Jobs, {
       method: "GET",
@@ -31,22 +31,21 @@ export async function getJobs(): Promise<Job[] | null> {
     });
 
     if (!response.ok) {
-      console.error(
-        "Failed to fetch jobs:",
-        response.status,
-        response.statusText
-      );
-      return null;
+      return [];
     }
 
-    const result: any[] = await response.json();
-    return result.map((item) => ({
+    const result = await response.json();
+    const list = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.data)
+        ? result.data
+        : [];
+    return list.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
     })) as Job[];
   } catch (error) {
-    console.error("Network error fetching jobs:", error);
-    return null;
+    return [];
   }
 }
 
@@ -61,7 +60,7 @@ export async function getJobById(id: string): Promise<Job | null> {
       console.error(
         `Failed to fetch job ${id}:`,
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -111,7 +110,7 @@ export async function createJobListing(data: CreateJobData, token: string) {
 export async function updateJobListing(
   id: string,
   data: Partial<CreateJobData>,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Jobs}/${id}`, {

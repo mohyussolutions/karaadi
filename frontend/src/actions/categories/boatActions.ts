@@ -51,7 +51,7 @@ export async function getBoats(): Promise<Boat[] | null> {
       console.error(
         "Failed to fetch boats:",
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -78,7 +78,7 @@ export async function getBoatById(id: string): Promise<Boat | null> {
       console.error(
         `Failed to fetch boat ${id}:`,
         response.status,
-        response.statusText
+        response.statusText,
       );
       return null;
     }
@@ -128,7 +128,7 @@ export async function createBoat(data: CreateBoatData, token: string) {
 export async function updateBoat(
   id: string,
   data: Partial<CreateBoatData>,
-  token: string
+  token: string,
 ) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {

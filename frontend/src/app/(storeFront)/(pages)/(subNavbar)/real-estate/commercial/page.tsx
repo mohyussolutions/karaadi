@@ -5,7 +5,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 import { useGetRealEstateItemsQuery } from "@/app/(storeFront)/store/slices/realtStateSlice";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
@@ -21,7 +21,7 @@ function Commercial() {
 
   // State wuxuu qabanayaa magaca Soomaaliga ee subcategory-ga (e.g., "Goob tafaariiq")
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   // 1. Shaandhaynta alaabta guud ee "Commercial"
@@ -43,7 +43,7 @@ function Commercial() {
     return allCommercialItems.filter((item: any) => {
       // Shaandhaynta ku salaysan magaca Soomaaliga ee subcategory-ga (item.subcategory array)
       return item.subcategory.some(
-        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory
+        (sub: string) => sub.toLowerCase() === normalizedSelectedCategory,
       );
     });
   }, [allCommercialItems, selectedSubcategory]);
@@ -54,7 +54,7 @@ function Commercial() {
       return "Commercial Listings (Ganacsi)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory
+      (cat) => cat.so === selectedSubcategory,
     );
     // Muuji magaca Soomaaliga iyo Ingiriisiga
     return foundCategory
@@ -80,7 +80,7 @@ function Commercial() {
   const handleCategoryClick = (subcategory: string) => {
     // Waxay doorataa magaca Soomaaliga ee subcategory-ga
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

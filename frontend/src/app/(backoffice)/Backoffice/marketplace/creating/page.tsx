@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { FIXED_USER_ID } from "../../lib/storage";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
-import { apiService } from "@/actions/core/authAction";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function MarketplaceCreate() {
   const [title, setTitle] = useState("");
@@ -61,19 +61,37 @@ export default function MarketplaceCreate() {
     e.preventDefault();
     const nextErrors: string[] = [];
     const parsedPrice = parseFloat(price);
-    const categoryArr = categoryList.length ? categoryList : category.split(",").map((s) => s.trim()).filter(Boolean);
-    const subcategoryArr = subcategoryList.length ? subcategoryList : subcategory.split(",").map((s) => s.trim()).filter(Boolean);
-    const imagesArr = imagesList.length ? imagesList : images.split(",").map((s) => s.trim()).filter(Boolean);
+    const categoryArr = categoryList.length
+      ? categoryList
+      : category
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+    const subcategoryArr = subcategoryList.length
+      ? subcategoryList
+      : subcategory
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+    const imagesArr = imagesList.length
+      ? imagesList
+      : images
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
 
     if (!title.trim()) nextErrors.push("Title is required.");
     if (!description.trim()) nextErrors.push("Description is required.");
-    if (Number.isNaN(parsedPrice)) nextErrors.push("Price must be a valid number.");
+    if (Number.isNaN(parsedPrice))
+      nextErrors.push("Price must be a valid number.");
     if (!mainCategory.trim()) nextErrors.push("Main category is required.");
-    if (categoryArr.length === 0) nextErrors.push("At least one category is required (comma-separated).");
+    if (categoryArr.length === 0)
+      nextErrors.push("At least one category is required (comma-separated).");
     if (!region.trim()) nextErrors.push("Region is required.");
     if (!city.trim()) nextErrors.push("City is required.");
     if (!district.trim()) nextErrors.push("District is required.");
-    if (imagesArr.length === 0) nextErrors.push("At least one image URL is required (comma-separated).");
+    if (imagesArr.length === 0)
+      nextErrors.push("At least one image URL is required (comma-separated).");
 
     if (nextErrors.length) {
       setErrors(nextErrors);
@@ -95,7 +113,11 @@ export default function MarketplaceCreate() {
       subDistrict: subDistrict || null,
       images: imagesArr,
       extra: (() => {
-        try { return extra ? JSON.parse(extra) : null; } catch { return null; }
+        try {
+          return extra ? JSON.parse(extra) : null;
+        } catch {
+          return null;
+        }
       })(),
       maGaday,
       isPaid,
@@ -125,13 +147,15 @@ export default function MarketplaceCreate() {
     let mounted = true;
     (async () => {
       try {
-        const u = await apiService.verifySession();
+        const u = await verifySession();
         if (mounted) setCurrentUserId(u?._id ?? FIXED_USER_ID);
       } catch {
         if (mounted) setCurrentUserId(FIXED_USER_ID);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -141,74 +165,214 @@ export default function MarketplaceCreate() {
         {errors.length > 0 && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded">
             <ul className="list-disc pl-5">
-              {errors.map((err, i) => (<li key={i}>{err}</li>))}
+              {errors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
             </ul>
           </div>
         )}
-        <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title" className="w-full p-2 border rounded" />
-        <input value={so} onChange={(e)=>setSo(e.target.value)} placeholder="SO (optional)" className="w-full p-2 border rounded" />
-        <textarea value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Description" className="w-full p-2 border rounded" />
-        <input value={price} onChange={(e)=>setPrice(e.target.value)} placeholder="Price" type="number" step="0.01" className="w-full p-2 border rounded" />
-        <input value={mainCategory} onChange={(e)=>setMainCategory(e.target.value)} placeholder="Main Category" className="w-full p-2 border rounded" />
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={so}
+          onChange={(e) => setSo(e.target.value)}
+          placeholder="SO (optional)"
+          className="w-full p-2 border rounded"
+        />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Price"
+          type="number"
+          step="0.01"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={mainCategory}
+          onChange={(e) => setMainCategory(e.target.value)}
+          placeholder="Main Category"
+          className="w-full p-2 border rounded"
+        />
         <div>
           <label className="block text-sm font-medium mb-1">Categories</label>
           <div className="flex gap-2">
-            <input value={categoryInput} onChange={(e)=>setCategoryInput(e.target.value)} placeholder="Add category" className="flex-1 p-2 border rounded" />
-            <button type="button" onClick={addCategory} className="px-3 py-2 bg-gray-200 rounded">Add</button>
+            <input
+              value={categoryInput}
+              onChange={(e) => setCategoryInput(e.target.value)}
+              placeholder="Add category"
+              className="flex-1 p-2 border rounded"
+            />
+            <button
+              type="button"
+              onClick={addCategory}
+              className="px-3 py-2 bg-gray-200 rounded"
+            >
+              Add
+            </button>
           </div>
           <div className="flex gap-2 flex-wrap mt-2">
             {categoryList.map((c, i) => (
-              <span key={i} className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded">
+              <span
+                key={i}
+                className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded"
+              >
                 {c}
-                <button type="button" onClick={()=>removeCategory(i)} className="text-xs text-red-600">x</button>
+                <button
+                  type="button"
+                  onClick={() => removeCategory(i)}
+                  className="text-xs text-red-600"
+                >
+                  x
+                </button>
               </span>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Subcategories</label>
+          <label className="block text-sm font-medium mb-1">
+            Subcategories
+          </label>
           <div className="flex gap-2">
-            <input value={subcategoryInput} onChange={(e)=>setSubcategoryInput(e.target.value)} placeholder="Add subcategory" className="flex-1 p-2 border rounded" />
-            <button type="button" onClick={addSubcategory} className="px-3 py-2 bg-gray-200 rounded">Add</button>
+            <input
+              value={subcategoryInput}
+              onChange={(e) => setSubcategoryInput(e.target.value)}
+              placeholder="Add subcategory"
+              className="flex-1 p-2 border rounded"
+            />
+            <button
+              type="button"
+              onClick={addSubcategory}
+              className="px-3 py-2 bg-gray-200 rounded"
+            >
+              Add
+            </button>
           </div>
           <div className="flex gap-2 flex-wrap mt-2">
             {subcategoryList.map((c, i) => (
-              <span key={i} className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded">
+              <span
+                key={i}
+                className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded"
+              >
                 {c}
-                <button type="button" onClick={()=>removeSubcategory(i)} className="text-xs text-red-600">x</button>
+                <button
+                  type="button"
+                  onClick={() => removeSubcategory(i)}
+                  className="text-xs text-red-600"
+                >
+                  x
+                </button>
               </span>
             ))}
           </div>
         </div>
-        <input value={region} onChange={(e)=>setRegion(e.target.value)} placeholder="Region" className="w-full p-2 border rounded" />
-        <input value={city} onChange={(e)=>setCity(e.target.value)} placeholder="City" className="w-full p-2 border rounded" />
-        <input value={district} onChange={(e)=>setDistrict(e.target.value)} placeholder="District" className="w-full p-2 border rounded" />
-        <input value={subDistrict} onChange={(e)=>setSubDistrict(e.target.value)} placeholder="Sub District (optional)" className="w-full p-2 border rounded" />
+        <input
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          placeholder="Region"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder="City"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={district}
+          onChange={(e) => setDistrict(e.target.value)}
+          placeholder="District"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={subDistrict}
+          onChange={(e) => setSubDistrict(e.target.value)}
+          placeholder="Sub District (optional)"
+          className="w-full p-2 border rounded"
+        />
 
         <div>
-          <label className="block text-sm font-medium mb-1">Images (URLs)</label>
+          <label className="block text-sm font-medium mb-1">
+            Images (URLs)
+          </label>
           <div className="flex gap-2">
-            <input value={imageInput} onChange={(e)=>setImageInput(e.target.value)} placeholder="Add image URL" className="flex-1 p-2 border rounded" />
-            <button type="button" onClick={addImage} className="px-3 py-2 bg-gray-200 rounded">Add</button>
+            <input
+              value={imageInput}
+              onChange={(e) => setImageInput(e.target.value)}
+              placeholder="Add image URL"
+              className="flex-1 p-2 border rounded"
+            />
+            <button
+              type="button"
+              onClick={addImage}
+              className="px-3 py-2 bg-gray-200 rounded"
+            >
+              Add
+            </button>
           </div>
           <div className="flex gap-2 flex-wrap mt-2">
             {imagesList.map((img, i) => (
-              <span key={i} className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded">
-                <a href={img} target="_blank" rel="noreferrer" className="underline text-blue-600">{img}</a>
-                <button type="button" onClick={()=>removeImage(i)} className="text-xs text-red-600">x</button>
+              <span
+                key={i}
+                className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded"
+              >
+                <a
+                  href={img}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline text-blue-600"
+                >
+                  {img}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => removeImage(i)}
+                  className="text-xs text-red-600"
+                >
+                  x
+                </button>
               </span>
             ))}
           </div>
         </div>
-        <textarea value={extra} onChange={(e)=>setExtra(e.target.value)} placeholder='Extra JSON (optional) e.g. {"k": "v"}' className="w-full p-2 border rounded" />
-        <label className="flex items-center gap-2"><input type="checkbox" checked={maGaday} onChange={(e)=>setMaGaday(e.target.checked)} /> maGaday</label>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={isPaid} onChange={(e)=>setIsPaid(e.target.checked)} /> isPaid</label>
+        <textarea
+          value={extra}
+          onChange={(e) => setExtra(e.target.value)}
+          placeholder='Extra JSON (optional) e.g. {"k": "v"}'
+          className="w-full p-2 border rounded"
+        />
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={maGaday}
+            onChange={(e) => setMaGaday(e.target.checked)}
+          />{" "}
+          maGaday
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isPaid}
+            onChange={(e) => setIsPaid(e.target.checked)}
+          />{" "}
+          isPaid
+        </label>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded">Create</button>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded">
+            Create
+          </button>
         </div>
       </form>
     </div>
   );
 }
-

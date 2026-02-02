@@ -30,6 +30,7 @@ import FeeRoutes from "routers/paymentRoute/FeeRoutes.ts";
 import uploadRouterSelector from "routers/paymentRoute/uploadRouterSelector.ts";
 import paymentRoutes from "routers/paymentRoute/paymentRoutes.ts";
 import agencyRoutes from "routers/agencyRoutes.ts";
+import searchRouter from "routers/userRoute/searchRouter.ts";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -43,14 +44,14 @@ app.use(
     origin: allowedOrigins,
     credentials: true,
     exposedHeaders: ["set-cookie"],
-  })
+  }),
 );
 
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
+  }),
 );
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -70,7 +71,7 @@ app.use(
       maxAge: 86400000,
       domain: process.env.COOKIE_DOMAIN,
     },
-  })
+  }),
 );
 
 app.use("/api/marketplace", marketplaceRoutes);
@@ -95,7 +96,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/Fee", FeeRoutes);
 app.use("/api/customers", customerSupportRoutes);
 app.use("/api/visitors", visitorRoute);
-
+app.use("/api/search", searchRouter);
 app.use("/api/upload", uploadRouterSelector);
 app.use("/imagesStore", express.static(path.join(__dirname, "imagesStore")));
 

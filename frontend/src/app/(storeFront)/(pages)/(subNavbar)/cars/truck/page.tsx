@@ -7,7 +7,7 @@ import { TruckNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateA
 import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 
@@ -16,14 +16,14 @@ export default function Truck() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: items = [], isLoading, isError } = useGetCarsQuery();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allTruckItems = useMemo(() => {
     return Array.isArray(items)
       ? items.filter(
           (item: any) =>
-            item.subCategory === "Truck" || item.so === "Baabuur xamuul"
+            item.subCategory === "Truck" || item.so === "Baabuur xamuul",
         )
       : [];
   }, [items]);
@@ -48,7 +48,7 @@ export default function Truck() {
       return "All Trucks (Dhammaan Baabuurta Xamuulka)";
     }
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory
+      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
@@ -71,7 +71,7 @@ export default function Truck() {
   const handleCategoryClick = (categoryTitle: string) => {
     const normalizedTitle = categoryTitle.toLowerCase();
     setSelectedSubcategory((prev) =>
-      prev === normalizedTitle ? null : normalizedTitle
+      prev === normalizedTitle ? null : normalizedTitle,
     );
   };
 

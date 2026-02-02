@@ -6,7 +6,7 @@ import {
   regions,
   cities,
   Districts,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import {
   FiBell,
   FiLayers,
@@ -49,18 +49,18 @@ const CreateSubscription = () => {
 
   const filteredCities = useMemo(
     () => cities.filter((city) => city.regionId === formData.region),
-    [formData.region]
+    [formData.region],
   );
 
   const filteredDistricts = useMemo(
     () => Districts.find((d) => d.id === formData.city)?.subDistricts || [],
-    [formData.city]
+    [formData.city],
   );
 
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
 

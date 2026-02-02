@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { FIXED_USER_ID } from "../../lib/storage";
 import { ADVERTISEMENT_ENDPOINTS } from "@/actions/constant/constant";
-import { apiService } from "@/actions/core/authAction";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function AdvertisementCreate() {
   const [title, setTitle] = useState("");
@@ -59,29 +59,90 @@ export default function AdvertisementCreate() {
     let mounted = true;
     (async () => {
       try {
-        const u = await apiService.verifySession();
+        const u = await verifySession();
         if (mounted) setCurrentUserId(u?._id ?? FIXED_USER_ID);
       } catch {
         if (mounted) setCurrentUserId(FIXED_USER_ID);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
     <div className="py-6">
       <h2 className="text-2xl font-bold mb-4">Create Advertisement</h2>
       <form onSubmit={handleSubmit} className="space-y-3 max-w-2xl">
-        <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title" className="w-full p-2 border rounded" />
-        <textarea value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Description" className="w-full p-2 border rounded" />
-        <input value={imageUrl} onChange={(e)=>setImageUrl(e.target.value)} placeholder="Image URL" className="w-full p-2 border rounded" />
-        <input value={link} onChange={(e)=>setLink(e.target.value)} placeholder="Link" className="w-full p-2 border rounded" />
-        <input value={buttonText} onChange={(e)=>setButtonText(e.target.value)} placeholder="Button Text (optional)" className="w-full p-2 border rounded" />
-        <label className="flex items-center gap-2"><input type="checkbox" checked={isActive} onChange={(e)=>setIsActive(e.target.checked)} /> Active</label>
-        <input value={position} onChange={(e)=>setPosition(e.target.value)} placeholder="Position" className="w-full p-2 border rounded" />
-        <input value={priority} onChange={(e)=>setPriority(e.target.value)} placeholder="Priority (number)" className="w-full p-2 border rounded" />
-        <div className="grid grid-cols-2 gap-2"><input value={startDate} onChange={(e)=>setStartDate(e.target.value)} placeholder="Start Date (ISO)" className="p-2 border rounded" /><input value={endDate} onChange={(e)=>setEndDate(e.target.value)} placeholder="End Date (ISO)" className="p-2 border rounded" /></div>
-        <div><button className="px-4 py-2 bg-blue-600 text-white rounded">Create</button></div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          className="w-full p-2 border rounded"
+        />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          placeholder="Image URL"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="Link"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={buttonText}
+          onChange={(e) => setButtonText(e.target.value)}
+          placeholder="Button Text (optional)"
+          className="w-full p-2 border rounded"
+        />
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+          />{" "}
+          Active
+        </label>
+        <input
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
+          placeholder="Position"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+          placeholder="Priority (number)"
+          className="w-full p-2 border rounded"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            placeholder="Start Date (ISO)"
+            className="p-2 border rounded"
+          />
+          <input
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            placeholder="End Date (ISO)"
+            className="p-2 border rounded"
+          />
+        </div>
+        <div>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded">
+            Create
+          </button>
+        </div>
       </form>
     </div>
   );

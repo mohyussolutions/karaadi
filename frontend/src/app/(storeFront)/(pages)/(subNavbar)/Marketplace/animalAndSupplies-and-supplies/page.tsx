@@ -8,7 +8,7 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import CardItem from "@/app/(storeFront)/components/Cards/CardItem";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/regionsandCities";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 
 import { AnimalAndSuppliesNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMarketplace";
@@ -44,12 +44,12 @@ function AnimalAndSupplies() {
   };
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    null,
   );
 
   const allAnimalAndSuppliesItems = useMemo(() => {
     return items.filter(
-      (item) => item.category && item.category.includes("Animals & Supplies")
+      (item) => item.category && item.category.includes("Animals & Supplies"),
     );
   }, [items]);
 
@@ -59,7 +59,7 @@ function AnimalAndSupplies() {
     }
     return allAnimalAndSuppliesItems.filter(
       (item) =>
-        item.subcategory && item.subcategory.includes(selectedSubcategory)
+        item.subcategory && item.subcategory.includes(selectedSubcategory),
     );
   }, [allAnimalAndSuppliesItems, selectedSubcategory]);
 
@@ -82,7 +82,7 @@ function AnimalAndSupplies() {
 
   const handleCategoryClick = (subcategory: string) => {
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
+      prev === subcategory ? null : subcategory,
     );
   };
 

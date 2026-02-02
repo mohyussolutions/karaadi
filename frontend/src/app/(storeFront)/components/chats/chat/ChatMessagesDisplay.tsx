@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from "react";
-import { ChatMessagesDisplayProps } from "@/types/chat";
-import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { ChatEmptyState } from "./ChatEmptyState";
 import { ChatHeader } from "./ChatHeader";
 import { MessageBubble } from "./MessageBubble";
+import { ChatMessagesDisplayProps } from "@/app/utils/types/chat";
+import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 export default function ChatMessagesDisplay({
   currentUserId,

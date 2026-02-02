@@ -12,7 +12,7 @@ import {
   cities,
   Districts,
   regions,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import { subCategoriesMotorSomalia } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMotorcycles";
 import { allCategories } from "@/app/(storeFront)/links/categories";
 import { motorcyclesSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
@@ -76,7 +76,7 @@ const MotoForSellAndBuy = () => {
   });
 
   const [mainCategory, setMainCategory] = useState(
-    allCategories.find((cat) => cat.key === "Motorcycles")?.name || ""
+    allCategories.find((cat) => cat.key === "Motorcycles")?.name || "",
   );
 
   const [images, setImages] = useState<File[]>([]);
@@ -146,10 +146,10 @@ const MotoForSellAndBuy = () => {
     } else if (formData.city) {
       setShowNewCityInputs(false);
       const cityDistrictObj = Districts.find(
-        (d: any) => d.name === formData.city
+        (d: any) => d.name === formData.city,
       );
       setFilteredDistricts(
-        cityDistrictObj?.subDistricts.map((sd: any) => sd.name) || []
+        cityDistrictObj?.subDistricts.map((sd: any) => sd.name) || [],
       );
       handleInputChange("district", "");
       setNewDistrict("");
@@ -168,7 +168,7 @@ const MotoForSellAndBuy = () => {
 
     if (categoryKey && formData.subCategory) {
       const selectedSub = subCategories.find(
-        (sub) => sub.title === formData.subCategory
+        (sub) => sub.title === formData.subCategory,
       );
       handleInputChange("title", selectedSub?.so || "");
     } else if (categoryKey && !formData.subCategory) {
@@ -184,7 +184,7 @@ const MotoForSellAndBuy = () => {
 
     if (selectedFiles.length > filesToProcess.length) {
       toast.warn(
-        "You can only upload up to 10 images total. Some were ignored."
+        "You can only upload up to 10 images total. Some were ignored.",
       );
     }
 
@@ -259,8 +259,8 @@ const MotoForSellAndBuy = () => {
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(file);
-          })
-      )
+          }),
+      ),
     );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -271,7 +271,7 @@ const MotoForSellAndBuy = () => {
     }
     if (!isFormValid()) {
       toast.warn(
-        "Please fill out all required fields correctly (including Year, Price, and at least one image)."
+        "Please fill out all required fields correctly (including Year, Price, and at least one image).",
       );
       return;
     }

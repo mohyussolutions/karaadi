@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import managementFolderLinks from "@/app/(links)/management/links/managementFolderLinks";
 import { FaEllipsisH } from "react-icons/fa";
-import { apiService } from "@/actions/core/authAction";
+import { register } from "@/actions/core/authAction";
 
 const ManagementContent = () => {
   const preferred = ["users", "listings", "content", "marketplace"];
@@ -17,10 +17,11 @@ const ManagementContent = () => {
 
   async function quickRegister(e: React.FormEvent) {
     e.preventDefault();
-    if (!username || !email || !password) return alert("Please fill all fields");
+    if (!username || !email || !password)
+      return alert("Please fill all fields");
     setLoading(true);
     try {
-      await apiService.register(username, email, password);
+      await register(username, email, password);
       alert("User created");
       setUsername("");
       setEmail("");
@@ -35,11 +36,14 @@ const ManagementContent = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
       <div className="bg-white rounded shadow-sm p-6">
         <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {links.map((l) => (
-            <Link key={l.id} href={l.href} className="flex items-center gap-4 p-4 border rounded hover:bg-gray-50 transition">
+            <Link
+              key={l.id}
+              href={l.href}
+              className="flex items-center gap-4 p-4 border rounded hover:bg-gray-50 transition"
+            >
               <l.icon className="text-gray-600 w-6 h-6" />
               <div>
                 <div className="font-medium text-gray-800">{l.name}</div>
@@ -48,7 +52,10 @@ const ManagementContent = () => {
             </Link>
           ))}
 
-          <Link href="/managment/listings" className="flex items-center gap-4 p-4 border rounded hover:bg-gray-50 transition">
+          <Link
+            href="/managment/listings"
+            className="flex items-center gap-4 p-4 border rounded hover:bg-gray-50 transition"
+          >
             <FaEllipsisH className="text-gray-600 w-6 h-6" />
             <div>
               <div className="font-medium text-gray-800">More</div>

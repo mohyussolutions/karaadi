@@ -14,10 +14,14 @@ import {
   cities,
   Districts,
   regions,
-} from "@/app/(storeFront)/components/shared/SomaliMapRegionsAndCities/SomaliaRegions";
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 
 import { apiService } from "@/actions/core/authAction";
-import { carsNestedCategoriesMap, carsSubCategories, CarSubCategory } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import {
+  carsNestedCategoriesMap,
+  carsSubCategories,
+  CarSubCategory,
+} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 import { allCategories } from "@/app/(links)/dashboardLinks/categories";
 
 const CarsForSellOrBuy = () => {
@@ -64,7 +68,7 @@ const CarsForSellOrBuy = () => {
     area: "",
   });
   const [mainCategory, setMainCategory] = useState(
-    allCategories[0]?.name || ""
+    allCategories[0]?.name || "",
   );
   const [images, setImages] = useState<File[]>([]);
   const [filteredCities, setFilteredCities] = useState<string[]>([]);
@@ -95,7 +99,7 @@ const CarsForSellOrBuy = () => {
 
   const handleInputChange = (
     field: keyof CarFormData,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -138,7 +142,7 @@ const CarsForSellOrBuy = () => {
   useEffect(() => {
     if (formData.category) {
       setFilteredSubcategories(
-        carsNestedCategoriesMap[formData.category] || []
+        carsNestedCategoriesMap[formData.category] || [],
       );
       handleInputChange("subCategory", "");
     } else {
@@ -149,7 +153,7 @@ const CarsForSellOrBuy = () => {
   useEffect(() => {
     if (formData.category && formData.subCategory) {
       const selectedSub = carsNestedCategoriesMap[formData.category]?.find(
-        (sub) => sub.title === formData.subCategory
+        (sub) => sub.title === formData.subCategory,
       );
       handleInputChange("title", selectedSub?.so || "");
     }
@@ -214,8 +218,8 @@ const CarsForSellOrBuy = () => {
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(file);
-          })
-      )
+          }),
+      ),
     );
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,6 +1,5 @@
 "use client";
 
-import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { useState, useEffect, useRef } from "react";
 import { Socket } from "socket.io-client";
 import Image from "next/image";
@@ -8,8 +7,9 @@ import SocketManager from "./ServerClientsSocket";
 import ChatMessagesDisplay from "./ChatMessagesDisplay";
 import ChatInputArea from "./InputTextarea";
 import { Trash2 } from "lucide-react";
-import { SOCKET_EVENTS } from "@/actions/constant/communicationEndpoints";
 import { ChatSystemProps } from "@/app/utils/types/chat";
+import { API_ENDPOINTS } from "@/actions/constant/sockets";
+import { SOCKET_EVENTS } from "@/actions/constant/communicationEndpoints";
 
 export default function ChatSystem({
   currentUserId,
@@ -44,7 +44,7 @@ export default function ChatSystem({
     const fetchChats = async () => {
       try {
         const response = await fetch(
-          API_ENDPOINTS.CHATS.USER_CHATS(currentUserId)
+          API_ENDPOINTS.CHATS.USER_CHATS(currentUserId),
         );
         if (response.ok) {
           const existingChats = await response.json();
@@ -53,7 +53,7 @@ export default function ChatSystem({
 
           if (initialChatId) {
             const urlChat = existingChats.find(
-              (chat: any) => chat.id === initialChatId
+              (chat: any) => chat.id === initialChatId,
             );
             if (urlChat) chatToSelect = urlChat;
           }
@@ -61,7 +61,7 @@ export default function ChatSystem({
           if (!chatToSelect && sellerId && itemId) {
             const existingChat = existingChats.find(
               (chat: any) =>
-                chat.otherUser?.id === sellerId && chat.item?.id === itemId
+                chat.otherUser?.id === sellerId && chat.item?.id === itemId,
             );
             if (existingChat) {
               chatToSelect = existingChat;
@@ -72,8 +72,8 @@ export default function ChatSystem({
                     currentUserId,
                     sellerId,
                     itemId,
-                    "Marketplace"
-                  )
+                    "Marketplace",
+                  ),
                 );
                 if (findResponse.ok) {
                   const foundChat = await findResponse.json();
@@ -81,7 +81,7 @@ export default function ChatSystem({
                     chatToSelect = foundChat;
                     setChats((prev) => {
                       const exists = prev.some(
-                        (chat) => chat.id === foundChat.id
+                        (chat) => chat.id === foundChat.id,
                       );
                       if (!exists) return [...prev, foundChat];
                       return prev;
@@ -134,7 +134,7 @@ export default function ChatSystem({
       }
 
       const response = await fetch(
-        API_ENDPOINTS.CHATS.CHAT_MESSAGES(chatId, currentUserId)
+        API_ENDPOINTS.CHATS.CHAT_MESSAGES(chatId, currentUserId),
       );
 
       if (response.ok) {
@@ -249,7 +249,7 @@ export default function ChatSystem({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
+          errorData.error || `HTTP error! status: ${response.status}`,
         );
       }
 
@@ -271,8 +271,8 @@ export default function ChatSystem({
                 ...savedMessage,
                 status: "sent",
               }
-            : msg
-        )
+            : msg,
+        ),
       );
 
       if (chats && savedMessage.id) {
@@ -288,8 +288,8 @@ export default function ChatSystem({
                   },
                   updatedAt: new Date().toISOString(),
                 }
-              : chat
-          )
+              : chat,
+          ),
         );
       }
 
@@ -308,8 +308,8 @@ export default function ChatSystem({
                 error:
                   error instanceof Error ? error.message : "Failed to send",
               }
-            : msg
-        )
+            : msg,
+        ),
       );
     } finally {
       setSending(false);
@@ -322,7 +322,7 @@ export default function ChatSystem({
     try {
       const response = await fetch(
         API_ENDPOINTS.CHATS.DELETE(chatId, currentUserId),
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (response.ok) {
         setChats((prev) => prev.filter((chat) => chat.id !== chatId));
@@ -343,7 +343,7 @@ export default function ChatSystem({
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: currentUserId }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -355,7 +355,7 @@ export default function ChatSystem({
 
   const handleUpdateMessage = async (
     messageId: number | string,
-    newContent: string
+    newContent: string,
   ) => {
     try {
       const response = await fetch(
@@ -364,7 +364,7 @@ export default function ChatSystem({
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: newContent, userId: currentUserId }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -373,8 +373,8 @@ export default function ChatSystem({
           prev.map((msg) =>
             msg.id === messageId
               ? { ...msg, content: newContent, isEdited: true }
-              : msg
-          )
+              : msg,
+          ),
         );
       }
     } catch (error) {}
@@ -383,7 +383,7 @@ export default function ChatSystem({
   const retryFailedMessage = async (tempMessage: any) => {
     if (!selectedChat?.id) return;
     setMessages((prev) =>
-      prev.filter((msg) => msg.tempId !== tempMessage.tempId)
+      prev.filter((msg) => msg.tempId !== tempMessage.tempId),
     );
     await sendMessage(tempMessage.content, selectedChat.id);
   };
@@ -414,7 +414,7 @@ export default function ChatSystem({
     setMessages((prev) => {
       const exists = prev.some(
         (msg) =>
-          msg.id === messageId || (msg.tempId && msg.tempId === message.tempId)
+          msg.id === messageId || (msg.tempId && msg.tempId === message.tempId),
       );
       if (exists) return prev;
       return [...prev, message];
@@ -435,8 +435,8 @@ export default function ChatSystem({
                 ...data.message,
                 status: "sent",
               }
-            : msg
-        )
+            : msg,
+        ),
       );
     }
   };

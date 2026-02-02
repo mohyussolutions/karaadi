@@ -13,13 +13,13 @@ import { useGetMotorcycleByIdQuery } from "@/app/(storeFront)/store/slices/motor
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
-import { apiService } from "@/actions/core/authAction";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function VehicleDetails() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [currentUser, setCurrentUser] = useState<Record<string, any> | null>(
-    null
+    null,
   );
   const [showModal, setShowModal] = useState(false);
 
@@ -48,7 +48,7 @@ export default function VehicleDetails() {
     let mounted = true;
     (async () => {
       try {
-        const user = await apiService.verifySession();
+        const user = await verifySession();
         if (mounted) setCurrentUser(user ?? null);
       } catch {
         if (mounted) setCurrentUser(null);
