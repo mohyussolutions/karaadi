@@ -16,7 +16,7 @@ interface Props {
   itemId: string;
   itemTitle?: string;
   itemName: string;
-  maGaday: boolean;
+  maGaday?: boolean;
   onSendMessage?: () => Promise<void> | void;
 }
 
@@ -26,7 +26,7 @@ export default function UserCard({
   itemId,
   itemTitle,
   itemName,
-  maGaday,
+  maGaday = false,
   onSendMessage,
 }: Props) {
   const router = useRouter();

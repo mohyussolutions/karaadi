@@ -21,7 +21,7 @@ export const getAdvertisements = async (
   position?: string,
   limit?: number,
 ): Promise<Advertisement[]> => {
-  const url = new URL(ADVERTISEMENT_ENDPOINTS.GET_ALL);
+  const url = new URL(`${ADVERTISEMENT_ENDPOINTS.GET_ALL}`);
   if (position) url.searchParams.append("position", position);
   if (limit) url.searchParams.append("limit", limit.toString());
 

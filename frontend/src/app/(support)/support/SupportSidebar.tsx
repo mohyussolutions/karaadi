@@ -4,21 +4,19 @@ import React, { useState, useEffect } from "react";
 import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 import { useRouter, usePathname } from "next/navigation";
 import { FiSearch, FiHeadphones, FiLogOut } from "react-icons/fi";
-import { apiService } from "@/actions/core/authAction";
-import { useLogout } from "@/app/(dashboard)/dashboard/navbar/Navbar";
+import { verifySession, logout } from "@/actions/core/authAction";
 
 export default function SupportSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const [hasMounted, setHasMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const logout = useLogout();
 
   useEffect(() => {
     setHasMounted(true);
     const getSession = async () => {
       try {
-        const session = await apiService.verifySession();
+        const session = await verifySession();
         setUser(session);
       } catch (err) {
         console.error("Session verification failed", err);
@@ -32,7 +30,6 @@ export default function SupportSidebar() {
   const isActive = (href: string) => pathname === href;
 
   const handleLogout = () => {
-    localStorage.clear();
     logout();
     router.push("/");
   };
@@ -57,7 +54,11 @@ export default function SupportSidebar() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-black text-indigo-500/80 uppercase tracking-widest">
-                  {user.isAdmin ? "Admin" : user.isManager ? "Manager" : "Support"}
+                  {user.isAdmin
+                    ? "Admin"
+                    : user.isManager
+                      ? "Manager"
+                      : "Support"}
                 </span>
               </div>
             </div>
@@ -100,7 +101,9 @@ export default function SupportSidebar() {
               }`}
             >
               <div className="flex items-center gap-4">
-                <span className={`${active ? "text-white" : "text-zinc-500 group-hover:text-indigo-400"}`}>
+                <span
+                  className={`${active ? "text-white" : "text-zinc-500 group-hover:text-indigo-400"}`}
+                >
                   {typeof Icon === "function" ? <Icon size={20} /> : Icon}
                 </span>
                 <span className="text-sm font-bold tracking-wide">{title}</span>

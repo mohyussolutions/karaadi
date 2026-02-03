@@ -1,9 +1,8 @@
 "use client";
-
-import { apiService } from "@/actions/core/authAction";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MdSend, MdHistory } from "react-icons/md";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function SupportModule() {
   const router = useRouter();
@@ -19,7 +18,7 @@ export default function SupportModule() {
   useEffect(() => {
     async function init() {
       try {
-        const session = await apiService.verifySession();
+        const session = await verifySession();
         if (session) {
           setUser(session);
         }

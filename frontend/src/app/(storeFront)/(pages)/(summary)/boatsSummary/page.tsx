@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useGetBoatByIdQuery } from "@/app/(storeFront)/store/slices/boatsSlice";
-import { apiService } from "@/actions/core/authAction";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { verifySession } from "@/actions/core/authAction";
 
 const BoatSummary: React.FC = () => {
   const params = useSearchParams();
@@ -20,7 +20,7 @@ const BoatSummary: React.FC = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const sessionUser = await apiService.verifySession();
+      const sessionUser = await verifySession();
       if (!sessionUser) {
         router.push("/login");
       } else {
@@ -100,11 +100,7 @@ const BoatSummary: React.FC = () => {
                 className="relative w-40 h-28 rounded-md overflow-hidden border border-gray-300 shadow-sm hover:shadow-lg transition-shadow duration-300"
               >
                 <Image
-                  src={
-                    img.startsWith("data:image")
-                      ? img
-                      : "/images/default-boat.jpg"
-                  }
+                  src={img.startsWith("data:image") ? img : "/logo.jpg"}
                   alt={`Boat image ${idx + 1}`}
                   fill
                   className="object-cover"

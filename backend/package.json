@@ -5,6 +5,8 @@
   "main": "server.ts",
   "scripts": {
     "dev": "DOTENV_QUIET=true tsx watch src/server.ts",
+    "build": "tsc --project tsconfig.json --noEmit",
+    "start": "NODE_ENV=production tsx src/server.ts",
     "prisma:generate": "prisma generate --schema=src/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=src/prisma/schema.prisma",
     "db:new-migration": "prisma migrate dev --name NEW_MIGRATION_NAME --schema=src/prisma/schema.prisma",
@@ -52,6 +54,7 @@
     "@types/node": "^24.10.4",
     "@types/pg": "^8.16.0",
     "@types/react": "^19.1.13",
+    "@types/uuid": "^10.0.0",
     "chalk": "^5.6.2",
     "prisma": "^7.3.0",
     "ts-node": "^10.9.2",

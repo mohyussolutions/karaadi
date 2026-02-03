@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 import VehicleImageGallery from "../VehicleImageGallery";
 import { Item } from "@/app/utils/types/vihcles";
@@ -13,6 +14,7 @@ import { useGetMotorcycleByIdQuery } from "@/app/(storeFront)/store/slices/motor
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
+import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { verifySession } from "@/actions/core/authAction";
 
 export default function VehicleDetails() {
@@ -22,6 +24,7 @@ export default function VehicleDetails() {
     null,
   );
   const [showModal, setShowModal] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   const { data: carItem, isLoading: isLoadingCar } = useGetCarByIdQuery(id, {
     skip: !id,
@@ -33,7 +36,6 @@ export default function VehicleDetails() {
   const { data: tractorItem, isLoading: isLoadingTractor } =
     useGetTractorByIdQuery(id, { skip: !id });
 
-  console.log(tractorItem);
   const { data: motorcycleItem, isLoading: isLoadingMotorcycle } =
     useGetMotorcycleByIdQuery(id, { skip: !id });
 
@@ -52,6 +54,8 @@ export default function VehicleDetails() {
         if (mounted) setCurrentUser(user ?? null);
       } catch {
         if (mounted) setCurrentUser(null);
+      } finally {
+        if (mounted) setLoadingUser(false);
       }
     })();
     return () => {
@@ -67,7 +71,53 @@ export default function VehicleDetails() {
     setShowModal(true);
   };
 
-  if (loading)
+  const handleModalConfirm = async () => {
+    try {
+      const userData = await verifySession();
+      if (!userData) {
+        router.push("/login");
+        return;
+      }
+
+      if (!item) {
+        toast.error("Item not found");
+        return;
+      }
+
+      const descriptionText = Array.isArray(item.description)
+        ? item.description.join(" ")
+        : item.description || "No description provided";
+
+      // Determine category based on which query returned the item
+      let category = "Vehicle";
+      if (carItem) category = "Car";
+      else if (boatItem) category = "Boat";
+      else if (tractorItem) category = "Tractor";
+      else if (motorcycleItem) category = "Motorcycle";
+
+      await addToFavorite({
+        title: item.title,
+        description: descriptionText,
+        price: String(item.price),
+        image: item.images?.[0] || "",
+        itemId: item._id,
+        category: category,
+      });
+
+      toast.success(`"${item.title}" saved to favorites!`);
+      setShowModal(false);
+      setTimeout(() => router.push("/mine/favorites"), 1000);
+    } catch (error: any) {
+      console.error("Failed to save favorite:", error);
+      toast.error("Failed to save favorite. Please try again.");
+    }
+  };
+
+  const handleModalCancel = () => {
+    setShowModal(false);
+  };
+
+  if (loading || loadingUser)
     return (
       <div className="p-8 text-center">
         <Loading />
@@ -145,7 +195,7 @@ export default function VehicleDetails() {
 
           <UserCard
             user={{
-              _id: item.user?._id || "",
+              id: item.user?._id || "",
               username: item.user?.username || "Unknown Seller",
               profileImage: item.user?.profileImage || null,
               phone: item.user?.phone || null,
@@ -153,18 +203,15 @@ export default function VehicleDetails() {
             isLoggedIn={Boolean(currentUser)}
             itemId={item._id}
             itemName={item.title}
+            maGaday={false}
           />
         </div>
       </div>
-
       {showModal && (
         <SaveFavoriteModel
-          onConfirm={() => {
-            setShowModal(false);
-            router.push("/mine/favorites");
-          }}
-          onCancel={() => setShowModal(false)}
-          backgroundImage={"red"}
+          onConfirm={handleModalConfirm}
+          onCancel={handleModalCancel}
+          backgroundImage={images[0]}
         />
       )}
     </div>

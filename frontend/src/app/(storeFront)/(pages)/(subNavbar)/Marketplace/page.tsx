@@ -29,9 +29,8 @@ function MarketplaceLinks() {
 
   return (
     <div className="container mx-auto px-3 py-3">
-      <SearchInput />
       <PathSegmentsDisplay />
-
+      <SearchInput />
       <div className="grid grid-cols-3 gap-2 px-4 py-6 sm:grid-cols-4 lg:grid-cols-4">
         {marketplaceSubCategories.map((category) => {
           const linkClasses = `flex flex-col items-center text-center group space-y-0 p-1 rounded-xl ${linkHoverClasses} transition-all duration-300 hover:scale-[1.03]`;

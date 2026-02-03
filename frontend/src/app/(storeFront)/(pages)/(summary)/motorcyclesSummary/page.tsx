@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { apiService } from "@/actions/core/authAction";
+
 import { useGetMotorcycleByIdQuery } from "@/app/(storeFront)/store/slices/motorcyclesSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { verifySession } from "@/actions/core/authAction";
 
 interface User {
   _id: string;
@@ -31,7 +32,7 @@ const MotorcyclesSummary: React.FC = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const sessionUser = await apiService.verifySession();
+      const sessionUser = await verifySession();
       if (!sessionUser) {
         router.push("/login");
       } else {
@@ -146,7 +147,7 @@ const MotorcyclesSummary: React.FC = () => {
                   src={
                     img.startsWith("data:image") || img.startsWith("http")
                       ? img
-                      : "/images/default-motorcycle.jpg"
+                      : "/logo.jpg"
                   }
                   alt={`Motorcycle image ${idx + 1}`}
                   fill

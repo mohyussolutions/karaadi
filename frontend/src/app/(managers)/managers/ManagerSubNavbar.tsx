@@ -3,23 +3,20 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { 
-  FaChevronDown, 
-  FaChevronRight, 
-  FaSignOutAlt, 
-  FaUserCircle, 
-  FaSpinner, 
-  FaCircle 
+import {
+  FaChevronDown,
+  FaChevronRight,
+  FaSignOutAlt,
+  FaUserCircle,
+  FaSpinner,
+  FaCircle,
 } from "react-icons/fa";
 import { managerTotalLinks } from "@/app/(links)/managmentLinks/managerLinks";
-import { useLogout } from "@/app/(dashboard)/dashboard/navbar/Navbar";
-import { apiService } from "@/actions/core/authAction";
-
+import { logout, verifySession } from "@/actions/core/authAction";
 export default function ManagerSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const logout = useLogout();
-  
+
   const [hasMounted, setHasMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -31,7 +28,7 @@ export default function ManagerSidebar() {
   useEffect(() => {
     setHasMounted(true);
     const fetchSession = async () => {
-      const session = await apiService.verifySession();
+      const session = await verifySession();
       setUser(session);
     };
     fetchSession();
@@ -45,8 +42,6 @@ export default function ManagerSidebar() {
     setIsLoading(true);
     try {
       if (logout) await logout();
-      localStorage.clear();
-      sessionStorage.clear();
       router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -57,7 +52,11 @@ export default function ManagerSidebar() {
 
   if (!hasMounted) return null;
 
-  const roleLabel = user?.isAdmin ? "Admin" : user?.isManager ? "Manager" : "Staff";
+  const roleLabel = user?.isAdmin
+    ? "Admin"
+    : user?.isManager
+      ? "Manager"
+      : "Staff";
 
   return (
     <aside className="w-80 bg-[#0f172a] text-slate-200 h-screen flex flex-col border-r border-slate-800 shadow-2xl">
@@ -78,57 +77,66 @@ export default function ManagerSidebar() {
         </div>
       </div>
 
-
       <div className="flex-1 p-6 space-y-8 overflow-y-auto">
         <section className="space-y-2">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-4 mb-4">Core Menu</p>
-          {managerTotalLinks.filter(i => i.category === "core").map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
-                pathname === item.href 
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" 
-                  : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-              }`}
-            >
-              <item.icon className="size-5" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-4 mb-4">
+            Core Menu
+          </p>
+          {managerTotalLinks
+            .filter((i) => i.category === "core")
+            .map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
+                  pathname === item.href
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                    : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                }`}
+              >
+                <item.icon className="size-5" />
+                <span>{item.name}</span>
+              </Link>
+            ))}
         </section>
 
-  
         <section className="space-y-2">
-           <button
-            onClick={() => toggleSection('management')}
+          <button
+            onClick={() => toggleSection("management")}
             className="flex items-center justify-between w-full px-4 py-2 text-slate-500 hover:text-slate-300 transition"
           >
-            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Backoffice</span>
-            {openSections.management ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
+            <span className="text-[10px] font-black uppercase tracking-[0.3em]">
+              Backoffice
+            </span>
+            {openSections.management ? (
+              <FaChevronDown size={10} />
+            ) : (
+              <FaChevronRight size={10} />
+            )}
           </button>
 
           {openSections.management && (
             <div className="space-y-1 mt-2">
-              {managerTotalLinks.filter(i => i.category === "backoffice").map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
-                    pathname === item.href 
-                      ? "bg-slate-700 text-white" 
-                      : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                  }`}
-                >
-                  <item.icon className="size-5" />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
+              {managerTotalLinks
+                .filter((i) => i.category === "backoffice")
+                .map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all ${
+                      pathname === item.href
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                    }`}
+                  >
+                    <item.icon className="size-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                ))}
             </div>
           )}
         </section>
       </div>
-
 
       <div className="p-6 border-t border-slate-800/50 bg-[#0c1222]">
         <button
@@ -136,7 +144,9 @@ export default function ManagerSidebar() {
           disabled={isLoading}
           className="flex items-center gap-4 w-full p-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all font-bold text-sm disabled:opacity-50 group"
         >
-          <div className={`p-2 rounded-lg bg-red-400/10 group-hover:bg-red-400/20 transition-colors`}>
+          <div
+            className={`p-2 rounded-lg bg-red-400/10 group-hover:bg-red-400/20 transition-colors`}
+          >
             {isLoading ? (
               <FaSpinner className="animate-spin size-5" />
             ) : (
@@ -145,7 +155,9 @@ export default function ManagerSidebar() {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-white">Sign Out</span>
-            <span className="text-[10px] text-red-400/60 font-medium">Terminate Session</span>
+            <span className="text-[10px] text-red-400/60 font-medium">
+              Terminate Session
+            </span>
           </div>
         </button>
       </div>

@@ -1,15 +1,16 @@
 "use client";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
+import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import { TrailerNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
-import { TrailerNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForCars";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
 
 export default function Trailers() {
   const subCategoryLinks = TrailerNestedSub;
@@ -18,6 +19,40 @@ export default function Trailers() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  useEffect(() => {
+    const allTrailerItems = Array.isArray(items)
+      ? items.filter(
+          (item: any) =>
+            item.subCategory === "Trailers" || item.so === "Rimoor",
+        )
+      : [];
+  }, [items]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      const results = await getGlobalSearchResults(query);
+
+      const filteredTrailersFromSearch = results.filter(
+        (item: any) => item.subCategory === "Trailers" || item.so === "Rimoor",
+      );
+
+      setSearchResults(filteredTrailersFromSearch);
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
 
   const allTrailerItems = useMemo(() => {
     return Array.isArray(items)
@@ -29,31 +64,47 @@ export default function Trailers() {
   }, [items]);
 
   const itemsToDisplay = useMemo(() => {
-    if (!selectedSubcategory) {
-      return allTrailerItems;
+    let filteredItems = [];
+
+    if (query.trim()) {
+      filteredItems = searchResults;
+    } else {
+      filteredItems = allTrailerItems;
     }
 
-    const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
+    if (selectedSubcategory) {
+      const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
 
-    return allTrailerItems.filter((item: any) => {
-      return (
-        item.title.toLowerCase().includes(normalizedSelectedCategory) ||
-        (item.so && item.so.toLowerCase().includes(normalizedSelectedCategory))
-      );
-    });
-  }, [allTrailerItems, selectedSubcategory]);
+      return filteredItems.filter((item: any) => {
+        return (
+          item.title.toLowerCase().includes(normalizedSelectedCategory) ||
+          (item.so &&
+            item.so.toLowerCase().includes(normalizedSelectedCategory))
+        );
+      });
+    }
+
+    return filteredItems;
+  }, [query, searchResults, selectedSubcategory, allTrailerItems]);
 
   const currentDisplayTitle = useMemo(() => {
+    if (query.trim()) {
+      return `Search Results: "${query}"`;
+    }
+
     if (!selectedSubcategory) {
       return "All Trailers (Dhammaan Rimoorrada)";
     }
+
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
+      (cat: any) =>
+        cat.so.toLowerCase() === selectedSubcategory ||
+        cat.title.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
       : selectedSubcategory;
-  }, [selectedSubcategory, subCategoryLinks]);
+  }, [query, selectedSubcategory, subCategoryLinks]);
 
   const totalFound = itemsToDisplay.length;
 
@@ -75,6 +126,22 @@ export default function Trailers() {
     );
   };
 
+  const handleSearch = (searchQuery: string) => {
+    setQuery(searchQuery);
+  };
+
+  const handleLocationFilterChange = (
+    region: string | null,
+    cities: Record<string, boolean>,
+  ) => {
+    setSelectedRegion(region);
+    setCheckedCities(cities);
+  };
+
+  const handleRegionClick = (region: string | null) => {
+    setSelectedRegion(region);
+  };
+
   if (isLoading) return <Loading />;
   if (isError)
     return (
@@ -85,7 +152,7 @@ export default function Trailers() {
 
   return (
     <div className="container mx-auto px-4 pb-10">
-      <Search />
+      <SearchInput onSearch={handleSearch} />
       <PathSegmentsDisplay />
 
       <div className="relative py-6">
@@ -146,46 +213,53 @@ export default function Trailers() {
       <div className="px-4 text-sm text-gray-700 mb-4">
         <p>
           Showing
-          <span className="text-blue-600 font-semibold">{totalFound}</span>
+          <span className="text-blue-600 font-semibold"> {totalFound}</span>
           listings in
           <strong> {currentDisplayTitle}</strong>
         </p>
       </div>
 
-      <div className="container mx-auto">
-        <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-          <div className="sticky top-4 space-y-4">
-            <LocationSelector />
-            <SomaliMap />
-          </div>
+      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
+        <div className="sticky top-4 space-y-4">
+          <LocationSelector
+            onFilterChange={handleLocationFilterChange}
+            selectedRegion={selectedRegion}
+            checkedCities={checkedCities}
+          />
+          <SomaliMap
+            selectedRegion={selectedRegion}
+            onRegionClick={handleRegionClick}
+          />
+        </div>
 
-          <div className="md:w-3/4 w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item: any) => (
-                  <VehicleCard
-                    key={item._id}
-                    id={item._id}
-                    title={item.title}
-                    description={
-                      item.description
-                        ? (Array.isArray(item.description)
-                            ? item.description
-                            : [item.description]
-                          ).filter((desc: any): desc is string => !!desc)
-                        : []
-                    }
-                    city={item.city}
-                    images={item.images}
-                    price={item.price}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-10 text-gray-500">
-                  No trailers found for this selection.
-                </div>
-              )}
-            </div>
+        <div className="md:w-3/4 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {itemsToDisplay.length > 0 ? (
+              itemsToDisplay.map((item: any) => (
+                <VehicleCard
+                  key={item._id}
+                  id={item._id}
+                  title={item.title}
+                  description={
+                    item.description
+                      ? (Array.isArray(item.description)
+                          ? item.description
+                          : [item.description]
+                        ).filter((desc: any): desc is string => !!desc)
+                      : []
+                  }
+                  city={item.city}
+                  images={item.images}
+                  price={item.price}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-10 text-gray-500">
+                {query.trim()
+                  ? `No trailers found for "${query}"`
+                  : "No trailers found for this selection."}
+              </div>
+            )}
           </div>
         </div>
       </div>

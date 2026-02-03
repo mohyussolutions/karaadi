@@ -210,3 +210,24 @@ export async function deleteRealEstate(id: string, token: string) {
     return { success: false, message: "Network error or unable to reach API." };
   }
 }
+
+export async function toggleRealEstatePaidStatus(
+  propertyId: string,
+  newStatus: boolean,
+): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `http://localhost:8080/api/real-estate/${propertyId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPaid: newStatus }),
+        credentials: "include",
+      },
+    );
+    return res.ok;
+  } catch (err) {
+    console.error("Toggle paid error:", err);
+    return false;
+  }
+}

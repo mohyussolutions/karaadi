@@ -10,7 +10,7 @@ import { ImageControls } from "@/app/(storeFront)/components/hooks/useRenderImag
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import UserCard from "@/app/(storeFront)/components/Cards/UserProfileCard";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
-import { apiService } from "@/actions/core/authAction";
+import { verifySession } from "@/actions/core/authAction";
 
 export type Item = {
   id: string;
@@ -38,13 +38,14 @@ function RealEstateDetails() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
+  const [mainImageError, setMainImageError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     (async () => {
       try {
-        const user = await apiService.verifySession();
+        const user = await verifySession();
         if (mounted) {
           setCurrentUser(user);
         }
@@ -78,6 +79,10 @@ function RealEstateDetails() {
     ? realEstate.images.filter(Boolean)
     : [];
   const selectedImage = images[selectedImageIndex] || "";
+  const isRemoteSelected =
+    typeof selectedImage === "string" &&
+    (selectedImage.startsWith("http://") ||
+      selectedImage.startsWith("https://"));
 
   const handleHeartClick = () => {
     if (!currentUser) {
@@ -94,11 +99,11 @@ function RealEstateDetails() {
 
   const showPreviousImage = () =>
     setSelectedImageIndex((prev) =>
-      prev === 0 ? images.length - 1 : prev - 1
+      prev === 0 ? images.length - 1 : prev - 1,
     );
   const showNextImage = () =>
     setSelectedImageIndex((prev) =>
-      prev === images.length - 1 ? 0 : prev + 1
+      prev === images.length - 1 ? 0 : prev + 1,
     );
 
   return (
@@ -120,12 +125,18 @@ function RealEstateDetails() {
               {selectedImage ? (
                 <>
                   <Image
-                    src={selectedImage}
+                    src={
+                      mainImageError
+                        ? "/images/job-placeholder.png"
+                        : selectedImage
+                    }
                     alt={realEstate.title}
                     fill
                     className="object-cover cursor-zoom-in"
                     priority
                     quality={100}
+                    unoptimized={isRemoteSelected}
+                    onError={() => setMainImageError(true)}
                     onClick={() => setShowFullImage(true)}
                   />
                   <ImageControls
@@ -188,12 +199,6 @@ function RealEstateDetails() {
             <GoBackBtn />
             <h1 className="text-2xl font-bold">{realEstate.title}</h1>
 
-            {realEstate.purpose && (
-              <span className="text-green-700 font-semibold">
-                {realEstate.purpose}
-              </span>
-            )}
-
             <div className="text-xl font-bold text-blue-700">
               {typeof realEstate.price === "number"
                 ? realEstate.price.toLocaleString()
@@ -231,11 +236,14 @@ function RealEstateDetails() {
 
             <UserCard
               user={{
+                id: realEstate?.user?.id ?? "unknown-id",
                 username: realEstate?.user?.username ?? "Unknown Seller",
                 profileImage: realEstate?.user?.profileImage || "/user.jpg",
                 phone: realEstate?.user?.phone ?? null,
               }}
-              isLoggedIn={!!currentUser}
+              isLoggedIn={false}
+              itemId={""}
+              itemName={""}
             />
           </div>
         </div>
@@ -265,6 +273,11 @@ function RealEstateDetails() {
                   fill
                   className="object-contain"
                   quality={100}
+                  unoptimized={
+                    typeof images[selectedImageIndex] === "string" &&
+                    (images[selectedImageIndex].startsWith("http://") ||
+                      images[selectedImageIndex].startsWith("https://"))
+                  }
                 />
               </div>
 

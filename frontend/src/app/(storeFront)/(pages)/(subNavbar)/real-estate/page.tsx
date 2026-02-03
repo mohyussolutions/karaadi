@@ -1,52 +1,72 @@
 "use client";
-import React, { JSX } from "react";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaHome, FaBuilding, FaWarehouse, FaTree } from "react-icons/fa";
-
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
-import { useGetRealEstateItemsQuery } from "@/app/(storeFront)/store/slices/realtStateSlice";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
+import { getRealEstateListings } from "@/actions/categories/realEstateActions";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 
-const iconMap: Record<string, JSX.Element> = {
-  Apartment: <FaBuilding size={32} />,
-  House: <FaHome size={32} />,
-  Warehouse: <FaWarehouse size={32} />,
-  Land: <FaTree size={32} />,
+const iconMap: Record<string, React.ReactNode> = {
+  Apartment: <FaBuilding size={24} />,
+  House: <FaHome size={24} />,
+  Warehouse: <FaWarehouse size={24} />,
+  Land: <FaTree size={24} />,
 };
 
-function RealEstateLinks() {
-  const { data: items = [], isLoading, error } = useGetRealEstateItemsQuery();
+export default function RealEstateLinks() {
+  const [items, setItems] = useState<any[]>([]);
+  const [initialItems, setInitialItems] = useState<any[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  if (isLoading)
-    return (
-      <div>
-        <Loading />
-      </div>
-    );
-  if (error) return <div>Error loading items</div>;
+  useEffect(() => {
+    async function loadInitialData() {
+      const data = await getRealEstateListings();
+      setItems(data || []);
+      setInitialItems(data || []);
+      setLoading(false);
+    }
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!query.trim()) {
+        setItems(initialItems);
+        return;
+      }
+      const results = await getGlobalSearchResults(query);
+      const filteredItems = results.filter(
+        (i: any) => i.itemType === "real-estate",
+      );
+      setItems(filteredItems);
+    }, 400);
+    return () => clearTimeout(delayDebounce);
+  }, [query, initialItems]);
 
   return (
-    <>
-      <SearchInput />
-      <div className="px-2 py-2 sm:px-2 ">
+    <div className="container mx-auto px-2 py-2">
+      <SearchInput onSearch={setQuery} />
+
+      <div className="px-1 py-1">
         <PathSegmentsDisplay />
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 justify-items-center mt-4 sm:mt-6">
+        <div className="grid grid-cols-3 gap-1 justify-items-center mt-2">
           {realEstateSubCategories.map((category) => (
             <Link
               key={category.title}
-              href={`/real-estate/${category.title
-                .toLowerCase()
-                .replace(/\s+/g, "-")}`}
+              href={`/real-estate/${category.title.toLowerCase().replace(/\s+/g, "-")}`}
+              className="w-full"
             >
-              <div className="w-[160px] xs:w-[180px] sm:w-[200px] bg-white shadow-md hover:shadow-lg transition-shadow rounded-xl p-3 cursor-pointer group border hover:border-blue-500 text-center mx-auto mb-4 sm:mb-0">
-                <div className="text-3xl text-blue-400 group-hover:text-black transition-colors duration-200 mb-3 flex justify-center items-center h-[45px]">
+              <div className="bg-white hover:shadow transition-shadow rounded-lg p-2 cursor-pointer group border border-gray-200 hover:border-blue-400 text-center">
+                <div className="text-xl text-blue-500 group-hover:text-blue-700 transition-colors duration-150 mb-2 flex justify-center items-center h-[35px]">
                   {iconMap[category.title] || category.icon}
                 </div>
-                <span className="text-sm font-medium text-gray-800 block mb-1">
+                <span className="text-xs font-medium text-gray-800 block">
                   {category.so}
                 </span>
               </div>
@@ -54,24 +74,42 @@ function RealEstateLinks() {
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-center min-h-[112px]">
+
+      <div className="flex items-center justify-center min-h-[80px]">
         <WantSell />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
-        {items.map((item: any) => (
-          <RealEstateCard
-            key={item.id}
-            id={item.id}
-            title={item.title}
-            description={item.description}
-            city={item.city}
-            price={item.price}
-            images={item.images}
-          />
-        ))}
-      </div>
-    </>
+
+      <h2 className="text-lg font-semibold px-2 mb-3">
+        {query
+          ? `Natiijada Raadinta (${items.length})`
+          : `Dhammaan Guryaha & Dhulka (${items.length})`}
+      </h2>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin h-6 w-6 border-3 border-blue-500 border-t-transparent rounded-full" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2">
+          {items.length > 0 ? (
+            items.map((item: any) => (
+              <RealEstateCard
+                key={item.id || item._id}
+                id={item.id || item._id}
+                title={item.title}
+                description={item.description}
+                city={item.city || item.location}
+                price={item.price}
+                images={item.images}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-gray-500">
+              Ma jiro hanti maguurtada ah oo la helay
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
-
-export default RealEstateLinks;

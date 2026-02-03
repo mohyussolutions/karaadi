@@ -1,17 +1,17 @@
 "use client";
-
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import CardItem from "@/app/(storeFront)/components/Cards/CardItem";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
+import { AnimalAndSuppliesNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
+import { getGlobalFilteredResults } from "@/actions/categories/filterAction";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
-
-import { AnimalAndSuppliesNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMarketplace";
+import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 
 interface MarketplaceItem {
   id: string;
@@ -46,6 +46,14 @@ function AnimalAndSupplies() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [filteredItems, setFilteredItems] = useState<any[]>([]);
 
   const allAnimalAndSuppliesItems = useMemo(() => {
     return items.filter(
@@ -53,15 +61,150 @@ function AnimalAndSupplies() {
     );
   }, [items]);
 
+  // Calculate counts for each region and city - MUST BE AFTER allAnimalAndSuppliesItems is defined
+  const regionCityCounts = useMemo(() => {
+    const regionCounts: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+
+    allAnimalAndSuppliesItems.forEach((item) => {
+      if (item.region) {
+        regionCounts[item.region] = (regionCounts[item.region] || 0) + 1;
+      }
+      if (item.city) {
+        cityCounts[item.city] = (cityCounts[item.city] || 0) + 1;
+      }
+    });
+
+    return { regionCounts, cityCounts };
+  }, [allAnimalAndSuppliesItems]); // Depend on allAnimalAndSuppliesItems
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      const results = await getGlobalSearchResults(query);
+      const filteredAnimalsFromSearch = results.filter(
+        (item: any) =>
+          item.category && item.category.includes("Animals & Supplies"),
+      );
+      setSearchResults(filteredAnimalsFromSearch);
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+  useEffect(() => {
+    const applyLocationFilter = async () => {
+      if (!selectedRegion && Object.keys(checkedCities).length === 0) {
+        setFilteredItems([]);
+        setIsFiltering(false);
+        return;
+      }
+
+      setIsFiltering(true);
+
+      try {
+        const selectedCities = Object.entries(checkedCities)
+          .filter(([_, isChecked]) => isChecked)
+          .map(([cityName]) => cityName);
+
+        // If multiple cities selected, fetch each separately and combine
+        if (selectedCities.length > 0) {
+          const allResults = [];
+
+          // Fetch for each city individually
+          for (const city of selectedCities) {
+            let filterParams: any = { city: city };
+
+            if (selectedRegion) {
+              filterParams.region = selectedRegion;
+            }
+
+            if (query.trim()) {
+              filterParams.q = query;
+            }
+
+            const results = await getGlobalFilteredResults(filterParams);
+
+            // Filter by category
+            const filteredByCategory = results.filter(
+              (item: any) =>
+                item.category && item.category.includes("Animals & Supplies"),
+            );
+
+            // Filter out duplicates (items that might appear in multiple cities)
+            const existingIds = new Set(
+              allResults.map((item) => item.id || item._id),
+            );
+            const uniqueItems = filteredByCategory.filter(
+              (item: any) => !existingIds.has(item.id || item._id),
+            );
+
+            allResults.push(...uniqueItems);
+          }
+
+          setFilteredItems(allResults);
+        } else if (selectedRegion) {
+          // Only region selected
+          let filterParams: any = { region: selectedRegion };
+
+          if (query.trim()) {
+            filterParams.q = query;
+          }
+
+          const results = await getGlobalFilteredResults(filterParams);
+
+          const filteredByCategory = results.filter(
+            (item: any) =>
+              item.category && item.category.includes("Animals & Supplies"),
+          );
+
+          setFilteredItems(filteredByCategory);
+        }
+      } catch (error) {
+        console.error("Location filter error:", error);
+        setFilteredItems([]);
+      } finally {
+        setIsFiltering(false);
+      }
+    };
+
+    applyLocationFilter();
+  }, [selectedRegion, checkedCities, query]);
+
   const itemsToDisplay = useMemo(() => {
-    if (!selectedSubcategory) {
-      return allAnimalAndSuppliesItems;
+    // If location filtering is active
+    if (selectedRegion || Object.keys(checkedCities).length > 0) {
+      return filteredItems;
     }
-    return allAnimalAndSuppliesItems.filter(
-      (item) =>
-        item.subcategory && item.subcategory.includes(selectedSubcategory),
-    );
-  }, [allAnimalAndSuppliesItems, selectedSubcategory]);
+
+    // If search is active
+    if (query.trim()) {
+      return searchResults;
+    }
+
+    // If subcategory is selected
+    if (selectedSubcategory) {
+      return allAnimalAndSuppliesItems.filter(
+        (item) =>
+          item.subcategory && item.subcategory.includes(selectedSubcategory),
+      );
+    }
+
+    // Default: show all items
+    return allAnimalAndSuppliesItems;
+  }, [
+    query,
+    searchResults,
+    selectedSubcategory,
+    allAnimalAndSuppliesItems,
+    selectedRegion,
+    checkedCities,
+    filteredItems,
+  ]);
 
   const subcategoryFilters = useMemo(() => {
     return AnimalAndSuppliesNestedSub.map((item) => ({
@@ -69,6 +212,46 @@ function AnimalAndSupplies() {
       soName: item.so,
     }));
   }, []);
+
+  const currentDisplayTitle = useMemo(() => {
+    if (isFiltering) return "Filtering...";
+
+    if (selectedRegion || Object.keys(checkedCities).length > 0) {
+      let locationText = "";
+      if (selectedRegion) {
+        locationText = selectedRegion;
+      }
+      if (Object.keys(checkedCities).length > 0) {
+        const cityNames = Object.keys(checkedCities).join(", ");
+        locationText = locationText
+          ? `${locationText} - ${cityNames}`
+          : cityNames;
+      }
+      return `Location: ${locationText}`;
+    }
+
+    if (query.trim()) {
+      return `Search Results: "${query}"`;
+    }
+
+    if (!selectedSubcategory) {
+      return "Dhamaan Xayawaan iyo Agabka (All Animals & Supplies)";
+    }
+
+    const foundCategory = subcategoryFilters.find(
+      (cat) => cat.subcategory === selectedSubcategory,
+    );
+    return foundCategory
+      ? `${foundCategory.soName} (${foundCategory.subcategory})`
+      : selectedSubcategory;
+  }, [
+    query,
+    selectedSubcategory,
+    subcategoryFilters,
+    selectedRegion,
+    checkedCities,
+    isFiltering,
+  ]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -86,6 +269,18 @@ function AnimalAndSupplies() {
     );
   };
 
+  const handleLocationFilterChange = (
+    region: string | null,
+    cities: Record<string, boolean>,
+  ) => {
+    setSelectedRegion(region);
+    setCheckedCities(cities);
+  };
+
+  const handleRegionClick = (region: string | null) => {
+    setSelectedRegion(region);
+  };
+
   if (isLoading) return <Loading />;
   if (error)
     return (
@@ -94,14 +289,12 @@ function AnimalAndSupplies() {
       </div>
     );
 
-  const currentItemDisplay =
-    selectedSubcategory || "Dhamaan Xayawaan iyo Agabka";
-
   return (
-    <div className="pb-10">
-      <Search />
+    <div className="container mx-auto px-4 pb-10">
+      <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
-      <div className="relative px-4 py-6">
+
+      <div className="relative py-6">
         <div className="flex justify-center relative">
           <button
             onClick={() => scroll("left")}
@@ -155,38 +348,56 @@ function AnimalAndSupplies() {
           <span className="text-blue-600 font-semibold">
             {itemsToDisplay.length}
           </span>{" "}
-          alaab gudaha <strong>{currentItemDisplay}</strong>
+          alaab gudaha <strong>{currentDisplayTitle}</strong>
         </p>
       </div>
 
-      <div className="container mx-auto">
-        <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-          <div className="sticky top-4 space-y-4">
-            <LocationSelector />
-            <SomaliMap />
-          </div>
+      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
+        <div className="sticky top-4 space-y-4">
+          <LocationSelector
+            onFilterChange={handleLocationFilterChange}
+            selectedRegion={selectedRegion}
+            checkedCities={checkedCities}
+            regionCounts={regionCityCounts.regionCounts}
+            cityCounts={regionCityCounts.cityCounts}
+          />
+          <SomaliMap
+            selectedRegion={selectedRegion}
+            onRegionClick={handleRegionClick}
+          />
+        </div>
 
-          <div className="w-full md:w-5/6">
+        <div className="md:w-3/4 w-full">
+          {isFiltering ? (
+            <div className="flex justify-center py-10">
+              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+            </div>
+          ) : (
             <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-3 gap-6">
               {itemsToDisplay.length > 0 ? (
                 itemsToDisplay.map((item) => (
-                  <CardItem
-                    key={item.id}
-                    id={item.id}
+                  <UniversalCard
+                    key={item.id || item._id}
+                    id={item.id || item._id}
                     title={item.title}
                     description={item.description}
                     city={item.city}
                     price={item.price}
                     images={item.images}
+                    category="marketplace"
                   />
                 ))
               ) : (
                 <div className="col-span-full text-center py-10 text-gray-500">
-                  Ma jiro wax alaab Xayawaan iyo Agab ah oo la helay
+                  {selectedRegion || Object.keys(checkedCities).length > 0
+                    ? `Ma jiro alaab Xayawaan iyo Agab ah ${selectedRegion ? `gobolka ${selectedRegion}` : ""}${Object.keys(checkedCities).length > 0 ? ` magaalooyinka ${Object.keys(checkedCities).join(", ")}` : ""}`
+                    : query.trim()
+                      ? `Ma jiro wax alaab Xayawaan iyo Agab ah la raadinayay "${query}"`
+                      : "Ma jiro wax alaab Xayawaan iyo Agab ah oo la helay"}
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

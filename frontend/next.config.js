@@ -1,18 +1,7 @@
-import "./src/lib/localStorage-polyfill.js";
-
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: true,
-  },
-
+  reactStrictMode: true,
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "example.com",
-        pathname: "/**",
-      },
       {
         protocol: "https",
         hostname: "images.unsplash.com",
@@ -25,8 +14,8 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "placehold.co",
-        pathname: "/**",
+        hostname: "assets.example.com",
+        pathname: "/account123/**",
       },
       {
         protocol: "http",

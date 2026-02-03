@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AiOutlineHeart } from "react-icons/ai";
@@ -8,14 +8,14 @@ import { AiOutlineHeart } from "react-icons/ai";
 const BASE_URL = "http://localhost:8080";
 
 interface UniversalCardProps {
-  id: string;
+  id: string | number | any;
   title: string;
   price: number;
   city: string;
   images: string[];
   category: string;
-  maGaday?: boolean;
   description?: string;
+  maGaday?: boolean;
   make?: string;
   year?: number;
   rooms?: number;
@@ -39,7 +39,7 @@ export default function UniversalCard(item: UniversalCardProps) {
     }
   };
 
-  const getSafeImagePath = () => {
+  const imageSrc = useMemo(() => {
     const img = item.images?.[0];
 
     if (
@@ -48,18 +48,21 @@ export default function UniversalCard(item: UniversalCardProps) {
       img.trim() === "" ||
       img === "undefined"
     ) {
-      return "/placeholder.png"; // Ensure this exists in your public folder
+      return "/placeholder.png";
     }
 
     if (img.startsWith("http")) {
       return img;
     }
 
-    // If it's a relative path like "uploads/image.jpg", add the base URL
-    return `${BASE_URL}/${img.startsWith("/") ? img.slice(1) : img}`;
-  };
+    if (img.startsWith("/")) {
+      return img;
+    }
 
-  const imageSrc = getSafeImagePath();
+    return `${BASE_URL}/${img}`;
+  }, [item.images]);
+
+  const [finalSrc, setFinalSrc] = useState(imageSrc);
 
   return (
     <div className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all duration-300 flex flex-col h-full">
@@ -68,15 +71,16 @@ export default function UniversalCard(item: UniversalCardProps) {
         className="relative h-52 w-full overflow-hidden block bg-gray-50"
       >
         <Image
-          src={imageSrc}
+          loader={({ src }) => src}
+          src={finalSrc}
           alt={item.title || "Listing Image"}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={(e) => {
-            // Backup if the URL is valid but the image file is missing on server
-            const target = e.target as HTMLImageElement;
-            target.src = "/placeholder.png";
+          onError={() => {
+            if (finalSrc !== "/placeholder.png") {
+              setFinalSrc("/placeholder.png");
+            }
           }}
         />
         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm z-10">

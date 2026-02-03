@@ -10,20 +10,17 @@ export default function SupportSectionPage() {
   const [items, setItems] = useState<Array<any>>([]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const data = JSON.parse(localStorage.getItem(`support:${section}`) || "[]");
-      setItems(data);
-    } catch (e) {
-      setItems([]);
-    }
+    setItems([]);
   }, [section]);
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Support: {section}</h1>
-        <Link href={`/support/${section}/create`} className="px-4 py-2 bg-blue-600 text-white rounded-md">
+        <Link
+          href={`/support/${section}/create`}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md"
+        >
           Create
         </Link>
       </div>
@@ -34,7 +31,9 @@ export default function SupportSectionPage() {
         ) : (
           <ul className="space-y-2">
             {items.map((it: any) => (
-              <li key={it.id} className="p-3 border rounded-md bg-white">{it.title || JSON.stringify(it)}</li>
+              <li key={it.id} className="p-3 border rounded-md bg-white">
+                {it.title || JSON.stringify(it)}
+              </li>
             ))}
           </ul>
         )}

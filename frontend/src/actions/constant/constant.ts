@@ -51,13 +51,13 @@ export const apiUrls = {
 };
 
 export const CATEGORY_TOTALS_ENDPOINTS = {
-  Cars: `${BASE_API_URL}/api/cars/total`,
+  Jobs: `${BASE_API_URL}/api/jobs`,
+  Cars: `${BASE_API_URL}/api/cars`,
   Boats: `${BASE_API_URL}/api/boats`,
-  Motorcycles: `${BASE_API_URL}/api/motorcycles/total`,
-  Properties: `${BASE_API_URL}/api/properties/total`,
-  Traktors: `${BASE_API_URL}/api/traktors/total`,
-  Marketplace: `${BASE_API_URL}/api/marketplace/total`,
-  Jobs: `${BASE_API_URL}/api/jobs/total`,
+  Motorcycles: `${BASE_API_URL}/api/motorcycles`,
+  RealEstate: `${BASE_API_URL}/api/real-estate`,
+  Traktors: `${BASE_API_URL}/api/traktor`,
+  Marketplace: `${BASE_API_URL}/api/marketplace`,
 };
 
 export const apiUrlsForAds = {
@@ -78,7 +78,7 @@ export const apiUrlsForCategoryTotals = {
   Cars: CATEGORY_TOTALS_ENDPOINTS.Cars,
   Boats: CATEGORY_TOTALS_ENDPOINTS.Boats,
   Motorcycles: CATEGORY_TOTALS_ENDPOINTS.Motorcycles,
-  RealEstate: CATEGORY_TOTALS_ENDPOINTS.Properties,
+  RealEstate: CATEGORY_TOTALS_ENDPOINTS.RealEstate,
   Traktors: CATEGORY_TOTALS_ENDPOINTS.Traktors,
   Marketplace: CATEGORY_TOTALS_ENDPOINTS.Marketplace,
 
@@ -152,8 +152,11 @@ export const REPORT_ENDPOINTS = {
   DELETE: (id: string) => `${BASE_API_URL}/api/reports/${id}`,
   STATS: `${BASE_API_URL}/api/reports/stats`,
 };
-export const SEARCH_ENDPOINTS = {
-  SEARCH: `${BASE_API_URL}/api/search`,
+export const SEARCH_ENDPOINT = `${BASE_API_URL}/api/search`;
+export const FILTERING_ENDPOINTS = {
+  BASE: `${BASE_API_URL}/api/filtering`,
+  GLOBAL: `/global-filter`,
+  METADATA: `/metadata`,
 };
 
 export const SUPPORT_ENDPOINTS = {

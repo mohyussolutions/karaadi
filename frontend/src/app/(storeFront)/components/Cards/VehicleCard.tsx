@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AiOutlineHeart } from "react-icons/ai";
@@ -39,6 +39,7 @@ export default function VehicleCard({
 }: VehicleCardProps) {
   const rawPrimaryImage = images?.[0];
   const primaryImage = getValidSrc(rawPrimaryImage);
+  const [imgError, setImgError] = useState(false);
   const url = `/vehicle-details/${id}`;
 
   return (
@@ -47,12 +48,13 @@ export default function VehicleCard({
         <div className="relative w-full h-36 group overflow-hidden border-b border-gray-200">
           {primaryImage ? (
             <Image
-              src={primaryImage}
+              src={imgError ? "/logo.jpg" : primaryImage}
               alt={title}
               fill
               priority
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-sm">

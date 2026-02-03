@@ -2,17 +2,30 @@
 
 import React from "react";
 
-function SomaliMap() {
+interface SomaliMapProps {
+  selectedRegion: string | null;
+  onRegionClick: (region: string | null) => void;
+}
+
+function SomaliMap({ selectedRegion, onRegionClick }: SomaliMapProps) {
   return (
     <div className="bg-white border rounded-md shadow-sm p-3 max-h-[96vh] overflow-auto w-64">
-      <p>
-        "Interactive Somali map placeholder — explore regions and districts
-        here." "Map will load here soon. Use this area to view Somali regions
-        and districts here." "Map will load here soon. Use this area to view
-        Somali regions and select "Interactive Somali map placeholder — explore
-        regions and districts here." "Map will load here soon. Use this area to
-        view Somali regions and select
+      <p className="text-sm text-gray-600">
+        Interactive Somali map placeholder.
       </p>
+
+      {selectedRegion && (
+        <p className="mt-2 text-xs text-blue-600">
+          Selected region: <strong>{selectedRegion}</strong>
+        </p>
+      )}
+
+      <button
+        onClick={() => onRegionClick(null)}
+        className="mt-3 text-xs text-red-500 underline"
+      >
+        Clear region
+      </button>
     </div>
   );
 }

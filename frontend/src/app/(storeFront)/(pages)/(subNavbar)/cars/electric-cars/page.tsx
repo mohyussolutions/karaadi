@@ -1,26 +1,54 @@
 "use client";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
-import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import { ElectricCarsNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForCars";
-
-const subCategoryLinks = ElectricCarsNestedSub;
-
+import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
+import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
+import { ElectricCarsNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
+import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 function ElectricCars() {
+  const subCategoryLinks = ElectricCarsNestedSub;
   const scrollRef = useRef<HTMLDivElement>(null);
-
   const { data: items = [], isLoading, isError } = useGetCarsQuery();
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  useEffect(() => {
+    const allElectricItems = Array.isArray(items)
+      ? items.filter((item: any) => item.subCategory === "electric")
+      : [];
+  }, [items]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      const results = await getGlobalSearchResults(query);
+
+      const filteredElectricFromSearch = results.filter(
+        (item: any) => item.subCategory === "electric",
+      );
+
+      setSearchResults(filteredElectricFromSearch);
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
 
   const allElectricItems = useMemo(() => {
     return Array.isArray(items)
@@ -29,31 +57,47 @@ function ElectricCars() {
   }, [items]);
 
   const itemsToDisplay = useMemo(() => {
-    if (!selectedSubcategory) {
-      return allElectricItems;
+    let filteredItems = [];
+
+    if (query.trim()) {
+      filteredItems = searchResults;
+    } else {
+      filteredItems = allElectricItems;
     }
 
-    const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
+    if (selectedSubcategory) {
+      const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
 
-    return allElectricItems.filter((item: any) => {
-      return (
-        item.title.toLowerCase().includes(normalizedSelectedCategory) ||
-        item.so.toLowerCase().includes(normalizedSelectedCategory)
-      );
-    });
-  }, [allElectricItems, selectedSubcategory]);
+      return filteredItems.filter((item: any) => {
+        return (
+          item.title.toLowerCase().includes(normalizedSelectedCategory) ||
+          (item.so &&
+            item.so.toLowerCase().includes(normalizedSelectedCategory))
+        );
+      });
+    }
+
+    return filteredItems;
+  }, [query, searchResults, selectedSubcategory, allElectricItems]);
 
   const currentDisplayTitle = useMemo(() => {
+    if (query.trim()) {
+      return `Search Results: "${query}"`;
+    }
+
     if (!selectedSubcategory) {
       return "All Electric Cars (Dhammaan Gawaarida Korontada)";
     }
+
     const foundCategory = subCategoryLinks.find(
-      (cat) => cat.so === selectedSubcategory,
+      (cat: any) =>
+        cat.so.toLowerCase() === selectedSubcategory ||
+        cat.title.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
       : selectedSubcategory;
-  }, [selectedSubcategory]);
+  }, [query, selectedSubcategory, subCategoryLinks]);
 
   const totalFound = itemsToDisplay.length;
 
@@ -68,10 +112,27 @@ function ElectricCars() {
     }
   };
 
-  const handleCategoryClick = (subcategory: string) => {
+  const handleCategoryClick = (categoryTitle: string) => {
+    const normalizedTitle = categoryTitle.toLowerCase();
     setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory,
+      prev === normalizedTitle ? null : normalizedTitle,
     );
+  };
+
+  const handleSearch = (searchQuery: string) => {
+    setQuery(searchQuery);
+  };
+
+  const handleLocationFilterChange = (
+    region: string | null,
+    cities: Record<string, boolean>,
+  ) => {
+    setSelectedRegion(region);
+    setCheckedCities(cities);
+  };
+
+  const handleRegionClick = (region: string | null) => {
+    setSelectedRegion(region);
   };
 
   if (isLoading) return <Loading />;
@@ -83,106 +144,115 @@ function ElectricCars() {
     );
 
   return (
-    <div className="pb-10">
-      <Search />
+    <div className="container mx-auto px-4 pb-10">
+      <SearchInput onSearch={handleSearch} />
       <PathSegmentsDisplay />
 
-      <div className="relative px-4 py-6">
-        <div className="flex justify-center relative">
-          <button
-            onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Scroll left"
-          >
-            <FaChevronLeft className="hover:scale-110 transition-transform" />
-          </button>
+      <div className="relative py-6">
+        {subCategoryLinks.length > 0 && (
+          <div className="flex justify-center relative">
+            <button
+              onClick={() => scroll("left")}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Scroll left"
+            >
+              <FaChevronLeft className="hover:scale-110 transition-transform" />
+            </button>
 
-          <div
-            ref={scrollRef}
-            className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)]"
-          >
-            {subCategoryLinks.map((category) => (
-              <Link
-                prefetch={false}
-                key={category.so}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleCategoryClick(category.so);
-                }}
-                className={`flex-shrink-0 w-40 flex flex-col items-center justify-center text-center group border rounded-lg p-4 shadow-sm transition-all duration-300 m-6
+            <div
+              ref={scrollRef}
+              className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)]"
+            >
+              {subCategoryLinks.map((category: any) => (
+                <Link
+                  prefetch={false}
+                  key={category.so}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleCategoryClick(category.so);
+                  }}
+                  className={`flex-shrink-0 w-40 flex flex-col items-center justify-center text-center group border rounded-lg p-4 shadow-sm transition-all duration-300 m-6
                   ${
-                    selectedSubcategory === category.so
+                    selectedSubcategory === category.so.toLowerCase()
                       ? "bg-blue-100 border-blue-400 scale-[1.03] shadow-md"
                       : "bg-white border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:shadow-lg"
                   } active:scale-95`}
-              >
-                <div className="text-2xl text-gray-600 mb-2 group-hover:text-blue-600">
-                  {category.icon}
-                </div>
-                <span className="text-sm font-medium text-gray-800 group-hover:text-blue-600">
-                  {category.so}
-                </span>
-                <span className="text-xs text-gray-500">
-                  ({category.title})
-                </span>
-              </Link>
-            ))}
-          </div>
+                >
+                  <div className="text-2xl text-gray-600 mb-2 group-hover:text-blue-600">
+                    {category.icon}
+                  </div>
+                  <span className="text-sm font-medium text-gray-800 group-hover:text-blue-600">
+                    {category.so}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    ({category.title})
+                  </span>
+                </Link>
+              ))}
+            </div>
 
-          <button
-            onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Scroll right"
-          >
-            <FaChevronRight className="hover:scale-110 transition-transform" />
-          </button>
-        </div>
+            <button
+              onClick={() => scroll("right")}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Scroll right"
+            >
+              <FaChevronRight className="hover:scale-110 transition-transform" />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="px-4 text-sm text-gray-700 mb-4">
         <p>
           Showing
-          <span className="text-blue-600 font-semibold">{totalFound}</span>
+          <span className="text-blue-600 font-semibold"> {totalFound}</span>
           listings in
           <strong> {currentDisplayTitle}</strong>
         </p>
       </div>
 
-      <div className="container mx-auto">
-        <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-          <div className="sticky top-4 space-y-4">
-            <LocationSelector />
-            <SomaliMap />
-          </div>
+      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
+        <div className="sticky top-4 space-y-4">
+          <LocationSelector
+            onFilterChange={handleLocationFilterChange}
+            selectedRegion={selectedRegion}
+            checkedCities={checkedCities}
+          />
+          <SomaliMap
+            selectedRegion={selectedRegion}
+            onRegionClick={handleRegionClick}
+          />
+        </div>
 
-          <div className="w-full md:w-5/6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item: any) => (
-                  <VehicleCard
-                    key={item._id}
-                    id={item._id}
-                    title={item.title}
-                    description={
-                      item.description
-                        ? (Array.isArray(item.description)
-                            ? item.description
-                            : [item.description]
-                          ).filter((desc: any): desc is string => !!desc)
-                        : []
-                    }
-                    city={item.city}
-                    images={item.images}
-                    price={item.price}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-10 text-gray-500">
-                  No electric cars found for this selection.
-                </div>
-              )}
-            </div>
+        <div className="md:w-3/4 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {itemsToDisplay.length > 0 ? (
+              itemsToDisplay.map((item: any) => (
+                <VehicleCard
+                  key={item._id}
+                  id={item._id}
+                  title={item.title}
+                  description={
+                    item.description
+                      ? (Array.isArray(item.description)
+                          ? item.description
+                          : [item.description]
+                        ).filter((desc: any): desc is string => !!desc)
+                      : []
+                  }
+                  city={item.city}
+                  images={item.images}
+                  price={item.price}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-10 text-gray-500">
+                {query.trim()
+                  ? `No electric cars found for "${query}"`
+                  : "No electric cars found for this selection."}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,15 +1,17 @@
 "use client";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
 import { useGetBoatsQuery } from "@/app/(storeFront)/store/slices/boatsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
-import { BoatsForRentNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForBoats";
+import { BoatsForRentNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
+import { getGlobalFilteredResults } from "@/actions/categories/filterAction";
+import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
+import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 
 export default function BoatsForRent() {
   const subCategoryLinks = BoatsForRentNestedSub;
@@ -18,6 +20,14 @@ export default function BoatsForRent() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [filteredItems, setFilteredItems] = useState<any[]>([]);
 
   const allRentItems = useMemo(() => {
     return Array.isArray(items)
@@ -29,33 +39,190 @@ export default function BoatsForRent() {
       : [];
   }, [items]);
 
+  const regionCityCounts = useMemo(() => {
+    const regionCounts: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+
+    allRentItems.forEach((item: any) => {
+      if (item.region) {
+        regionCounts[item.region] = (regionCounts[item.region] || 0) + 1;
+      }
+      if (item.city) {
+        cityCounts[item.city] = (cityCounts[item.city] || 0) + 1;
+      }
+    });
+
+    return { regionCounts, cityCounts };
+  }, [allRentItems]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      const results = await getGlobalSearchResults(query);
+      const filteredBoatsFromSearch = results.filter(
+        (item: any) =>
+          item.subCategory === "Boats for Rent" ||
+          item.name === "Doomo kireysi ah",
+      );
+      setSearchResults(filteredBoatsFromSearch);
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+  useEffect(() => {
+    const applyLocationFilter = async () => {
+      if (!selectedRegion && Object.keys(checkedCities).length === 0) {
+        setFilteredItems([]);
+        setIsFiltering(false);
+        return;
+      }
+
+      setIsFiltering(true);
+
+      try {
+        const selectedCities = Object.entries(checkedCities)
+          .filter(([_, isChecked]) => isChecked)
+          .map(([cityName]) => cityName);
+
+        if (selectedCities.length > 0) {
+          const allResults = [];
+
+          for (const city of selectedCities) {
+            let filterParams: any = { city: city };
+
+            if (selectedRegion) {
+              filterParams.region = selectedRegion;
+            }
+
+            if (query.trim()) {
+              filterParams.q = query;
+            }
+
+            const results = await getGlobalFilteredResults(filterParams);
+
+            const filteredByCategory = results.filter(
+              (item: any) =>
+                item.subCategory === "Boats for Rent" ||
+                item.name === "Doomo kireysi ah",
+            );
+
+            const existingIds = new Set(
+              allResults.map((item) => item.id || item._id),
+            );
+            const uniqueItems = filteredByCategory.filter(
+              (item: any) => !existingIds.has(item.id || item._id),
+            );
+
+            allResults.push(...uniqueItems);
+          }
+
+          setFilteredItems(allResults);
+        } else if (selectedRegion) {
+          let filterParams: any = { region: selectedRegion };
+
+          if (query.trim()) {
+            filterParams.q = query;
+          }
+
+          const results = await getGlobalFilteredResults(filterParams);
+
+          const filteredByCategory = results.filter(
+            (item: any) =>
+              item.subCategory === "Boats for Rent" ||
+              item.name === "Doomo kireysi ah",
+          );
+
+          setFilteredItems(filteredByCategory);
+        }
+      } catch (error) {
+        console.error("Location filter error:", error);
+        setFilteredItems([]);
+      } finally {
+        setIsFiltering(false);
+      }
+    };
+
+    applyLocationFilter();
+  }, [selectedRegion, checkedCities, query]);
+
   const itemsToDisplay = useMemo(() => {
-    if (!selectedSubcategory) {
-      return allRentItems;
+    if (selectedRegion || Object.keys(checkedCities).length > 0) {
+      return filteredItems;
     }
 
-    const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
+    if (query.trim()) {
+      return searchResults;
+    }
 
-    return allRentItems.filter((item: any) => {
-      return (
-        item.title.toLowerCase().includes(normalizedSelectedCategory) ||
-        (item.name &&
-          item.name.toLowerCase().includes(normalizedSelectedCategory))
-      );
-    });
-  }, [allRentItems, selectedSubcategory]);
+    if (selectedSubcategory) {
+      const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
+
+      return allRentItems.filter((item: any) => {
+        return (
+          item.title.toLowerCase().includes(normalizedSelectedCategory) ||
+          (item.name &&
+            item.name.toLowerCase().includes(normalizedSelectedCategory))
+        );
+      });
+    }
+
+    return allRentItems;
+  }, [
+    query,
+    searchResults,
+    selectedSubcategory,
+    allRentItems,
+    selectedRegion,
+    checkedCities,
+    filteredItems,
+  ]);
 
   const currentDisplayTitle = useMemo(() => {
+    if (isFiltering) return "Filtering...";
+
+    if (selectedRegion || Object.keys(checkedCities).length > 0) {
+      let locationText = "";
+      if (selectedRegion) {
+        locationText = selectedRegion;
+      }
+      if (Object.keys(checkedCities).length > 0) {
+        const cityNames = Object.keys(checkedCities).join(", ");
+        locationText = locationText
+          ? `${locationText} - ${cityNames}`
+          : cityNames;
+      }
+      return `Location: ${locationText}`;
+    }
+
+    if (query.trim()) {
+      return `Search Results: "${query}"`;
+    }
+
     if (!selectedSubcategory) {
       return "All Boats for Rent (Dhammaan Doonyaha Kirada ah)";
     }
+
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
+      (cat: any) =>
+        cat.so.toLowerCase() === selectedSubcategory ||
+        cat.title.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
       : selectedSubcategory;
-  }, [selectedSubcategory, subCategoryLinks]);
+  }, [
+    query,
+    selectedSubcategory,
+    subCategoryLinks,
+    selectedRegion,
+    checkedCities,
+    isFiltering,
+  ]);
 
   const totalFound = itemsToDisplay.length;
 
@@ -77,6 +244,18 @@ export default function BoatsForRent() {
     );
   };
 
+  const handleLocationFilterChange = (
+    region: string | null,
+    cities: Record<string, boolean>,
+  ) => {
+    setSelectedRegion(region);
+    setCheckedCities(cities);
+  };
+
+  const handleRegionClick = (region: string | null) => {
+    setSelectedRegion(region);
+  };
+
   if (isLoading) return <Loading />;
   if (isError)
     return (
@@ -87,7 +266,7 @@ export default function BoatsForRent() {
 
   return (
     <div className="container mx-auto px-4 pb-10">
-      <Search />
+      <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
       <div className="relative py-6">
@@ -148,20 +327,33 @@ export default function BoatsForRent() {
       <div className="px-4 text-sm text-gray-700 mb-4">
         <p>
           Showing
-          <span className="text-blue-600 font-semibold">{totalFound}</span>
+          <span className="text-blue-600 font-semibold"> {totalFound}</span>
           listings in
           <strong> {currentDisplayTitle}</strong>
         </p>
       </div>
 
-      <div className="container mx-auto">
-        <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-          <div className="sticky top-4 space-y-4">
-            <LocationSelector />
-            <SomaliMap />
-          </div>
+      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
+        <div className="sticky top-4 space-y-4">
+          <LocationSelector
+            onFilterChange={handleLocationFilterChange}
+            selectedRegion={selectedRegion}
+            checkedCities={checkedCities}
+            regionCounts={regionCityCounts.regionCounts}
+            cityCounts={regionCityCounts.cityCounts}
+          />
+          <SomaliMap
+            selectedRegion={selectedRegion}
+            onRegionClick={handleRegionClick}
+          />
+        </div>
 
-          <div className="md:w-3/4 w-full">
+        <div className="md:w-3/4 w-full">
+          {isFiltering ? (
+            <div className="flex justify-center py-10">
+              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+            </div>
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {itemsToDisplay.length > 0 ? (
                 itemsToDisplay.map((item: any) => (
@@ -184,11 +376,15 @@ export default function BoatsForRent() {
                 ))
               ) : (
                 <div className="col-span-full text-center py-10 text-gray-500">
-                  No boats found for this selection.
+                  {selectedRegion || Object.keys(checkedCities).length > 0
+                    ? `No boats found ${selectedRegion ? `in ${selectedRegion} region` : ""}${Object.keys(checkedCities).length > 0 ? ` in cities ${Object.keys(checkedCities).join(", ")}` : ""}`
+                    : query.trim()
+                      ? `No boats found for "${query}"`
+                      : "No boats found for this selection."}
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

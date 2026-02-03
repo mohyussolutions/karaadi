@@ -138,11 +138,7 @@ const TraktorSummary: React.FC = () => {
                 className="relative w-40 h-28 rounded-md overflow-hidden border border-gray-300 shadow-sm hover:shadow-lg transition-shadow duration-300"
               >
                 <Image
-                  src={
-                    img.startsWith("data:image")
-                      ? img
-                      : "/images/default-tractor.jpg"
-                  }
+                  src={img.startsWith("data:image") ? img : "/logo.jpg"}
                   alt={`Tractor image ${idx + 1}`}
                   fill
                   className="object-cover"

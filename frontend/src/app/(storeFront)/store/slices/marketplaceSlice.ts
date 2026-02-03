@@ -9,6 +9,26 @@ const baseQuery = fetchBaseQuery({
   credentials: "include",
 });
 
+// Resolve invalid image keys (e.g., "unsplash_...") to a safe placeholder
+// to avoid Next Image requesting non-existent localhost paths.
+// Keeps http/https, absolute "/", and data URLs intact.
+// Unknown tokens map to placehold.co which is allowed in next.config.
+const resolveImages = (images?: string[]): string[] =>
+  (Array.isArray(images) ? images : [])
+    .map((src) => {
+      if (!src) return "https://placehold.co/600x400?text=No+Image";
+      if (
+        src.startsWith("http") ||
+        src.startsWith("/") ||
+        src.startsWith("data:image")
+      ) {
+        return src;
+      }
+      const label = encodeURIComponent(src.toString());
+      return `https://placehold.co/600x400?text=${label}`;
+    })
+    .filter((s) => typeof s === "string" && s.length > 0);
+
 export type RealEstateItem = {
   icon: ReactNode;
   so: string;
@@ -27,7 +47,7 @@ export type RealEstateItem = {
   extra?: Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
-  maGaday: boolean; 
+  maGaday: boolean;
 };
 
 export type CreateRealEstateItemInput = Omit<
@@ -50,7 +70,8 @@ export const marketplaceApi = createApi({
         response.map((item) => ({
           ...item,
           _id: item._id, // ensure _id exists
-          maGaday: item.maGaday || false, // <- Ku dar default value
+          maGaday: item.maGaday || false, // default value
+          images: resolveImages(item.images),
         })),
       providesTags: ["Marketplace"],
     }),
@@ -59,7 +80,8 @@ export const marketplaceApi = createApi({
       transformResponse: (item: any) => ({
         ...item,
         _id: item._id,
-        maGaday: item.maGaday || false, // <- Ku dar default value
+        maGaday: item.maGaday || false, // default value
+        images: resolveImages(item.images),
       }),
       providesTags: (result, error, id) => [{ type: "Marketplace", id }],
     }),

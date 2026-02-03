@@ -1,4 +1,5 @@
 import { WaafiError, WaafiRawResponse } from "types/payment.ts";
+export type { WaafiError };
 import { ResponseCodes } from "./waafipay.service.responseCodes.ts";
 
 export const parseWaafiError = (text: unknown): WaafiError => {
@@ -16,7 +17,7 @@ export const parseWaafiError = (text: unknown): WaafiError => {
       (item) =>
         item.code.toString() === rCode ||
         item.key === rCode ||
-        item.key === rMsg
+        item.key === rMsg,
     );
 
     const isSuccess =

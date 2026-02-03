@@ -31,6 +31,7 @@ import uploadRouterSelector from "routers/paymentRoute/uploadRouterSelector.ts";
 import paymentRoutes from "routers/paymentRoute/paymentRoutes.ts";
 import agencyRoutes from "routers/agencyRoutes.ts";
 import searchRouter from "routers/userRoute/searchRouter.ts";
+import filterRouter from "routers/userRoute/filterRouter.ts";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -97,6 +98,8 @@ app.use("/api/Fee", FeeRoutes);
 app.use("/api/customers", customerSupportRoutes);
 app.use("/api/visitors", visitorRoute);
 app.use("/api/search", searchRouter);
+app.use("/api/filtering", filterRouter);
+
 app.use("/api/upload", uploadRouterSelector);
 app.use("/imagesStore", express.static(path.join(__dirname, "imagesStore")));
 

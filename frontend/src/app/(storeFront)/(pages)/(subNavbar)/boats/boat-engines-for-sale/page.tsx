@@ -1,15 +1,18 @@
 "use client";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { useGetBoatsQuery } from "@/app/(storeFront)/store/slices/boatsSlice";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
+
+import { getGlobalFilteredResults } from "@/actions/categories/filterAction";
+import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-import { BoatEnginesForSaleNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForBoats";
+import { BoatEnginesForSaleNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 
 export default function BoatEnginesforSale() {
   const subCategoryLinks = BoatEnginesForSaleNestedSub;
@@ -18,6 +21,14 @@ export default function BoatEnginesforSale() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [filteredItems, setFilteredItems] = useState<any[]>([]);
 
   const allEngineItems = useMemo(() => {
     return Array.isArray(items)
@@ -29,33 +40,190 @@ export default function BoatEnginesforSale() {
       : [];
   }, [items]);
 
+  const regionCityCounts = useMemo(() => {
+    const regionCounts: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+
+    allEngineItems.forEach((item: any) => {
+      if (item.region) {
+        regionCounts[item.region] = (regionCounts[item.region] || 0) + 1;
+      }
+      if (item.city) {
+        cityCounts[item.city] = (cityCounts[item.city] || 0) + 1;
+      }
+    });
+
+    return { regionCounts, cityCounts };
+  }, [allEngineItems]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      const results = await getGlobalSearchResults(query);
+      const filteredEnginesFromSearch = results.filter(
+        (item: any) =>
+          item.subCategory === "Boat Engines for Sale" ||
+          item.name === "Matoorada doomo iib ah",
+      );
+      setSearchResults(filteredEnginesFromSearch);
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+  useEffect(() => {
+    const applyLocationFilter = async () => {
+      if (!selectedRegion && Object.keys(checkedCities).length === 0) {
+        setFilteredItems([]);
+        setIsFiltering(false);
+        return;
+      }
+
+      setIsFiltering(true);
+
+      try {
+        const selectedCities = Object.entries(checkedCities)
+          .filter(([_, isChecked]) => isChecked)
+          .map(([cityName]) => cityName);
+
+        if (selectedCities.length > 0) {
+          const allResults = [];
+
+          for (const city of selectedCities) {
+            let filterParams: any = { city: city };
+
+            if (selectedRegion) {
+              filterParams.region = selectedRegion;
+            }
+
+            if (query.trim()) {
+              filterParams.q = query;
+            }
+
+            const results = await getGlobalFilteredResults(filterParams);
+
+            const filteredByCategory = results.filter(
+              (item: any) =>
+                item.subCategory === "Boat Engines for Sale" ||
+                item.name === "Matoorada doomo iib ah",
+            );
+
+            const existingIds = new Set(
+              allResults.map((item) => item.id || item._id),
+            );
+            const uniqueItems = filteredByCategory.filter(
+              (item: any) => !existingIds.has(item.id || item._id),
+            );
+
+            allResults.push(...uniqueItems);
+          }
+
+          setFilteredItems(allResults);
+        } else if (selectedRegion) {
+          let filterParams: any = { region: selectedRegion };
+
+          if (query.trim()) {
+            filterParams.q = query;
+          }
+
+          const results = await getGlobalFilteredResults(filterParams);
+
+          const filteredByCategory = results.filter(
+            (item: any) =>
+              item.subCategory === "Boat Engines for Sale" ||
+              item.name === "Matoorada doomo iib ah",
+          );
+
+          setFilteredItems(filteredByCategory);
+        }
+      } catch (error) {
+        console.error("Location filter error:", error);
+        setFilteredItems([]);
+      } finally {
+        setIsFiltering(false);
+      }
+    };
+
+    applyLocationFilter();
+  }, [selectedRegion, checkedCities, query]);
+
   const itemsToDisplay = useMemo(() => {
-    if (!selectedSubcategory) {
-      return allEngineItems;
+    if (selectedRegion || Object.keys(checkedCities).length > 0) {
+      return filteredItems;
     }
 
-    const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
+    if (query.trim()) {
+      return searchResults;
+    }
 
-    return allEngineItems.filter((item: any) => {
-      return (
-        item.title.toLowerCase().includes(normalizedSelectedCategory) ||
-        (item.name &&
-          item.name.toLowerCase().includes(normalizedSelectedCategory))
-      );
-    });
-  }, [allEngineItems, selectedSubcategory]);
+    if (selectedSubcategory) {
+      const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
+
+      return allEngineItems.filter((item: any) => {
+        return (
+          item.title.toLowerCase().includes(normalizedSelectedCategory) ||
+          (item.name &&
+            item.name.toLowerCase().includes(normalizedSelectedCategory))
+        );
+      });
+    }
+
+    return allEngineItems;
+  }, [
+    query,
+    searchResults,
+    selectedSubcategory,
+    allEngineItems,
+    selectedRegion,
+    checkedCities,
+    filteredItems,
+  ]);
 
   const currentDisplayTitle = useMemo(() => {
+    if (isFiltering) return "Filtering...";
+
+    if (selectedRegion || Object.keys(checkedCities).length > 0) {
+      let locationText = "";
+      if (selectedRegion) {
+        locationText = selectedRegion;
+      }
+      if (Object.keys(checkedCities).length > 0) {
+        const cityNames = Object.keys(checkedCities).join(", ");
+        locationText = locationText
+          ? `${locationText} - ${cityNames}`
+          : cityNames;
+      }
+      return `Location: ${locationText}`;
+    }
+
+    if (query.trim()) {
+      return `Search Results: "${query}"`;
+    }
+
     if (!selectedSubcategory) {
       return "All Boat Engines for Sale (Dhammaan Matoorada Doonyaha ee Iibka ah)";
     }
+
     const foundCategory = subCategoryLinks.find(
-      (cat: any) => cat.so.toLowerCase() === selectedSubcategory,
+      (cat: any) =>
+        cat.so.toLowerCase() === selectedSubcategory ||
+        cat.title.toLowerCase() === selectedSubcategory,
     );
     return foundCategory
       ? `${foundCategory.so} (${foundCategory.title})`
       : selectedSubcategory;
-  }, [selectedSubcategory, subCategoryLinks]);
+  }, [
+    query,
+    selectedSubcategory,
+    subCategoryLinks,
+    selectedRegion,
+    checkedCities,
+    isFiltering,
+  ]);
 
   const totalFound = itemsToDisplay.length;
 
@@ -77,6 +245,18 @@ export default function BoatEnginesforSale() {
     );
   };
 
+  const handleLocationFilterChange = (
+    region: string | null,
+    cities: Record<string, boolean>,
+  ) => {
+    setSelectedRegion(region);
+    setCheckedCities(cities);
+  };
+
+  const handleRegionClick = (region: string | null) => {
+    setSelectedRegion(region);
+  };
+
   if (isLoading) return <Loading />;
   if (isError)
     return (
@@ -87,7 +267,7 @@ export default function BoatEnginesforSale() {
 
   return (
     <div className="container mx-auto px-4 pb-10">
-      <Search />
+      <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
       <div className="relative py-6">
@@ -148,20 +328,33 @@ export default function BoatEnginesforSale() {
       <div className="px-4 text-sm text-gray-700 mb-4">
         <p>
           Showing
-          <span className="text-blue-600 font-semibold">{totalFound}</span>
+          <span className="text-blue-600 font-semibold"> {totalFound}</span>
           listings in
           <strong> {currentDisplayTitle}</strong>
         </p>
       </div>
 
-      <div className="container mx-auto">
-        <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-          <div className="sticky top-4 space-y-4">
-            <LocationSelector />
-            <SomaliMap />
-          </div>
+      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
+        <div className="sticky top-4 space-y-4">
+          <LocationSelector
+            onFilterChange={handleLocationFilterChange}
+            selectedRegion={selectedRegion}
+            checkedCities={checkedCities}
+            regionCounts={regionCityCounts.regionCounts}
+            cityCounts={regionCityCounts.cityCounts}
+          />
+          <SomaliMap
+            selectedRegion={selectedRegion}
+            onRegionClick={handleRegionClick}
+          />
+        </div>
 
-          <div className="md:w-3/4 w-full">
+        <div className="md:w-3/4 w-full">
+          {isFiltering ? (
+            <div className="flex justify-center py-10">
+              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+            </div>
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {itemsToDisplay.length > 0 ? (
                 itemsToDisplay.map((item: any) => (
@@ -184,11 +377,15 @@ export default function BoatEnginesforSale() {
                 ))
               ) : (
                 <div className="col-span-full text-center py-10 text-gray-500">
-                  No engines found for this selection.
+                  {selectedRegion || Object.keys(checkedCities).length > 0
+                    ? `No engines found ${selectedRegion ? `in ${selectedRegion} region` : ""}${Object.keys(checkedCities).length > 0 ? ` in cities ${Object.keys(checkedCities).join(", ")}` : ""}`
+                    : query.trim()
+                      ? `No engines found for "${query}"`
+                      : "No engines found for this selection."}
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

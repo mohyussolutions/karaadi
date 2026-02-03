@@ -13,9 +13,9 @@ import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import UserCard from "@/app/(storeFront)/components/Cards/UserProfileCard";
+import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { verifySession } from "@/actions/core/authAction";
-import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 type MarketplaceUser =
   | {
@@ -57,16 +57,13 @@ export default function ProductDetails() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
-
-  const { data: marketplaceItems = [], isLoading } =
-    useGetMarketplaceItemsQuery();
-
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
-
+  const { data: marketplaceItems = [], isLoading } =
+    useGetMarketplaceItemsQuery();
   const item: MarketplaceItem | undefined = marketplaceItems.find(
     (i) => i.id === id,
   );
@@ -186,7 +183,7 @@ export default function ProductDetails() {
 
   const handleModalConfirm = async () => {
     try {
-      const userData = await verifySession();
+      const userData: any = await verifySession();
       if (!userData) {
         router.push("/login");
         return;
@@ -194,26 +191,32 @@ export default function ProductDetails() {
 
       const descriptionText = Array.isArray(item?.description)
         ? item?.description.join(" ")
-        : item?.description;
+        : item?.description || "Sharaxaad lama helin";
 
       const categoryString = Array.isArray(item?.category)
         ? item?.category[0]
         : item?.category || "Marketplace";
 
-      await addToFavorite({
+      const response: any = await addToFavorite({
         title: item?.title,
-        description: descriptionText || "No description provided",
+        description: descriptionText,
         price: String(item?.price),
         image: item?.images?.[0] || "",
         itemId: item?.id,
         category: categoryString,
       });
 
-      toast.success(`"${item?.title}" saved!`);
+      if (response?.message === "You have already saved this item") {
+        toast.error("Alaabtan mar horre ayaad kaydisay!");
+        setShowModal(false);
+        return;
+      }
+
+      toast.success(`"${item?.title}" waa la kaydiyay!`);
       setShowModal(false);
       setTimeout(() => router.push("/mine/favorites"), 1000);
     } catch (error: any) {
-      toast.error("Failed to save favorite");
+      toast.error("Wuu ku fashilmay kaydinta");
     }
   };
 
@@ -255,7 +258,7 @@ export default function ProductDetails() {
         </p>
       </div>
 
-      <div className="max-w-6xl mx-auto p-1 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="max-w-6xl mx-auto p-1 grid grid-cols-1 md:grid-cols-2 gap,8">
         <div className="relative">
           <div
             className="w-full aspect-[2/2] relative bg-gray-50 rounded-lg overflow-hidden"
@@ -339,19 +342,7 @@ export default function ProductDetails() {
           {item.subCategory && <p className="capitalize">{item.subCategory}</p>}
 
           {itemUser ? (
-            <div className="flex gap-4">
-              <button
-                onClick={handleSendMessage}
-                disabled={item.maGaday === true}
-                className={`font-semibold py-2 px-4 rounded ${
-                  item.maGaday === true
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                } text-white`}
-              >
-                {item.maGaday === true ? "Item Sold" : "Send Message"}
-              </button>
-            </div>
+            <div className="flex gap-4"></div>
           ) : (
             <div className="text-red-500 bg-red-50 p-4 rounded border border-red-200">
               <p className="font-semibold">Seller Information Not Available</p>
@@ -373,7 +364,6 @@ export default function ProductDetails() {
               Read more
             </Link>
           </div>
-
           <div>
             <h2 className="text-lg font-semibold mb-1">Description</h2>
             <div className="text-gray-600">
@@ -393,6 +383,15 @@ export default function ProductDetails() {
                 <p>No description available.</p>
               )}
             </div>
+
+            <div className="mt-4">
+              <Link
+                href={`/components/Report/${item.id}`}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-red-500 text-red-600 font-semibold text-sm hover:bg-red-50 transition-colors"
+              >
+                Report this item
+              </Link>
+            </div>
           </div>
 
           {itemUser && (
@@ -403,6 +402,7 @@ export default function ProductDetails() {
               itemTitle={item.title}
               itemName="Marketplace"
               maGaday={item.maGaday || false}
+              onSendMessage={handleSendMessage}
             />
           )}
         </div>
@@ -429,8 +429,7 @@ export default function ProductDetails() {
             >
               <IoIosArrowBack className="w-8 h-8 text-white" />
             </button>
-
-            <div className="relative w-full h-full">
+            <div className="relative h-64 overflow-hidden">
               <Image
                 src={images[selectedImageIndex]}
                 alt={`Full view - ${item.title}`}

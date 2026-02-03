@@ -25,14 +25,9 @@ interface Props {
   setRegion: React.Dispatch<React.SetStateAction<string>>;
   city: string;
   setCity: React.Dispatch<React.SetStateAction<string>>;
-  district: string;
-  setDistrict: React.Dispatch<React.SetStateAction<string>>;
   filteredCities: string[];
-  filteredDistricts: string[];
   newCity: string;
   setNewCity: React.Dispatch<React.SetStateAction<string>>;
-  newDistrict: string;
-  setNewDistrict: React.Dispatch<React.SetStateAction<string>>;
   showNewCityInputs: boolean;
   setShowNewCityInputs: React.Dispatch<React.SetStateAction<boolean>>;
   description: string;
@@ -43,7 +38,6 @@ interface Props {
   setImages: React.Dispatch<React.SetStateAction<File[]>>;
   imageError: string | null;
   handleAddNewBusinessType: () => void;
-  handleSaveNewCityDistrict: () => void;
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleRemoveImage: (index: number) => void;
   handleSubmit: (e: React.FormEvent) => void;
@@ -68,14 +62,9 @@ const BusinessCourseFormView: React.FC<Props> = ({
   setRegion,
   city,
   setCity,
-  district,
-  setDistrict,
   filteredCities,
-  filteredDistricts,
   newCity,
   setNewCity,
-  newDistrict,
-  setNewDistrict,
   showNewCityInputs,
   setShowNewCityInputs,
   description,
@@ -83,10 +72,8 @@ const BusinessCourseFormView: React.FC<Props> = ({
   price,
   setPrice,
   images,
-  setImages,
   imageError,
   handleAddNewBusinessType,
-  handleSaveNewCityDistrict,
   handleImageChange,
   handleRemoveImage,
   handleSubmit,
@@ -104,7 +91,6 @@ const BusinessCourseFormView: React.FC<Props> = ({
         Title *
         <input
           type="text"
-          placeholder="sale or rend (iska gad ama kiro)"
           value={courseTitle}
           onChange={(e) => setCourseTitle(e.target.value)}
           className="w-full border rounded px-3 py-2 mt-1"
@@ -116,7 +102,6 @@ const BusinessCourseFormView: React.FC<Props> = ({
         Company Name *
         <input
           type="text"
-          placeholder="the componay name (magaca shirkada)"
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           className="w-full border rounded px-3 py-2 mt-1"
@@ -128,7 +113,6 @@ const BusinessCourseFormView: React.FC<Props> = ({
         Street Name *
         <input
           type="text"
-          placeholder="the componay name (magaca shirkada)"
           value={streetName}
           onChange={(e) => setStreetName(e.target.value)}
           className="w-full border rounded px-3 py-2 mt-1"
@@ -179,7 +163,7 @@ const BusinessCourseFormView: React.FC<Props> = ({
               onClick={handleAddNewBusinessType}
               className="bg-blue-600 text-white px-4 py-2 rounded"
             >
-              Save Business Type
+              Save
             </button>
             <button
               type="button"
@@ -187,7 +171,7 @@ const BusinessCourseFormView: React.FC<Props> = ({
                 setShowNewBusinessTypeInput(false);
                 setNewBusinessType("");
               }}
-              className="px-4 py-2 rounded border"
+              className="border px-4 py-2 rounded"
             >
               Cancel
             </button>
@@ -249,57 +233,6 @@ const BusinessCourseFormView: React.FC<Props> = ({
       </label>
 
       <label className="block mb-4">
-        District *
-        {!showNewCityInputs ? (
-          <select
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            className="w-full border rounded px-3 py-2 mt-1"
-            required
-          >
-            <option value="">-- Select District --</option>
-            {filteredDistricts.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type="text"
-            placeholder="New district name"
-            value={newDistrict}
-            onChange={(e) => setNewDistrict(e.target.value)}
-            className="w-full border rounded px-3 py-2 mt-1"
-            required
-          />
-        )}
-      </label>
-
-      {showNewCityInputs && (
-        <div className="mb-4 flex gap-4">
-          <button
-            type="button"
-            onClick={handleSaveNewCityDistrict}
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Save New City & District
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShowNewCityInputs(false);
-              setNewCity("");
-              setNewDistrict("");
-            }}
-            className="px-4 py-2 rounded border"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      <label className="block mb-4">
         Description *
         <textarea
           value={description}
@@ -317,7 +250,6 @@ const BusinessCourseFormView: React.FC<Props> = ({
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           min="0"
-          step="0.01"
           className="w-full border rounded px-3 py-2 mt-1"
           required
         />
@@ -330,29 +262,26 @@ const BusinessCourseFormView: React.FC<Props> = ({
           multiple
           accept="image/*"
           onChange={handleImageChange}
-          className="w-full mt-1"
-          required={images.length === 0}
         />
         {imageError && (
-          <p className="text-red-600 mt-2 text-sm">{imageError}</p>
+          <p className="text-red-600 text-sm mt-2">{imageError}</p>
         )}
       </label>
 
       {images.length > 0 && (
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {images.map((file, idx) => (
-            <div key={idx} className="relative border rounded overflow-hidden">
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {images.map((file, i) => (
+            <div key={i} className="relative">
               <img
                 src={URL.createObjectURL(file)}
-                alt={`Preview ${idx + 1}`}
-                className="w-full h-24 object-cover"
+                className="w-full h-24 object-cover rounded"
               />
               <button
                 type="button"
-                onClick={() => handleRemoveImage(idx)}
-                className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                onClick={() => handleRemoveImage(i)}
+                className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full"
               >
-                &times;
+                ×
               </button>
             </div>
           ))}
@@ -361,7 +290,7 @@ const BusinessCourseFormView: React.FC<Props> = ({
 
       <button
         type="submit"
-        className="mt-6 bg-blue-700 text-white px-6 py-3 rounded font-semibold w-full"
+        className="bg-blue-700 text-white w-full py-3 rounded font-semibold"
       >
         Submit
       </button>

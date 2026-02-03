@@ -26,7 +26,7 @@ const RealEstateSummary: React.FC = () => {
     itemId || "",
     {
       skip: !itemId,
-    }
+    },
   );
 
   useEffect(() => {
@@ -116,11 +116,7 @@ const RealEstateSummary: React.FC = () => {
                 className="relative w-40 h-28 rounded-md overflow-hidden border border-gray-300 shadow-sm hover:shadow-lg transition-shadow duration-300"
               >
                 <Image
-                  src={
-                    img.startsWith("data:image")
-                      ? img
-                      : "/images/default-house.jpg"
-                  }
+                  src={img.startsWith("data:image") ? img : "/logo.jpg"}
                   alt={`Real estate image ${idx + 1}`}
                   fill
                   className="object-cover"

@@ -18,7 +18,7 @@ function SupportCard({
   count?: number;
 }) {
   return (
-    <div 
+    <div
       onClick={onClick}
       className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-indigo-100 transition-all flex items-center gap-6 cursor-pointer group"
     >
@@ -38,123 +38,123 @@ export default function StreamlinedDashboard() {
   const [sections, setSections] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const map: Record<string, any[]> = {};
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key?.startsWith("support:")) {
-          const section = key.split(":")[1] || "general";
-          map[section] = JSON.parse(localStorage.getItem(key) || "[]");
-        }
-      }
-    } catch (err) { console.error(err); }
-    setSections(map);
+    setSections({});
   }, []);
 
   const totalItems = Object.values(sections).reduce((s, a) => s + a.length, 0);
-  const entries = Object.entries(sections).sort((a, b) => b[1].length - a[1].length);
+  const entries = Object.entries(sections).sort(
+    (a, b) => b[1].length - a[1].length,
+  );
 
   return (
     <div className="flex flex-col gap-10 p-10 w-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">Support Overview</h1>
-          <p className="text-lg text-slate-500 font-medium">Real-time status of platform management.</p>
+          <h1 className="text-4xl font-black tracking-tight text-slate-900">
+            Support Overview
+          </h1>
+          <p className="text-lg text-slate-500 font-medium">
+            Real-time status of platform management.
+          </p>
         </div>
         <div className="flex items-center gap-4 bg-white p-2 rounded-3xl border border-slate-100 shadow-sm">
           <div className="px-6 py-3 text-center border-r border-slate-100">
-            <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">Total Items</p>
+            <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">
+              Total Items
+            </p>
             <p className="text-3xl font-black text-indigo-600">{totalItems}</p>
           </div>
           <div className="px-6 py-3 text-center">
-            <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">Active Sections</p>
-            <p className="text-3xl font-black text-slate-900">{Object.keys(sections).length}</p>
+            <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">
+              Active Sections
+            </p>
+            <p className="text-3xl font-black text-slate-900">
+              {Object.keys(sections).length}
+            </p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {SUPPORT_LINKS
-          .filter((link) => {
-            const title = link.label || link.name || "";
-            return title.toLowerCase() !== "home";
-          })
-          .map((link: any) => {
-            const title = link.label || link.name;
-            const IconContent = link.dashboardIcon || link.icon;
-            const count = sections[title.toLowerCase()]?.length || 0;
+        {SUPPORT_LINKS.filter((link) => {
+          const title = link.label || link.name || "";
+          return title.toLowerCase() !== "home";
+        }).map((link: any) => {
+          const title = link.label || link.name;
+          const IconContent = link.dashboardIcon || link.icon;
+          const count = sections[title.toLowerCase()]?.length || 0;
 
-            return (
-              <SupportCard
-                key={title}
-                title={title}
-                count={count}
-                onClick={() => router.push(link.href)}
-                icon={
-                  typeof IconContent === "function" ? (
-                    <IconContent size={28} />
-                  ) : React.isValidElement(IconContent) ? (
-                    React.cloneElement(IconContent as React.ReactElement<any>, { size: 28 })
-                  ) : (
-                    IconContent
-                  )
-                }
-              />
-            );
-          })}
+          return (
+            <SupportCard
+              key={title}
+              title={title}
+              count={count}
+              onClick={() => router.push(link.href)}
+              icon={
+                typeof IconContent === "function" ? (
+                  <IconContent size={28} />
+                ) : React.isValidElement(IconContent) ? (
+                  React.cloneElement(IconContent as React.ReactElement<any>, {
+                    size: 28,
+                  })
+                ) : (
+                  IconContent
+                )
+              }
+            />
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
         <div className="xl:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black text-slate-900">Recent Activity</h2>
+            <h2 className="text-2xl font-black text-slate-900">
+              Recent Activity
+            </h2>
             <div className="flex gap-3">
-              <input type="date" className="text-sm border-slate-200 border rounded-xl px-4 py-2 outline-none focus:ring-2 ring-indigo-500/20" />
-              <button className="text-sm font-black text-indigo-600 px-5 py-2 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition">Filter Data</button>
+              <input
+                type="date"
+                className="text-sm border-slate-200 border rounded-xl px-4 py-2 outline-none focus:ring-2 ring-indigo-500/20"
+              />
+              <button className="text-sm font-black text-indigo-600 px-5 py-2 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition">
+                Filter Data
+              </button>
             </div>
           </div>
           <ul className="divide-y divide-slate-50">
             {Object.entries(sections)
-              .flatMap(([section, arr]) => arr.map((it: any) => ({ ...it, section })))
-              .sort((a, b) => (b.createdAt || "") > (a.createdAt || "") ? 1 : -1)
+              .flatMap(([section, arr]) =>
+                arr.map((it: any) => ({ ...it, section })),
+              )
+              .sort((a, b) =>
+                (b.createdAt || "") > (a.createdAt || "") ? 1 : -1,
+              )
               .slice(0, 6)
               .map((item: any, idx) => (
-                <li key={item.id || idx} className="py-6 flex justify-between items-center group">
+                <li
+                  key={item.id || idx}
+                  className="py-6 flex justify-between items-center group"
+                >
                   <div className="flex items-center gap-6">
                     <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]" />
                     <div>
-                      <p className="text-lg font-bold text-slate-800">{item.title || "Request Update"}</p>
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">Section: <span className="text-indigo-500">{item.section}</span></p>
+                      <p className="text-lg font-bold text-slate-800">
+                        {item.title || "Request Update"}
+                      </p>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">
+                        Section:{" "}
+                        <span className="text-indigo-500">{item.section}</span>
+                      </p>
                     </div>
-                  </div>
-                  <button className="text-sm font-black text-slate-400 opacity-0 group-hover:opacity-100 transition hover:text-indigo-600 bg-slate-50 px-4 py-2 rounded-lg">View Details</button>
-                </li>
-              ))}
-          </ul>
-        </div>
-
-        <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 mb-8">Distribution</h2>
-            <div className="space-y-8 flex-1">
-              {entries.slice(0, 6).map(([section, arr]) => (
-                <div key={section}>
-                  <div className="flex justify-between text-xs font-black uppercase text-slate-400 mb-3 tracking-widest">
-                    <span>{section}</span>
-                    <span className="text-slate-900">{arr.length}</span>
-                  </div>
-                  <div className="h-3 bg-slate-50 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-indigo-500 transition-all duration-1000" 
-                      style={{ width: `${(arr.length / (entries[0][1].length || 1)) * 100}%` }} 
-                    />
-                  </div>
                 </div>
-              ))}
-            </div>
-            <button className="w-full mt-10 py-5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-black transition shadow-xl shadow-slate-200">
-              Download Full Report
-            </button>
+                  
+              </div>
+            ))}
+          </div>
+          <button className="w-full mt-10 py-5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-black transition shadow-xl shadow-slate-200">
+            Download Full Report
+          </button>
         </div>
       </div>
     </div>

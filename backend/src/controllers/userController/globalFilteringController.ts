@@ -1,0 +1,157 @@
+import { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
+import prisma from "core/utils/db.ts";
+import cacheManager from "services/redisserver/cacheManager.ts";
+
+export const globalFiltering = async (req: Request, res: Response) => {
+  const { q, region, city, minPrice, maxPrice } = req.query;
+  const cacheKey = `filter:${JSON.stringify(req.query).toLowerCase()}`;
+
+  try {
+    const cachedResults = await cacheManager.get(cacheKey);
+    if (cachedResults) return res.json(cachedResults);
+
+    const mode: Prisma.QueryMode = "insensitive";
+    const keywords = q
+      ? String(q).toLowerCase().split(" ").filter(Boolean)
+      : [];
+
+    const buildWhereClause = (
+      extraFields: string[] = [],
+      pField: string | null = "price",
+    ) => {
+      const where: any = { AND: [] };
+
+      // Only add isPaid if you are sure it exists on all models
+      where.AND.push({ isPaid: true });
+
+      if (keywords.length > 0) {
+        where.AND.push({
+          AND: keywords.map((word) => ({
+            OR: [
+              { title: { contains: word, mode } },
+              { city: { contains: word, mode } },
+              { region: { contains: word, mode } },
+              ...extraFields.map((f) => ({ [f]: { contains: word, mode } })),
+            ],
+          })),
+        });
+      }
+
+      if (region) where.AND.push({ region: { equals: String(region), mode } });
+      if (city) where.AND.push({ city: { equals: String(city), mode } });
+
+      if (pField && (minPrice || maxPrice)) {
+        const priceFilter: any = {};
+        if (minPrice) priceFilter.gte = Number(minPrice);
+        if (maxPrice) priceFilter.lte = Number(maxPrice);
+        where.AND.push({ [pField]: priceFilter });
+      }
+
+      return where;
+    };
+
+    // Use individual catches to prevent one failing model from crashing the whole request
+    const [market, real, cars, boats, motos, traktors, jobs] =
+      await Promise.all([
+        prisma.marketplace
+          .findMany({ where: buildWhereClause() })
+          .catch(() => []),
+        prisma.realEstate
+          .findMany({ where: buildWhereClause() })
+          .catch(() => []),
+        prisma.car
+          .findMany({ where: buildWhereClause(["brand", "model"]) })
+          .catch(() => []),
+        prisma.boat
+          .findMany({ where: buildWhereClause(["type"]) })
+          .catch(() => []),
+        prisma.motorcycle
+          .findMany({ where: buildWhereClause(["make"]) })
+          .catch(() => []),
+        prisma.traktor
+          .findMany({ where: buildWhereClause(["make"]) })
+          .catch(() => []),
+        prisma.job
+          .findMany({ where: buildWhereClause(["company"], "salary") })
+          .catch(() => []),
+      ]);
+
+    const results = [
+      ...market.map((i) => ({ ...i, itemType: "marketplace" })),
+      ...real.map((i) => ({ ...i, itemType: "real-estate" })),
+      ...cars.map((i) => ({ ...i, itemType: "car" })),
+      ...boats.map((i) => ({ ...i, itemType: "boat" })),
+      ...motos.map((i) => ({ ...i, itemType: "motorcycle" })),
+      ...traktors.map((i) => ({ ...i, itemType: "traktor" })),
+      ...jobs.map((i) => ({ ...i, itemType: "job" })),
+    ].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    await cacheManager.set(cacheKey, results, 300);
+    res.json(results);
+  } catch (error) {
+    console.error("Global filtering error:", error);
+    res.status(500).json({ error: "Global filtering failed" });
+  }
+};
+
+export const getFilterMetadata = async (req: Request, res: Response) => {
+  try {
+    const where = { isPaid: true };
+    const select = { region: true, city: true };
+
+    const responses = await Promise.allSettled([
+      prisma.marketplace.findMany({ where, select }),
+      prisma.realEstate.findMany({ where, select }),
+      prisma.car.findMany({ where, select }),
+      prisma.boat.findMany({ where, select }),
+      prisma.motorcycle.findMany({ where, select }),
+      prisma.traktor.findMany({ where, select }),
+      prisma.job.findMany({ where, select }),
+    ]);
+
+    const allItems = responses
+      .filter(
+        (r): r is PromiseFulfilledResult<any[]> => r.status === "fulfilled",
+      )
+      .flatMap((r) => r.value);
+
+    const dataStructure: Record<
+      string,
+      { total: number; cities: Record<string, number> }
+    > = {};
+
+    allItems.forEach((item) => {
+      const r = item.region?.trim();
+      const c = item.city?.trim();
+      if (!r) return;
+
+      if (!dataStructure[r]) dataStructure[r] = { total: 0, cities: {} };
+      dataStructure[r].total += 1;
+
+      if (c) {
+        dataStructure[r].cities[c] = (dataStructure[r].cities[c] || 0) + 1;
+      }
+    });
+
+    const regions = Object.entries(dataStructure)
+      .map(([name, data]) => ({
+        name,
+        total: data.total,
+        cities: Object.entries(data.cities)
+          .map(([cityName, cityTotal]) => ({
+            name: cityName,
+            total: cityTotal,
+          }))
+          .sort((a, b) => b.total - a.total),
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    res.json({ regions });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch metadata" });
+  }
+};

@@ -1,131 +1,152 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { AiOutlineHeart } from "react-icons/ai";
+import React, { useState, useEffect, useCallback } from "react";
+import Loading from "../shared/Loading/Loading";
+import UniversalCard from "./UniversalCard";
+import SeeEmore from "../shared/buttons/SeeEmore";
 
-interface CardItemProps {
-  id: string;
-  title: string;
-  description?: string | string[];
-  city?: string;
-  price?: number;
-  images?: string[] | null;
-  jobType?: string;
-  maGaday?: boolean;
-  category?: string;
+interface ItemsGridProps {
+  fetchFunctions?: {
+    getBoats: () => Promise<any>;
+    getCars: () => Promise<any>;
+    getJobs: () => Promise<any>;
+    getMarketplaceItems: () => Promise<any>;
+    getMotorcycles: () => Promise<any>;
+    getRealEstateListings: () => Promise<any>;
+    getTraktors: () => Promise<any>;
+  };
+  initialData?: any;
 }
 
-const getValidSrc = (src?: string | null): string | null => {
-  if (!src || src.trim() === "" || src === "undefined") return null;
-  if (src.startsWith("http")) return src;
-  if (src.startsWith("/")) return src;
-  return `/${src}`;
-};
+const ITEMS_PER_LOAD = 10;
+const INITIAL_LOAD = 30;
+const MAX_ITEMS = 100;
 
-export default function CardItem({
-  id,
-  title,
-  description,
-  city,
-  price,
-  images,
-  maGaday,
-  category,
-}: CardItemProps) {
-  const [imgError, setImgError] = useState(false);
-  const primaryImage = getValidSrc(images?.[0]);
-  const url = (() => {
-    switch (category) {
-      case "cars":
-      case "boats":
-      case "motorcycles":
-      case "tractors":
-        return `/vehicles/${id}`;
-      case "real-estate":
-        return `/real-estate/${id}`;
-      case "jobs":
-        return `/jobs/${id}`;
-      default:
-        return `/item-details/${id}`;
+export default function ItemsGrid({
+  fetchFunctions,
+  initialData,
+}: ItemsGridProps) {
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
+  const [allItems, setAllItems] = useState<any[]>([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(!initialData);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const processData = useCallback((data: any) => {
+    const toSafe = (res: any) => (Array.isArray(res) ? res : []);
+    return [
+      ...toSafe(data.boats).map((i) => ({ ...i, category: "boats" })),
+      ...toSafe(data.cars).map((i) => ({ ...i, category: "cars" })),
+      ...toSafe(data.jobs).map((i) => ({ ...i, category: "jobs" })),
+      ...toSafe(data.marketplace).map((i) => ({
+        ...i,
+        category: "marketplace",
+      })),
+      ...toSafe(data.motorcycles).map((i) => ({
+        ...i,
+        category: "motorcycles",
+      })),
+      ...toSafe(data.realEstate || data.real_estate).map((i) => ({
+        ...i,
+        category: "real-estate",
+      })),
+      ...toSafe(data.tractors || data.traktors).map((i) => ({
+        ...i,
+        category: "tractors",
+      })),
+    ].map((item) => ({
+      ...item,
+      price: Number(item.price) || 0,
+      images: Array.isArray(item.images) ? item.images : [],
+    }));
+  }, []);
+
+  const fetchAll = useCallback(async () => {
+    if (!fetchFunctions) return;
+    if (allItems.length === 0) setIsInitialLoading(true);
+    else setIsRefreshing(true);
+
+    try {
+      const [
+        boats,
+        cars,
+        jobs,
+        marketplace,
+        motorcycles,
+        realEstate,
+        tractors,
+      ] = await Promise.all([
+        fetchFunctions.getBoats(),
+        fetchFunctions.getCars(),
+        fetchFunctions.getJobs(),
+        fetchFunctions.getMarketplaceItems(),
+        fetchFunctions.getMotorcycles(),
+        fetchFunctions.getRealEstateListings(),
+        fetchFunctions.getTraktors(),
+      ]);
+
+      setAllItems(
+        processData({
+          boats,
+          cars,
+          jobs,
+          marketplace,
+          motorcycles,
+          realEstate,
+          tractors,
+        }),
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsInitialLoading(false);
+      setIsRefreshing(false);
     }
-  })();
-  const MAX_LENGTH = 70;
+  }, [fetchFunctions, allItems.length, processData]);
 
-  const getTruncatedDescription = () => {
-    if (!description) return null;
-    const descText = Array.isArray(description)
-      ? description[0] || ""
-      : description;
-    return descText.length <= MAX_LENGTH
-      ? descText
-      : `${descText.substring(0, MAX_LENGTH)}...`;
-  };
+  useEffect(() => {
+    if (initialData) {
+      setAllItems(processData(initialData));
+      setIsInitialLoading(false);
+    } else {
+      fetchAll();
+    }
+  }, [initialData, fetchAll, processData]);
 
-  const truncatedDescription = getTruncatedDescription();
+  if (isInitialLoading)
+    return (
+      <div className="flex justify-center py-20">
+        <Loading />
+      </div>
+    );
+
+  const itemsToShow = allItems.slice(0, Math.min(visibleCount, MAX_ITEMS));
 
   return (
-    <div className="border border-gray-200 rounded-lg shadow-sm flex flex-col overflow-hidden bg-white h-full transition-shadow hover:shadow-md">
-      <Link prefetch={false} href={url} className="block flex flex-col h-full">
-        <div className="relative w-full h-44 overflow-hidden border-b border-gray-200 bg-gray-50">
-          {primaryImage && !imgError ? (
-            <Image
-              src={primaryImage}
-              alt={title || "Listing image"}
-              fill
-              priority
-              sizes="(max-width: 640px) 100vw, (max-width: 1224px) 100vw, 53vw"
-              className="object-cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-gray-400 text-xs">Sawir lama helin</span>
-            </div>
-          )}
-
-          <div className="absolute top-2 right-2 rounded-full p-1.5 bg-white/90 backdrop-blur-[1px] z-10 shadow-sm transition-transform hover:scale-110">
-            <AiOutlineHeart className="text-gray-600 w-5 h-5 transition-colors hover:text-red-500" />
-          </div>
+    <div
+      className={`relative ${isRefreshing ? "opacity-60" : "opacity-100"} transition-opacity duration-300`}
+    >
+      {isRefreshing && (
+        <div className="absolute top-0 left-0 w-full h-1 bg-blue-600 animate-pulse z-10" />
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
+        {itemsToShow.map((item, index) => (
+          <UniversalCard
+            key={item.id ? `${item.category}-${item.id}` : `idx-${index}`}
+            {...item}
+          />
+        ))}
+      </div>
+      {allItems.length > visibleCount && (
+        <div className="flex justify-center pb-10">
+          <SeeEmore
+            onClick={() =>
+              setVisibleCount((prev) =>
+                Math.min(prev + ITEMS_PER_LOAD, MAX_ITEMS),
+              )
+            }
+          />
         </div>
-
-        <div className="flex-grow flex flex-col p-3">
-          {maGaday === true && (
-            <div className="bg-orange-100 rounded px-2 py-1 mb-2 w-fit">
-              <h6 className="text-xs md:text-sm m-0 font-bold text-orange-800">
-                waa la gatay
-              </h6>
-            </div>
-          )}
-
-          <h3 className="text-base font-semibold mb-1 line-clamp-2 leading-snug text-gray-900">
-            {title}
-          </h3>
-
-          <div className="flex justify-between items-center mb-2">
-            {price !== undefined && price !== null ? (
-              <span className="font-bold text-blue-800 text-lg">
-                {price.toLocaleString()} kr
-              </span>
-            ) : (
-              <span className="font-semibold text-gray-500 text-sm">
-                Pris på forespørsel
-              </span>
-            )}
-          </div>
-
-          {city && (
-            <p className="text-green-700 font-medium text-sm mb-1">{city}</p>
-          )}
-
-          {truncatedDescription && (
-            <p className="text-gray-600 text-xs mb-1 line-clamp-2">
-              {truncatedDescription}
-            </p>
-          )}
-        </div>
-      </Link>
+      )}
     </div>
   );
 }

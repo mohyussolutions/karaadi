@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AiOutlineHeart } from "react-icons/ai";
@@ -41,9 +41,9 @@ export default function RealEstateCard({
 }: RealEstateCardProps) {
   const rawPrimaryImage = images?.[0];
   const primaryImage = getValidSrc(rawPrimaryImage);
+  const [imgError, setImgError] = useState(false);
   const url = `/real-estate/${id}`;
 
-  // Helper function to translate purpose values
   const getPurposeDisplay = (purpose?: string) => {
     if (!purpose) return "";
 
@@ -69,12 +69,13 @@ export default function RealEstateCard({
         <div className="relative w-full h-44 sm:h-52 md:h-64 lg:h-60 group overflow-hidden border-b-2 border-gray-300">
           {primaryImage ? (
             <Image
-              src={primaryImage}
+              src={imgError ? "/logo.jpg" : primaryImage}
               alt={title || "Real Estate Listing Image"}
               fill
               priority
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover transition-transform duration-300"
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400">

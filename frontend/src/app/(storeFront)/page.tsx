@@ -33,14 +33,6 @@ export default async function Home() {
     tractors: result7,
   };
 
-  console.log(initialData.cars);
-  console.log(initialData.cars);
-  console.log(initialData.cars);
-  console.log(initialData.cars);
-  console.log(initialData.cars);
-
-  console.log(initialData.cars);
-
   return (
     <div className="space-y-8 py-6 px-2">
       <HomeContent initialData={initialData}>
