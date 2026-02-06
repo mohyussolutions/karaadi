@@ -1,18 +1,30 @@
 "use client";
 
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ItemsGrid from "../Cards/mainCard";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "../shared/(search)/SearchInput";
+
+const CATEGORY_CONFIG = [
+  { key: "boats", type: "boat" },
+  { key: "cars", type: "car" },
+  { key: "jobs", type: "job" },
+  { key: "marketplace", type: "marketplace" },
+  { key: "motorcycles", type: "motorcycle" },
+  { key: "realEstate", type: "real-estate" },
+  { key: "tractors", type: "traktor" },
+];
+
+interface HomeContentProps {
+  initialData: Record<string, any[] | null>;
+  children: React.ReactNode;
+}
 
 export default function HomeContent({
   initialData,
   children,
-}: {
-  initialData: any;
-  children: React.ReactNode;
-}) {
-  const [data, setData] = useState(initialData);
+}: HomeContentProps) {
+  const [data, setData] = useState<Record<string, any[] | null>>(initialData);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -24,19 +36,40 @@ export default function HomeContent({
 
       const results = await getGlobalSearchResults(query);
 
-      setData({
-        boats: results.filter((i: any) => i.itemType === "boat"),
-        cars: results.filter((i: any) => i.itemType === "car"),
-        jobs: results.filter((i: any) => i.itemType === "job"),
-        marketplace: results.filter((i: any) => i.itemType === "marketplace"),
-        motorcycles: results.filter((i: any) => i.itemType === "motorcycle"),
-        realEstate: results.filter((i: any) => i.itemType === "real-estate"),
-        tractors: results.filter((i: any) => i.itemType === "traktor"),
+      const filteredData: Record<string, any[]> = {};
+      CATEGORY_CONFIG.forEach((cat) => {
+        filteredData[cat.key] = results.filter(
+          (i: any) => i.itemType === cat.type,
+        );
       });
+
+      setData(filteredData);
     }, 400);
 
     return () => clearTimeout(delayDebounce);
   }, [query, initialData]);
+
+  const allItems = useMemo(() => {
+    return CATEGORY_CONFIG.flatMap((cat) => {
+      const items = data[cat.key];
+      if (!Array.isArray(items)) return [];
+
+      return items.map((item: any) => {
+        const rawDesc = Array.isArray(item?.description)
+          ? item.description.join(" ")
+          : item?.description || "";
+
+        return {
+          ...item,
+          category: cat.key,
+          price: Number(item?.price) || 0,
+          images: Array.isArray(item?.images) ? item.images : [],
+          description:
+            rawDesc.length > 100 ? `${rawDesc.substring(0, 100)}...` : rawDesc,
+        };
+      });
+    });
+  }, [data]);
 
   return (
     <div className="space-y-8">
@@ -44,66 +77,7 @@ export default function HomeContent({
 
       <div className="flex flex-col gap-8">{children}</div>
 
-      <ItemsGrid
-        items={[
-          ...(Array.isArray(data?.boats)
-            ? data.boats.map((item: any) => ({
-                ...item,
-                category: "boats",
-                price: Number(item?.price) || 0,
-                images: Array.isArray(item?.images) ? item.images : [],
-              }))
-            : []),
-          ...(Array.isArray(data?.cars)
-            ? data.cars.map((item: any) => ({
-                ...item,
-                category: "cars",
-                price: Number(item?.price) || 0,
-                images: Array.isArray(item?.images) ? item.images : [],
-              }))
-            : []),
-          ...(Array.isArray(data?.jobs)
-            ? data.jobs.map((item: any) => ({
-                ...item,
-                category: "jobs",
-                price: Number(item?.price) || 0,
-                images: Array.isArray(item?.images) ? item.images : [],
-              }))
-            : []),
-          ...(Array.isArray(data?.marketplace)
-            ? data.marketplace.map((item: any) => ({
-                ...item,
-                category: "marketplace",
-                price: Number(item?.price) || 0,
-                images: Array.isArray(item?.images) ? item.images : [],
-              }))
-            : []),
-          ...(Array.isArray(data?.motorcycles)
-            ? data.motorcycles.map((item: any) => ({
-                ...item,
-                category: "motorcycles",
-                price: Number(item?.price) || 0,
-                images: Array.isArray(item?.images) ? item.images : [],
-              }))
-            : []),
-          ...(Array.isArray(data?.realEstate)
-            ? data.realEstate.map((item: any) => ({
-                ...item,
-                category: "real-estate",
-                price: Number(item?.price) || 0,
-                images: Array.isArray(item?.images) ? item.images : [],
-              }))
-            : []),
-          ...(Array.isArray(data?.tractors)
-            ? data.tractors.map((item: any) => ({
-                ...item,
-                category: "tractors",
-                price: Number(item?.price) || 0,
-                images: Array.isArray(item?.images) ? item.images : [],
-              }))
-            : []),
-        ]}
-      />
+      <ItemsGrid items={allItems} />
     </div>
   );
 }

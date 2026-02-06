@@ -359,10 +359,10 @@ function ForSale() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item: any) => (
+                itemsToDisplay.map((item: any, idx: number) => (
                   <RealEstateCard
-                    key={item._id}
-                    id={item._id}
+                    key={item._id || item.id || `${item.title}-${idx}`}
+                    id={item._id || item.id}
                     title={item.title}
                     description={item.description}
                     city={item.city}

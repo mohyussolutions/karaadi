@@ -6,7 +6,7 @@ import Image from "next/image";
 import { AiOutlineHeart } from "react-icons/ai";
 
 interface VehicleCardProps {
-  id: string;
+  id: string | null;
   title: string;
   price: number;
   city: string;
@@ -36,15 +36,16 @@ export default function VehicleCard({
   model,
   year,
   mileage,
+  description,
 }: VehicleCardProps) {
   const rawPrimaryImage = images?.[0];
   const primaryImage = getValidSrc(rawPrimaryImage);
   const [imgError, setImgError] = useState(false);
-  const url = `/vehicle-details/${id}`;
+  const url = id ? `/vehicles/${id}` : "#";
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm transition-shadow hover:shadow-md">
-      <Link href={url} className="block">
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm transition-shadow hover:shadow-md flex flex-col h-full">
+      <Link href={url} className="block flex-grow">
         <div className="relative w-full h-36 group overflow-hidden border-b border-gray-200">
           {primaryImage ? (
             <Image
@@ -71,17 +72,25 @@ export default function VehicleCard({
         </div>
 
         <div className="p-3 space-y-1">
-          <p className="text-green-700 font-medium text-sm">{city}</p>
+          <p className="text-green-700 font-medium text-xs uppercase tracking-wide">
+            {city}
+          </p>
 
-          <h3 className="text-base font-semibold line-clamp-2 leading-snug">
-            {make} {model} {year ? `(${year})` : ""}
+          <h3 className="text-sm font-semibold line-clamp-1 leading-snug">
+            {make} {model} {title} {year ? `(${year})` : ""}
           </h3>
 
-          <p className="text-lg font-bold text-blue-800">
+          {description && description.length > 0 && (
+            <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed mt-1">
+              {description.join(" ")}
+            </p>
+          )}
+
+          <p className="text-lg font-bold text-blue-800 pt-1">
             {price.toLocaleString()} kr
           </p>
 
-          <div className="flex justify-start text-xs text-gray-500 pt-1 space-x-3">
+          <div className="flex justify-start text-[10px] uppercase font-bold text-gray-400 pt-2 space-x-3 border-t border-gray-50 mt-2">
             {mileage !== undefined && mileage !== null && (
               <span>{mileage.toLocaleString()} km</span>
             )}

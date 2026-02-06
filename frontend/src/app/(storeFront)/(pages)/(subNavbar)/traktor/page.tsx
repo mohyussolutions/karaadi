@@ -214,7 +214,7 @@ function TractorLinks() {
     }
 
     if (!selectedCategory) {
-      return "Dhamaan Tractorada (All Tractors)"; // Adjust this title
+      return "Dhamaan Tractorada (All Tractors)";
     }
 
     const foundCategory = categoryFilters.find(

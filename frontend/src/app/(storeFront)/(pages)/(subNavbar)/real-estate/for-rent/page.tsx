@@ -247,10 +247,11 @@ function ForRent() {
   if (error) return <div className="text-red-500 p-4">Error loading items</div>;
 
   return (
-    <div className="container mx-auto px-4 pb-10">
+    <div className="container mx-auto px-4 pb-10 ml-4">
+      {" "}
+      {/* Added ml-4 for left margin */}
       <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
-
       <div className="relative py-6">
         <div className="flex justify-center relative">
           <button
@@ -303,8 +304,9 @@ function ForRent() {
           </button>
         </div>
       </div>
-
-      <div className="px-4 text-sm text-gray-700 mb-4">
+      <div className="px-4 text-sm text-gray-700 mb-4 mt-4">
+        {" "}
+        {/* Added mt-4 for top margin */}
         <p>
           Showing
           <span className="text-blue-600 font-semibold"> {totalFound}</span>
@@ -312,7 +314,6 @@ function ForRent() {
           <strong> {currentDisplayTitle}</strong>
         </p>
       </div>
-
       <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
         <div className="sticky top-4 space-y-4">
           <LocationSelector
@@ -336,10 +337,10 @@ function ForRent() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item: any) => (
+                itemsToDisplay.map((item: any, idx: number) => (
                   <RealEstateCard
-                    key={item._id}
-                    id={item._id}
+                    key={item._id || item.id || `${item.title}-${idx}`}
+                    id={item._id || item.id}
                     title={item.title}
                     description={item.description}
                     city={item.city}

@@ -14,7 +14,7 @@ interface UniversalCardProps {
   city: string;
   images: string[];
   category: string;
-  description?: string;
+  description: string;
   maGaday?: boolean;
   make?: string;
   year?: number;
@@ -51,11 +51,7 @@ export default function UniversalCard(item: UniversalCardProps) {
       return "/placeholder.png";
     }
 
-    if (img.startsWith("http")) {
-      return img;
-    }
-
-    if (img.startsWith("/")) {
+    if (img.startsWith("http") || img.startsWith("/")) {
       return img;
     }
 
@@ -100,9 +96,13 @@ export default function UniversalCard(item: UniversalCardProps) {
           {item.category === "marketplace" ? "kr" : "$"}
         </h3>
 
-        <h4 className="text-gray-800 text-sm font-semibold line-clamp-2 mb-2 min-h-[40px]">
+        <h4 className="text-gray-800 text-sm font-semibold line-clamp-1 mb-1">
           {item.title}
         </h4>
+
+        <p className="text-gray-500 text-xs line-clamp-2 mb-3 min-h-[32px]">
+          {item.description}
+        </p>
 
         <div className="flex flex-wrap gap-2 text-[11px] text-gray-500 mb-3">
           {item.make && (

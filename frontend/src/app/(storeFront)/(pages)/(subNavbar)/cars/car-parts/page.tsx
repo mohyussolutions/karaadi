@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -26,14 +27,14 @@ export default function CarParts() {
     {},
   );
 
-  useEffect(() => {
-    const allCarPartsItems = Array.isArray(items)
-      ? items.filter(
-          (item: any) =>
-            item.subCategory === "Car Parts" || item.so === "Qaybaha gawaarida",
-        )
+  const allCarPartsItems = useMemo(() => {
+    return Array.isArray(items)
+      ? items.filter((item: any) => {
+          const subCat = (item.subCategory || "").toLowerCase();
+          const soName = (item.so || "").toLowerCase();
+          return subCat.includes("parts") || soName.includes("qaybaha");
+        })
       : [];
-    console.log("Initial Car Parts loaded:", allCarPartsItems.length);
   }, [items]);
 
   useEffect(() => {
@@ -42,69 +43,35 @@ export default function CarParts() {
         setSearchResults([]);
         return;
       }
-
       const results = await getGlobalSearchResults(query);
-      console.log("Search results total:", results.length);
-
-      const filteredCarPartsFromSearch = results.filter(
-        (item: any) =>
-          item.subCategory === "Car Parts" || item.so === "Qaybaha gawaarida",
-      );
-
-      console.log("Car parts from search:", filteredCarPartsFromSearch.length);
-      setSearchResults(filteredCarPartsFromSearch);
+      const filtered = results.filter((item: any) => {
+        const subCat = (item.subCategory || "").toLowerCase();
+        const soName = (item.so || "").toLowerCase();
+        return subCat.includes("parts") || soName.includes("qaybaha");
+      });
+      setSearchResults(filtered);
     }, 400);
-
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  const allCarPartsItems = useMemo(() => {
-    return Array.isArray(items)
-      ? items.filter(
-          (item: any) =>
-            item.subCategory === "Car Parts" || item.so === "Qaybaha gawaarida",
-        )
-      : [];
-  }, [items]);
-
   const itemsToDisplay = useMemo(() => {
-    let filteredItems = [];
-
-    if (query.trim()) {
-      filteredItems = searchResults;
-      console.log("Using search results:", filteredItems.length);
-    } else {
-      filteredItems = allCarPartsItems;
-      console.log("Using all car parts items:", filteredItems.length);
-    }
+    let source = query.trim() ? searchResults : allCarPartsItems;
 
     if (selectedSubcategory) {
-      const normalizedSelectedCategory = selectedSubcategory.toLowerCase();
-      const filtered = filteredItems.filter((item: any) => {
-        return (
-          item.title.toLowerCase() === normalizedSelectedCategory ||
-          (item.so && item.so.toLowerCase() === normalizedSelectedCategory)
-        );
+      const normalized = selectedSubcategory.toLowerCase();
+      return source.filter((item: any) => {
+        const titleMatch = item.title?.toLowerCase().includes(normalized);
+        const soMatch = item.so?.toLowerCase().includes(normalized);
+        return titleMatch || soMatch;
       });
-      console.log(
-        `Filtered by subcategory "${selectedSubcategory}":`,
-        filtered.length,
-      );
-      return filtered;
     }
-
-    console.log("No subcategory filter applied");
-    return filteredItems;
+    return source;
   }, [query, searchResults, selectedSubcategory, allCarPartsItems]);
 
   const currentDisplayTitle = useMemo(() => {
-    if (query.trim()) {
-      return `Search Results: "${query}"`;
-    }
-
-    if (!selectedSubcategory) {
+    if (query.trim()) return `Search Results: "${query}"`;
+    if (!selectedSubcategory)
       return "All Car Parts (Dhammaan Qaybaha Gawaarida)";
-    }
 
     const foundCategory = subCategoryLinks.find(
       (cat: any) =>
@@ -116,45 +83,16 @@ export default function CarParts() {
       : selectedSubcategory;
   }, [query, selectedSubcategory, subCategoryLinks]);
 
-  const totalFound = itemsToDisplay.length;
-  console.log("Total items to display:", totalFound);
-
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
       const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollAmount = direction === "left" ? -clientWidth : clientWidth;
+      const scrollAmount =
+        direction === "left" ? -clientWidth / 2 : clientWidth / 2;
       scrollRef.current.scrollTo({
         left: scrollLeft + scrollAmount,
         behavior: "smooth",
       });
     }
-  };
-
-  const handleCategoryClick = (categoryTitle: string) => {
-    const normalizedTitle = categoryTitle.toLowerCase();
-    setSelectedSubcategory((prev) =>
-      prev === normalizedTitle ? null : normalizedTitle,
-    );
-    console.log("Subcategory clicked:", normalizedTitle);
-  };
-
-  const handleSearch = (searchQuery: string) => {
-    setQuery(searchQuery);
-    console.log("Search query set:", searchQuery);
-  };
-
-  const handleLocationFilterChange = (
-    region: string | null,
-    cities: Record<string, boolean>,
-  ) => {
-    console.log("Location filter changed - Region:", region, "Cities:", cities);
-    setSelectedRegion(region);
-    setCheckedCities(cities);
-  };
-
-  const handleRegionClick = (region: string | null) => {
-    console.log("Region clicked on map:", region);
-    setSelectedRegion(region);
   };
 
   if (isLoading) return <Loading />;
@@ -167,87 +105,88 @@ export default function CarParts() {
 
   return (
     <div className="container mx-auto px-4 pb-10">
-      <SearchInput onSearch={handleSearch} />
+      <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
       <div className="relative py-6">
-        {subCategoryLinks.length > 0 && (
-          <div className="flex justify-center relative">
-            <button
-              onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              aria-label="Scroll left"
-            >
-              <FaChevronLeft className="hover:scale-110 transition-transform" />
-            </button>
+        <div className="flex justify-center relative">
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <FaChevronLeft />
+          </button>
 
-            <div
-              ref={scrollRef}
-              className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)]"
-            >
-              {subCategoryLinks.map((category: any) => (
-                <Link
-                  prefetch={false}
-                  key={category.so}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleCategoryClick(category.so);
-                  }}
-                  className={`flex-shrink-0 w-40 flex flex-col items-center justify-center text-center group border rounded-lg p-4 shadow-sm transition-all duration-300 m-6
-                  ${
-                    selectedSubcategory === category.so.toLowerCase()
-                      ? "bg-blue-100 border-blue-400 scale-[1.03] shadow-md"
-                      : "bg-white border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:shadow-lg"
-                  } active:scale-95`}
-                >
-                  <div className="text-2xl text-gray-600 mb-2 group-hover:text-blue-600">
-                    {category.icon}
-                  </div>
-                  <span className="text-sm font-medium text-gray-800 group-hover:text-blue-600">
-                    {category.so}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    ({category.title})
-                  </span>
-                </Link>
-              ))}
-            </div>
-
-            <button
-              onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              aria-label="Scroll right"
-            >
-              <FaChevronRight className="hover:scale-110 transition-transform" />
-            </button>
+          <div
+            ref={scrollRef}
+            className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)]"
+          >
+            {subCategoryLinks.map((category: any) => (
+              <Link
+                key={category.so}
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const normalized = category.so.toLowerCase();
+                  setSelectedSubcategory(
+                    selectedSubcategory === normalized ? null : normalized,
+                  );
+                }}
+                className={`flex-shrink-0 w-40 flex flex-col items-center justify-center text-center border rounded-lg p-4 shadow-sm transition-all duration-300 m-6 ${
+                  selectedSubcategory === category.so.toLowerCase()
+                    ? "bg-blue-100 border-blue-400 scale-[1.03] shadow-md"
+                    : "bg-white border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:shadow-lg"
+                }`}
+              >
+                <div className="text-2xl text-gray-600 mb-2">
+                  {category.icon}
+                </div>
+                <span className="text-sm font-medium text-gray-800">
+                  {category.so}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({category.title})
+                </span>
+              </Link>
+            ))}
           </div>
-        )}
+
+          <button
+            onClick={() => scroll("right")}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <FaChevronRight />
+          </button>
+        </div>
       </div>
 
       <div className="px-4 text-sm text-gray-700 mb-4">
         <p>
-          Showing
-          <span className="text-blue-600 font-semibold"> {totalFound}</span>
-          listings in
-          <strong> {currentDisplayTitle}</strong>
+          Showing{" "}
+          <span className="text-blue-600 font-semibold">
+            {itemsToDisplay.length}
+          </span>{" "}
+          listings in <strong>{currentDisplayTitle}</strong>
         </p>
       </div>
 
       <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-        <div className="sticky top-4 space-y-4">
+        <aside className="sticky top-4 space-y-4 md:w-1/4">
           <LocationSelector
-            onFilterChange={handleLocationFilterChange}
+            onFilterChange={(reg, cities) => {
+              setSelectedRegion(reg);
+              setCheckedCities(cities);
+            }}
             selectedRegion={selectedRegion}
             checkedCities={checkedCities}
           />
           <SomaliMap
             selectedRegion={selectedRegion}
-            onRegionClick={handleRegionClick}
+            onRegionClick={setSelectedRegion}
           />
-        </div>
+        </aside>
 
-        <div className="md:w-3/4 w-full">
+        <main className="md:w-3/4 w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {itemsToDisplay.length > 0 ? (
               itemsToDisplay.map((item: any) => (
@@ -260,7 +199,7 @@ export default function CarParts() {
                       ? (Array.isArray(item.description)
                           ? item.description
                           : [item.description]
-                        ).filter((desc: any): desc is string => !!desc)
+                        ).filter(Boolean)
                       : []
                   }
                   city={item.city}
@@ -276,7 +215,7 @@ export default function CarParts() {
               </div>
             )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
