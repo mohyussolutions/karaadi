@@ -1,5 +1,5 @@
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
 
 export const getUserNotifications = async (req: Request, res: Response) => {
   try {
@@ -73,7 +73,7 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
 
 export const markAllNotificationsAsRead = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { userId } = req.params;

@@ -329,6 +329,7 @@ function FarmForSale() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={finalItems}
           />
         </div>
 

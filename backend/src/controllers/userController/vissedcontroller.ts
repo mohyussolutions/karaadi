@@ -1,6 +1,6 @@
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
-import { v4 as uuid } from "uuid";
+
+import prisma from "../../core/utils/db.ts";
 
 export const trackVisitor = async (req: Request, res: Response) => {
   try {
@@ -76,3 +76,6 @@ export const deleteVisitor = async (req: Request, res: Response) => {
     return res.status(500).json({ error: err.message });
   }
 };
+function uuid(): any {
+  throw new Error("Function not implemented.");
+}

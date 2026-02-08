@@ -4,9 +4,10 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "DOTENV_QUIET=true tsx watch src/server.ts",
+    "dev": "DOTENV_CONFIG_PATH=.env tsx -r tsconfig-paths/register src/server.ts",
     "build": "tsc --project tsconfig.json --noEmit",
     "start": "NODE_ENV=production tsx src/server.ts",
+    "prod": "DOTENV_CONFIG_PATH=.env.production tsx -r tsconfig-paths/register src/server.ts",
     "prisma:generate": "prisma generate --schema=src/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=src/prisma/schema.prisma",
     "db:new-migration": "prisma migrate dev --name NEW_MIGRATION_NAME --schema=src/prisma/schema.prisma",

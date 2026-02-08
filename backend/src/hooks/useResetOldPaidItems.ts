@@ -1,8 +1,8 @@
-import { DAYS_FOR_UPLOADING_AGAIN, MS_PER_DAY } from "config/contstanst.ts";
+import { DAYS_FOR_UPLOADING_AGAIN, MS_PER_DAY } from "../config/contstanst.js";
 
 export const useResetOldPaidItems = () => {
   const thresholdDate = new Date(
-    Date.now() - DAYS_FOR_UPLOADING_AGAIN * MS_PER_DAY
+    Date.now() - DAYS_FOR_UPLOADING_AGAIN * MS_PER_DAY,
   );
 
   return {

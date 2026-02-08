@@ -4,7 +4,7 @@ import {
   getAllVisitors,
   trackVisitor,
   updateVisitor,
-} from "controllers/userController/vissedcontroller.ts";
+} from "../../controllers/userController/vissedcontroller.ts";
 
 const visitorRoute = Router();
 

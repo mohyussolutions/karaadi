@@ -2,7 +2,8 @@ import React from "react";
 
 interface StatBoxProps {
   label: string;
-  value: string;
+  value: string | number;
+  icon: React.ReactNode;
   color?: string;
   isCurr?: boolean;
 }
@@ -10,15 +11,25 @@ interface StatBoxProps {
 export default function StatBox({
   label,
   value,
-  color = "text-slate-900",
-  isCurr = true,
+  icon,
+  color,
+  isCurr,
 }: StatBoxProps) {
   return (
-    <div className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm transition-all hover:shadow-md">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
-        {label}
-      </p>
-      <p className={`text-2xl font-black tracking-tight ${color}`}>{value}</p>
+    <div className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm flex items-center gap-4">
+      <div
+        className={`p-3 rounded-2xl bg-slate-50 ${color || "text-slate-600"}`}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+          {label}
+        </p>
+        <p className={`text-xl font-black ${color || "text-slate-900"}`}>
+          {value}
+        </p>
+      </div>
     </div>
   );
 }

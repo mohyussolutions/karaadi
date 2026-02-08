@@ -1,11 +1,11 @@
 import { Server, Socket } from "socket.io";
 import chalk from "chalk";
-import { prisma } from "core/utils/db.ts";
+import prisma from "../../core/utils/db.ts";
 
 export const subscriptionHandler = (
   io: Server,
   socket: Socket,
-  userId: string
+  userId: string,
 ) => {
   socket.on(
     "subscribeToListings",
@@ -17,7 +17,7 @@ export const subscriptionHandler = (
 
       socket.join(room);
       console.log(chalk.blue(`⚓ User ${userId} joined room: ${room}`));
-    }
+    },
   );
 
   socket.on(
@@ -30,7 +30,7 @@ export const subscriptionHandler = (
 
       socket.leave(room);
       console.log(chalk.yellow(`🚪 User ${userId} left room: ${room}`));
-    }
+    },
   );
 
   socket.on(
@@ -55,9 +55,9 @@ export const subscriptionHandler = (
       });
 
       console.log(
-        chalk.magenta(`🔍 User ${userId} is looking for "${title}" in ${room}`)
+        chalk.magenta(`🔍 User ${userId} is looking for "${title}" in ${room}`),
       );
-    }
+    },
   );
 
   socket.on("syncMySubscriptions", async () => {

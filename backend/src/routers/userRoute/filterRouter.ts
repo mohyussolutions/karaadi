@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   globalFiltering,
   getFilterMetadata,
-} from "controllers/userController/globalFilteringController.ts";
+} from "../../controllers/userController/globalFilteringController.ts";
 
 const filterRouter = Router();
 

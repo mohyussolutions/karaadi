@@ -1,6 +1,6 @@
-import { EncryptionController } from "controllers/encryptionController/encryptionController.ts";
-import prisma from "core/utils/db.ts";
 import { Server, Socket } from "socket.io";
+import { EncryptionController } from "../../controllers/encryptionController/encryptionController.ts";
+import prisma from "../../core/utils/db.ts";
 
 export const messageHandler = (io: Server, socket: Socket, userId: string) => {
   const processedMessageIds = new Set<string>();

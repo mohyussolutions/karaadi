@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import prisma from "core/utils/db.ts";
-import { FEE_KEYS } from "config/contstanst.ts";
-import { FeeConfigKeysPros } from "types/FeeConfig.ts";
+import { FEE_KEYS } from "../../config/contstanst.ts";
+import prisma from "../../core/utils/db.ts";
+import { FeeConfigKeysPros } from "../../types/FeeConfig.ts";
 
 export const createFeeConfig = async (req: Request, res: Response) => {
   try {

@@ -397,6 +397,7 @@ function Farmtools() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={setSelectedRegion}
+            items={finalItems}
           />
         </div>
 

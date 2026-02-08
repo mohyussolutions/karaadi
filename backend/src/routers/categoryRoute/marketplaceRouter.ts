@@ -6,7 +6,7 @@ import {
   getMarketplaceItemById,
   getTotalMarketplaceItems,
   updateMarketplaceItem,
-} from "controllers/categoryController/marketplaceController.ts";
+} from "../../controllers/categoryController/marketplaceController.ts";
 import { Router } from "express";
 
 const marketplaceRoutes = Router();

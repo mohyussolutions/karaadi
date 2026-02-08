@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef, ReactElement } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { MdOutlinePlaylistRemove } from "react-icons/md";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import {
-  Districts,
   regions,
+  cities,
+  Region,
+  City,
 } from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import {
   CreateRealEstateItemInput,
   useCreateMarketplaceItemMutation,
 } from "@/app/(storeFront)/store/slices/marketplaceSlice";
 
-import { apiService } from "@/actions/core/authAction";
 import { allCategories } from "@/app/(links)/dashboardLinks/categories";
 import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import {
@@ -26,6 +26,7 @@ import {
   FurnitureNestedSub,
   FashionNestedSub,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
+import { verifySession } from "@/actions/core/authAction";
 
 interface User {
   _id: string;
@@ -37,7 +38,7 @@ interface User {
 interface SubCategoryItem {
   so: string;
   title: string;
-  icon: ReactElement;
+  icon: React.ReactElement;
   href: string;
 }
 
@@ -78,9 +79,8 @@ const MarketplaceAdForm = () => {
   const [mainCategory, setMainCategory] = useState(
     allCategories[0]?.name || "",
   );
-
   const [images, setImages] = useState<File[]>([]);
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [filteredDistricts, setFilteredDistricts] = useState<string[]>([]);
   const [filteredSubcategories, setFilteredSubcategories] = useState<
     SubCategoryItem[]
@@ -92,7 +92,7 @@ const MarketplaceAdForm = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const sessionUser = await apiService.verifySession();
+      const sessionUser = await verifySession();
       setCurrentUser(sessionUser);
     };
     fetchUser();
@@ -104,9 +104,9 @@ const MarketplaceAdForm = () => {
 
   useEffect(() => {
     if (!formData.region) return;
-    const citiesInRegion = Districts.filter(
-      (d) => d.regionId === formData.region,
-    ).map((d) => d.name);
+    const citiesInRegion = cities.filter(
+      (city) => city.regionId === formData.region,
+    );
     setFilteredCities(citiesInRegion);
     handleInputChange("city", "");
     handleInputChange("district", "");
@@ -123,8 +123,6 @@ const MarketplaceAdForm = () => {
       handleInputChange("district", "");
     } else if (formData.city) {
       setShowNewCityInputs(false);
-      const cityObj = Districts.find((d) => d.name === formData.city);
-      setFilteredDistricts(cityObj?.subDistricts.map((sd) => sd.name) || []);
       handleInputChange("district", "");
     } else {
       setShowNewCityInputs(false);
@@ -139,9 +137,7 @@ const MarketplaceAdForm = () => {
         formData.category
       ];
       const selectedCategoryTitle = selectedCategoryEntry?.title;
-
       const nested = categoryNestedMap[selectedCategoryTitle] || [];
-
       setFilteredSubcategories(nested);
     } else {
       setFilteredSubcategories([]);
@@ -233,15 +229,9 @@ const MarketplaceAdForm = () => {
       mainCategory: mainCategory,
     };
 
-    console.log("--- FINAL PAYLOAD Submitted (All Fields) ---");
-    console.log(payload);
-    console.log("------------------------------------------");
-
     try {
       const createdItem = await createMarketplaceItem(payload).unwrap();
-
       toast.success("Ad submitted successfully!", { position: "top-right" });
-
       setTimeout(() => {
         router.push(`/marketplaceSummary?id=${createdItem.id}`);
       }, 1000);
@@ -264,7 +254,7 @@ const MarketplaceAdForm = () => {
       <form onSubmit={handleSubmit} ref={formRef} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            main Category
+            Main Category
           </label>
           <select
             value={mainCategory}
@@ -411,8 +401,8 @@ const MarketplaceAdForm = () => {
             >
               <option value="">Select city</option>
               {filteredCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+                <option key={c.id} value={c.name}>
+                  {c.name}
                 </option>
               ))}
               <option value="custom" className="font-bold text-blue-600">
@@ -512,9 +502,8 @@ const MarketplaceAdForm = () => {
                     setImages(images.filter((_, idx) => idx !== i))
                   }
                   className="absolute top-[-5px] right-[-5px] bg-red-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition duration-150"
-                  aria-label="Remove image"
                 >
-                  <MdOutlinePlaylistRemove size={16} />
+                  ×
                 </button>
               </div>
             ))}

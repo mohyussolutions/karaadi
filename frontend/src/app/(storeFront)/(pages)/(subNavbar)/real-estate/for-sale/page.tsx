@@ -348,6 +348,7 @@ function ForSale() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={finalItems}
           />
         </div>
 

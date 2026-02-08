@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import SeeEmore from "../shared/buttons/SeeEmore";
-import CardItem from "./CardItem";
 import UniversalCard from "./UniversalCard";
 
 interface ItemsGridProps {

@@ -7,11 +7,11 @@ import {
   deleteCar,
   getTotalCars,
   getAllCarsIncludingUnpaid,
-} from "controllers/categoryController/carsController.ts";
+} from "../../controllers/categoryController/carsController.ts";
 import {
   adminAndManager,
   ProtectRoute,
-} from "core/middelware/authMiddlewareBothDbAndCognito.ts";
+} from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const carsRoutes = Router();
 
@@ -19,7 +19,7 @@ carsRoutes.get("/total", getTotalCars);
 carsRoutes.get(
   "/all-including-unpaid",
 
-  getAllCarsIncludingUnpaid
+  getAllCarsIncludingUnpaid,
 );
 
 carsRoutes.post(
@@ -28,7 +28,7 @@ carsRoutes.post(
   adminAndManager,
   async (req: Request, res: Response) => {
     await createCar(req, res);
-  }
+  },
 );
 
 carsRoutes.put("/:id", async (req: Request, res: Response) => {
@@ -40,7 +40,7 @@ carsRoutes.delete(
 
   async (req: Request, res: Response) => {
     await deleteCar(req, res);
-  }
+  },
 );
 
 // --- PUBLIC ROUTES ---

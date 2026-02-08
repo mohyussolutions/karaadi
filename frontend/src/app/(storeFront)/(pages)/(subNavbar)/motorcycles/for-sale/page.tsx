@@ -228,6 +228,7 @@ function MotoForSale() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={setSelectedRegion}
+            items={finalItems}
           />
         </div>
 

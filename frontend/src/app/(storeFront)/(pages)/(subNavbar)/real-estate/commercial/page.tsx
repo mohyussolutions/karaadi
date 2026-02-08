@@ -329,6 +329,7 @@ function Commercial() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={finalItems}
           />
         </div>
 

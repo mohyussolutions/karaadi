@@ -1,7 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { apiUrlsForCategoryTotals } from "../constant/constant";
+import {
+  apiUrlsForCategoryTotals,
+  PAYMENT_ENDPOINTS,
+} from "../constant/constant";
 
 export type MarketplaceItem = {
   _id: string;
@@ -54,7 +57,7 @@ export async function getMarketplaceItems(): Promise<MarketplaceItem[]> {
       : result && result.data && Array.isArray(result.data)
         ? result.data
         : [];
-
+    console.log(result.data);
     return itemList.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
@@ -197,4 +200,15 @@ export async function deleteMarketplaceItem(id: string, token: string) {
   } catch (error) {
     return { success: false, message: "Network error or unable to reach API." };
   }
+}
+
+export async function getItemDetailAction(id: string) {
+  const response = await fetch(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id), {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Failed to fetch item");
+  return result;
 }

@@ -14,13 +14,12 @@ import {
   updateUserProfileCognito,
   cognitoClient,
 } from "../../core/utils/cognitoauth.ts";
-import * as crypto from "crypto";
-import prisma from "core/utils/db.ts";
+import prisma from "../../core/utils/db.ts";
 
 export const registerUser = async (
   email: string,
   password: string,
-  username: string
+  username: string,
 ) => {
   const emailExists = await prisma.user.findUnique({ where: { email } });
   if (emailExists)
@@ -86,7 +85,7 @@ export const loginUsingDb = async (email: string, password: string) => {
   const token = jwt.sign(
     { id: user.id, email: user.email },
     process.env.JWT_SECRET!,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
 
   const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
@@ -122,7 +121,7 @@ export const resetCodeUser = async (req: Request, res: Response) => {
 
 export const forgotPasswordIncontroller = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { email } = req.body;
@@ -141,7 +140,7 @@ export const forgotPasswordIncontroller = async (
 
 export const resetPasswordIncontroller = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { email, newPassword, resetCode } = req.body;

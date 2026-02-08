@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyToken } from "core/utils/cognitoauth.ts";
-import prisma from "core/utils/db.ts";
+import { verifyToken } from "../utils/cognitoauth.ts";
+import prisma from "../utils/db.ts";
 
 interface AuthRequest extends Request {
   user?: any;
@@ -10,11 +10,11 @@ interface AuthRequest extends Request {
 export const ProtectRoute = async (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const token: string | undefined = req.headers.authorization?.startsWith(
-      "Bearer "
+      "Bearer ",
     )
       ? req.headers.authorization.split(" ")[1]
       : req.cookies?.idToken;
@@ -60,7 +60,7 @@ export const ProtectRoute = async (
 export const adminAndManager = (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   if (!req.user) {
     res.status(401).json({ message: "Not authorized, no user data" });

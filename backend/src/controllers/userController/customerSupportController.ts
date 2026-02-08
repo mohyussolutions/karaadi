@@ -1,6 +1,5 @@
-//implements the encyrption and decryption
-import { prisma } from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
 export const getTicketsAndMetrics = async (req: Request, res: Response) => {
   try {
     const tickets = await prisma.customerSupportTicket.findMany({

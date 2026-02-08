@@ -1,29 +1,31 @@
 import * as http from "http";
 import dotenv from "dotenv";
 import chalk from "chalk";
-import app from "app.ts";
+import app from "./app.js";
+import { socketServer } from "./services/sockets/socketServer.js";
+import redisServer from "./services/redisserver/redisServer.js";
+import prisma from "./core/utils/db.js";
+import path from "path";
 
-import { socketServer } from "services/sockets/socketServer.ts";
-import redisServer from "services/redisserver/redisServer.ts";
-import prisma from "core/utils/db.ts";
+const envFile =
+  process.env.NODE_ENV === "production" ? ".env.production" : ".env";
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
-dotenv.config();
 const PORT = Number(process.env.PORT || 8080);
 const server = http.createServer(app);
 socketServer(server);
+
 const startServer = async () => {
   console.log(chalk.blue("Starting server..."));
+  console.log(chalk.magenta(`Config Loaded: ${envFile}`));
 
   try {
     await redisServer.start();
     const redisStatus = await redisServer.getStatus();
     if (redisStatus.isConnected) {
       console.log(chalk.green("✓ Redis connected"));
-      console.log(
-        chalk.cyan(`  Memory: ${redisStatus.memoryUsage.used_memory_human}`),
-      );
     } else {
-      console.log(chalk.yellow("⚠ Redis health check failed"));
+      console.error(chalk.red("✗ Redis is not connected"));
     }
   } catch (e) {
     console.error(chalk.red("✗ Redis connection failed:"), e);

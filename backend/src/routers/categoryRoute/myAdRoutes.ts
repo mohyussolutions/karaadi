@@ -2,10 +2,11 @@ import {
   deleteAd,
   getAds,
   updateAd,
-} from "controllers/categoryController/myAdController.ts";
-import { ProtectRoute } from "core/middelware/authMiddlewareBothDbAndCognito.ts";
+} from "../../controllers/categoryController/myAdController.ts";
+
 import express from "express";
 import { Response, Request } from "express";
+import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const myAdsRouter = express.Router();
 
@@ -22,7 +23,7 @@ myAdsRouter.delete(
   ProtectRoute,
   (req: Request, res: Response) => {
     deleteAd(req, res);
-  }
+  },
 );
 
 export default myAdsRouter;

@@ -4,7 +4,7 @@ import {
   ERROR_MESSAGES,
   LOG_MESSAGES,
   REDIS_CONFIG,
-} from "config/contstanst.ts";
+} from "../../config/contstanst.ts";
 import { createClient, RedisClientType } from "redis";
 
 class CacheManager {
@@ -22,7 +22,7 @@ class CacheManager {
           }
           return Math.min(
             retries * REDIS_CONFIG.RECONNECT_DELAY,
-            REDIS_CONFIG.MAX_RECONNECT_DELAY
+            REDIS_CONFIG.MAX_RECONNECT_DELAY,
           );
         },
       },
@@ -106,7 +106,7 @@ class CacheManager {
   public async set(
     key: string,
     value: any,
-    ttlSeconds: number = CACHE_TTL.DEFAULT
+    ttlSeconds: number = CACHE_TTL.DEFAULT,
   ): Promise<boolean> {
     if (!this.isReady()) return false;
     try {
@@ -173,7 +173,7 @@ class CacheManager {
   public async withCache<T>(
     key: string,
     fetchData: () => Promise<T>,
-    ttlSeconds: number = CACHE_TTL.DEFAULT
+    ttlSeconds: number = CACHE_TTL.DEFAULT,
   ): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) return cached;
@@ -184,12 +184,12 @@ class CacheManager {
 
   public async cacheUserSession(
     userId: string,
-    sessionData: any
+    sessionData: any,
   ): Promise<boolean> {
     return await this.set(
       CACHE_KEYS.USER_SESSION(userId),
       sessionData,
-      CACHE_TTL.USER_SESSION
+      CACHE_TTL.USER_SESSION,
     );
   }
 
@@ -203,7 +203,7 @@ class CacheManager {
 
   public async cacheAdvertisements(
     ads: any[],
-    position?: string
+    position?: string,
   ): Promise<boolean> {
     const key = position
       ? CACHE_KEYS.ADS_POSITION(position)
@@ -222,7 +222,7 @@ class CacheManager {
     return await this.set(
       CACHE_KEYS.AD_DETAIL(adId),
       adData,
-      CACHE_TTL.AD_DETAIL
+      CACHE_TTL.AD_DETAIL,
     );
   }
 
@@ -240,7 +240,7 @@ class CacheManager {
     return await this.set(
       CACHE_KEYS.VISITOR_STATS,
       stats,
-      CACHE_TTL.VISITOR_STATS
+      CACHE_TTL.VISITOR_STATS,
     );
   }
 
@@ -251,7 +251,7 @@ class CacheManager {
   public async cacheCategoryListings(
     category: string,
     listings: any[],
-    filters: any = {}
+    filters: any = {},
   ): Promise<boolean> {
     const key = CACHE_KEYS.CATEGORY_LISTINGS(category, filters);
     return await this.set(key, listings, CACHE_TTL.CATEGORY_LISTINGS);
@@ -259,7 +259,7 @@ class CacheManager {
 
   public async getCategoryListings(
     category: string,
-    filters: any = {}
+    filters: any = {},
   ): Promise<any[] | null> {
     const key = CACHE_KEYS.CATEGORY_LISTINGS(category, filters);
     return await this.get<any[]>(key);
@@ -272,7 +272,7 @@ class CacheManager {
   public async checkRateLimit(
     key: string,
     limit: number,
-    windowSeconds: number
+    windowSeconds: number,
   ): Promise<boolean> {
     const current = await this.increment(CACHE_KEYS.RATE_LIMIT(key), 1);
     if (current === 1)
@@ -282,12 +282,12 @@ class CacheManager {
 
   public async cacheChatMessages(
     chatId: string,
-    messages: any[]
+    messages: any[],
   ): Promise<boolean> {
     return await this.set(
       CACHE_KEYS.CHAT_MESSAGES(chatId),
       messages,
-      CACHE_TTL.CHAT_MESSAGES
+      CACHE_TTL.CHAT_MESSAGES,
     );
   }
 
@@ -297,13 +297,13 @@ class CacheManager {
 
   public async cacheSearchResults(
     query: string,
-    results: any[]
+    results: any[],
   ): Promise<boolean> {
     const queryHash = Buffer.from(query).toString("base64").slice(0, 32);
     return await this.set(
       CACHE_KEYS.SEARCH_RESULTS(queryHash),
       results,
-      CACHE_TTL.SEARCH_RESULTS
+      CACHE_TTL.SEARCH_RESULTS,
     );
   }
 
@@ -314,12 +314,12 @@ class CacheManager {
 
   public async cacheUserNotifications(
     userId: string,
-    notifications: any[]
+    notifications: any[],
   ): Promise<boolean> {
     return await this.set(
       CACHE_KEYS.USER_NOTIFICATIONS(userId),
       notifications,
-      CACHE_TTL.USER_NOTIFICATIONS
+      CACHE_TTL.USER_NOTIFICATIONS,
     );
   }
 
@@ -354,7 +354,7 @@ class CacheManager {
 
   public generateCacheKey(prefix: string, ...parts: any[]): string {
     const stringParts = parts.map((part) =>
-      typeof part === "object" ? JSON.stringify(part) : String(part)
+      typeof part === "object" ? JSON.stringify(part) : String(part),
     );
     return `${prefix}:${stringParts.join(":")}`;
   }

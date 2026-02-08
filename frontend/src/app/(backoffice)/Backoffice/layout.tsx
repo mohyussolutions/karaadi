@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import ManagerNavbar from "./ManagerNavbar";
 import ManagerSidebar from "./ManagerSidebar";
 import { usePathname } from "next/navigation";
-import { AdminRoute } from "@/app/ProtectedRoute/ProtectedRoute";
+import { AdminRoute, SupportRoute } from "@/app/ProtectedRoute/ProtectedRoute";
 
 export default function ManagementLayout({
   children,
@@ -25,7 +25,7 @@ export default function ManagementLayout({
         : "manager";
 
   return (
-    <AdminRoute>
+    <SupportRoute>
       <div className="flex min-h-screen bg-slate-50 overflow-hidden">
         <aside
           id="backoffice-sidebar"
@@ -67,6 +67,6 @@ export default function ManagementLayout({
           </main>
         </div>
       </div>
-    </AdminRoute>
+    </SupportRoute>
   );
 }

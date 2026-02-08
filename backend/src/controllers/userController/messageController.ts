@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-
-import { getIO } from "services/sockets/socketServer.ts";
-import { EncryptionController } from "controllers/encryptionController/encryptionController.ts";
+import { EncryptionController } from "../encryptionController/encryptionController.ts";
+import { getIO } from "../../services/sockets/socketServer.ts";
 export const getChatMessages = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;

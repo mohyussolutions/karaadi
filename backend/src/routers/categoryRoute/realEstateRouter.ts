@@ -6,7 +6,7 @@ import {
   getRealEstateById,
   getTotalRealEstates,
   updateRealEstate,
-} from "controllers/categoryController/realEstateController.ts";
+} from "../../controllers/categoryController/realEstateController.ts";
 import { Router } from "express";
 
 const realEstateRouter = Router();

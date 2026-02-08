@@ -1,8 +1,7 @@
-import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
-import prisma from "core/utils/db.ts";
-import cacheManager from "services/redisserver/cacheManager.ts";
-
+import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
+import cacheManager from "../../services/redisserver/cacheManager.ts";
 export const globalFiltering = async (req: Request, res: Response) => {
   const { q, region, city, minPrice, maxPrice } = req.query;
   const cacheKey = `filter:${JSON.stringify(req.query).toLowerCase()}`;
@@ -12,6 +11,8 @@ export const globalFiltering = async (req: Request, res: Response) => {
     if (cachedResults) return res.json(cachedResults);
 
     const mode: Prisma.QueryMode = "insensitive";
+    const regionArray = region ? String(region).split(",").filter(Boolean) : [];
+    const cityArray = city ? String(city).split(",").filter(Boolean) : [];
     const keywords = q
       ? String(q).toLowerCase().split(" ").filter(Boolean)
       : [];
@@ -21,8 +22,6 @@ export const globalFiltering = async (req: Request, res: Response) => {
       pField: string | null = "price",
     ) => {
       const where: any = { AND: [] };
-
-      // Only add isPaid if you are sure it exists on all models
       where.AND.push({ isPaid: true });
 
       if (keywords.length > 0) {
@@ -38,8 +37,13 @@ export const globalFiltering = async (req: Request, res: Response) => {
         });
       }
 
-      if (region) where.AND.push({ region: { equals: String(region), mode } });
-      if (city) where.AND.push({ city: { equals: String(city), mode } });
+      if (regionArray.length > 0) {
+        where.AND.push({ region: { in: regionArray, mode } });
+      }
+
+      if (cityArray.length > 0) {
+        where.AND.push({ city: { in: cityArray, mode } });
+      }
 
       if (pField && (minPrice || maxPrice)) {
         const priceFilter: any = {};
@@ -51,7 +55,6 @@ export const globalFiltering = async (req: Request, res: Response) => {
       return where;
     };
 
-    // Use individual catches to prevent one failing model from crashing the whole request
     const [market, real, cars, boats, motos, traktors, jobs] =
       await Promise.all([
         prisma.marketplace
@@ -93,7 +96,6 @@ export const globalFiltering = async (req: Request, res: Response) => {
     await cacheManager.set(cacheKey, results, 300);
     res.json(results);
   } catch (error) {
-    console.error("Global filtering error:", error);
     res.status(500).json({ error: "Global filtering failed" });
   }
 };

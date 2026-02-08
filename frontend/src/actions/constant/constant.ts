@@ -115,14 +115,12 @@ export const PAYMENT_ENDPOINTS = {
   CREATE: `${BASE_API_URL}/api/payments`,
   GET_ALL: `${BASE_API_URL}/api/payments`,
   STATS: `${BASE_API_URL}/api/payments/stats`,
-  RECENT: `${BASE_API_URL}/api/payments/recent`,
-  VERIFY: `${BASE_API_URL}/api/payments/verify`,
-  GET_BY_ID: (id: string) => `${BASE_API_URL}/api/payments/${id}`,
-  GET_BY_USER: (userId: string) =>
-    `${BASE_API_URL}/api/payments/user/${userId}`,
+  SEARCH: `${BASE_API_URL}/api/payments/search`,
+  GET_MY_PAYMENTS: `${BASE_API_URL}/api/payments/me`,
   UPDATE_STATUS: (id: string) => `${BASE_API_URL}/api/payments/${id}/status`,
   DELETE: (id: string) => `${BASE_API_URL}/api/payments/${id}`,
-} as const;
+  GET_ITEM_DETAIL: (id: string) => `${BASE_API_URL}/api/payments/item/${id}`,
+};
 
 export const SUBS_ENDPOINTS = {
   CREATE: `${BASE_API_URL}/api/Subscription`,

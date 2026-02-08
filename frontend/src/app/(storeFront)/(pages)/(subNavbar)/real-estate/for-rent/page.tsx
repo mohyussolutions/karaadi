@@ -326,6 +326,7 @@ function ForRent() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={finalItems}
           />
         </div>
 

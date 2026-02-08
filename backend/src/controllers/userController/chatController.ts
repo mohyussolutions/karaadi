@@ -1,6 +1,6 @@
-import { EncryptionController } from "controllers/encryptionController/encryptionController.ts";
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
+import { EncryptionController } from "../encryptionController/encryptionController.ts";
 
 export const createChat = async (req: Request, res: Response) => {
   try {

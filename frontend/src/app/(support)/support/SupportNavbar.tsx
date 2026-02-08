@@ -8,12 +8,12 @@ import {
 } from "react-icons/fi";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiService } from "@/actions/core/authAction";
+import { logout } from "@/actions/core/authAction";
 
 function useLogout() {
   return async () => {
     try {
-      await apiService.logout();
+      await logout();
       window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
@@ -30,7 +30,7 @@ export default function SupportNavbar({
   user,
   toggleSidebar,
 }: SupportNavbarProps) {
-  const logout = useLogout();
+  const logoutHandler = useLogout();
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -104,7 +104,7 @@ export default function SupportNavbar({
               </button>
 
               <button
-                onClick={logout}
+                onClick={logoutHandler}
                 className="w-full px-4 py-3 text-sm flex items-center gap-2 text-red-600 hover:bg-gray-100"
               >
                 <FiLogOut /> Logout

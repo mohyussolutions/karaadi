@@ -14,9 +14,11 @@ export interface Subscription {
   priceMin?: number;
   priceMax?: number;
   isActive: boolean;
+  status: string;
   createdAt: string;
   updatedAt: string;
   lastNotified?: string;
+  notificationCount?: number;
 }
 
 export interface SubscriptionFilters {

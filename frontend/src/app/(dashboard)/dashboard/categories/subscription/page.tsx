@@ -29,8 +29,10 @@ function AdminSubscriptionsPage() {
     Subscription[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [selectedSubscription, setSelectedSubscription] =
     useState<Subscription | null>(null);
+
   const [filters, setFilters] = useState<SubscriptionFilters>({
     search: "",
     status: "",
@@ -39,6 +41,7 @@ function AdminSubscriptionsPage() {
     dateFrom: "",
     dateTo: "",
   });
+
   const [regions, setRegions] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [stats, setStats] = useState({
@@ -47,27 +50,38 @@ function AdminSubscriptionsPage() {
     inactive: 0,
     recent: 0,
   });
-  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchSubscriptions();
   }, []);
 
   useEffect(() => {
-    filterSubscriptions();
+    const s = filters.search.toLowerCase();
+    let filtered = subscriptions.filter(
+      (sub) =>
+        (!s ||
+          sub.title.toLowerCase().includes(s) ||
+          sub.userId?.username?.toLowerCase().includes(s) ||
+          sub.region.toLowerCase().includes(s)) &&
+        (!filters.region || sub.region === filters.region) &&
+        (!filters.category || sub.category === filters.category),
+    );
+
+    if (filters.status) {
+      filtered = filtered.filter((sub) =>
+        filters.status === "active"
+          ? sub.status === "active" || sub.isActive
+          : sub.status !== "active" && !sub.isActive,
+      );
+    }
+    setFilteredSubscriptions(filtered);
   }, [filters, subscriptions]);
 
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const subs = await getAllSubscriptionsAdmin({
-        search: filters.search,
-        category: filters.category,
-        region: filters.region,
-        status: filters.status,
-      });
-
-      const mappedSubscriptions = subs.map((sub: any) => ({
+      const subs = await getAllSubscriptionsAdmin(filters);
+      const mapped = subs.map((sub: any) => ({
         _id: sub.id,
         userId: {
           _id: sub.user?.id || "",
@@ -77,83 +91,47 @@ function AdminSubscriptionsPage() {
         },
         title: sub.title,
         category: sub.category,
-        subCategory: sub.subCategory || "",
         region: sub.region,
-        city: sub.city,
-        priceMin: sub.priceMin,
-        priceMax: sub.priceMax,
         isActive: sub.isActive,
         status: sub.status,
         createdAt: sub.createdAt,
-        updatedAt: sub.updatedAt,
-        lastNotified: sub.lastNotified,
         notificationCount: sub.notificationCount || 0,
       }));
 
-      setSubscriptions(mappedSubscriptions);
+      setSubscriptions(mapped);
       setRegions(
-        Array.from(
-          new Set(mappedSubscriptions.map((s: any) => s.region))
-        ).filter(Boolean) as string[]
+        Array.from(new Set(mapped.map((s: any) => s.region))).filter(
+          Boolean,
+        ) as string[],
       );
       setCategories(
-        Array.from(
-          new Set(mappedSubscriptions.map((s: any) => s.category))
-        ).filter(Boolean) as string[]
+        Array.from(new Set(mapped.map((s: any) => s.category))).filter(
+          Boolean,
+        ) as string[],
       );
-      calculateStats(mappedSubscriptions);
+
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const activeCount = mapped.filter(
+        (s: any) => s.status === "active" || s.isActive,
+      ).length;
+      setStats({
+        total: mapped.length,
+        active: activeCount,
+        inactive: mapped.length - activeCount,
+        recent: mapped.filter((s: any) => new Date(s.createdAt) >= weekAgo)
+          .length,
+      });
     } catch (error) {
-      console.error("Error fetching subscriptions:", error);
-      setSubscriptions([]);
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateStats = (data: Subscription[]) => {
-    const total = data.length;
-    const active = data.filter(
-      (sub: any) => sub.status === "active" || sub.isActive
-    ).length;
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const recent = data.filter(
-      (sub) => new Date(sub.createdAt) >= weekAgo
-    ).length;
-    setStats({ total, active, inactive: total - active, recent });
-  };
-
-  const filterSubscriptions = () => {
-    let filtered = [...subscriptions];
-    if (filters.search) {
-      const s = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (sub) =>
-          sub.title.toLowerCase().includes(s) ||
-          sub.userId?.username?.toLowerCase().includes(s) ||
-          sub.region.toLowerCase().includes(s)
-      );
-    }
-    if (filters.status) {
-      filtered = filtered.filter((sub: any) =>
-        filters.status === "active"
-          ? sub.status === "active" || sub.isActive
-          : sub.status !== "active" && !sub.isActive
-      );
-    }
-    if (filters.region)
-      filtered = filtered.filter((sub) => sub.region === filters.region);
-    if (filters.category)
-      filtered = filtered.filter((sub) => sub.category === filters.category);
-    setFilteredSubscriptions(filtered);
-  };
-
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
-      await updateSubscriptionStatus(id, {
-        status: newStatus as "active" | "inactive" | "paused",
-      });
-
+      await updateSubscriptionStatus(id, { status: newStatus as any });
       setSubscriptions((prev) =>
         prev.map((s) =>
           s._id === id
@@ -162,8 +140,8 @@ function AdminSubscriptionsPage() {
                 status: newStatus,
                 isActive: newStatus === "active",
               } as any)
-            : s
-        )
+            : s,
+        ),
       );
     } catch (error) {
       alert("Update failed");
@@ -181,10 +159,34 @@ function AdminSubscriptionsPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    setExporting(true);
+    try {
+      const headers = "ID,User,Title,Category,Region,Status,Date\n";
+      const rows = filteredSubscriptions
+        .map(
+          (s) =>
+            `${s._id},${s.userId?.username},"${s.title}",${s.category},${s.region},${s.status},${s.createdAt}`,
+        )
+        .join("\n");
+
+      const blob = new Blob([headers + rows], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `subscriptions-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+    } catch (err) {
+      alert("Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading)
     return (
-      <div className="flex h-screen items-center justify-center">
-        Loading...
+      <div className="flex h-screen items-center justify-center font-medium">
+        Loading Dashboard...
       </div>
     );
 
@@ -193,28 +195,22 @@ function AdminSubscriptionsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Subscription Management</h1>
-            <p className="text-gray-600">
-              Monitor and manage user subscriptions
+            <h1 className="text-3xl font-bold text-gray-900">Subscriptions</h1>
+            <p className="text-gray-500">
+              Manage automated user alerts and preferences
             </p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={fetchSubscriptions}
-              className="p-2 bg-white border rounded-lg hover:bg-gray-50 transition"
+              className="p-2 bg-white border rounded-lg hover:bg-gray-50 transition shadow-sm"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
             <button
-              onClick={() => {
-                if (filteredSubscriptions.length === 0) {
-                  alert("No data to export");
-                  return;
-                }
-                handleExportCSV();
-              }}
-              disabled={exporting}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+              onClick={handleExportCSV}
+              disabled={exporting || filteredSubscriptions.length === 0}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 shadow-sm transition"
             >
               <Download className="h-4 w-4" />{" "}
               {exporting ? "Exporting..." : "Export CSV"}
@@ -234,22 +230,22 @@ function AdminSubscriptionsPage() {
             title="Active"
             value={stats.active}
             icon={Activity}
-            gradientFrom="from-green-500"
-            gradientTo="to-green-600"
+            gradientFrom="from-emerald-500"
+            gradientTo="to-emerald-600"
           />
           <StatsCard
             title="Inactive"
             value={stats.inactive}
             icon={Bell}
-            gradientFrom="from-red-500"
-            gradientTo="to-red-600"
+            gradientFrom="from-rose-500"
+            gradientTo="to-rose-600"
           />
           <StatsCard
             title="This Week"
             value={stats.recent}
             icon={TrendingUp}
-            gradientFrom="from-purple-500"
-            gradientTo="to-purple-600"
+            gradientFrom="from-violet-500"
+            gradientTo="to-violet-600"
           />
         </div>
 
@@ -269,27 +265,19 @@ function AdminSubscriptionsPage() {
               dateTo: "",
             })
           }
-          onBulkActivate={() => {
-            if (filteredSubscriptions.length === 0) {
-              alert("No subscriptions to activate");
-              return;
-            }
-            filteredSubscriptions.forEach((sub) => {
-              handleUpdateStatus(sub._id, "active");
-            });
-          }}
-          onBulkDeactivate={() => {
-            if (filteredSubscriptions.length === 0) {
-              alert("No subscriptions to deactivate");
-              return;
-            }
-            filteredSubscriptions.forEach((sub) => {
-              handleUpdateStatus(sub._id, "inactive");
-            });
-          }}
+          onBulkActivate={() =>
+            filteredSubscriptions.forEach((sub) =>
+              handleUpdateStatus(sub._id, "active"),
+            )
+          }
+          onBulkDeactivate={() =>
+            filteredSubscriptions.forEach((sub) =>
+              handleUpdateStatus(sub._id, "inactive"),
+            )
+          }
         />
 
-        <div className="bg-white rounded-2xl shadow-lg mt-6 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mt-6 overflow-hidden">
           <SubscriptionTable
             subscriptions={filteredSubscriptions}
             onViewDetails={setSelectedSubscription}
@@ -312,10 +300,5 @@ function AdminSubscriptionsPage() {
     </div>
   );
 }
-
-// Helper function for CSV export
-const handleExportCSV = () => {
-  alert("Export functionality would be implemented here");
-};
 
 export default AdminSubscriptionsPage;

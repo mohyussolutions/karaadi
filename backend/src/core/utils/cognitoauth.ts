@@ -23,7 +23,7 @@ export const cognitoClient = new AWS.CognitoIdentityServiceProvider({
 export const signUp = async (
   email: string,
   password: string,
-  username: string
+  username: string,
 ) => {
   try {
     const response = await cognitoClient
@@ -50,7 +50,7 @@ export const signIn = async (
   email: string,
   password: string,
   req?: Request,
-  res?: Response
+  res?: Response,
 ) => {
   try {
     const response = await cognitoClient
@@ -74,7 +74,7 @@ export const signIn = async (
     }
 
     const decodedToken = JSON.parse(
-      Buffer.from(idToken.split(".")[1], "base64").toString("utf-8")
+      Buffer.from(idToken.split(".")[1], "base64").toString("utf-8"),
     );
 
     const isAdmin = decodedToken["custom:isAdmin"] === "true";
@@ -132,7 +132,7 @@ export const signIn = async (
 
 export const verifySession = async (
   req: Request & { accessToken?: string },
-  res: Response
+  res: Response,
 ) => {
   const token = req.headers.authorization?.split(" ")[1] || req.cookies.idToken;
   if (!token) return res.status(401).json({ message: "Not authenticated" });
@@ -258,7 +258,7 @@ export const forgotPassword = async (email: string) => {
 export const resetPassword = async (
   email: string,
   newPassword: string,
-  resetCode: string
+  resetCode: string,
 ): Promise<void> => {
   try {
     await cognitoClient
@@ -308,7 +308,7 @@ export class TokenVerificationError extends Error {
 }
 
 export const verifyToken = async (
-  token: string
+  token: string,
 ): Promise<VerifiedTokenData | null> => {
   try {
     const decoded: any = jwt.decode(token);
@@ -331,7 +331,7 @@ export const verifyToken = async (
 };
 
 export const refreshTokenLogic = async (
-  refreshToken: string
+  refreshToken: string,
 ): Promise<string> => {
   const response = await cognitoClient
     .initiateAuth({
@@ -355,14 +355,14 @@ export const adminUpdateUser = async (
     "custom:isAdmin"?: string;
     "custom:isManager"?: string;
     "custom:isSupport"?: string;
-  }
+  },
 ): Promise<void> => {
   try {
     const userAttributes = Object.entries(attributesToUpdate).map(
       ([key, value]) => ({
         Name: key,
         Value: value!,
-      })
+      }),
     );
 
     await cognitoClient
@@ -398,7 +398,7 @@ export const updateUserRole = async (
     isAdmin?: string;
     isManager?: string;
     isSupport?: string;
-  }
+  },
 ): Promise<{ message: string }> => {
   try {
     const requester = await verifyToken(requesterAccessToken);
@@ -458,7 +458,7 @@ export const updateUserRole = async (
 };
 
 export const refreshTokenLogicV2 = async (
-  refreshToken: string
+  refreshToken: string,
 ): Promise<{
   accessToken: string;
   idToken: string;

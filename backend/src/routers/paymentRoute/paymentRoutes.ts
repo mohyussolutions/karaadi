@@ -1,26 +1,16 @@
 import { Router } from "express";
-import {
-  createPayment,
-  getAllPayments,
-  getPaymentById,
-  getPaymentsByUser,
-  getPaymentStats,
-  updatePaymentStatus,
-  deletePayment,
-  verifyPayment,
-  getRecentPayments,
-} from "../../controllers/paymentController/PaymentController.ts";
+import paymentController from "../../controllers/paymentController/PaymentController.ts";
+import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const paymentRoutes = Router();
 
-paymentRoutes.post("/", createPayment);
-paymentRoutes.get("/", getAllPayments);
-paymentRoutes.get("/stats", getPaymentStats);
-paymentRoutes.get("/recent", getRecentPayments);
-paymentRoutes.get("/:id", getPaymentById);
-paymentRoutes.put("/:id/status", updatePaymentStatus);
-paymentRoutes.delete("/:id", deletePayment);
-paymentRoutes.get("/user/:userId", getPaymentsByUser);
-paymentRoutes.post("/verify", verifyPayment);
+paymentRoutes.get("/", paymentController.getAllPayments);
+paymentRoutes.get("/stats", paymentController.getPaymentStats);
+paymentRoutes.get("/search", paymentController.searchPayments);
+paymentRoutes.get("/me", ProtectRoute, paymentController.getMyPayments);
+paymentRoutes.post("/", paymentController.createPayment);
+paymentRoutes.put("/:id/status", paymentController.updatePaymentStatus);
+paymentRoutes.delete("/:id", paymentController.deletePayment);
+paymentRoutes.get("/item/:id", paymentController.getItemDetail);
 
 export default paymentRoutes;

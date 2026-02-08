@@ -10,7 +10,7 @@ import {
   searchSubscriptions,
   triggerNotification,
   updateSubscriptionStatus,
-} from "controllers/userController/subscriptionController.ts";
+} from "../../controllers/userController/subscriptionController.ts";
 
 const subscriptionRoute = express.Router();
 

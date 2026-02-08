@@ -9,7 +9,7 @@ import {
   incrementAdClicks,
   updateAdvertisement,
   getUserAdvertisements,
-} from "controllers/categoryController/advertisementController.ts";
+} from "../../controllers/categoryController/advertisementController.ts";
 
 const advertisementRouter = Router();
 

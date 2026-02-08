@@ -1,11 +1,11 @@
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
+import { triggerSubscriptionWatch } from "../userController/subscriptionController.ts";
 // Import the trigger function from your subscription controller
-import { triggerSubscriptionWatch } from "controllers/userController/subscriptionController.ts";
 
 export const getAllMarketplaceItemsAdmin = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const items = await prisma.marketplace.findMany({
@@ -34,7 +34,7 @@ export const getAllMarketplaceItemsAdmin = async (
 
 export const getTotalMarketplaceItems = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const total = await prisma.marketplace.count({});
@@ -48,7 +48,7 @@ export const getTotalMarketplaceItems = async (
 
 export const getPaidTotalMarketplaceItems = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const total = await prisma.marketplace.count({
@@ -64,7 +64,7 @@ export const getPaidTotalMarketplaceItems = async (
 
 export const getUnpaidTotalMarketplaceItems = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const total = await prisma.marketplace.count({

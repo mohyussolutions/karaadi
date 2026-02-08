@@ -350,6 +350,7 @@ function FurnitureAndInterior() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={itemsToDisplay}
           />
         </div>
 

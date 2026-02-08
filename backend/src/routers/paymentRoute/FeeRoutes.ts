@@ -5,7 +5,7 @@ import {
   calculateTotalFee,
   updateFeeWithLog,
   deleteFeeConfig,
-} from "controllers/paymentController/FeeController.ts";
+} from "../../controllers/paymentController/FeeController.ts";
 import { Router } from "express";
 
 const FeeRoutes = Router();

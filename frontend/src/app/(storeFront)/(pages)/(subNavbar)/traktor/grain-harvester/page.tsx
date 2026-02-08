@@ -358,6 +358,7 @@ function Grainharvester() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={[]}
           />
         </div>
 

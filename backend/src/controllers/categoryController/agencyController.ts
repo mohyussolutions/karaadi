@@ -1,5 +1,5 @@
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
 
 export const getAgencyStats = async (req: Request, res: Response) => {
   try {

@@ -13,10 +13,10 @@ import {
   getUsersCount,
   getUserProfile,
   getAllUsers,
-} from "controllers/userController/authController.ts";
-import { ProtectRoute } from "core/middelware/authMiddlewareBothDbAndCognito.ts";
-import { signIn, verifySession } from "core/utils/cognitoauth.ts";
-import { setAuthCookies } from "core/utils/cookiesDB.ts";
+} from "../../controllers/userController/authController.ts";
+import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
+import { signIn, verifySession } from "../../core/utils/cognitoauth.ts";
+import { setAuthCookies } from "../../core/utils/cookiesDB.ts";
 
 const authRouters = express.Router();
 const upload = multer();
@@ -74,7 +74,7 @@ authRouters.put(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 authRouters.post("/forgot-password", forgotPasswordIncontroller);
@@ -84,7 +84,7 @@ authRouters.post("/refreshtoken", refreshTokenController);
 authRouters.delete(
   "/delete-account",
   ProtectRoute,
-  async (req, res) => await deleteAccount(req as any, res)
+  async (req, res) => await deleteAccount(req as any, res),
 );
 
 authRouters.get("/total-users", async (req, res) => {

@@ -7,9 +7,9 @@ import { realEstateItems } from "../seeder/real-state.ts";
 
 import { motorcycleItems } from "../seeder/motorcycles.ts";
 import { notificationItems } from "../seeder/notifications.ts";
-import { equipmentItems } from "seeder/equipmentSeeder.ts";
-import { subscriptionItems } from "seeder/subscription.ts";
-import { supportTicketSeedData } from "seeder/ticketData.ts";
+import { equipmentItems } from "../seeder/equipmentSeeder.js";
+import { subscriptionItems } from "../seeder/subscription.js";
+import { supportTicketSeedData } from "../seeder/ticketData.js";
 
 const importData = async () => {
   try {

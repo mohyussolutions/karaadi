@@ -7,7 +7,7 @@ import {
   deleteMotorcycle,
   getTotalMotorcycles,
   getAllMotorcyclesIncludingUnpaid,
-} from "controllers/categoryController/motorcyclesController.ts";
+} from "../../controllers/categoryController/motorcyclesController.ts";
 import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const motorcyclesRoutes = Router();

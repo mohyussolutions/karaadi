@@ -1,4 +1,4 @@
-import { globalSearch } from "controllers/userController/searchController.ts";
+import { globalSearch } from "../../controllers/userController/searchController.ts";
 import { Router } from "express";
 
 const searchRouter = Router();

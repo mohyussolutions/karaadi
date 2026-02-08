@@ -10,9 +10,9 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "./src",
+    "baseUrl": "./",
     "paths": {
-      "*": ["*"]
+      "src/*": ["src/*"]
     }
   },
   "include": ["src"]

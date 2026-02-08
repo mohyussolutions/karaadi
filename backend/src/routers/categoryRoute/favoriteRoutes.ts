@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ProtectRoute } from "core/middelware/authMiddlewareBothDbAndCognito.ts";
+
 import {
   getMyFavorites,
   getFavoritesCount,
@@ -7,7 +7,8 @@ import {
   createFavorite,
   updateFavorite,
   deleteFavorite,
-} from "controllers/categoryController/favoriteController.ts";
+} from "../../controllers/categoryController/favoriteController.ts";
+import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const favoriteRoutes = Router();
 

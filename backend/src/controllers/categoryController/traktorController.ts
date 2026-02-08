@@ -1,9 +1,9 @@
-import { triggerSubscriptionWatch } from "controllers/userController/subscriptionController.ts";
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
+import { triggerSubscriptionWatch } from "../userController/subscriptionController.ts";
 export const getAllTractorsIncludingUnpaid = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const tractors = await prisma.traktor.findMany({

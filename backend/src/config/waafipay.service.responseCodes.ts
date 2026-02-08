@@ -1,7 +1,13 @@
+export interface ResponseCodeDetail {
+  readonly code: number;
+  readonly message: string;
+  readonly key: string;
+}
+
 export const ResponseCodes = {
   SUCCESS: {
     code: 2001,
-    message: "Request/Transaction is approved/successful",
+    message: "Request or transaction is approved successfully",
     key: "RCS_SUCCESS",
   },
   INVALID_HPPKEY: {
@@ -49,4 +55,48 @@ export const ResponseCodes = {
     message: "User timeout",
     key: "RCS_HPP_USERACTION_TIMEOUT",
   },
-} as const;
+  SERVICE_UNAVAILABLE: {
+    code: 5310,
+    message:
+      "Payment service is currently unavailable. Please try again later.",
+    key: "RCS_SERVICE_UNAVAILABLE",
+  },
+  CONFIGURATION_ERROR: {
+    code: 5311,
+    message:
+      "We're experiencing technical difficulties. Our team has been notified.",
+    key: "RCS_CONFIGURATION_ERROR",
+  },
+  INVALID_CONFIGURATION: {
+    code: 5312,
+    message: "Invalid payment configuration detected",
+    key: "RCS_INVALID_CONFIGURATION",
+  },
+  GATEWAY_ERROR: {
+    code: 5313,
+    message: "Payment gateway error occurred",
+    key: "RCS_GATEWAY_ERROR",
+  },
+  PAYMENT_DECLINED: {
+    code: 5314,
+    message: "Payment was not approved",
+    key: "RCS_PAYMENT_DECLINED",
+  },
+  PROCESSING_ERROR: {
+    code: 5315,
+    message: "We encountered an issue processing your payment",
+    key: "RCS_PROCESSING_ERROR",
+  },
+  MISSING_FIELDS: {
+    code: 5316,
+    message: "Required payment information is missing",
+    key: "RCS_MISSING_FIELDS",
+  },
+  INVALID_AMOUNT: {
+    code: 5317,
+    message: "Payment amount must be greater than zero",
+    key: "RCS_INVALID_AMOUNT",
+  },
+} as const satisfies Record<string, ResponseCodeDetail>;
+
+export type ResponseCodeKeys = keyof typeof ResponseCodes;

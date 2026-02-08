@@ -355,6 +355,7 @@ function AntiquesAndArt() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={itemsToDisplay}
           />
         </div>
 

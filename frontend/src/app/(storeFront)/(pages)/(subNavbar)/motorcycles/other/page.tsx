@@ -6,12 +6,11 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useGetMotorcyclesQuery } from "@/app/(storeFront)/store/slices/motorcyclesSlice";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomaliMap/page";
+import { OtherNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMotorcycles";
+import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
-import Search from "@/app/(storeFront)/components/shared/search/SearchInput";
-
-import { OtherNestedSub } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMotorcycles";
 
 function OtherItems() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -54,7 +53,7 @@ function OtherItems() {
 
   return (
     <div className="mx-2">
-      <Search />
+      <SearchInput onSearch={setQuery} />
 
       <div className="relative px-4 py-6 m-2">
         <PathSegmentsDisplay />
@@ -102,8 +101,23 @@ function OtherItems() {
 
       <div className="flex flex-col-reverse md:flex-row gap-4 pt-2">
         <div className="sticky top-4 space-y-4 md:w-1/4">
-          <LocationSelector />
-          <SomaliMap />
+          <LocationSelector
+            onFilterChange={function (
+              region: string | null,
+              cities: Record<string, boolean>,
+            ): void {
+              throw new Error("Function not implemented.");
+            }}
+            selectedRegion={null}
+            checkedCities={undefined}
+          />
+          <SomaliMap
+            selectedRegion={null}
+            onRegionClick={function (region: string): void {
+              throw new Error("Function not implemented.");
+            }}
+            items={finalItems}
+          />
         </div>
 
         <div className="md:w-3/4 w-full">

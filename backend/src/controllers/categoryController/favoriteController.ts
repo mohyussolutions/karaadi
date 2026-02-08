@@ -1,5 +1,5 @@
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
 
 const getUserId = (req: Request) =>
   (req.user as any)?.id || (req.user as any)?._id || (req.user as any)?.sub;

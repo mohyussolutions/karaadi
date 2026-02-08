@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiCalendar, FiBarChart2 } from "react-icons/fi";
 import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 
 function SupportCard({
@@ -38,16 +36,15 @@ export default function StreamlinedDashboard() {
   const [sections, setSections] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
+    // Replace with your actual API fetch logic later
     setSections({});
   }, []);
 
   const totalItems = Object.values(sections).reduce((s, a) => s + a.length, 0);
-  const entries = Object.entries(sections).sort(
-    (a, b) => b[1].length - a[1].length,
-  );
 
   return (
     <div className="flex flex-col gap-10 p-10 w-full">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-slate-900">
@@ -75,6 +72,7 @@ export default function StreamlinedDashboard() {
         </div>
       </div>
 
+      {/* Grid Links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {SUPPORT_LINKS.filter((link) => {
           const title = link.label || link.name || "";
@@ -106,6 +104,7 @@ export default function StreamlinedDashboard() {
         })}
       </div>
 
+      {/* Activity Section */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
         <div className="xl:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
@@ -122,6 +121,7 @@ export default function StreamlinedDashboard() {
               </button>
             </div>
           </div>
+
           <ul className="divide-y divide-slate-50">
             {Object.entries(sections)
               .flatMap(([section, arr]) =>
@@ -147,11 +147,11 @@ export default function StreamlinedDashboard() {
                         <span className="text-indigo-500">{item.section}</span>
                       </p>
                     </div>
-                </div>
-                  
-              </div>
-            ))}
-          </div>
+                  </div>
+                </li>
+              ))}
+          </ul>
+
           <button className="w-full mt-10 py-5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-black transition shadow-xl shadow-slate-200">
             Download Full Report
           </button>

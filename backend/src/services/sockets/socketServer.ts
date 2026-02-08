@@ -6,7 +6,7 @@ import { chatHandler } from "./chatHandler.ts";
 import { messageHandler } from "./messageHandler.ts";
 import { notificationHandler } from "./notificationHandler.ts";
 import { subscriptionHandler } from "./subscriptionHandler.ts";
-import prisma from "core/utils/db.ts";
+import prisma from "../../core/utils/db.ts";
 
 let io: Server;
 

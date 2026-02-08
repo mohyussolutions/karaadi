@@ -1,7 +1,7 @@
-import { triggerSubscriptionWatch } from "controllers/userController/subscriptionController.ts";
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
+import { triggerSubscriptionWatch } from "../userController/subscriptionController.ts";
+import { prisma } from "../../core/utils/db.ts";
 
 export const getTotalBoats = async (_req: Request, res: Response) => {
   try {
@@ -14,7 +14,7 @@ export const getTotalBoats = async (_req: Request, res: Response) => {
 
 export const getAllBoatsIncludingUnpaid = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const boats = await prisma.boat.findMany({

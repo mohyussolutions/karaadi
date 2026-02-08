@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import SupportSidebar from "./SupportSidebar";
 import SupportNavbar from "./SupportNavbar";
 import SupportCharts from "./SupportCharts";
-import ProtectedRoute from "@/app/ProtectedRoute/ProtectedRoute";
+import { SupportRoute } from "@/app/ProtectedRoute/ProtectedRoute";
 
 export default function SupportLayout({
   children,
@@ -14,7 +14,7 @@ export default function SupportLayout({
   const [open, setOpen] = useState(false);
 
   return (
-    <ProtectedRoute support>
+    <SupportRoute>
       <div className="flex w-full min-h-screen bg-slate-50 overflow-hidden">
         <div
           className={`${
@@ -42,6 +42,6 @@ export default function SupportLayout({
           </main>
         </div>
       </div>
-    </ProtectedRoute>
+    </SupportRoute>
   );
 }

@@ -1,6 +1,6 @@
-import { triggerSubscriptionWatch } from "controllers/userController/subscriptionController.ts";
-import prisma from "core/utils/db.ts";
 import { Request, Response } from "express";
+import prisma from "../../core/utils/db.ts";
+import { triggerSubscriptionWatch } from "../userController/subscriptionController.ts";
 export const getAllRealEstates = async (_req: Request, res: Response) => {
   try {
     const properties = await prisma.realEstate.findMany({
@@ -20,7 +20,7 @@ export const getAllRealEstates = async (_req: Request, res: Response) => {
 
 export const getAllRealEstatesIncludingUnpaid = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const properties = await prisma.realEstate.findMany({

@@ -1,8 +1,8 @@
 // chatHandler.ts
 
-import { EncryptionController } from "controllers/encryptionController/encryptionController.ts";
-import prisma from "core/utils/db.ts";
 import { Server, Socket } from "socket.io";
+import { EncryptionController } from "../../controllers/encryptionController/encryptionController.ts";
+import prisma from "../../core/utils/db.ts";
 
 export const chatHandler = (io: Server, socket: Socket, userId: string) => {
   socket.on("joinChat", async (chatId: number) => {

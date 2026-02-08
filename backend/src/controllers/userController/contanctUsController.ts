@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import prisma from "core/utils/db.ts";
 import { Status, Role } from "@prisma/client";
-import { EncryptionController } from "controllers/encryptionController/encryptionController.ts";
+import { EncryptionController } from "../encryptionController/encryptionController.ts";
+import prisma from "../../core/utils/db.ts";
 
 export const createSupportTicket = async (req: Request, res: Response) => {
   try {
@@ -112,7 +112,7 @@ export const getAllTickets = async (req: Request, res: Response) => {
         ...t,
         subject: EncryptionController.decrypt(t.subject),
         body: EncryptionController.decrypt(t.body),
-      }))
+      })),
     );
   } catch (err: any) {
     return res.status(500).json({ error: err.message });

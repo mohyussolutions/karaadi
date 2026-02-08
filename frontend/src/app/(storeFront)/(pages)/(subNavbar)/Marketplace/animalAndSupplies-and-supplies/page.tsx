@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -29,6 +30,8 @@ interface MarketplaceItem {
   images: string[];
   extra: any;
   userId: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 function AnimalAndSupplies() {
@@ -61,7 +64,6 @@ function AnimalAndSupplies() {
     );
   }, [items]);
 
-  // Calculate counts for each region and city - MUST BE AFTER allAnimalAndSuppliesItems is defined
   const regionCityCounts = useMemo(() => {
     const regionCounts: Record<string, number> = {};
     const cityCounts: Record<string, number> = {};
@@ -76,7 +78,7 @@ function AnimalAndSupplies() {
     });
 
     return { regionCounts, cityCounts };
-  }, [allAnimalAndSuppliesItems]); // Depend on allAnimalAndSuppliesItems
+  }, [allAnimalAndSuppliesItems]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -111,31 +113,20 @@ function AnimalAndSupplies() {
           .filter(([_, isChecked]) => isChecked)
           .map(([cityName]) => cityName);
 
-        // If multiple cities selected, fetch each separately and combine
         if (selectedCities.length > 0) {
           const allResults = [];
 
-          // Fetch for each city individually
           for (const city of selectedCities) {
             let filterParams: any = { city: city };
-
-            if (selectedRegion) {
-              filterParams.region = selectedRegion;
-            }
-
-            if (query.trim()) {
-              filterParams.q = query;
-            }
+            if (selectedRegion) filterParams.region = selectedRegion;
+            if (query.trim()) filterParams.q = query;
 
             const results = await getGlobalFilteredResults(filterParams);
-
-            // Filter by category
             const filteredByCategory = results.filter(
               (item: any) =>
                 item.category && item.category.includes("Animals & Supplies"),
             );
 
-            // Filter out duplicates (items that might appear in multiple cities)
             const existingIds = new Set(
               allResults.map((item) => item.id || item._id),
             );
@@ -148,15 +139,10 @@ function AnimalAndSupplies() {
 
           setFilteredItems(allResults);
         } else if (selectedRegion) {
-          // Only region selected
           let filterParams: any = { region: selectedRegion };
-
-          if (query.trim()) {
-            filterParams.q = query;
-          }
+          if (query.trim()) filterParams.q = query;
 
           const results = await getGlobalFilteredResults(filterParams);
-
           const filteredByCategory = results.filter(
             (item: any) =>
               item.category && item.category.includes("Animals & Supplies"),
@@ -165,7 +151,6 @@ function AnimalAndSupplies() {
           setFilteredItems(filteredByCategory);
         }
       } catch (error) {
-        console.error("Location filter error:", error);
         setFilteredItems([]);
       } finally {
         setIsFiltering(false);
@@ -176,25 +161,15 @@ function AnimalAndSupplies() {
   }, [selectedRegion, checkedCities, query]);
 
   const itemsToDisplay = useMemo(() => {
-    // If location filtering is active
-    if (selectedRegion || Object.keys(checkedCities).length > 0) {
+    if (selectedRegion || Object.keys(checkedCities).length > 0)
       return filteredItems;
-    }
-
-    // If search is active
-    if (query.trim()) {
-      return searchResults;
-    }
-
-    // If subcategory is selected
+    if (query.trim()) return searchResults;
     if (selectedSubcategory) {
       return allAnimalAndSuppliesItems.filter(
         (item) =>
           item.subcategory && item.subcategory.includes(selectedSubcategory),
       );
     }
-
-    // Default: show all items
     return allAnimalAndSuppliesItems;
   }, [
     query,
@@ -217,10 +192,7 @@ function AnimalAndSupplies() {
     if (isFiltering) return "Filtering...";
 
     if (selectedRegion || Object.keys(checkedCities).length > 0) {
-      let locationText = "";
-      if (selectedRegion) {
-        locationText = selectedRegion;
-      }
+      let locationText = selectedRegion || "";
       if (Object.keys(checkedCities).length > 0) {
         const cityNames = Object.keys(checkedCities).join(", ");
         locationText = locationText
@@ -230,13 +202,9 @@ function AnimalAndSupplies() {
       return `Location: ${locationText}`;
     }
 
-    if (query.trim()) {
-      return `Search Results: "${query}"`;
-    }
-
-    if (!selectedSubcategory) {
+    if (query.trim()) return `Search Results: "${query}"`;
+    if (!selectedSubcategory)
       return "Dhamaan Xayawaan iyo Agabka (All Animals & Supplies)";
-    }
 
     const foundCategory = subcategoryFilters.find(
       (cat) => cat.subcategory === selectedSubcategory,
@@ -285,7 +253,7 @@ function AnimalAndSupplies() {
   if (error)
     return (
       <div className="text-red-500 p-4">
-        Cilad ayaa ku timid soo dejinta alaabta Xayawaanka iyo agabka.
+        Cilad ayaa ku timid soo dejinta alaabta.
       </div>
     );
 
@@ -299,7 +267,6 @@ function AnimalAndSupplies() {
           <button
             onClick={() => scroll("left")}
             className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Bidix u dhaqaaji"
           >
             <FaChevronLeft className="hover:scale-110 transition-transform" />
           </button>
@@ -322,10 +289,10 @@ function AnimalAndSupplies() {
                     : "bg-gray-50 hover:bg-white hover:shadow-lg hover:-translate-y-1"
                 }`}
               >
-                <span className="text-sm font-medium text-gray-800 group-hover:text-gray-900 transition-colors">
+                <span className="text-sm font-medium text-gray-800 transition-colors">
                   {filter.soName}
                 </span>
-                <span className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors">
+                <span className="text-xs text-gray-500 transition-colors">
                   {filter.subcategory}
                 </span>
               </Link>
@@ -335,7 +302,6 @@ function AnimalAndSupplies() {
           <button
             onClick={() => scroll("right")}
             className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Midig u dhaqaaji"
           >
             <FaChevronRight className="hover:scale-110 transition-transform" />
           </button>
@@ -353,7 +319,7 @@ function AnimalAndSupplies() {
       </div>
 
       <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-        <div className="sticky top-4 space-y-4">
+        <div className="sticky top-4 space-y-4 md:w-64 w-full">
           <LocationSelector
             onFilterChange={handleLocationFilterChange}
             selectedRegion={selectedRegion}
@@ -364,6 +330,7 @@ function AnimalAndSupplies() {
           <SomaliMap
             selectedRegion={selectedRegion}
             onRegionClick={handleRegionClick}
+            items={itemsToDisplay}
           />
         </div>
 
@@ -373,7 +340,7 @@ function AnimalAndSupplies() {
               <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {itemsToDisplay.length > 0 ? (
                 itemsToDisplay.map((item) => (
                   <UniversalCard
@@ -389,11 +356,7 @@ function AnimalAndSupplies() {
                 ))
               ) : (
                 <div className="col-span-full text-center py-10 text-gray-500">
-                  {selectedRegion || Object.keys(checkedCities).length > 0
-                    ? `Ma jiro alaab Xayawaan iyo Agab ah ${selectedRegion ? `gobolka ${selectedRegion}` : ""}${Object.keys(checkedCities).length > 0 ? ` magaalooyinka ${Object.keys(checkedCities).join(", ")}` : ""}`
-                    : query.trim()
-                      ? `Ma jiro wax alaab Xayawaan iyo Agab ah la raadinayay "${query}"`
-                      : "Ma jiro wax alaab Xayawaan iyo Agab ah oo la helay"}
+                  Ma jiro wax alaab ah oo la helay.
                 </div>
               )}
             </div>

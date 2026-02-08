@@ -3,7 +3,7 @@ import {
   deleteTicket,
   getTicketsAndMetrics,
   updateTicket,
-} from "controllers/userController/customerSupportController.ts";
+} from "../../controllers/userController/customerSupportController.ts";
 import { Router } from "express";
 
 const customerSupportRoutes = Router();

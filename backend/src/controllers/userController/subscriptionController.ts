@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import chalk from "chalk";
-import prisma from "core/utils/db.ts";
-import { getIO } from "services/sockets/socketServer.ts";
+import prisma from "../../core/utils/db.ts";
+import { getIO } from "../../services/sockets/socketServer.ts";
 
 const includeUser = {
   user: {
@@ -41,7 +41,7 @@ export const notifyMatchingSubscribers = async (
     model?: string;
     condition?: string;
     posterId: string;
-  }
+  },
 ): Promise<void> => {
   try {
     const {
@@ -191,7 +191,7 @@ export const notifyMatchingSubscribers = async (
 
 export const triggerSubscriptionWatch = async (
   itemType: ItemModels,
-  itemId: string
+  itemId: string,
 ) => {
   try {
     let item: any;
@@ -634,7 +634,7 @@ export const getSubscriptionStats = async (req: Request, res: Response) => {
     const [total, active, inactive, byCategory, recentActivity] =
       await Promise.all([
         prisma.subscription.count(
-          dateFilter ? { where: { createdAt: dateFilter } } : undefined
+          dateFilter ? { where: { createdAt: dateFilter } } : undefined,
         ),
         prisma.subscription.count({
           where: {

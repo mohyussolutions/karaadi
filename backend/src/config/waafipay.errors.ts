@@ -1,6 +1,26 @@
-import { WaafiError, WaafiRawResponse } from "types/payment.ts";
-export type { WaafiError };
 import { ResponseCodes } from "./waafipay.service.responseCodes.ts";
+
+// Define or import WaafiRawResponse type
+type WaafiRawResponse = {
+  responseCode?: string | number;
+  errorCode?: string | number;
+  responseMsg?: string;
+  errorMsg?: string;
+  details?: string;
+  params?: {
+    state?: string;
+    [key: string]: any;
+  };
+};
+
+// Define WaafiError type
+type WaafiError = {
+  isSuccess: boolean;
+  message: string;
+  error: string;
+  responseCode?: string | number;
+  params?: Record<string, any>;
+};
 
 export const parseWaafiError = (text: unknown): WaafiError => {
   try {

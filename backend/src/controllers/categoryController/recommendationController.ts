@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../core/utils/db.js";
+import prisma from "../../core/utils/db.ts";
 
 export async function getRecommendations(req: Request, res: Response) {
   try {

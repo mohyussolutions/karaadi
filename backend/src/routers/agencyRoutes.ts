@@ -4,7 +4,7 @@ import {
   getAllAgencies,
   updateAgency,
   getAgencyStats,
-} from "controllers/categoryController/agencyController.ts";
+} from "../controllers/categoryController/agencyController.ts";
 import express from "express";
 
 const agencyRoutes = express.Router();
