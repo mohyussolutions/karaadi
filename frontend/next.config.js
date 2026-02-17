@@ -5,34 +5,65 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "media.istockphoto-photo",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "media.istockphoto.com",
-        pathname: "/**",
+        hostname: "**.istockphoto.com", // Catch-all for istock
       },
       {
         protocol: "https",
         hostname: "images.unsplash.com",
-        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "plus.unsplash.com",
-        pathname: "/**",
       },
       {
         protocol: "https",
-        hostname: "assets.example.com",
-        pathname: "/account123/**",
+        hostname: "**.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.githubusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.fbcdn.net",
+      },
+      {
+        protocol: "https",
+        hostname: "**.imgix.net",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "**.firebaseapp.com",
       },
       {
         protocol: "http",
         hostname: "localhost",
         port: "8080",
-        pathname: "/**",
+      },
+
+      {
+        protocol: "https",
+        hostname: "images.unsplo-1568680870491-590cd4e224ab",
       },
     ],
   },

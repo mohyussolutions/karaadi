@@ -6,7 +6,8 @@ import {
   updateAgency,
   createAgency,
 } from "@/actions/categories/actionsAgency";
-import { apiService } from "@/actions/core/authAction";
+import { verifySession } from "@/actions/core/authAction";
+
 import React, { useState, useEffect } from "react";
 import {
   FiEdit2,
@@ -43,7 +44,7 @@ export default function AgencyDashboard() {
 
   useEffect(() => {
     const init = async () => {
-      const user = await apiService.verifySession();
+      const user = await verifySession();
       if (user?._id) {
         setCurrentUserId(user._id);
       }

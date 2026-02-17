@@ -86,7 +86,6 @@ function MyAds() {
           {ads.map((ad) => {
             const routePrefix = useGetRoute(ad);
             const isSold = ad.maGaday === true;
-            const needsPayment = isSold && !ad.isPaid; // Check if needs payment
 
             return (
               <Link

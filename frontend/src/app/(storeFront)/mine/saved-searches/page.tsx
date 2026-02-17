@@ -1,102 +1,114 @@
 "use client";
 
-import { JSX, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import Loading from "../../components/shared/Loading/Loading";
-import { getProfile, deleteAccount } from "@/actions/core/accountAction";
-import { apiService } from "@/actions/core/authAction";
+import { getProfile } from "@/actions/core/accountAction";
 import {
-  FiSmartphone,
-  FiMonitor,
-  FiTablet,
-  FiCheckCircle,
-  FiHeart,
-  FiList,
-  FiSearch,
-  FiSettings,
-  FiClock,
   FiTrash2,
-  FiX,
-  FiAlertTriangle,
   FiUser,
   FiMail,
+  FiSearch,
+  FiTrendingUp,
+  FiClock,
 } from "react-icons/fi";
 import { navLinks } from "@/app/(links)/storeFrontLinks/mineLinks";
+import { verifySession } from "@/actions/core/authAction";
 
-interface IDevice {
-  name: string;
-  type: "phone" | "laptop" | "tablet" | "samsung" | "iphone";
-  lastActive: string;
-}
+const API_BASE = "http://localhost:8080/api/history-search";
 
-interface IUser {
-  _id: string;
-  username: string;
-  email: string;
-  phone?: string;
-  devices?: IDevice[];
-}
-
-interface INavLink {
-  name: string;
-  href: string;
-  icon: JSX.Element;
-  color?: string;
-}
-
-const Account: React.FC<{ accessToken: string }> = ({ accessToken }) => {
-  const [user, setUser] = useState<IUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+const SearchItemDetails = ({ query }: { query: string }) => {
+  const [item, setItem] = useState<any>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchItem = async () => {
       try {
-        const [profile, session] = await Promise.all([
-          getProfile(accessToken),
-          apiService.verifySession(),
-        ]);
-        setUser({ ...profile, ...session });
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+        const res = await fetch(`/api/search?q=${query}`);
+        if (res.ok) {
+          const data = await res.json();
+          setItem(data[0]);
+        }
+      } catch (e) {}
     };
+    fetchItem();
+  }, [query]);
+
+  if (!item) return null;
+
+  return (
+    <div className="mt-2 flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-50 shadow-sm">
+      {item.image && (
+        <img
+          src={item.image}
+          alt=""
+          className="w-10 h-10 rounded object-cover"
+        />
+      )}
+      <div>
+        <p className="text-[11px] font-bold text-gray-700">{item.title}</p>
+        <p className="text-[9px] text-blue-600 font-black uppercase">
+          {item.price}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
+  accessToken,
+}) => {
+  const [user, setUser] = useState<any>(null);
+  const [popularSearches, setPopularSearches] = useState([]);
+
+  const fetchData = async () => {
+    try {
+      const sessionFn =
+        typeof verifySession === "function"
+          ? verifySession()
+          : Promise.resolve({});
+      const [profile, session] = await Promise.all([
+        getProfile(accessToken),
+        sessionFn,
+      ]);
+      setUser({ ...profile, ...session });
+
+      const popularRes = await fetch(`${API_BASE}/admin/popular`);
+      if (popularRes.ok) setPopularSearches(await popularRes.json());
+    } catch (error) {}
+  };
+
+  useEffect(() => {
     fetchData();
   }, [accessToken]);
 
-  const getDeviceIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "iphone":
-      case "samsung":
-      case "phone":
-        return <FiSmartphone className="text-blue-500" />;
-      case "ipad":
-      case "tablet":
-        return <FiTablet className="text-purple-500" />;
-      default:
-        return <FiMonitor className="text-gray-500" />;
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (confirmText !== "delete me") return;
-
-    setIsDeleting(true);
+  const handleDeleteLog = async (logId: string) => {
     try {
-      await deleteAccount(accessToken);
-      window.location.href = "/";
-    } catch (error) {
-      alert("Failed to delete account. Please try again.");
-      setIsDeleting(false);
-    }
+      const res = await fetch(`${API_BASE}/delete/${logId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setUser((prev: any) => ({
+          ...prev,
+          searchLogs: prev.searchLogs.filter((log: any) => log.id !== logId),
+        }));
+      }
+    } catch (error) {}
   };
 
-  if (loading) return <Loading />;
+  const handleDeleteTrending = async (query: string) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/delete-by-query?q=${encodeURIComponent(query)}`,
+        {
+          method: "DELETE",
+        },
+      );
+      if (res.ok) {
+        setPopularSearches((prev) =>
+          prev.filter((item: any) => item.query !== query),
+        );
+      }
+    } catch (error) {}
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pt-10 pb-10 px-4">
@@ -107,11 +119,11 @@ const Account: React.FC<{ accessToken: string }> = ({ accessToken }) => {
               <FiUser size={24} />
             </div>
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
-                Current User
+              <p className="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">
+                Current Profile
               </p>
               <h1 className="text-xl font-black text-gray-900 leading-none">
-                {user?.username}
+                {user?.username || "Guest"}
               </h1>
             </div>
           </div>
@@ -120,11 +132,11 @@ const Account: React.FC<{ accessToken: string }> = ({ accessToken }) => {
               <FiMail size={24} />
             </div>
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
+              <p className="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">
                 Email Address
               </p>
               <h1 className="text-xl font-black text-gray-900 leading-none">
-                {user?.email}
+                {user?.email || "N/A"}
               </h1>
             </div>
           </div>
@@ -135,175 +147,94 @@ const Account: React.FC<{ accessToken: string }> = ({ accessToken }) => {
             <Link
               key={link.name}
               href={link.href}
-              className="flex flex-col items-center justify-center p-3 bg-white border border-gray-100 rounded-xl transition-all hover:shadow-md hover:border-blue-100 group"
+              className="flex flex-col items-center p-3 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all group"
             >
               <span
-                className={`text-xl mb-1 ${
-                  link.color || "text-gray-500"
-                } group-hover:scale-110 transition-transform`}
+                className={`text-xl mb-1 ${link.color || "text-gray-500"} group-hover:scale-110 transition-transform`}
               >
                 {link.icon}
               </span>
-              <span className="text-[10px] font-black uppercase tracking-tighter text-gray-600 text-center">
+              <span className="text-[10px] font-black uppercase text-gray-600 text-center">
                 {link.name}
               </span>
             </Link>
           ))}
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="flex flex-col items-center justify-center p-3 bg-white border border-gray-100 rounded-xl transition-all hover:shadow-md hover:border-red-100 group"
-          >
-            <FiTrash2 className="text-xl mb-1 text-red-600 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-tighter text-red-600 text-center">
-              Delete
-            </span>
-          </button>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 h-full">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center">
-              <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-100 mr-6">
-                {user?.username?.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-gray-900">
-                  {user?.username}
-                </h2>
-                <div className="mt-2">
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase rounded-md inline-flex items-center gap-1 border border-emerald-100">
-                    <FiCheckCircle /> Verified Account
-                  </span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <FiClock className="text-blue-600" /> Recent Search History
+            </h3>
+            <div className="space-y-4">
+              {user?.searchLogs?.length > 0 ? (
+                user.searchLogs.slice(0, 10).map((log: any) => (
+                  <div
+                    key={log.id}
+                    className="bg-gray-50 p-4 rounded-xl border border-gray-100 group transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FiSearch className="text-gray-400" />
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 capitalize">
+                            {log.query}
+                          </p>
+                          <p className="text-[10px] text-gray-400 font-black">
+                            {new Date(log.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteLog(log.id)}
+                        className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                    <SearchItemDetails query={log.query} />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-2xl text-gray-400 uppercase font-black text-[10px]">
+                  No search records found
                 </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 min-w-[200px]">
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <label className="text-[9px] font-black text-gray-400 uppercase block">
-                  Phone
-                </label>
-                <p className="text-xs font-bold text-gray-800">
-                  {user?.phone || "Not Verified"}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <label className="text-[9px] font-black text-gray-400 uppercase block">
-                  Member ID
-                </label>
-                <p className="text-[10px] font-mono text-gray-600 truncate">
-                  {user?._id}
-                </p>
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="mt-10 pt-8 border-t border-gray-50">
-            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">
-              Security & Active Devices
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <FiTrendingUp className="text-orange-500" /> Trending Searches
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {user?.devices?.map((device, idx) => (
+            <div className="space-y-4">
+              {popularSearches.slice(0, 8).map((item: any, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100"
+                  className="flex items-center justify-between border-b border-gray-50 pb-3 last:border-0"
                 >
-                  <div className="p-3 bg-white rounded-xl shadow-sm">
-                    {getDeviceIcon(device.type)}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-600 capitalize">
+                      {item.query}
+                    </span>
+                    <span className="text-[9px] font-black text-orange-600 uppercase">
+                      {item._count?.query || 0} hits
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-xs font-black text-gray-800 uppercase">
-                      {device.name}
-                    </p>
-                    <p className="text-[10px] text-gray-400">
-                      Active: {device.lastActive}
-                    </p>
-                  </div>
+                  <button
+                    onClick={() => handleDeleteTrending(item.query)}
+                    className="p-2 bg-gray-50 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-6 bg-red-50 flex items-center justify-between border-b border-red-100">
-              <div className="flex items-center gap-3 text-red-600">
-                <FiAlertTriangle size={24} />
-                <h3 className="text-lg font-black uppercase tracking-tight">
-                  Final Warning
-                </h3>
-              </div>
-              {!isDeleting && (
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setConfirmText("");
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FiX size={24} />
-                </button>
-              )}
-            </div>
-
-            <div className="p-8 space-y-6">
-              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-2">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center mb-2">
-                  Account to delete
-                </p>
-                <p className="text-sm font-black text-gray-900 text-center">
-                  {user?.email}
-                </p>
-                <p className="text-[10px] font-mono text-gray-400 text-center break-all">
-                  {user?._id}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-bold text-gray-600 text-center">
-                  To confirm, please type{" "}
-                  <span className="text-red-600 font-black">"delete me"</span>{" "}
-                  below:
-                </p>
-                <input
-                  type="text"
-                  value={confirmText}
-                  disabled={isDeleting}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder="delete me"
-                  className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center font-bold focus:border-red-200 outline-none transition-all disabled:opacity-50"
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <button
-                  disabled={confirmText !== "delete me" || isDeleting}
-                  className="w-full py-4 bg-red-600 text-white font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex justify-center items-center"
-                  onClick={handleDeleteAccount}
-                >
-                  {isDeleting ? "Deleting..." : "Confirm Permanent Deletion"}
-                </button>
-                {!isDeleting && (
-                  <button
-                    className="w-full py-4 bg-gray-100 text-gray-600 font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-gray-200 transition-all"
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setConfirmText("");
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default Account;
+export default SavedSearchHistory;

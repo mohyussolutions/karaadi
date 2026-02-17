@@ -1,375 +1,349 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FIXED_USER_ID } from "../../lib/storage";
-import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+import {
+  regions,
+  cities,
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import { verifySession } from "@/actions/core/authAction";
+import {
+  getMarketplaceActiveFee,
+  calculateMarketplaceFee,
+  FeeConfig,
+  CalculatedFee,
+} from "@/actions/categories/feeAction";
+import {
+  ShoppingBag,
+  Package,
+  MapPin,
+  DollarSign,
+  Image as ImageIcon,
+  ChevronRight,
+  Info,
+  Tag,
+} from "lucide-react";
+import { useAppDispatch } from "@/app/(storeFront)/store/hooks";
+
+const LISTING_OPTIONS = [
+  { value: "electronics", label: "Elektaroonig" },
+  { value: "furniture", label: "Alaabta Guriga" },
+  { value: "fashion", label: "Dharka & Quruxda" },
+  { value: "animal", label: "Xayawaanka" },
+  { value: "sports", label: "Cayaaraha" },
+  { value: "art", label: "Farshaxanka" },
+];
+
+type MarketplaceKey =
+  | "electronics"
+  | "art"
+  | "animal"
+  | "sports"
+  | "furniture"
+  | "fashion";
 
 export default function MarketplaceCreate() {
-  const [title, setTitle] = useState("");
-  const [so, setSo] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [mainCategory, setMainCategory] = useState("");
-  const [category, setCategory] = useState("");
-  const [subcategory, setSubcategory] = useState("");
-  const [region, setRegion] = useState("");
-  const [city, setCity] = useState("");
-  const [district, setDistrict] = useState("");
-  const [subDistrict, setSubDistrict] = useState("");
-  const [images, setImages] = useState("");
-  const [extra, setExtra] = useState("");
-  const [maGaday, setMaGaday] = useState(false);
-  const [errors, setErrors] = useState<string[]>([]);
-  const [categoryList, setCategoryList] = useState<string[]>([]);
-  const [categoryInput, setCategoryInput] = useState("");
-  const [subcategoryList, setSubcategoryList] = useState<string[]>([]);
-  const [subcategoryInput, setSubcategoryInput] = useState("");
-  const [imagesList, setImagesList] = useState<string[]>([]);
-  const [imageInput, setImageInput] = useState("");
-  const [isPaid, setIsPaid] = useState(false);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+  const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null);
+  const [calculatedFee, setCalculatedFee] = useState<CalculatedFee | null>(
+    null,
+  );
 
-  function addCategory() {
-    const v = categoryInput.trim();
-    if (!v) return;
-    setCategoryList((s) => [...s, v]);
-    setCategoryInput("");
-  }
-  function removeCategory(idx: number) {
-    setCategoryList((s) => s.filter((_, i) => i !== idx));
-  }
-  function addSubcategory() {
-    const v = subcategoryInput.trim();
-    if (!v) return;
-    setSubcategoryList((s) => [...s, v]);
-    setSubcategoryInput("");
-  }
-  function removeSubcategory(idx: number) {
-    setSubcategoryList((s) => s.filter((_, i) => i !== idx));
-  }
-  function addImage() {
-    const v = imageInput.trim();
-    if (!v) return;
-    setImagesList((s) => [...s, v]);
-    setImageInput("");
-  }
-  function removeImage(idx: number) {
-    setImagesList((s) => s.filter((_, i) => i !== idx));
-  }
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    price: "",
+    condition: "new",
+    brand: "",
+    region: "",
+    city: "",
+    district: "",
+    images: [] as File[],
+    listingType: "electronics" as MarketplaceKey,
+  });
+
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        const [u, config] = await Promise.all([
+          verifySession(),
+          getMarketplaceActiveFee(),
+        ]);
+        if (u?._id) setCurrentUserId(u._id);
+        if (config) setFeeConfig(config);
+      } catch (error) {
+        console.error("Marketplace init error:", error);
+      }
+    };
+    initData();
+  }, []);
+
+  useEffect(() => {
+    if (form.region) {
+      setFilteredCities(cities.filter((c) => c.regionId === form.region));
+    } else {
+      setFilteredCities([]);
+    }
+  }, [form.region]);
+
+  useEffect(() => {
+    if (feeConfig && form.listingType) {
+      const fee = calculateMarketplaceFee(feeConfig, form.listingType);
+      setCalculatedFee(fee);
+    }
+  }, [form.listingType, feeConfig]);
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value, type } = e.target;
+    if (type === "file") {
+      const files = (e.target as HTMLInputElement).files;
+      if (files) setForm((prev) => ({ ...prev, images: Array.from(files) }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const nextErrors: string[] = [];
-    const parsedPrice = parseFloat(price);
-    const categoryArr = categoryList.length
-      ? categoryList
-      : category
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-    const subcategoryArr = subcategoryList.length
-      ? subcategoryList
-      : subcategory
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-    const imagesArr = imagesList.length
-      ? imagesList
-      : images
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
+    if (!currentUserId) return alert("Fadlan soo gal marka hore");
+    setLoading(true);
 
-    if (!title.trim()) nextErrors.push("Title is required.");
-    if (!description.trim()) nextErrors.push("Description is required.");
-    if (Number.isNaN(parsedPrice))
-      nextErrors.push("Price must be a valid number.");
-    if (!mainCategory.trim()) nextErrors.push("Main category is required.");
-    if (categoryArr.length === 0)
-      nextErrors.push("At least one category is required (comma-separated).");
-    if (!region.trim()) nextErrors.push("Region is required.");
-    if (!city.trim()) nextErrors.push("City is required.");
-    if (!district.trim()) nextErrors.push("District is required.");
-    if (imagesArr.length === 0)
-      nextErrors.push("At least one image URL is required (comma-separated).");
-
-    if (nextErrors.length) {
-      setErrors(nextErrors);
-      return;
-    }
-    const obj = {
-      id: Date.now().toString(),
+    const marketData = {
+      id: uuidv4(),
       userId: currentUserId,
-      title,
-      so: so || null,
-      description,
-      price: parsedPrice || 0,
-      mainCategory,
-      category: categoryArr,
-      subcategory: subcategoryArr,
-      region,
-      city,
-      district,
-      subDistrict: subDistrict || null,
-      images: imagesArr,
-      extra: (() => {
-        try {
-          return extra ? JSON.parse(extra) : null;
-        } catch {
-          return null;
-        }
-      })(),
-      maGaday,
-      isPaid,
+      ...form,
+      price: parseFloat(form.price) || 0,
+      images: form.images.map((f) => URL.createObjectURL(f)),
+      category: ["Marketplace"],
+      subcategory: [form.listingType],
+      fee: calculatedFee,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
     try {
-      const res = await fetch(`${BASE_API_URL}/api/marketplace`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(obj),
-      });
-      if (!res.ok) throw new Error("Failed to create marketplace item");
-      setErrors([]);
-      alert("Marketplace item created");
+      // dispatch(addItem(marketData));
+      router.push(`/Backoffice/summary/summaryMarket/${marketData.id}`);
     } catch (err) {
       console.error(err);
-      alert("Failed to create marketplace item");
+    } finally {
+      setLoading(false);
     }
   }
 
-  const [currentUserId, setCurrentUserId] = useState<string>(FIXED_USER_ID);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const u = await verifySession();
-        if (mounted) setCurrentUserId(u?._id ?? FIXED_USER_ID);
-      } catch {
-        if (mounted) setCurrentUserId(FIXED_USER_ID);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   return (
-    <div className="py-6">
-      <h2 className="text-2xl font-bold mb-4">Create Marketplace</h2>
-      <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
-        {errors.length > 0 && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded">
-            <ul className="list-disc pl-5">
-              {errors.map((err, i) => (
-                <li key={i}>{err}</li>
+    <div className="py-10 max-w-5xl mx-auto px-4 text-slate-900">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="bg-emerald-600 p-3 rounded-2xl shadow-lg shadow-emerald-200">
+          <ShoppingBag className="text-white w-8 h-8" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-black uppercase tracking-tight">
+            Suuqa Alaabta
+          </h2>
+          <p className="text-emerald-600 text-sm font-bold uppercase tracking-widest">
+            Marketplace
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block tracking-widest">
+                Magaca Alaabta
+              </label>
+              <input
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                placeholder="Tusaale: iPhone 15 Pro Max..."
+                className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block tracking-widest">
+                Qaybta Alaabta
+              </label>
+              <div className="relative">
+                <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <select
+                  name="listingType"
+                  value={form.listingType}
+                  onChange={handleChange}
+                  className="w-full p-4 pl-10 bg-slate-50 rounded-2xl border-none font-bold focus:ring-2 focus:ring-emerald-500 appearance-none"
+                >
+                  {LISTING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block tracking-widest">
+                Qiimo (USD)
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  name="price"
+                  type="number"
+                  value={form.price}
+                  onChange={handleChange}
+                  className="w-full p-4 pl-10 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 mb-4">
+              <Package className="w-4 h-4 text-emerald-500" /> Warbixin
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <select
+                name="condition"
+                value={form.condition}
+                onChange={handleChange}
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="new">Cusub (New)</option>
+                <option value="used">La isticmaalay</option>
+              </select>
+              <input
+                name="brand"
+                value={form.brand}
+                onChange={handleChange}
+                placeholder="Shirkadda (Brand)"
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium"
+              />
+            </div>
+          </div>
+
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 mb-4">
+              <MapPin className="w-4 h-4 text-emerald-500" /> Goobta
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <select
+                name="region"
+                value={form.region}
+                onChange={handleChange}
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium focus:ring-2 focus:ring-emerald-500"
+                required
+              >
+                <option value="">Gobol</option>
+                {regions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium focus:ring-2 focus:ring-emerald-500"
+                disabled={!form.region}
+                required
+              >
+                <option value="">Magaalo</option>
+                {filteredCities.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+          <label className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+            <Info className="w-4 h-4 text-emerald-500" /> Sharaxaad & Sawirro
+          </label>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Sharaxaad ka bixi alaabtaan..."
+            className="w-full p-6 bg-slate-50 rounded-3xl border-none min-h-[120px] focus:ring-2 focus:ring-emerald-500"
+          />
+          <div className="relative">
+            <ImageIcon className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+            <input
+              name="images"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleChange}
+              className="w-full p-4 pl-10 bg-slate-50 rounded-2xl border-none text-sm"
+              required
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              {form.images.map((file, idx) => (
+                <img
+                  key={idx}
+                  src={URL.createObjectURL(file)}
+                  alt="preview"
+                  className="w-16 h-16 object-cover rounded-lg border"
+                />
               ))}
-            </ul>
+            </div>
+          </div>
+        </div>
+
+        {calculatedFee && (
+          <div
+            className={`p-8 rounded-[2.5rem] text-white flex items-center justify-between shadow-xl ${calculatedFee.isFree ? "bg-green-600" : "bg-emerald-600"}`}
+          >
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-90">
+                {calculatedFee.isFree ? "Bilaash 🎉" : "Lacagta Liiska"}
+              </p>
+              <h4 className="text-2xl font-black uppercase">
+                {
+                  LISTING_OPTIONS.find((o) => o.value === form.listingType)
+                    ?.label
+                }
+              </h4>
+            </div>
+            <div className="text-right">
+              <p className="text-4xl font-black">
+                {calculatedFee.currency} {calculatedFee.totalAmount.toFixed(2)}
+              </p>
+              <p className="text-[10px] font-bold uppercase opacity-90 tracking-widest">
+                WADARTA LACAGTA
+              </p>
+            </div>
           </div>
         )}
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={so}
-          onChange={(e) => setSo(e.target.value)}
-          placeholder="SO (optional)"
-          className="w-full p-2 border rounded"
-        />
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="Price"
-          type="number"
-          step="0.01"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={mainCategory}
-          onChange={(e) => setMainCategory(e.target.value)}
-          placeholder="Main Category"
-          className="w-full p-2 border rounded"
-        />
-        <div>
-          <label className="block text-sm font-medium mb-1">Categories</label>
-          <div className="flex gap-2">
-            <input
-              value={categoryInput}
-              onChange={(e) => setCategoryInput(e.target.value)}
-              placeholder="Add category"
-              className="flex-1 p-2 border rounded"
-            />
-            <button
-              type="button"
-              onClick={addCategory}
-              className="px-3 py-2 bg-gray-200 rounded"
-            >
-              Add
-            </button>
-          </div>
-          <div className="flex gap-2 flex-wrap mt-2">
-            {categoryList.map((c, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded"
-              >
-                {c}
-                <button
-                  type="button"
-                  onClick={() => removeCategory(i)}
-                  className="text-xs text-red-600"
-                >
-                  x
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Subcategories
-          </label>
-          <div className="flex gap-2">
-            <input
-              value={subcategoryInput}
-              onChange={(e) => setSubcategoryInput(e.target.value)}
-              placeholder="Add subcategory"
-              className="flex-1 p-2 border rounded"
-            />
-            <button
-              type="button"
-              onClick={addSubcategory}
-              className="px-3 py-2 bg-gray-200 rounded"
-            >
-              Add
-            </button>
-          </div>
-          <div className="flex gap-2 flex-wrap mt-2">
-            {subcategoryList.map((c, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded"
-              >
-                {c}
-                <button
-                  type="button"
-                  onClick={() => removeSubcategory(i)}
-                  className="text-xs text-red-600"
-                >
-                  x
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-        <input
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          placeholder="Region"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="City"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={district}
-          onChange={(e) => setDistrict(e.target.value)}
-          placeholder="District"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={subDistrict}
-          onChange={(e) => setSubDistrict(e.target.value)}
-          placeholder="Sub District (optional)"
-          className="w-full p-2 border rounded"
-        />
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Images (URLs)
-          </label>
-          <div className="flex gap-2">
-            <input
-              value={imageInput}
-              onChange={(e) => setImageInput(e.target.value)}
-              placeholder="Add image URL"
-              className="flex-1 p-2 border rounded"
-            />
-            <button
-              type="button"
-              onClick={addImage}
-              className="px-3 py-2 bg-gray-200 rounded"
-            >
-              Add
-            </button>
-          </div>
-          <div className="flex gap-2 flex-wrap mt-2">
-            {imagesList.map((img, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-2 bg-gray-100 px-2 py-1 rounded"
-              >
-                <a
-                  href={img}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline text-blue-600"
-                >
-                  {img}
-                </a>
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="text-xs text-red-600"
-                >
-                  x
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-        <textarea
-          value={extra}
-          onChange={(e) => setExtra(e.target.value)}
-          placeholder='Extra JSON (optional) e.g. {"k": "v"}'
-          className="w-full p-2 border rounded"
-        />
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={maGaday}
-            onChange={(e) => setMaGaday(e.target.checked)}
-          />{" "}
-          maGaday
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isPaid}
-            onChange={(e) => setIsPaid(e.target.checked)}
-          />{" "}
-          isPaid
-        </label>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded">
-            Create
+        <div className="flex justify-center w-full">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-64 py-4 bg-emerald-500 text-white rounded-full font-bold hover:bg-emerald-600 transition-all shadow-lg flex items-center justify-center gap-2"
+          >
+            {loading ? "Sug..." : "Review Summary"}{" "}
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </form>

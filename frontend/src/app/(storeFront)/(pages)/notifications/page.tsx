@@ -11,13 +11,13 @@ import {
   FiZap,
 } from "react-icons/fi";
 import Link from "next/link";
-import { apiService } from "@/actions/core/authAction";
 import {
   fetchNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
 } from "@/actions/core/notificationsAction";
+import { verifySession } from "@/actions/core/authAction";
 import NotificationCard from "../../components/Cards/NotificationCard";
 
 const NotificationsComponent = () => {
@@ -52,7 +52,7 @@ const NotificationsComponent = () => {
 
   useEffect(() => {
     const init = async () => {
-      const user = await apiService.verifySession();
+      const user = await verifySession();
       if (user?._id) {
         setUserId(user._id);
         loadNotifications(user._id);
@@ -68,8 +68,8 @@ const NotificationsComponent = () => {
       await markNotificationAsRead(id);
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === id ? { ...n, isRead: true, isUrgent: false } : n
-        )
+          n.id === id ? { ...n, isRead: true, isUrgent: false } : n,
+        ),
       );
     } catch (err) {
       console.error(err);
@@ -81,7 +81,7 @@ const NotificationsComponent = () => {
     try {
       await markAllNotificationsAsRead(userId);
       setNotifications((prev) =>
-        prev.map((n) => ({ ...n, isRead: true, isUrgent: false }))
+        prev.map((n) => ({ ...n, isRead: true, isUrgent: false })),
       );
     } catch (err) {
       console.error(err);
@@ -125,7 +125,7 @@ const NotificationsComponent = () => {
   const filtered = notifications
     .filter((n) => (activeTab === "unread" ? !n.isRead : true))
     .filter((n) =>
-      filterCategory === "all" ? true : n.category === filterCategory
+      filterCategory === "all" ? true : n.category === filterCategory,
     )
     .sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;
@@ -135,7 +135,7 @@ const NotificationsComponent = () => {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const subscriptionAlertCount = notifications.filter(
-    (n) => n.category === "subscription_alert" && !n.isRead
+    (n) => n.category === "subscription_alert" && !n.isRead,
   ).length;
   const categories = [
     "all",

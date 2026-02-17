@@ -1,112 +1,45 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Boat, BoatsState } from "@/app/utils/types/store/boatTypes";
 
-const BASE_URL = "http://localhost:8080";
+const initialState: BoatsState = {
+  boats: [],
+  userSelection: null,
+};
 
-const baseQuery = fetchBaseQuery({
-  baseUrl: BASE_URL,
-  credentials: "include",
+const boatsSlice = createSlice({
+  name: "boats",
+  initialState,
+  reducers: {
+    setBoats(state, action: PayloadAction<Boat[]>) {
+      state.boats = action.payload;
+    },
+    addBoat(state, action: PayloadAction<Boat>) {
+      state.boats.push(action.payload);
+      state.userSelection = action.payload;
+    },
+    updateBoat(state, action: PayloadAction<Boat>) {
+      const idx = state.boats.findIndex((b) => b.id === action.payload.id);
+      if (idx !== -1) {
+        state.boats[idx] = { ...state.boats[idx], ...action.payload };
+      }
+      if (state.userSelection?.id === action.payload.id) {
+        state.userSelection = { ...state.userSelection, ...action.payload };
+      }
+    },
+    removeBoat(state, action: PayloadAction<string>) {
+      state.boats = state.boats.filter((boat) => boat.id !== action.payload);
+      if (state.userSelection?.id === action.payload) {
+        state.userSelection = null;
+      }
+    },
+    clearBoats(state) {
+      state.boats = [];
+      state.userSelection = null;
+    },
+  },
 });
 
-export type User = {
-  _id: string;
-  username: string;
-  email?: string;
-  phone?: string;
-  profileImage?: string;
-  isAdmin: boolean;
-  isManager: boolean;
-};
-
-export type Boat = {
-  name: string;
-  _id: string;
-  user: string;
-  title: string;
-  category: string;
-  subCategory: string;
-  region: string;
-  city: string;
-  district: string;
-  description: string;
-  price: number;
-  images: string[];
-  type: string;
-  boatModel: string;
-  transmission: string;
-  color: string;
-};
-
-export type CreateBoatInput = Omit<Boat, "_id" | "user" | "name"> & {
-  user: string;
-  name?: string;
-  subDistrict?: string;
-};
-
-export type UpdateBoatInput = Partial<Omit<Boat, "_id">> & { id: string };
-
-export const boatsApi = createApi({
-  reducerPath: "boatsApi",
-  baseQuery,
-  tagTypes: ["Boat"],
-  endpoints: (builder) => ({
-    getBoats: builder.query<Boat[], void>({
-      query: () => ({
-        url: "/api/boats",
-        method: "GET",
-      }),
-      transformResponse: (response: any[]) =>
-        response.map((item) => ({
-          ...item,
-          id: item._id,
-        })),
-      providesTags: ["Boat"],
-      keepUnusedDataFor: 5,
-    }),
-
-    getBoatById: builder.query<Boat, string>({
-      query: (id) => ({
-        url: `/api/boats/${id}`,
-        method: "GET",
-      }),
-      transformResponse: (item: any) => ({
-        ...item,
-        id: item._id,
-      }),
-      providesTags: (result, error, id) => [{ type: "Boat", id }],
-    }),
-
-    createBoat: builder.mutation<Boat, CreateBoatInput>({
-      query: (data) => ({
-        url: "/api/boats",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Boat"],
-    }),
-
-    deleteBoat: builder.mutation<{ success: boolean; id: string }, string>({
-      query: (id) => ({
-        url: `/api/boats/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Boat"],
-    }),
-
-    updateBoat: builder.mutation<Boat, UpdateBoatInput>({
-      query: ({ id, ...data }) => ({
-        url: `/api/boats/${id}`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Boat"],
-    }),
-  }),
-});
-
-export const {
-  useGetBoatsQuery,
-  useGetBoatByIdQuery,
-  useCreateBoatMutation,
-  useDeleteBoatMutation,
-  useUpdateBoatMutation,
-} = boatsApi;
+export const { setBoats, addBoat, updateBoat, removeBoat, clearBoats } =
+  boatsSlice.actions;
+export const selectActiveBoat = (state: any) => state.boats.userSelection;
+export default boatsSlice.reducer;

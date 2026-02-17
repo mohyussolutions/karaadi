@@ -13,7 +13,7 @@ export default function DailySupportMessages() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/apicontactUs/stats`, {
+        const res = await fetch(`${BASE_URL}/api/contactUs/stats`, {
           credentials: "include",
         });
         if (res.ok) {

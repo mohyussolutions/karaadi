@@ -5,9 +5,7 @@ export async function getGlobalSearchResults(query: string) {
     if (!query || query.trim() === "") {
       return [];
     }
-
     const normalizedQuery = query.trim();
-
     const res = await fetch(
       `${SEARCH_ENDPOINT}?q=${encodeURIComponent(normalizedQuery)}`,
       {
@@ -17,12 +15,20 @@ export async function getGlobalSearchResults(query: string) {
         },
       },
     );
-
     if (!res.ok) {
-      console.error(`Search request failed with status: ${res.status}`);
+      let errorMsg = `Search request failed with status: ${res.status}`;
+      try {
+        const errorData = await res.json();
+        errorMsg += ` | Message: ${errorData?.message || JSON.stringify(errorData)}`;
+      } catch (e) {
+        try {
+          const errorText = await res.text();
+          errorMsg += ` | Response: ${errorText}`;
+        } catch {}
+      }
+      console.error(errorMsg);
       return [];
     }
-
     const results = await res.json();
     return results || [];
   } catch (error) {

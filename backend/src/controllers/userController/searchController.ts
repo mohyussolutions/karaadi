@@ -148,7 +148,6 @@ export const globalSearch = async (req: Request, res: Response) => {
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
-                { company: { contains: word, mode } },
                 { city: { contains: word, mode } },
                 { region: { contains: word, mode } },
                 ...(priceValue && !isNaN(Number(word))

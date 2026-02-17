@@ -1,57 +1,43 @@
 "use client";
 
-import { fetchAgencies } from "@/actions/categories/actionsAgency";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   FiBriefcase,
   FiCheckCircle,
   FiExternalLink,
   FiChevronLeft,
   FiChevronRight,
-  FiLoader,
 } from "react-icons/fi";
 
-function Agencies() {
-  const [agencies, setAgencies] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+interface Agency {
+  image: string;
+  name: string;
+  status?: string;
+  type: string;
+  location: string;
+  specialty: string;
+  link?: string;
+}
 
-  useEffect(() => {
-    const loadAgencies = async () => {
-      const data = await fetchAgencies();
-      setAgencies(data);
-      setLoading(false);
-    };
-    loadAgencies();
-  }, []);
+function Agencies({ initialAgencies }: { initialAgencies: Agency[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const agencies = initialAgencies || [];
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev === agencies.length - 1 ? 0 : prev + 1));
+  }, [agencies.length]);
 
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev === 0 ? agencies.length - 1 : prev - 1));
   };
 
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev === agencies.length - 1 ? 0 : prev + 1));
-  };
-
   useEffect(() => {
-    if (agencies.length === 0) return;
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 4000);
+    if (agencies.length <= 1) return;
+    const interval = setInterval(nextSlide, 4000);
     return () => clearInterval(interval);
-  }, [currentIndex, agencies]);
+  }, [nextSlide, agencies.length]);
 
-  if (loading) {
-    return (
-      <div className="h-[400px] flex items-center justify-center">
-        <FiLoader className="animate-spin text-blue-600" size={30} />
-      </div>
-    );
-  }
-
-  if (agencies.length === 0) {
-    return null;
-  }
+  if (agencies.length === 0) return null;
 
   const current = agencies[currentIndex];
 
@@ -65,7 +51,7 @@ function Agencies() {
           </h1>
         </div>
 
-        <div className="relative h-[400px] w-full overflow-hidden rounded-3xl shadow-xl group">
+        <div className="relative h-[400px] w-full overflow-hidden rounded-3xl shadow-xl group bg-gray-200">
           <button
             onClick={prevSlide}
             className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/30 transition-all opacity-0 group-hover:opacity-100"
@@ -81,7 +67,7 @@ function Agencies() {
           </button>
 
           <div
-            className="w-full h-full duration-700 ease-in-out bg-cover bg-center flex items-center justify-center transition-all"
+            className="w-full h-full duration-700 ease-in-out bg-cover bg-center flex items-center justify-center transition-all relative"
             style={{ backgroundImage: `url(${current.image})` }}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/70" />
@@ -117,6 +103,7 @@ function Agencies() {
               <a
                 href={current.link || "#"}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="px-6 py-2 bg-white text-gray-900 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto hover:bg-blue-600 hover:text-white transition-all shadow-md w-fit"
               >
                 View Agency <FiExternalLink size={12} />

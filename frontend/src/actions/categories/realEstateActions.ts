@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
 
 export type RealEstate = {
+  id: string;
   _id: string;
   user: string;
   title: string;
@@ -23,52 +24,28 @@ export type RealEstate = {
   images: string[];
 };
 
-type CreateRealEstateData = {
-  title: string;
-  description: string;
-  price: number;
-  subCategory: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  squareFeet?: number;
-  address: string;
-  hasGarage?: boolean;
-  hasGarden?: boolean;
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string;
-  images: string[];
-};
+type CreateRealEstateData = Omit<RealEstate, "_id" | "user">;
 
 export async function getRealEstateListings(): Promise<RealEstate[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.RealEstate, {
       method: "GET",
-      next: { tags: ["real-estate-listings"], revalidate: 60 },
+      next: {
+        revalidate: 300,
+        tags: ["real-estate-listings"],
+      },
     });
 
-    if (!response.ok) {
-      return [];
-    }
+    if (!response.ok) return [];
 
     const result = await response.json();
-
-    const listingList = Array.isArray(result)
-      ? result
-      : result && result.data && Array.isArray(result.data)
-        ? result.data
-        : [];
-
-    if (!Array.isArray(listingList)) {
-      return [];
-    }
+    const listingList = Array.isArray(result) ? result : (result?.data ?? []);
 
     return listingList.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
     })) as RealEstate[];
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -81,26 +58,21 @@ export async function getRealEstateById(
       `${apiUrlsForCategoryTotals.RealEstate}/${id}`,
       {
         method: "GET",
-        next: { tags: [`real-estate-${id}`], revalidate: 3600 },
+        next: {
+          revalidate: 600,
+          tags: [`real-estate-${id}`],
+        },
       },
     );
 
-    if (!response.ok) {
-      console.error(
-        `Failed to fetch real estate listing ${id}:`,
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
+    if (!response.ok) return null;
 
     const item: any = await response.json();
     return {
       ...item,
       _id: item._id || item.id,
     } as RealEstate;
-  } catch (error) {
-    console.error(`Network error fetching real estate listing ${id}:`, error);
+  } catch {
     return null;
   }
 }
@@ -120,23 +92,18 @@ export async function createRealEstate(
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result.message || "Failed to create real estate listing in backend.",
-      };
-    }
-
+    revalidateTag("real-estate-listings");
     revalidatePath("/real-estate");
+
     return {
       success: true,
       message: "Real Estate listing created successfully.",
-      realEstateId: result.id,
+      realEstateId: result.id || result._id,
     };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+  } catch {
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -159,24 +126,20 @@ export async function updateRealEstate(
     );
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result.message || "Failed to update real estate listing in backend.",
-      };
-    }
-
+    revalidateTag(`real-estate-${id}`);
+    revalidateTag("real-estate-listings");
     revalidatePath(`/real-estate/${id}`);
     revalidatePath("/real-estate");
+
     return {
       success: true,
       message: "Real Estate listing updated successfully.",
-      realEstateId: result.id,
+      realEstateId: id,
     };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+  } catch {
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -186,28 +149,19 @@ export async function deleteRealEstate(id: string, token: string) {
       `${apiUrlsForCategoryTotals.RealEstate}/${id}`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       },
     );
 
-    if (!response.ok) {
-      const result = await response.json();
-      return {
-        success: false,
-        message:
-          result.message || "Failed to delete real estate listing in backend.",
-      };
-    }
+    if (!response.ok) return { success: false };
 
+    revalidateTag(`real-estate-${id}`);
+    revalidateTag("real-estate-listings");
     revalidatePath("/real-estate");
-    return {
-      success: true,
-      message: "Real Estate listing deleted successfully.",
-    };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+
+    return { success: true };
+  } catch {
+    return { success: false };
   }
 }
 
@@ -217,17 +171,21 @@ export async function toggleRealEstatePaidStatus(
 ): Promise<boolean> {
   try {
     const res = await fetch(
-      `http://localhost:8080/api/real-estate/${propertyId}`,
+      `${apiUrlsForCategoryTotals.RealEstate}/${propertyId}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPaid: newStatus }),
-        credentials: "include",
       },
     );
+
+    if (res.ok) {
+      revalidateTag(`real-estate-${propertyId}`);
+      revalidateTag("real-estate-listings");
+    }
+
     return res.ok;
-  } catch (err) {
-    console.error("Toggle paid error:", err);
+  } catch {
     return false;
   }
 }

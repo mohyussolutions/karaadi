@@ -1,4 +1,5 @@
 import cacheManager from "./cacheManager.ts";
+import chalk from "chalk";
 
 class RedisServer {
   private static instance: RedisServer;
@@ -17,12 +18,12 @@ class RedisServer {
       await cacheManager.connect();
       const redisHealthy = await cacheManager.healthCheck();
       if (redisHealthy) {
-        console.log("Redis connected and healthy");
+        console.log(chalk.green("Redis connected and healthy"));
       } else {
-        console.log("Redis health check failed");
+        console.log(chalk.red("Redis health check failed"));
       }
     } catch (error) {
-      console.error("Redis connection failed", error);
+      console.error(chalk.red("Redis connection failed"), error);
       throw error;
     }
   }
@@ -30,9 +31,9 @@ class RedisServer {
   public async stop(): Promise<void> {
     try {
       await cacheManager.disconnect();
-      console.log("Redis disconnected");
+      console.log(chalk.yellow("Redis disconnected"));
     } catch (error) {
-      console.error("Redis server stop error:", error);
+      console.error(chalk.red("Redis server stop error:"), error);
       throw error;
     }
   }

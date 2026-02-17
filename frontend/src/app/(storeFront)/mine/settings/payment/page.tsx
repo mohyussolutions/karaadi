@@ -5,7 +5,6 @@ interface PaymentItem {
   id: number;
   item: string;
   date: string;
-  amount: number; // in SOS
   waafiNumber: string;
   status: "Paid" | "Pending" | "Failed";
 }
@@ -45,7 +44,6 @@ const Payment: React.FC = () => {
   const handleSavePhone = () => {
     setSavedPhone(userPhone);
     alert(`Phone number updated to ${userPhone}`);
-    // Here you could also call your backend API to save the phone permanently
   };
 
   return (
@@ -102,8 +100,8 @@ const Payment: React.FC = () => {
                     payment.status === "Paid"
                       ? "text-green-600"
                       : payment.status === "Pending"
-                      ? "text-yellow-600"
-                      : "text-red-600"
+                        ? "text-yellow-600"
+                        : "text-red-600"
                   }`}
                 >
                   {payment.status}

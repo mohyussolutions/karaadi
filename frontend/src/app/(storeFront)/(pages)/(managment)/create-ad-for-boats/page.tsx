@@ -9,7 +9,6 @@ import { FaShip, FaTools } from "react-icons/fa";
 import { GiBoatFishing, GiBoatPropeller } from "react-icons/gi";
 import {
   cities,
-  Districts,
   regions,
 } from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import { User } from "@/app/utils/types/user";
@@ -23,9 +22,9 @@ import {
   BoatsForRentNestedSub,
   BoatsForSaleNestedSub,
   BoatSubCategoryItem,
-} from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForBoats";
-import { allCategories } from "@/app/(storeFront)/links/categories";
-import { apiService } from "@/actions/core/authAction";
+} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
+import { verifySession } from "@/actions/core/authAction";
+import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 
 interface CategoryOption {
   so: string;
@@ -110,7 +109,7 @@ const BoatForSellAndBuy = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const sessionUser = await apiService.verifySession();
+      const sessionUser = await verifySession();
       if (!sessionUser) {
         router.push("/login");
       } else {

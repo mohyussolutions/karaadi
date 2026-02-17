@@ -1,164 +1,253 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import Link from "next/link";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { useGetMotorcyclesQuery } from "@/app/(storeFront)/store/slices/motorcyclesSlice";
+import { getMotorcycles } from "@/actions/categories/motorcycleActions";
+import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import { OtherNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMotorcycles";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "@/app/(search)/SearchInput";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 
 function OtherItems() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { data: items = [], isLoading } = useGetMotorcyclesQuery();
-
-  const otherCategories = OtherNestedSub;
-
-  const filteredItems = items.filter((item) =>
-    otherCategories.some(
-      (cat) => cat.title === item.subCategory || cat.so === item.subCategory,
-    ),
+  const [items, setItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
+    {},
   );
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getMotorcycles();
+        setItems(data || []);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
-  const finalItems = selectedCategory
-    ? filteredItems.filter(
-        (item) =>
-          item.title === selectedCategory || item.so === selectedCategory,
-      )
-    : filteredItems;
+  const otherItems = useMemo(() => {
+    return items.filter((item) => {
+      const cat = String(item?.category || "").toLowerCase();
+      return cat.includes("other");
+    });
+  }, [items]);
+
+  const regionCityCounts = useMemo(() => {
+    const regionCounts: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+
+    otherItems.forEach((item) => {
+      const format = (s: any) => {
+        const str = String(s || "").trim();
+        if (!str) return null;
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      };
+      const reg = format(item.region);
+      const cit = format(item.city);
+      if (reg) regionCounts[reg] = (regionCounts[reg] || 0) + 1;
+      if (cit) cityCounts[cit] = (cityCounts[cit] || 0) + 1;
+    });
+    return { regionCounts, cityCounts };
+  }, [otherItems]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      const results = await getGlobalSearchResults(query);
+      setSearchResults(
+        results.filter((item: any) => {
+          const mainCat = String(item?.mainCategory || "");
+          const cat = String(item?.category || "").toLowerCase();
+          return mainCat === "Motorcycle" && cat.includes("other");
+        }),
+      );
+    }, 400);
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+  const finalItems = useMemo(() => {
+    let list = query.trim() ? searchResults : otherItems;
+    if (selectedCategory) {
+      list = list.filter((item) => {
+        const sub = Array.isArray(item?.subcategory)
+          ? item.subcategory.join(" ")
+          : String(item?.subcategory || "");
+        return sub.toLowerCase().includes(selectedCategory.toLowerCase());
+      });
+    }
+    if (selectedRegion) {
+      const activeRegs = selectedRegion.split(",").map((r) => r.toLowerCase());
+      list = list.filter((item) => {
+        const itemReg = String(item?.region || "").toLowerCase();
+        return itemReg && activeRegs.includes(itemReg);
+      });
+    }
+    const activeCities = Object.keys(checkedCities)
+      .filter((c) => checkedCities[c])
+      .map((c) => c.toLowerCase());
+    if (activeCities.length > 0) {
+      list = list.filter((item) => {
+        const itemCity = String(item?.city || "").toLowerCase();
+        return itemCity && activeCities.includes(itemCity);
+      });
+    }
+    return Array.from(
+      new Map(list.map((item: any) => [item._id || item.id, item])).values(),
+    );
+  }, [
+    query,
+    searchResults,
+    otherItems,
+    selectedCategory,
+    selectedRegion,
+    checkedCities,
+  ]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
       const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollAmount =
-        direction === "left" ? -clientWidth / 2 : clientWidth / 2;
+      const move = direction === "left" ? -clientWidth / 2 : clientWidth / 2;
       scrollRef.current.scrollTo({
-        left: scrollLeft + scrollAmount,
+        left: scrollLeft + move,
         behavior: "smooth",
       });
     }
   };
 
-  const handleCategoryClick = (categoryTitle: string) => {
-    setSelectedCategory(
-      categoryTitle === selectedCategory ? null : categoryTitle,
-    );
-  };
-
   return (
-    <div className="mx-2">
+    <div className="container mx-auto px-4 pb-10">
       <SearchInput onSearch={setQuery} />
 
-      <div className="relative px-4 py-6 m-2">
+      <div className="relative py-6">
         <PathSegmentsDisplay />
-
-        <button
-          onClick={() => scroll("left")}
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full"
-        >
-          <FaChevronLeft />
-        </button>
-        <button
-          onClick={() => scroll("right")}
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full"
-        >
-          <FaChevronRight />
-        </button>
-
-        <div
-          ref={scrollRef}
-          className="flex justify-center overflow-x-auto space-x-4 scrollbar-hide px-8 mt-4"
-        >
-          {otherCategories.map((category) => (
-            <Link
-              key={category.title}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                handleCategoryClick(category.title);
-              }}
-              className={`flex-shrink-0 w-40 flex flex-col items-center text-center group rounded-lg p-5 m-2 shadow transition-colors ${
-                selectedCategory === category.title
-                  ? "bg-blue-100 ring-2 ring-blue-500"
-                  : "bg-gray-50 hover:bg-white"
-              }`}
-            >
-              <span className="text-xl mb-1">{category.icon}</span>
-              <span className="text-sm font-medium text-gray-800">
-                {category.title}
-              </span>
-              <span className="text-xs text-gray-500">{category.so}</span>
-            </Link>
-          ))}
+        <div className="relative mt-4">
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full border hover:bg-gray-100"
+          >
+            <FaChevronLeft />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full border hover:bg-gray-100"
+          >
+            <FaChevronRight />
+          </button>
+          <div
+            ref={scrollRef}
+            className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 py-2"
+          >
+            {OtherNestedSub.map((category) => (
+              <button
+                key={category.title}
+                onClick={() =>
+                  setSelectedCategory(
+                    selectedCategory === category.title ? null : category.title,
+                  )
+                }
+                className={`flex-shrink-0 w-44 flex flex-col items-center text-center rounded-xl p-4 shadow-sm border transition-all ${
+                  selectedCategory === category.title
+                    ? "bg-blue-600 border-blue-600 text-white scale-105"
+                    : "bg-white text-gray-800 hover:border-blue-300 hover:shadow-md"
+                }`}
+              >
+                <span className="text-xs font-bold leading-tight">
+                  {category.so}
+                </span>
+                <span
+                  className={`text-[9px] uppercase tracking-tighter mt-1 ${selectedCategory === category.title ? "text-blue-100" : "text-gray-400"}`}
+                >
+                  ({category.title})
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2">
-        <div className="sticky top-4 space-y-4 md:w-1/4">
-          <LocationSelector
-            onFilterChange={function (
-              region: string | null,
-              cities: Record<string, boolean>,
-            ): void {
-              throw new Error("Function not implemented.");
-            }}
-            selectedRegion={null}
-            checkedCities={undefined}
-          />
-          <SomaliMap
-            selectedRegion={null}
-            onRegionClick={function (region: string): void {
-              throw new Error("Function not implemented.");
-            }}
-            items={finalItems}
-          />
-        </div>
-
-        <div className="md:w-3/4 w-full">
-          <h2 className="text-xl font-semibold mb-6 px-2 md:px-0">
-            {selectedCategory || "All Miscellaneous Equipment"} (
-            {finalItems.length})
-          </h2>
-
-          {isLoading ? (
-            <div className="text-center text-gray-500 py-20">
-              <Loading />
+      <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
+        <aside className="w-full md:w-1/3 sticky top-4 self-start">
+          <div className="space-y-6">
+            <LocationSelector
+              onFilterChange={(region, cities) => {
+                setSelectedRegion(region);
+                setCheckedCities(cities);
+              }}
+              selectedRegion={selectedRegion}
+              checkedCities={checkedCities}
+              regionCounts={regionCityCounts.regionCounts}
+              cityCounts={regionCityCounts.cityCounts}
+            />
+            <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
+              <SomaliMap
+                selectedRegion={selectedRegion}
+                onRegionClick={setSelectedRegion}
+                items={otherItems}
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-0">
-              {finalItems.length > 0 ? (
-                finalItems.map((item) => (
-                  <VehicleCard
-                    key={item._id}
-                    id={item._id}
-                    title={item.title}
-                    description={
-                      item.description
-                        ? (Array.isArray(item.description)
-                            ? item.description
-                            : [item.description]
-                          ).filter((desc): desc is string => !!desc)
-                        : []
-                    }
-                    city={item.city}
-                    images={item.images}
-                    price={item.price}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-20 text-gray-500 min-h-[200px]">
-                  No miscellaneous items found.
-                </div>
+          </div>
+        </aside>
+
+        <main className="md:w-2/3 w-full">
+          <div className="mb-6 flex justify-between items-center bg-blue-50 py-2 px-4 rounded-lg border border-blue-100">
+            <h2 className="text-sm font-medium text-gray-600 uppercase tracking-tight">
+              {isLoading
+                ? "Waa la soo dejinayaa..."
+                : selectedCategory || "Miscellaneous"}
+              {!isLoading && (
+                <span className="ml-2 text-blue-700 font-bold">
+                  ({finalItems.length})
+                </span>
               )}
-            </div>
-          )}
-        </div>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-72 w-full bg-gray-100 animate-pulse rounded-2xl border border-gray-200"
+                />
+              ))
+            ) : finalItems.length > 0 ? (
+              finalItems.map((item) => (
+                <VehicleCard
+                  key={item._id || item.id}
+                  id={item._id || item.id}
+                  title={item.title}
+                  description={
+                    Array.isArray(item.description)
+                      ? item.description
+                      : [item.description || ""]
+                  }
+                  city={item.city}
+                  images={item.images}
+                  price={item.price}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-20 text-gray-400 border-2 border-dashed rounded-2xl bg-gray-50 font-medium">
+                Ma jirto wax kale oo la helay waafaqsan raadintaada.
+              </div>
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );

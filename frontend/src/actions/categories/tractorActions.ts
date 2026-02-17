@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
 
 export type Traktor = {
@@ -26,49 +26,28 @@ export type Traktor = {
   images: string[];
 };
 
-type CreateTraktorData = {
-  title: string;
-  description: string;
-  price: number;
-  category: string;
-  subCategories: string;
-  type: string;
-  make: string;
-  traktortModel: string;
-  year: number;
-  condition: string;
-  hours: number;
-  enginePower: string;
-  fuelType: string;
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string;
-  images: string[];
-};
+type CreateTraktorData = Omit<Traktor, "_id" | "user">;
 
 export async function getTraktors(): Promise<Traktor[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Traktors, {
       method: "GET",
-      next: { tags: ["traktors"], revalidate: 60 },
+      next: {
+        revalidate: 300,
+        tags: ["traktors"],
+      },
     });
 
-    if (!response.ok) {
-      return [];
-    }
+    if (!response.ok) return [];
 
     const result = await response.json();
-    const list = Array.isArray(result)
-      ? result
-      : Array.isArray(result?.data)
-        ? result.data
-        : [];
-    return list.map((item: any) => ({
+    const list: Traktor[] = Array.isArray(result) ? result : result?.data || [];
+
+    return list.map((item: Traktor) => ({
       ...item,
-      _id: item._id || item.id,
-    })) as Traktor[];
-  } catch (error) {
+      _id: item._id || (item as any).id,
+    }));
+  } catch {
     return [];
   }
 }
@@ -77,25 +56,20 @@ export async function getTraktorById(id: string): Promise<Traktor | null> {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
       method: "GET",
-      next: { tags: [`traktor-${id}`], revalidate: 3600 },
+      next: {
+        revalidate: 600,
+        tags: [`traktor-${id}`],
+      },
     });
 
-    if (!response.ok) {
-      console.error(
-        `Failed to fetch tractor ${id}:`,
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
+    if (!response.ok) return null;
 
-    const item: any = await response.json();
+    const item: Traktor = await response.json();
     return {
       ...item,
-      _id: item._id || item.id,
-    } as Traktor;
-  } catch (error) {
-    console.error(`Network error fetching tractor ${id}:`, error);
+      _id: item._id || (item as any).id,
+    };
+  } catch {
     return null;
   }
 }
@@ -112,23 +86,18 @@ export async function createTraktor(data: CreateTraktorData, token: string) {
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result.message || "Failed to create tractor listing in backend.",
-      };
-    }
-
+    revalidateTag("traktors");
     revalidatePath("/traktor");
+
     return {
       success: true,
-      message: "Traktor listing created successfully.",
-      traktorId: result.id,
+      message: "Listing created successfully.",
+      traktorId: result.id || result._id,
     };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+  } catch {
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -148,24 +117,20 @@ export async function updateTraktor(
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result.message || "Failed to update tractor listing in backend.",
-      };
-    }
-
+    revalidateTag(`traktor-${id}`);
+    revalidateTag("traktors");
     revalidatePath(`/traktor/${id}`);
     revalidatePath("/traktor");
+
     return {
       success: true,
-      message: "Traktor listing updated successfully.",
-      traktorId: result.id,
+      message: "Listing updated successfully.",
+      traktorId: id,
     };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+  } catch {
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -173,23 +138,17 @@ export async function deleteTraktor(id: string, token: string) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) {
-      const result = await response.json();
-      return {
-        success: false,
-        message:
-          result.message || "Failed to delete tractor listing in backend.",
-      };
-    }
+    if (!response.ok) return { success: false };
 
+    revalidateTag(`traktor-${id}`);
+    revalidateTag("traktors");
     revalidatePath("/traktor");
-    return { success: true, message: "Traktor listing deleted successfully." };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+
+    return { success: true, message: "Listing deleted." };
+  } catch {
+    return { success: false, message: "Network error." };
   }
 }

@@ -50,7 +50,7 @@ export const BoatsForRentNestedSub: BoatSubCategoryItem[] = [
   },
 ];
 
-export const BoatEnginesForSaleNestedSub: BoatSubCategoryItem[] = [
+export const BoatEnginesNestedSub: BoatSubCategoryItem[] = [
   {
     so: "Matoor dibadda ah (Outboard)",
     title: "Outboard Engine",

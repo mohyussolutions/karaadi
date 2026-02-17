@@ -1,6 +1,5 @@
 "use client";
 
-
 import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import React, { useEffect, useState } from "react";
 
@@ -17,7 +16,7 @@ export default function RealEstatePage() {
           {
             cache: "no-store",
             credentials: "include",
-          }
+          },
         );
 
         if (res.ok) {
@@ -67,13 +66,13 @@ export default function RealEstatePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isPaid: newStatus }),
           credentials: "include",
-        }
+        },
       );
 
       if (!res.ok) return;
 
       setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i))
+        prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i)),
       );
     } catch (err) {
       console.error("Toggle paid error:", err);

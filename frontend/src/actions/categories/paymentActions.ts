@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import {
   CreatePaymentData,
   Payment,
@@ -13,110 +13,140 @@ import { PAYMENT_ENDPOINTS } from "../constant/constant";
 export async function createPaymentAction(
   data: CreatePaymentData,
 ): Promise<Payment> {
-  const response = await fetch(PAYMENT_ENDPOINTS.CREATE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ payment: data }),
-  });
+  try {
+    const response = await fetch(PAYMENT_ENDPOINTS.CREATE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payment: data }),
+    });
 
-  const result = await response.json();
-  if (!response.ok)
-    throw new Error(
-      result.error || result.message || "Failed to create payment",
-    );
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Failed");
 
-  revalidatePath("/dashboard/payments");
-  return result.data;
+    revalidateTag("payments-list");
+    revalidateTag("payment-stats");
+    revalidatePath("/dashboard/payments");
+
+    return result.data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 }
 
-export async function getAllPaymentsAction(params?: {
-  page?: number;
-  limit?: number;
-  status?: string;
-  paymentMethod?: string;
-  userId?: string;
-  region?: string;
-  city?: string;
-}): Promise<PaginatedPayments> {
-  const url = new URL(PAYMENT_ENDPOINTS.GET_ALL);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) url.searchParams.append(key, value.toString());
+export async function getAllPaymentsAction(
+  params?: any,
+): Promise<PaginatedPayments> {
+  try {
+    const url = new URL(PAYMENT_ENDPOINTS.GET_ALL);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) url.searchParams.append(key, value.toString());
+      });
+    }
+
+    const response = await fetch(url.toString(), {
+      next: { revalidate: 30, tags: ["payments-list"] },
     });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error();
+
+    return result.data;
+  } catch {
+    return {
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+    } as unknown as PaginatedPayments;
   }
-
-  const response = await fetch(url.toString(), { cache: "no-store" });
-  const result = await response.json();
-
-  if (!response.ok) throw new Error(result.error || "Failed to fetch payments");
-
-  return result.data;
 }
 
-export async function getPaymentStatsAction(params?: {
-  region?: string;
-  city?: string;
-}): Promise<PaymentStats> {
-  const url = new URL(PAYMENT_ENDPOINTS.STATS);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) url.searchParams.append(key, value.toString());
+export async function getPaymentStatsAction(
+  params?: any,
+): Promise<PaymentStats> {
+  try {
+    const url = new URL(PAYMENT_ENDPOINTS.STATS);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) url.searchParams.append(key, value.toString());
+      });
+    }
+
+    const response = await fetch(url.toString(), {
+      next: { revalidate: 60, tags: ["payment-stats"] },
     });
+
+    const result = await response.json();
+    return result.data;
+  } catch {
+    return { totalRevenue: 0, paymentCount: 0 } as unknown as PaymentStats;
   }
-
-  const response = await fetch(url.toString(), { cache: "no-store" });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to fetch stats");
-
-  return result.data;
 }
 
 export async function updatePaymentStatusAction(
   id: string,
   data: UpdatePaymentStatusData,
 ): Promise<Payment> {
-  const response = await fetch(PAYMENT_ENDPOINTS.UPDATE_STATUS(id), {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  try {
+    const response = await fetch(PAYMENT_ENDPOINTS.UPDATE_STATUS(id), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to update status");
+    const result = await response.json();
+    if (!response.ok) throw new Error();
 
-  revalidatePath("/dashboard/payments");
-  return result.data;
+    revalidateTag("payments-list");
+    revalidateTag("payment-stats");
+    revalidateTag(`payment-${id}`);
+
+    return result.data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 }
 
 export async function deletePaymentAction(id: string) {
-  const response = await fetch(PAYMENT_ENDPOINTS.DELETE(id), {
-    method: "DELETE",
-  });
+  try {
+    const response = await fetch(PAYMENT_ENDPOINTS.DELETE(id), {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error();
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to delete payment");
-
-  revalidatePath("/dashboard/payments");
-  return result;
+    revalidateTag("payments-list");
+    revalidateTag("payment-stats");
+    revalidatePath("/dashboard/payments");
+    return await response.json();
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 }
 
 export async function searchPaymentsAction(query: string): Promise<Payment[]> {
-  const url = new URL(PAYMENT_ENDPOINTS.SEARCH);
-  url.searchParams.append("query", query);
+  try {
+    const url = new URL(PAYMENT_ENDPOINTS.SEARCH);
+    url.searchParams.append("query", query);
 
-  const response = await fetch(url.toString());
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Search failed");
-
-  return result.data;
+    const response = await fetch(url.toString(), { cache: "no-store" });
+    const result = await response.json();
+    return result.data || [];
+  } catch {
+    return [];
+  }
 }
-export async function getItemDetailAction(id: string) {
-  const response = await fetch(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id), {
-    method: "GET",
-    cache: "no-store",
-  });
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to fetch item");
-  return result;
+export async function getItemDetailAction(id: string) {
+  try {
+    const response = await fetch(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id), {
+      method: "GET",
+      next: { revalidate: 300, tags: [`item-detail-${id}`] },
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error();
+    return result;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 }

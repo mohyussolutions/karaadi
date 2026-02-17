@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import ProtectedRoute from "@/app/ProtectedRoute/ProtectedRoute";
-import ManagerNavbar from "@/app/(backoffice)/Backoffice/ManagerNavbar";
+
 import ManagerSidebar from "@/app/(managers)/managers/ManagerSidebar";
+import { ManagerRoute } from "@/app/Guard/ProtectedRoute";
+import ManagerNavbar from "@/app/(backoffice)/Backoffice/ManagerNavbar";
 
 export default function ManagerLayout({
   children,
@@ -17,7 +18,7 @@ export default function ManagerLayout({
   };
 
   return (
-    <ProtectedRoute manager={true}>
+    <ManagerRoute>
       <div className="flex min-h-screen w-full bg-gray-50 flex-nowrap">
         {open && (
           <div
@@ -26,9 +27,7 @@ export default function ManagerLayout({
           />
         )}
 
-
-          <ManagerSidebar/>
-  
+        <ManagerSidebar />
 
         <div className="flex flex-col flex-1 min-w-0 h-screen overflow-hidden">
           <ManagerNavbar
@@ -42,6 +41,6 @@ export default function ManagerLayout({
           </main>
         </div>
       </div>
-    </ProtectedRoute>
+    </ManagerRoute>
   );
 }

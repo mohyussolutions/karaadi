@@ -131,8 +131,15 @@ export default function RealEstateCard({
             )}
 
             <p className="text-gray-500 text-sm font-normal">
-              {city}
-              {region && `, ${region}`}
+              {city && (
+                <span className="text-green-600 font-semibold">{city}</span>
+              )}
+              {region && city && !city.includes(region) && (
+                <span className="text-green-600 font-semibold">{`, ${region}`}</span>
+              )}
+              {region && !city && (
+                <span className="text-green-600 font-semibold">{region}</span>
+              )}
             </p>
 
             <p className="text-xl font-bold text-blue-600 mt-2">
@@ -177,8 +184,13 @@ export default function RealEstateCard({
               </p>
             )}
             <p className="text-gray-500 text-sm font-normal">
-              {city}
-              {region && `, ${region}`}
+              <span>{city}</span>
+              {region && city && !city.includes(region) && (
+                <span className="text-green-600 font-semibold">{`, ${region}`}</span>
+              )}
+              {region && !city && (
+                <span className="text-green-600 font-semibold">{region}</span>
+              )}
             </p>
             <p className="text-xl font-bold text-blue-600 mt-2">
               ${price.toLocaleString()}

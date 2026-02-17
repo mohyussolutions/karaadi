@@ -4,19 +4,25 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
+import { createMarketplaceItem } from "@/actions/categories/marketplaceActions";
 
-import {
-  regions,
-  cities,
-  Region,
-  City,
-} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
-import {
-  CreateRealEstateItemInput,
-  useCreateMarketplaceItemMutation,
-} from "@/app/(storeFront)/store/slices/marketplaceSlice";
+// Define CreateRealEstateItemInput if not imported from elsewhere
+type CreateRealEstateItemInput = {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  subcategory: string;
+  region: string;
+  city: string;
+  district: string;
+  subDistrict: string;
+  extra?: object;
+  maGaday?: boolean;
+};
 
-import { allCategories } from "@/app/(links)/dashboardLinks/categories";
+import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import {
   AntiquesAndArtNestedSub,
@@ -53,8 +59,7 @@ const categoryNestedMap: { [key: string]: SubCategoryItem[] } = {
 
 const MarketplaceAdForm = () => {
   const router = useRouter();
-  const [createMarketplaceItem, { isLoading }] =
-    useCreateMarketplaceItemMutation();
+  const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   type FormData = Omit<
@@ -230,16 +235,25 @@ const MarketplaceAdForm = () => {
     };
 
     try {
-      const createdItem = await createMarketplaceItem(payload).unwrap();
-      toast.success("Ad submitted successfully!", { position: "top-right" });
-      setTimeout(() => {
-        router.push(`/marketplaceSummary?id=${createdItem.id}`);
-      }, 1000);
+      setIsLoading(true);
+      const result = await createMarketplaceItem(payload);
+      if (result && result.success) {
+        toast.success("Ad submitted successfully!", { position: "top-right" });
+        setTimeout(() => {
+          router.push(`/marketplaceSummary?id=${result.id}`);
+        }, 1000);
+      } else {
+        toast.error(result?.error || "Failed to create marketplace item.", {
+          position: "top-right",
+        });
+      }
     } catch (error) {
       console.error("Submission error:", error);
       toast.error("Failed to create marketplace item.", {
         position: "top-right",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

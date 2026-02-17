@@ -185,105 +185,115 @@ function AdminSubscriptionsPage() {
 
   if (loading)
     return (
-      <div className="flex h-screen items-center justify-center font-medium">
-        Loading Dashboard...
+      <div className="flex h-screen items-center justify-center font-bold text-2xl">
+        LOADING DASHBOARD...
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-8 w-full">
+      <div className="w-full">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Subscriptions</h1>
-            <p className="text-gray-500">
+            <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">
+              Subscriptions
+            </h1>
+            <p className="text-lg text-gray-500 font-medium">
               Manage automated user alerts and preferences
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-4 w-full md:w-auto">
             <button
               onClick={fetchSubscriptions}
-              className="p-2 bg-white border rounded-lg hover:bg-gray-50 transition shadow-sm"
+              className="p-3 bg-white border-2 border-gray-200 rounded-xl hover:border-indigo-500 hover:text-indigo-600 transition shadow-sm"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-6 w-6" />
             </button>
             <button
               onClick={handleExportCSV}
               disabled={exporting || filteredSubscriptions.length === 0}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 shadow-sm transition"
+              className="flex-1 md:flex-none px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg transition uppercase tracking-wider text-sm"
             >
-              <Download className="h-4 w-4" />{" "}
+              <Download className="h-5 w-5" />{" "}
               {exporting ? "Exporting..." : "Export CSV"}
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <StatsCard
             title="Total"
             value={stats.total}
             icon={Users}
-            gradientFrom="from-blue-500"
-            gradientTo="to-blue-600"
+            gradientFrom="from-blue-600"
+            gradientTo="to-blue-800"
           />
           <StatsCard
             title="Active"
             value={stats.active}
             icon={Activity}
             gradientFrom="from-emerald-500"
-            gradientTo="to-emerald-600"
+            gradientTo="to-emerald-700"
           />
           <StatsCard
             title="Inactive"
             value={stats.inactive}
             icon={Bell}
             gradientFrom="from-rose-500"
-            gradientTo="to-rose-600"
+            gradientTo="to-rose-700"
           />
           <StatsCard
             title="This Week"
             value={stats.recent}
             icon={TrendingUp}
-            gradientFrom="from-violet-500"
-            gradientTo="to-violet-600"
+            gradientFrom="from-indigo-500"
+            gradientTo="to-purple-700"
           />
         </div>
 
-        <FilterSection
-          filters={filters}
-          regions={regions}
-          categories={categories}
-          filteredCount={filteredSubscriptions.length}
-          onFilterChange={(k, v) => setFilters((p) => ({ ...p, [k]: v }))}
-          onClearFilters={() =>
-            setFilters({
-              search: "",
-              status: "",
-              region: "",
-              category: "",
-              dateFrom: "",
-              dateTo: "",
-            })
-          }
-          onBulkActivate={() =>
-            filteredSubscriptions.forEach((sub) =>
-              handleUpdateStatus(sub._id, "active"),
-            )
-          }
-          onBulkDeactivate={() =>
-            filteredSubscriptions.forEach((sub) =>
-              handleUpdateStatus(sub._id, "inactive"),
-            )
-          }
-        />
+        <div className="w-full bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm">
+          <FilterSection
+            filters={filters}
+            regions={regions}
+            categories={categories}
+            filteredCount={filteredSubscriptions.length}
+            onFilterChange={(k, v) => setFilters((p) => ({ ...p, [k]: v }))}
+            onClearFilters={() =>
+              setFilters({
+                search: "",
+                status: "",
+                region: "",
+                category: "",
+                dateFrom: "",
+                dateTo: "",
+              })
+            }
+            onBulkActivate={() =>
+              filteredSubscriptions.forEach((sub) =>
+                handleUpdateStatus(sub._id, "active"),
+              )
+            }
+            onBulkDeactivate={() =>
+              filteredSubscriptions.forEach((sub) =>
+                handleUpdateStatus(sub._id, "inactive"),
+              )
+            }
+          />
+        </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mt-6 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 mt-8 overflow-hidden w-full">
           <SubscriptionTable
             subscriptions={filteredSubscriptions}
             onViewDetails={setSelectedSubscription}
             onDelete={handleDeleteSubscription}
             onUpdateStatus={handleUpdateStatus}
-            formatDate={(d) => new Date(d).toLocaleDateString()}
+            formatDate={(d) =>
+              new Date(d).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            }
             formatPrice={(p) => (p ? `$${p.toLocaleString()}` : "N/A")}
           />
         </div>

@@ -68,7 +68,6 @@ export const AntiquesAndArtNestedSub: SubCategoryItem[] = [
   },
 ];
 
-// New Marketplace Nested Subcategories
 export const ElectronicsNestedSub: SubCategoryItem[] = [
   {
     so: "Telefoonada Gacanta",

@@ -3,17 +3,7 @@
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { useState, useEffect, useMemo } from "react";
 import ItemsGrid from "../Cards/mainCard";
-import SearchInput from "../shared/(search)/SearchInput";
-
-const CATEGORY_CONFIG = [
-  { key: "boats", type: "boat" },
-  { key: "cars", type: "car" },
-  { key: "jobs", type: "job" },
-  { key: "marketplace", type: "marketplace" },
-  { key: "motorcycles", type: "motorcycle" },
-  { key: "realEstate", type: "real-estate" },
-  { key: "tractors", type: "traktor" },
-];
+import SearchInput from "../../../(search)/SearchInput";
 
 interface HomeContentProps {
   initialData: Record<string, any[] | null>;
@@ -24,60 +14,79 @@ export default function HomeContent({
   initialData,
   children,
 }: HomeContentProps) {
-  const [data, setData] = useState<Record<string, any[] | null>>(initialData);
+  const [searchResults, setSearchResults] = useState<any[] | null>(null);
   const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setSearchResults(null);
+      setLoading(false);
+      return;
+    }
+
     const delayDebounce = setTimeout(async () => {
-      if (!query.trim()) {
-        setData(initialData);
-        return;
+      setLoading(true);
+      try {
+        const results = await getGlobalSearchResults(query);
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setLoading(false);
       }
-
-      const results = await getGlobalSearchResults(query);
-
-      const filteredData: Record<string, any[]> = {};
-      CATEGORY_CONFIG.forEach((cat) => {
-        filteredData[cat.key] = results.filter(
-          (i: any) => i.itemType === cat.type,
-        );
-      });
-
-      setData(filteredData);
-    }, 400);
+    }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [query, initialData]);
+  }, [query]);
 
-  const allItems = useMemo(() => {
-    return CATEGORY_CONFIG.flatMap((cat) => {
-      const items = data[cat.key];
+  const displayItems = useMemo(() => {
+    if (searchResults !== null) {
+      return searchResults.map((item) => ({
+        ...item,
+        price: Number(item?.price) || 0,
+        images: Array.isArray(item?.images) ? item.images : [],
+      }));
+    }
+
+    return Object.entries(initialData).flatMap(([categoryKey, items]) => {
       if (!Array.isArray(items)) return [];
-
-      return items.map((item: any) => {
-        const rawDesc = Array.isArray(item?.description)
-          ? item.description.join(" ")
-          : item?.description || "";
-
-        return {
-          ...item,
-          category: cat.key,
-          price: Number(item?.price) || 0,
-          images: Array.isArray(item?.images) ? item.images : [],
-          description:
-            rawDesc.length > 100 ? `${rawDesc.substring(0, 100)}...` : rawDesc,
-        };
-      });
+      return items.map((item) => ({
+        ...item,
+        category: categoryKey,
+        price: Number(item?.price) || 0,
+        images: Array.isArray(item?.images) ? item.images : [],
+      }));
     });
-  }, [data]);
+  }, [searchResults, initialData]);
+
+  if (!mounted) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div className="h-12 bg-gray-200 rounded-xl w-full" />
+        <div className="h-96 bg-gray-100 rounded-xl w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       <SearchInput onSearch={setQuery} />
 
-      <div className="flex flex-col gap-8">{children}</div>
+      <div className={query.trim() ? "hidden" : "block"}>
+        <div className="flex flex-col gap-8">{children}</div>
+      </div>
 
-      <ItemsGrid items={allItems} />
+      <div
+        className={`transition-opacity duration-300 ${loading ? "opacity-40" : "opacity-100"}`}
+      >
+        <ItemsGrid items={displayItems} />
+      </div>
     </div>
   );
 }

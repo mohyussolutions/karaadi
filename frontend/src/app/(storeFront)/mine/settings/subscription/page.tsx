@@ -17,7 +17,7 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { createSubscription } from "@/actions/categories/subscriptionsActions";
-import { allCategories } from "@/app/(links)/dashboardLinks/categories";
+import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 
 const CreateSubscription = () => {
   const [loading, setLoading] = useState(false);

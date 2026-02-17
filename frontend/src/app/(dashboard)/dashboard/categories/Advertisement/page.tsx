@@ -6,8 +6,8 @@ import {
   deleteAdvertisement,
   getAdvertisements,
 } from "@/actions/categories/advertisementService";
+import { verifySession } from "@/actions/core/authAction";
 import React, { useState, useEffect } from "react";
-import { apiService } from "@/actions/core/authAction";
 
 interface AdFormData {
   id: string;
@@ -47,7 +47,7 @@ const AdvertisementManager = () => {
 
   const getCurrentUser = async () => {
     try {
-      const user = await apiService.verifySession();
+      const user = await verifySession();
       if (user?._id) {
         setCurrentUserId(user._id);
         setForm((prev) => ({ ...prev, userId: user._id }));
@@ -130,7 +130,7 @@ const AdvertisementManager = () => {
       alert(
         editingId
           ? "Failed to update advertisement"
-          : "Failed to create advertisement"
+          : "Failed to create advertisement",
       );
       console.error("Save ad error:", error);
     }
@@ -184,8 +184,8 @@ const AdvertisementManager = () => {
 
       setAds((prev) =>
         prev.map((ad) =>
-          ad.id === id ? { ...ad, isActive: !currentStatus } : ad
-        )
+          ad.id === id ? { ...ad, isActive: !currentStatus } : ad,
+        ),
       );
     } catch (error) {
       alert("Failed to update ad status");

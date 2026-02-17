@@ -1,241 +1,370 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { FIXED_USER_ID } from "../../lib/storage";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+import {
+  regions,
+  cities,
+} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
 import { verifySession } from "@/actions/core/authAction";
-import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+import {
+  getMotoActiveFee,
+  calculateMotoFee,
+  FeeConfig,
+  CalculatedFee,
+} from "@/actions/categories/feeAction";
+import {
+  Bike,
+  Settings,
+  MapPin,
+  DollarSign,
+  Image as ImageIcon,
+  ChevronRight,
+  Info,
+  Tag,
+} from "lucide-react";
+import { useAppDispatch } from "@/app/(storeFront)/store/hooks";
+import { addMotorcycle } from "@/app/(storeFront)/store/slices/motorcyclesSlice";
+
+const MOTORCYCLE_OPTIONS = [
+  { value: "motoSale", label: "Mooto Iib ah" },
+  { value: "motoRent", label: "Mooto Kireyn" },
+  { value: "motoParts", label: "Qaybaha Mootada" },
+];
+
+type MotoKey = "motoSale" | "motoRent" | "motoParts";
 
 export default function MotorcycleCreate() {
-  const [title, setTitle] = useState("");
-  const [transmission, setTransmission] = useState("");
-  const [mainCategory, setMainCategory] = useState("");
-  const [category, setCategory] = useState("");
-  const [subcategory, setSubcategory] = useState("");
-  const [price, setPrice] = useState("");
-  const [so, setSo] = useState("");
-  const [region, setRegion] = useState("");
-  const [city, setCity] = useState("");
-  const [district, setDistrict] = useState("");
-  const [subDistrict, setSubDistrict] = useState("");
-  const [images, setImages] = useState("");
-  const [typeVal, setTypeVal] = useState("");
-  const [make, setMake] = useState("");
-  const [modelName, setModelName] = useState("");
-  const [year, setYear] = useState("");
-  const [mileage, setMileage] = useState("");
-  const [engineSize, setEngineSize] = useState("");
-  const [fuelType, setFuelType] = useState("");
-  const [color, setColor] = useState("");
-  const [description, setDescription] = useState("");
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+  const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null);
+  const [calculatedFee, setCalculatedFee] = useState<CalculatedFee | null>(
+    null,
+  );
+
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    price: "",
+    brand: "",
+    modelName: "",
+    year: "",
+    engineSize: "",
+    fuelType: "",
+    color: "",
+    region: "",
+    city: "",
+    district: "",
+    images: [] as File[],
+    listingType: "motoSale" as MotoKey,
+  });
+
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        const [u, config] = await Promise.all([
+          verifySession(),
+          getMotoActiveFee(),
+        ]);
+        if (u?._id) setCurrentUserId(u._id);
+        if (config) setFeeConfig(config);
+      } catch (error) {
+        console.error("Motorcycle init error:", error);
+      }
+    };
+    initData();
+  }, []);
+
+  useEffect(() => {
+    if (form.region) {
+      setFilteredCities(cities.filter((c) => c.regionId === form.region));
+    } else {
+      setFilteredCities([]);
+    }
+  }, [form.region]);
+
+  useEffect(() => {
+    if (feeConfig && form.listingType) {
+      const fee = calculateMotoFee(feeConfig, form.listingType);
+      setCalculatedFee(fee);
+    }
+  }, [form.listingType, feeConfig]);
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value, type } = e.target;
+    if (type === "file") {
+      const files = (e.target as HTMLInputElement).files;
+      if (files) setForm((prev) => ({ ...prev, images: Array.from(files) }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const obj = {
-      id: Date.now().toString(),
+    if (!currentUserId) return alert("Fadlan soo gal marka hore");
+    setLoading(true);
+
+    const motorcycleData = {
+      id: uuidv4(),
       userId: currentUserId,
-      title,
-      transmission,
-      mainCategory,
-      category: category
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      subcategory: subcategory
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      price: parseFloat(price) || 0,
-      so: so || null,
-      region,
-      city,
-      district,
-      subDistrict,
-      images: images
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      type: typeVal,
-      make,
-      modelName,
-      year: year ? parseInt(year) : null,
-      mileage: mileage ? parseInt(mileage) : null,
-      engineSize,
-      fuelType,
-      color,
-      description,
-      maGaday: false,
+      ...form,
+      price: parseFloat(form.price) || 0,
+      year: parseInt(form.year) || 0,
+      images: form.images.map((f) => URL.createObjectURL(f)),
+      category: ["Vehicles", "Motorcycles"],
+      subcategory: [form.listingType],
+      fee: calculatedFee,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      mainCategory: "Motorcycles",
+      subDistrict: form.district || "",
+      type: form.listingType,
+      make: form.brand || "",
+      model: form.modelName || "",
+      color: form.color || "",
+      fuelType: form.fuelType || "",
+      engineSize: form.engineSize || "",
+      mileage: 0,
+      maGaday: false,
       isPaid: false,
     };
 
     try {
-      const res = await fetch(`${BASE_API_URL}/api/motorcycles`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(obj),
-      });
-      if (!res.ok) throw new Error("Failed to create motorcycle");
-      alert("Motorcycle created");
+      dispatch(addMotorcycle(motorcycleData));
+      router.push(`/Backoffice/summary/summaryMoto/${motorcycleData.id}`);
     } catch (err) {
       console.error(err);
-      alert("Failed to create motorcycle");
+    } finally {
+      setLoading(false);
     }
   }
 
-  const [currentUserId, setCurrentUserId] = useState<string>(FIXED_USER_ID);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const u = await verifySession();
-        if (mounted) setCurrentUserId(u?._id ?? FIXED_USER_ID);
-      } catch {
-        if (mounted) setCurrentUserId(FIXED_USER_ID);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   return (
-    <div className="py-6">
-      <h2 className="text-2xl font-bold mb-4">Create Motorcycle</h2>
-      <form onSubmit={handleSubmit} className="space-y-3 max-w-2xl">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={transmission}
-          onChange={(e) => setTransmission(e.target.value)}
-          placeholder="Transmission"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={mainCategory}
-          onChange={(e) => setMainCategory(e.target.value)}
-          placeholder="Main Category"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          placeholder="Category (comma-separated)"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={subcategory}
-          onChange={(e) => setSubcategory(e.target.value)}
-          placeholder="Subcategory (comma-separated)"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="Price"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={so}
-          onChange={(e) => setSo(e.target.value)}
-          placeholder="SO (optional)"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          placeholder="Region"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="City"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={district}
-          onChange={(e) => setDistrict(e.target.value)}
-          placeholder="District"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={subDistrict}
-          onChange={(e) => setSubDistrict(e.target.value)}
-          placeholder="Sub District"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={images}
-          onChange={(e) => setImages(e.target.value)}
-          placeholder="Images (comma-separated)"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={typeVal}
-          onChange={(e) => setTypeVal(e.target.value)}
-          placeholder="Type"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={make}
-          onChange={(e) => setMake(e.target.value)}
-          placeholder="Make"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={modelName}
-          onChange={(e) => setModelName(e.target.value)}
-          placeholder="Model Name"
-          className="w-full p-2 border rounded"
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            placeholder="Year"
-            className="p-2 border rounded"
-          />
-          <input
-            value={mileage}
-            onChange={(e) => setMileage(e.target.value)}
-            placeholder="Mileage"
-            className="p-2 border rounded"
-          />
+    <div className="py-10 max-w-5xl mx-auto px-4 text-slate-900">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-200">
+          <Bike className="text-white w-8 h-8" />
         </div>
-        <input
-          value={engineSize}
-          onChange={(e) => setEngineSize(e.target.value)}
-          placeholder="Engine Size"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={fuelType}
-          onChange={(e) => setFuelType(e.target.value)}
-          placeholder="Fuel Type"
-          className="w-full p-2 border rounded"
-        />
-        <input
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          placeholder="Color"
-          className="w-full p-2 border rounded"
-        />
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
-          className="w-full p-2 border rounded"
-        />
         <div>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded">
-            Create
+          <h2 className="text-3xl font-black uppercase tracking-tight">
+            Mootooyin Liis
+          </h2>
+          <p className="text-indigo-600 text-sm font-bold uppercase tracking-widest">
+            Motorcycles
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block tracking-widest">
+                Magaca Mootada
+              </label>
+              <input
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                placeholder="Tusaale: Honda CG 125..."
+                className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block tracking-widest">
+                Nooca Liiska
+              </label>
+              <div className="relative">
+                <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <select
+                  name="listingType"
+                  value={form.listingType}
+                  onChange={handleChange}
+                  className="w-full p-4 pl-10 bg-slate-50 rounded-2xl border-none font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
+                >
+                  {MOTORCYCLE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block tracking-widest">
+                Qiimo (USD)
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  name="price"
+                  type="number"
+                  value={form.price}
+                  onChange={handleChange}
+                  className="w-full p-4 pl-10 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 font-bold"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 mb-4">
+              <Settings className="w-4 h-4 text-indigo-500" /> Farsamada
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                name="brand"
+                value={form.brand}
+                onChange={handleChange}
+                placeholder="Shirkadda (Brand)"
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium"
+              />
+              <input
+                name="modelName"
+                value={form.modelName}
+                onChange={handleChange}
+                placeholder="Model"
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium"
+              />
+              <input
+                name="year"
+                value={form.year}
+                onChange={handleChange}
+                placeholder="Sanadka"
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium"
+              />
+              <input
+                name="engineSize"
+                value={form.engineSize}
+                onChange={handleChange}
+                placeholder="Engine (CC)"
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium"
+              />
+            </div>
+          </div>
+
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 mb-4">
+              <MapPin className="w-4 h-4 text-indigo-500" /> Goobta
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <select
+                name="region"
+                value={form.region}
+                onChange={handleChange}
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium focus:ring-2 focus:ring-indigo-500"
+                required
+              >
+                <option value="">Gobol</option>
+                {regions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                className="p-4 bg-slate-50 rounded-2xl border-none text-sm font-medium focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                disabled={!form.region}
+                required
+              >
+                <option value="">Magaalo</option>
+                {filteredCities.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+          <label className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+            <Info className="w-4 h-4 text-indigo-500" /> Sharaxaad & Sawirro
+          </label>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Sharaxaad dheeraad ah..."
+            className="w-full p-6 bg-slate-50 rounded-3xl border-none min-h-[120px] focus:ring-2 focus:ring-indigo-500"
+          />
+          <div className="relative">
+            <ImageIcon className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+            <input
+              name="images"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleChange}
+              className="w-full p-4 pl-10 bg-slate-50 rounded-2xl border-none text-sm"
+              required
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              {form.images.map((file, idx) => (
+                <img
+                  key={idx}
+                  src={URL.createObjectURL(file)}
+                  alt="preview"
+                  className="w-16 h-16 object-cover rounded-lg border"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {calculatedFee && (
+          <div
+            className={`p-8 rounded-[2.5rem] text-white flex items-center justify-between shadow-xl ${calculatedFee.isFree ? "bg-green-600" : "bg-indigo-600"}`}
+          >
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-90">
+                {calculatedFee.isFree ? "Bilaash 🎉" : "Lacagta Liiska"}
+              </p>
+              <h4 className="text-2xl font-black uppercase">
+                {
+                  MOTORCYCLE_OPTIONS.find((o) => o.value === form.listingType)
+                    ?.label
+                }
+              </h4>
+            </div>
+            <div className="text-right">
+              <p className="text-4xl font-black">
+                {calculatedFee.currency} {calculatedFee.totalAmount.toFixed(2)}
+              </p>
+              <p className="text-[10px] font-bold uppercase opacity-90 tracking-widest">
+                WADARTA LACAGTA
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-center w-full">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-64 py-4 bg-green-500 text-white rounded-full font-bold hover:bg-green-600 transition-all shadow-lg flex items-center justify-center gap-2"
+          >
+            {loading ? "Sug..." : "Review Summary"}{" "}
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </form>

@@ -2,6 +2,8 @@
 
 import TotalAdvertisement from "../categories/Advertisement/TotalAdvertisement";
 import TotalAgencies from "../categories/Agencies/totoalAgencies";
+import TotalCities from "../categories/geo/totalCities";
+import TotalRegions from "../categories/geo/totalRegion";
 import TotalSubscriptionsCard from "../categories/subscription/TotalSubscriptionsCard";
 import ActiveListings from "../categories/totalsOfEach/ActiveListings";
 import ChatsActive from "../categories/totalsOfEach/ChatsActive";
@@ -28,6 +30,8 @@ export const StatsCards: React.FC = () => {
       <TotalAdvertisement />
       <TotalSubscriptionsCard />
       <TotalAgencies />
+      <TotalRegions />
+      <TotalCities />
     </div>
   );
 };

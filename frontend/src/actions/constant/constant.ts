@@ -166,3 +166,41 @@ export const SUPPORT_ENDPOINTS = {
   CLOSE_TICKET: (id: string) =>
     `${BASE_API_URL}/api/support/tickets/${id}/close`,
 };
+
+export const geoEndpoints = {
+  GET_ALL_REGIONS: `${BASE_API_URL}/api/locations/regions`,
+  GET_REGION_BY_ID: (id: string) =>
+    `${BASE_API_URL}/api/locations/regions/${id}`,
+  ADD_REGION: `${BASE_API_URL}/api/locations/regions`,
+  UPDATE_REGION: (id: string) => `${BASE_API_URL}/api/locations/regions/${id}`,
+  DELETE_REGION: (id: string) => `${BASE_API_URL}/api/locations/regions/${id}`,
+
+  GET_ALL_CITIES: `${BASE_API_URL}/api/locations/cities`,
+  GET_CITY_BY_ID: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
+  ADD_CITY: `${BASE_API_URL}/api/locations/cities`,
+  UPDATE_CITY: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
+  DELETE_CITY: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
+
+  TOTAL_STATS: `${BASE_API_URL}/api/locations/stats`,
+  SYNC_DATA: `${BASE_API_URL}/sync`,
+};
+
+export const FAVORITE_ROUTES = {
+  MY_FAVORITES: `${BASE_API_URL}/api/favorites/my`,
+  BASE: `${BASE_API_URL}/api/favorites`,
+  BY_ID: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
+  GET_FAVORITE_BY_ID: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
+  DELETE_FAVORITE: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
+  UPDATE_FAVORITE: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
+  ADD_FAVORITE: `${BASE_API_URL}/api/favorites`,
+  FAVORITES_COUNT: `${BASE_API_URL}/api/favorites/count`,
+};
+
+export const SEARCH_HISTORY_ENDPOINTS = {
+  SEARCH_HISTORY: `${BASE_API_URL}/history-search`,
+  LOG_SEARCH: `${BASE_API_URL}/history-search/log`,
+  POPULAR_SEARCHES: `${BASE_API_URL}/history-search/admin/popular`,
+  DELETE_BY_QUERY: `${BASE_API_URL}/history-search/delete-by-query`,
+  DELETE_BY_ID: (id: string) => `${BASE_API_URL}/history-search/delete/${id}`,
+  SEARCH_ITEMS: (query: string) => `${BASE_API_URL}/api/search?q=${query}`,
+};

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import VisitorManager from "./deleteVisitors";
 import { useRouter } from "next/navigation";
-import { settingLinks } from "@/app/(links)/dashboardLinks/categories";
+import { settingLinks } from "@/app/(links)/storeFrontLinks/categories";
 import { SettingLink } from "@/app/utils/types/categoriestype";
 
 interface SettingCardProps {
@@ -31,8 +31,8 @@ function SettingCard({
         <h2 className="text-lg font-semibold text-gray-800 mb-4">{title}</h2>
         <ul className="space-y-2 text-gray-600 mb-4">
           {items.map((item, idx) => (
-            <li key={idx} className="flex items-start">
-              <span className="mt-1 mr-2 h-2 w-2 bg-indigo-500 rounded-full" />
+            <li key={idx} className="flex items-start text-sm">
+              <span className="mt-1.5 mr-2 h-1.5 w-1.5 bg-indigo-500 rounded-full shrink-0" />
               {item}
             </li>
           ))}
@@ -41,10 +41,10 @@ function SettingCard({
       {actionButton && (
         <button
           onClick={() => {
-            if (actionButton.href) onNavigate(actionButton.href);
-            if (actionButton.type) onAction(actionButton.type);
+            if (actionButton.href) return onNavigate(actionButton.href);
+            if (actionButton.type) return onAction(actionButton.type);
           }}
-          className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
         >
           {actionButton.text}
         </button>
@@ -74,11 +74,11 @@ export default function Settings() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-500 mt-1">
-          Manage essential marketplace settings.
+          Manage essential marketplace and geographical settings.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {settingLinks.map((link: SettingLink) => (
           <SettingCard
             key={link.title}

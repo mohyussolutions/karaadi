@@ -22,7 +22,7 @@ import {
   carsSubCategories,
   CarSubCategory,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
-import { allCategories } from "@/app/(links)/dashboardLinks/categories";
+import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 
 const CarsForSellOrBuy = () => {
   const router = useRouter();

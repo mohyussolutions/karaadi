@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import ManagerNavbar from "./ManagerNavbar";
+import React, { useState, useMemo, useEffect } from "react";
 import ManagerSidebar from "./ManagerSidebar";
+import ManagerNavbar from "./ManagerNavbar";
 import { usePathname } from "next/navigation";
-import { AdminRoute, SupportRoute } from "@/app/ProtectedRoute/ProtectedRoute";
+import { getActiveRole } from "./useUserRole";
 
 export default function ManagementLayout({
   children,
@@ -12,61 +12,42 @@ export default function ManagementLayout({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+  const userRole = useMemo(() => getActiveRole(pathname || ""), [pathname]);
 
-  const userRole: "devices" | "manager" | "support" = pathname?.startsWith(
-    "/devices",
-  )
-    ? "devices"
-    : pathname?.startsWith("/managers")
-      ? "manager"
-      : pathname?.startsWith("/support")
-        ? "support"
-        : "manager";
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   return (
-    <SupportRoute>
-      <div className="flex min-h-screen bg-slate-50 overflow-hidden">
-        <aside
-          id="backoffice-sidebar"
-          className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-[#09090b] transition-transform duration-300 ease-in-out md:relative md:translate-x-0 shrink-0 ${
-            open ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          <div className="h-full flex flex-col">
-            <div className="p-4 md:hidden flex justify-end">
-              <button
-                onClick={() => setOpen(false)}
-                className="text-zinc-400 hover:text-white p-2"
-              >
-                ✕
-              </button>
-            </div>
+    <div className="flex min-h-screen bg-slate-50 overflow-hidden relative">
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-[#09090b] transition-transform duration-300 ease-in-out md:relative md:translate-x-0 shrink-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <ManagerSidebar userRole={userRole} />
+      </aside>
 
-            <div className="flex-1 overflow-y-auto">
-              <ManagerSidebar userRole={userRole} />
-            </div>
-          </div>
-        </aside>
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 md:hidden backdrop-blur-sm"
+        />
+      )}
 
-        {open && (
-          <div
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
-          />
-        )}
-
-        <div className="flex flex-col flex-1 min-w-0">
-          <ManagerNavbar
-            userRole={userRole}
-            onMenuClick={() => setOpen((v) => !v)}
-          />
-
-          <main className="flex-1 overflow-y-auto p-4 md:p-8">
-            <div className="w-full">{children}</div>
-          </main>
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <ManagerNavbar
+          userRole={userRole as any}
+          onMenuClick={() => setOpen(true)}
+        />
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 md:p-12 max-w-[1600px] mx-auto w-full">
+          {children}
         </div>
-      </div>
-    </SupportRoute>
+      </main>
+    </div>
   );
 }

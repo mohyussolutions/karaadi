@@ -6,7 +6,7 @@ import {
   getAllFees,
   createFee,
 } from "@/actions/categories/feeAction";
-import { FEE_CATEGORIES } from "../../../(links)/dashboardLinks/FEE_CATEGORIES";
+import { FEE_CATEGORIES } from "../../../../actions/common/FEE_CATEGORIES";
 import FeeModal from "@/app/(storeFront)/components/shared/modals/feeModel";
 import FeeLoading from "./FeeLoading";
 
@@ -28,7 +28,7 @@ const FeeManagement = () => {
       setAllFees(history);
       if (active) setFormData(active);
     } catch (err) {
-      console.error("Failed to fetch fees:", err);
+      console.error(err);
     } finally {
       setLoading((p) => ({ ...p, active: false }));
     }
@@ -72,7 +72,7 @@ const FeeManagement = () => {
       setShowNewFeeForm(false);
       await fetchData();
     } catch (err) {
-      alert("Error deploying fees. Please check your connection.");
+      alert("Error deploying fees.");
     } finally {
       setLoading((p) => ({ ...p, action: false }));
     }
@@ -87,14 +87,13 @@ const FeeManagement = () => {
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             Setting a value to{" "}
-            <span className="font-bold text-gray-700">0</span> or less
-            automatically marks that category as{" "}
+            <span className="font-bold text-gray-700">0</span> marks it as{" "}
             <span className="text-emerald-600 font-bold">FREE</span>.
           </p>
         </div>
         <button
           onClick={() => setShowNewFeeForm(true)}
-          className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-indigo-700 hover:shadow-indigo-200 transition-all active:scale-95"
+          className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-all active:scale-95"
         >
           New Configuration
         </button>

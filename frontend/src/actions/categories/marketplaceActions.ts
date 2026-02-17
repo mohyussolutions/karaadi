@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import {
   apiUrlsForCategoryTotals,
   PAYMENT_ENDPOINTS,
@@ -14,55 +14,38 @@ export type MarketplaceItem = {
   description: string;
   price: number;
   mainCategory: string;
-  category: string[];
-  subcategory: string[];
+  category: string;
+  subcategory: string;
   region: string;
   city: string;
-  district: string;
-  subDistrict?: string;
   images: string[];
   extra?: object;
 };
 
-type CreateMarketplaceData = {
-  title: string;
-  so?: string;
-  description: string;
-  price: number;
-  mainCategory: string;
-  category: string[];
-  subcategory: string[];
-  region: string;
-  city: string;
-  district: string;
-  subDistrict?: string;
-  images: string[];
-  extra?: object;
-};
+type CreateMarketplaceData = Omit<MarketplaceItem, "_id" | "user">;
 
 export async function getMarketplaceItems(): Promise<MarketplaceItem[]> {
   try {
-    const response = await fetch(apiUrlsForCategoryTotals.Marketplace, {
-      method: "GET",
-      next: { tags: ["marketplace-items"], revalidate: 60 },
-    });
+    const response = await fetch(
+      `${apiUrlsForCategoryTotals.Marketplace}?paid=true`,
+      {
+        method: "GET",
+        next: {
+          revalidate: 300,
+          tags: ["marketplace-items"],
+        },
+      },
+    );
 
-    if (!response.ok) {
-      return [];
-    }
-
+    if (!response.ok) return [];
     const result = await response.json();
-    const itemList = Array.isArray(result)
-      ? result
-      : result && result.data && Array.isArray(result.data)
-        ? result.data
-        : [];
-    console.log(result.data);
+    const itemList = Array.isArray(result) ? result : (result?.data ?? []);
+
     return itemList.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
-    })) as MarketplaceItem[];
-  } catch (error) {
+    }));
+  } catch {
     return [];
   }
 }
@@ -75,62 +58,51 @@ export async function getMarketplaceItemById(
       `${apiUrlsForCategoryTotals.Marketplace}/${id}`,
       {
         method: "GET",
-        next: { tags: [`marketplace-item-${id}`], revalidate: 3600 },
+        next: {
+          revalidate: 600,
+          tags: [`marketplace-item-${id}`],
+        },
       },
     );
 
-    if (!response.ok) {
-      console.error(
-        `Failed to fetch marketplace item ${id}:`,
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
-
-    const item: any = await response.json();
+    if (!response.ok) return null;
+    const item = await response.json();
     return {
       ...item,
       _id: item._id || item.id,
     } as MarketplaceItem;
-  } catch (error) {
-    console.error(`Network error fetching marketplace item ${id}:`, error);
+  } catch {
     return null;
   }
 }
 
 export async function createMarketplaceItem(
   data: CreateMarketplaceData,
-  token: string,
+  token?: string,
 ) {
   try {
+    const headers: HeadersInit = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const response = await fetch(apiUrlsForCategoryTotals.Marketplace, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, error: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result.message || "Failed to create marketplace item in backend.",
-      };
-    }
-
+    revalidateTag("marketplace-items");
     revalidatePath("/marketplace");
+
     return {
       success: true,
-      message: "Marketplace item created successfully.",
-      itemId: result.id,
+      message: "Item created successfully.",
+      id: result._id || result.id,
     };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+  } catch {
+    return { success: false, error: "Network error." };
   }
 }
 
@@ -153,24 +125,16 @@ export async function updateMarketplaceItem(
     );
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result.message || "Failed to update marketplace item in backend.",
-      };
-    }
-
+    revalidateTag(`marketplace-item-${id}`);
+    revalidateTag("marketplace-items");
     revalidatePath(`/marketplace/${id}`);
     revalidatePath("/marketplace");
-    return {
-      success: true,
-      message: "Marketplace item updated successfully.",
-      itemId: result.id,
-    };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+
+    return { success: true, message: "Item updated.", id: result.id };
+  } catch {
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -180,35 +144,36 @@ export async function deleteMarketplaceItem(id: string, token: string) {
       `${apiUrlsForCategoryTotals.Marketplace}/${id}`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       },
     );
 
-    if (!response.ok) {
-      const result = await response.json();
-      return {
-        success: false,
-        message:
-          result.message || "Failed to delete marketplace item in backend.",
-      };
-    }
+    if (!response.ok) return { success: false, message: "Delete failed." };
 
+    revalidateTag(`marketplace-item-${id}`);
+    revalidateTag("marketplace-items");
     revalidatePath("/marketplace");
-    return { success: true, message: "Marketplace item deleted successfully." };
-  } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+
+    return { success: true, message: "Item deleted." };
+  } catch {
+    return { success: false, message: "Network error." };
   }
 }
 
 export async function getItemDetailAction(id: string) {
-  const response = await fetch(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id), {
-    method: "GET",
-    cache: "no-store",
-  });
+  try {
+    const response = await fetch(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id), {
+      method: "GET",
+      next: {
+        revalidate: 60,
+        tags: [`item-detail-${id}`],
+      },
+    });
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to fetch item");
-  return result;
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+    return result;
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to fetch item");
+  }
 }

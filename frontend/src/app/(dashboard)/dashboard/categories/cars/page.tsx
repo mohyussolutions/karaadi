@@ -8,14 +8,15 @@ import {
   FaEdit,
   FaCar,
 } from "react-icons/fa";
-import {   CarPartsNestedSub,
+import {
+  CarPartsNestedSub,
   CarsForSaleNestedSub,
   carsSubCategories,
   ElectricCarsNestedSub,
   LeaseCarsNestedSub,
   TrailerNestedSub,
-  TruckNestedSub, } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
-
+  TruckNestedSub,
+} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 
 const apiService = {
   verifySession: async () => {
@@ -62,7 +63,7 @@ export default function CarsPage() {
         {
           credentials: "include",
           cache: "no-store",
-        }
+        },
       );
 
       if (!res.ok) {
@@ -94,14 +95,14 @@ export default function CarsPage() {
   });
 
   const uniqueMainCategories = Array.from(
-    new Set(items.map((c) => c.category))
+    new Set(items.map((c) => c.category)),
   );
   const uniqueSubCategories = Array.from(
     new Set(
       items
         .filter((c) => c.category === activeMainCategory)
-        .map((c) => c.subcategory)
-    )
+        .map((c) => c.subcategory),
+    ),
   );
 
   const handleMainCategoryClick = (mainCategoryTitle: string) => {
@@ -184,7 +185,7 @@ export default function CarsPage() {
       setItems((prev) => prev.map((c) => (c.id === carId ? updatedCar : c)));
       showStatus(
         `Car marked as ${!isPaid ? "PAID" : "UNPAID"} successfully.`,
-        "success"
+        "success",
       );
     } catch (err) {
       showStatus("Error toggling payment status.", "error");
@@ -224,8 +225,8 @@ export default function CarsPage() {
             statusMessage.type === "error"
               ? "bg-red-500"
               : statusMessage.type === "info"
-              ? "bg-blue-500"
-              : "bg-green-500"
+                ? "bg-blue-500"
+                : "bg-green-500"
           }`}
         >
           {statusMessage.text}

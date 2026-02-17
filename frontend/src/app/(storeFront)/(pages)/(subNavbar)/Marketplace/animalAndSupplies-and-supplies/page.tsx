@@ -1,84 +1,55 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
-import { AnimalAndSuppliesNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
-import { getGlobalFilteredResults } from "@/actions/categories/filterAction";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
+import { AnimalAndSuppliesNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
+import SearchInput from "@/app/(search)/SearchInput";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import {
+  getMarketplaceItems,
+  MarketplaceItem,
+} from "@/actions/categories/marketplaceActions";
 
-interface MarketplaceItem {
-  id: string;
-  title: string;
-  so: string;
-  description: string;
-  price: number;
-  mainCategory: string;
-  category: string[];
-  subcategory: string[];
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string | null;
-  images: string[];
-  extra: any;
-  userId: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-function AnimalAndSupplies() {
+export default function AnimalAndSupplies() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const {
-    data: items = [],
-    isLoading,
-    error,
-  } = useGetMarketplaceItemsQuery() as unknown as {
-    data: MarketplaceItem[];
-    isLoading: boolean;
-    error: any;
-  };
-
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<MarketplaceItem[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
     {},
   );
-  const [isFiltering, setIsFiltering] = useState(false);
-  const [filteredItems, setFilteredItems] = useState<any[]>([]);
 
-  const allAnimalAndSuppliesItems = useMemo(() => {
-    return items.filter(
-      (item) => item.category && item.category.includes("Animals & Supplies"),
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getMarketplaceItems();
+        if (data) setItems(data);
+      } catch (err) {
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const allAnimalItems = useMemo(() => {
+    return items.filter((item) =>
+      Array.isArray(item.category)
+        ? item.category.includes("Animals & Supplies")
+        : item.category === "Animals & Supplies",
     );
   }, [items]);
-
-  const regionCityCounts = useMemo(() => {
-    const regionCounts: Record<string, number> = {};
-    const cityCounts: Record<string, number> = {};
-
-    allAnimalAndSuppliesItems.forEach((item) => {
-      if (item.region) {
-        regionCounts[item.region] = (regionCounts[item.region] || 0) + 1;
-      }
-      if (item.city) {
-        cityCounts[item.city] = (cityCounts[item.city] || 0) + 1;
-      }
-    });
-
-    return { regionCounts, cityCounts };
-  }, [allAnimalAndSuppliesItems]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -86,139 +57,73 @@ function AnimalAndSupplies() {
         setSearchResults([]);
         return;
       }
-
       const results = await getGlobalSearchResults(query);
-      const filteredAnimalsFromSearch = results.filter(
-        (item: any) =>
-          item.category && item.category.includes("Animals & Supplies"),
+      const filtered = results.filter((item: any) =>
+        Array.isArray(item.category)
+          ? item.category.includes("Animals & Supplies")
+          : item.category === "Animals & Supplies",
       );
-      setSearchResults(filteredAnimalsFromSearch);
+      setSearchResults(filtered);
     }, 400);
-
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  useEffect(() => {
-    const applyLocationFilter = async () => {
-      if (!selectedRegion && Object.keys(checkedCities).length === 0) {
-        setFilteredItems([]);
-        setIsFiltering(false);
-        return;
+  const regionCityCounts = useMemo(() => {
+    const regionCounts: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+
+    allAnimalItems.forEach((item) => {
+      if (item.region) {
+        const reg = item.region.toLowerCase().trim();
+        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
       }
-
-      setIsFiltering(true);
-
-      try {
-        const selectedCities = Object.entries(checkedCities)
-          .filter(([_, isChecked]) => isChecked)
-          .map(([cityName]) => cityName);
-
-        if (selectedCities.length > 0) {
-          const allResults = [];
-
-          for (const city of selectedCities) {
-            let filterParams: any = { city: city };
-            if (selectedRegion) filterParams.region = selectedRegion;
-            if (query.trim()) filterParams.q = query;
-
-            const results = await getGlobalFilteredResults(filterParams);
-            const filteredByCategory = results.filter(
-              (item: any) =>
-                item.category && item.category.includes("Animals & Supplies"),
-            );
-
-            const existingIds = new Set(
-              allResults.map((item) => item.id || item._id),
-            );
-            const uniqueItems = filteredByCategory.filter(
-              (item: any) => !existingIds.has(item.id || item._id),
-            );
-
-            allResults.push(...uniqueItems);
-          }
-
-          setFilteredItems(allResults);
-        } else if (selectedRegion) {
-          let filterParams: any = { region: selectedRegion };
-          if (query.trim()) filterParams.q = query;
-
-          const results = await getGlobalFilteredResults(filterParams);
-          const filteredByCategory = results.filter(
-            (item: any) =>
-              item.category && item.category.includes("Animals & Supplies"),
-          );
-
-          setFilteredItems(filteredByCategory);
-        }
-      } catch (error) {
-        setFilteredItems([]);
-      } finally {
-        setIsFiltering(false);
+      if (item.city) {
+        const cit = item.city.toLowerCase().trim();
+        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
       }
-    };
-
-    applyLocationFilter();
-  }, [selectedRegion, checkedCities, query]);
+    });
+    return { regionCounts, cityCounts };
+  }, [allAnimalItems]);
 
   const itemsToDisplay = useMemo(() => {
-    if (selectedRegion || Object.keys(checkedCities).length > 0)
-      return filteredItems;
-    if (query.trim()) return searchResults;
+    let list = query.trim() ? searchResults : allAnimalItems;
+
     if (selectedSubcategory) {
-      return allAnimalAndSuppliesItems.filter(
+      list = list.filter((item) => {
+        const sub = Array.isArray(item.subcategory)
+          ? item.subcategory
+          : [item.subcategory];
+        return sub.some((s) =>
+          s?.toLowerCase().includes(selectedSubcategory.toLowerCase()),
+        );
+      });
+    }
+
+    if (selectedRegion) {
+      list = list.filter(
         (item) =>
-          item.subcategory && item.subcategory.includes(selectedSubcategory),
+          item.region?.toLowerCase().trim() ===
+          selectedRegion.toLowerCase().trim(),
       );
     }
-    return allAnimalAndSuppliesItems;
-  }, [
-    query,
-    searchResults,
-    selectedSubcategory,
-    allAnimalAndSuppliesItems,
-    selectedRegion,
-    checkedCities,
-    filteredItems,
-  ]);
 
-  const subcategoryFilters = useMemo(() => {
-    return AnimalAndSuppliesNestedSub.map((item) => ({
-      subcategory: item.title,
-      soName: item.so,
-    }));
-  }, []);
-
-  const currentDisplayTitle = useMemo(() => {
-    if (isFiltering) return "Filtering...";
-
-    if (selectedRegion || Object.keys(checkedCities).length > 0) {
-      let locationText = selectedRegion || "";
-      if (Object.keys(checkedCities).length > 0) {
-        const cityNames = Object.keys(checkedCities).join(", ");
-        locationText = locationText
-          ? `${locationText} - ${cityNames}`
-          : cityNames;
-      }
-      return `Location: ${locationText}`;
+    const activeCities = Object.keys(checkedCities).filter(
+      (city) => checkedCities[city],
+    );
+    if (activeCities.length > 0) {
+      list = list.filter((item) =>
+        activeCities.includes(item.city?.toLowerCase().trim() || ""),
+      );
     }
 
-    if (query.trim()) return `Search Results: "${query}"`;
-    if (!selectedSubcategory)
-      return "Dhamaan Xayawaan iyo Agabka (All Animals & Supplies)";
-
-    const foundCategory = subcategoryFilters.find(
-      (cat) => cat.subcategory === selectedSubcategory,
-    );
-    return foundCategory
-      ? `${foundCategory.soName} (${foundCategory.subcategory})`
-      : selectedSubcategory;
+    return list;
   }, [
+    allAnimalItems,
+    searchResults,
     query,
     selectedSubcategory,
-    subcategoryFilters,
     selectedRegion,
     checkedCities,
-    isFiltering,
   ]);
 
   const scroll = (direction: "left" | "right") => {
@@ -231,28 +136,9 @@ function AnimalAndSupplies() {
     }
   };
 
-  const handleCategoryClick = (subcategory: string) => {
-    setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory,
-    );
-  };
-
-  const handleLocationFilterChange = (
-    region: string | null,
-    cities: Record<string, boolean>,
-  ) => {
-    setSelectedRegion(region);
-    setCheckedCities(cities);
-  };
-
-  const handleRegionClick = (region: string | null) => {
-    setSelectedRegion(region);
-  };
-
-  if (isLoading) return <Loading />;
-  if (error)
+  if (isError)
     return (
-      <div className="text-red-500 p-4">
+      <div className="text-red-500 p-10 font-bold text-center">
         Cilad ayaa ku timid soo dejinta alaabta.
       </div>
     );
@@ -260,92 +146,91 @@ function AnimalAndSupplies() {
   return (
     <div className="container mx-auto px-4 pb-10">
       <SearchInput onSearch={setQuery} />
-      <PathSegmentsDisplay />
+      <div className="pt-2">
+        <PathSegmentsDisplay />
+      </div>
 
       <div className="relative py-6">
         <div className="flex justify-center relative">
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full border hover:bg-gray-50"
           >
-            <FaChevronLeft className="hover:scale-110 transition-transform" />
+            <FaChevronLeft />
           </button>
-
           <div
             ref={scrollRef}
-            className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)]"
+            className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)] py-2"
           >
-            {subcategoryFilters.map((filter) => (
-              <Link
-                key={filter.subcategory}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleCategoryClick(filter.subcategory);
-                }}
-                className={`flex-shrink-0 w-40 flex flex-col items-center text-center group rounded-lg p-4 shadow transition-all duration-300 m-6 ${
-                  selectedSubcategory === filter.subcategory
-                    ? "bg-blue-100 scale-[1.03] shadow-md"
-                    : "bg-gray-50 hover:bg-white hover:shadow-lg hover:-translate-y-1"
+            {AnimalAndSuppliesNestedSub.map((filter: any) => (
+              <button
+                key={filter.title}
+                onClick={() =>
+                  setSelectedSubcategory((prev) =>
+                    prev === filter.title ? null : filter.title,
+                  )
+                }
+                className={`flex-shrink-0 w-40 flex flex-col items-center text-center rounded-lg p-4 transition-all border ${
+                  selectedSubcategory === filter.title
+                    ? "bg-blue-100 border-blue-400 scale-105 shadow-sm"
+                    : "bg-gray-50 border-gray-200 hover:bg-white"
                 }`}
               >
-                <span className="text-sm font-medium text-gray-800 transition-colors">
-                  {filter.soName}
+                <div className="text-2xl text-blue-500 mb-2">{filter.icon}</div>
+                <span className="text-[13px] font-medium text-gray-800 leading-tight">
+                  {filter.so}
                 </span>
-                <span className="text-xs text-gray-500 transition-colors">
-                  {filter.subcategory}
+                <span className="text-[10px] text-gray-400 uppercase mt-1">
+                  {filter.title}
                 </span>
-              </Link>
+              </button>
             ))}
           </div>
-
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full border hover:bg-gray-50"
           >
-            <FaChevronRight className="hover:scale-110 transition-transform" />
+            <FaChevronRight />
           </button>
         </div>
       </div>
 
-      <div className="px-4 text-sm text-gray-700 mb-4">
-        <p>
-          Waxaa la soo bandhigayaa{" "}
-          <span className="text-blue-600 font-semibold">
-            {itemsToDisplay.length}
-          </span>{" "}
-          alaab gudaha <strong>{currentDisplayTitle}</strong>
-        </p>
-      </div>
-
-      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-        <div className="sticky top-4 space-y-4 md:w-64 w-full">
+      <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
+        <aside className="md:w-1/3 sticky top-4 self-start">
           <LocationSelector
-            onFilterChange={handleLocationFilterChange}
+            onFilterChange={(reg, cities) => {
+              setSelectedRegion(reg);
+              setCheckedCities(cities);
+            }}
             selectedRegion={selectedRegion}
             checkedCities={checkedCities}
             regionCounts={regionCityCounts.regionCounts}
             cityCounts={regionCityCounts.cityCounts}
           />
-          <SomaliMap
-            selectedRegion={selectedRegion}
-            onRegionClick={handleRegionClick}
-            items={itemsToDisplay}
-          />
-        </div>
+          <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
+            <SomaliMap
+              selectedRegion={selectedRegion}
+              onRegionClick={setSelectedRegion}
+              items={allAnimalItems}
+            />
+          </div>
+        </aside>
 
-        <div className="md:w-3/4 w-full">
-          {isFiltering ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item) => (
+        <main className="md:w-2/3 w-full">
+          <div className="mb-6 text-sm font-medium text-gray-600 bg-blue-50 py-2 px-4 rounded-lg inline-block border border-blue-100">
+            Waxaa la soo bandhigayaa{" "}
+            <span className="text-blue-700 font-bold">
+              {itemsToDisplay.length}
+            </span>{" "}
+            alaabta xoolaha ah
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {itemsToDisplay.length > 0
+              ? itemsToDisplay.map((item) => (
                   <UniversalCard
-                    key={item.id || item._id}
-                    id={item.id || item._id}
+                    key={item._id}
+                    id={item._id}
                     title={item.title}
                     description={item.description}
                     city={item.city}
@@ -354,17 +239,14 @@ function AnimalAndSupplies() {
                     category="marketplace"
                   />
                 ))
-              ) : (
-                <div className="col-span-full text-center py-10 text-gray-500">
-                  Ma jiro wax alaab ah oo la helay.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+              : !isLoading && (
+                  <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-medium">
+                    Ma jiro wax alaab ah oo la helay deegaankan.
+                  </div>
+                )}
+          </div>
+        </main>
       </div>
     </div>
   );
 }
-
-export default AnimalAndSupplies;

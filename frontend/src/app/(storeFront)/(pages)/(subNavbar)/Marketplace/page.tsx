@@ -4,10 +4,9 @@ import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "@/app/(search)/SearchInput";
 import {
   getMarketplaceItems,
   MarketplaceItem,
@@ -16,16 +15,16 @@ import {
 function MarketplaceLinks() {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [query, setQuery] = useState("");
 
-  // 1. Initial Fetch
   useEffect(() => {
     async function fetchInitialItems() {
       try {
         const data = await getMarketplaceItems();
-        setItems(data);
+        if (data) setItems(data);
       } catch (error) {
-        console.error("Failed to fetch items:", error);
+        setIsError(true);
       } finally {
         setIsLoading(false);
       }
@@ -33,76 +32,84 @@ function MarketplaceLinks() {
     fetchInitialItems();
   }, []);
 
-  // 2. Local Filtering Logic (Fast and Responsive)
   const itemsToDisplay = useMemo(() => {
     if (!query.trim()) return items;
 
     const lowerQuery = query.toLowerCase();
     return items.filter((item) => {
+      const descText = Array.isArray(item.description)
+        ? item.description.join(" ")
+        : item.description;
+
       return (
         item.title?.toLowerCase().includes(lowerQuery) ||
-        item.description?.toLowerCase().includes(lowerQuery) ||
+        descText?.toLowerCase().includes(lowerQuery) ||
         item.city?.toLowerCase().includes(lowerQuery) ||
         item.region?.toLowerCase().includes(lowerQuery)
       );
     });
   }, [items, query]);
 
-  if (isLoading) return <Loading />;
+  if (isError) {
+    return (
+      <div className="text-center py-6 text-red-500 font-medium">
+        Cilad baa ku timid soo dejinta xogta marketplace-ka.
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-3 py-3">
-      <PathSegmentsDisplay />
-
-      {/* Pass setQuery to the SearchInput */}
+    <div className="container mx-auto px-4 py-4">
       <SearchInput onSearch={setQuery} />
+      <div className="pt-2">
+        <PathSegmentsDisplay />
+      </div>
 
-      <div className="grid grid-cols-3 gap-2 px-4 py-6 sm:grid-cols-4 lg:grid-cols-4">
+      <div className="grid grid-cols-3 gap-3 py-6 max-w-4xl mx-auto">
         {marketplaceSubCategories.map((category) => (
           <Link
             key={category.title}
+            prefetch={true}
             href={
               category.href ||
               `/Marketplace/${category.title.replace(/\s/g, "-").toLowerCase()}`
             }
-            className="flex flex-col items-center text-center group p-1 rounded-xl transition-all duration-300 hover:scale-[1.03]"
+            className="flex flex-col items-center justify-center p-5 rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:bg-blue-50/10 group text-center"
           >
-            <div className="flex items-center justify-center rounded-xl w-16 h-16 lg:w-20 lg:h-20 text-3xl text-blue-400 group-hover:text-black transition-colors">
+            <div className="text-3xl text-blue-500 mb-3 transform transition-transform duration-300 group-hover:-translate-y-0.5">
               {category.icon}
             </div>
-            <span className="text-sm font-medium text-gray-800 leading-snug">
-              {category.so}
-            </span>
+            <div className="flex flex-col items-center w-full">
+              <span className="text-[15px] font-medium text-gray-800 leading-snug group-hover:text-blue-600">
+                {category.so}
+              </span>
+              <span className="text-[12px] text-gray-400 font-normal uppercase tracking-normal mt-1.5">
+                {category.title}
+              </span>
+            </div>
           </Link>
         ))}
       </div>
 
-      <div className="flex items-center justify-center min-h-[112px]">
+      <div className="flex items-center justify-center my-6">
         <WantSell />
       </div>
 
-      <div className="px-4 text-sm text-gray-700 mb-4 font-medium">
-        {query ? (
-          <p>
-            Found <span className="text-blue-600">{itemsToDisplay.length}</span>{" "}
-            results for "{query}"
-          </p>
-        ) : (
-          <p>
-            Showing{" "}
-            <span className="text-blue-600">{itemsToDisplay.length}</span>{" "}
-            Marketplace Items
-          </p>
-        )}
+      <div className="px-4 mb-4 flex justify-between items-center border-b border-gray-100 pb-2">
+        <h2 className="text-lg font-medium text-gray-700 uppercase tracking-tight">
+          {query ? "Natiijada Raadinta" : "Dhammaan Agabyada Marketplace"}
+          <span className="ml-2 text-blue-500 text-base">
+            ({itemsToDisplay.length})
+          </span>
+        </h2>
       </div>
 
-      <div className="w-full pt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
-          {itemsToDisplay.length > 0 ? (
-            itemsToDisplay.map((item) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+        {itemsToDisplay.length > 0
+          ? itemsToDisplay.map((item) => (
               <UniversalCard
-                key={item._id || item._id}
-                id={item._id || item._id}
+                key={item._id}
+                id={item._id}
                 title={item.title}
                 description={item.description}
                 city={item.city}
@@ -111,12 +118,11 @@ function MarketplaceLinks() {
                 category="marketplace"
               />
             ))
-          ) : (
-            <div className="col-span-full text-center py-10 text-gray-500">
-              No items found matching your search.
-            </div>
-          )}
-        </div>
+          : !isLoading && (
+              <div className="col-span-full text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-sm">
+                Lama helin agab waafaqsan raadintaada.
+              </div>
+            )}
       </div>
     </div>
   );

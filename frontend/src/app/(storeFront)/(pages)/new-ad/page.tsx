@@ -1,15 +1,13 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { JSX, useState } from "react";
 import { IoMdArrowDropdown } from "react-icons/io";
 import { TiArrowSortedUp } from "react-icons/ti";
 
-import { allCategories } from "@/app/(links)/dashboardLinks/categories";
+import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 import {
   boatsSubCategories,
   carsSubCategories,
-  jobsSubCategories,
   marketplaceSubCategories,
   motorcyclesSubCategories,
   realEstateSubCategories,
@@ -31,7 +29,6 @@ const categoryOptions: { [key: string]: CategoryOption[] } = {
   Motorcycles: motorcyclesSubCategories,
   Boats: boatsSubCategories,
   Traktor: traktorSubCategories,
-  Jobs: jobsSubCategories as CategoryOption[],
 };
 
 const getAdCreationPath = (categoryKey: string): string | null => {
@@ -44,8 +41,6 @@ const getAdCreationPath = (categoryKey: string): string | null => {
       return "/create-ad-for-motorcycles";
     case "Boats":
       return "/create-ad-for-boats";
-    case "Jobs":
-      return "/create-ad-for-jobs";
     default:
       return null;
   }
@@ -132,7 +127,10 @@ function Ads() {
           {allCategories
             .filter(
               (category) =>
-                category.name !== "mohyus" && category.name !== "Smart Suuq"
+                category.name !== "mohyus" &&
+                category.name !== "Smart Suuq" &&
+                category.name !== "Jobs" &&
+                category.name !== "Smartsuuq",
             )
             .map((category) => (
               <div

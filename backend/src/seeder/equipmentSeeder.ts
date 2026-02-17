@@ -1,5 +1,27 @@
+export interface EquipmentItem {
+  id: string;
+  title: string;
+  so: string;
+  mainCategory: "Equipment";
+  description: string;
+  price: number;
+  category: string[];
+  subcategory: string[];
+  type: string;
+  make: string;
+  traktortModel: string;
+  year: number;
+  condition: string;
+  hours: number;
+  enginePower: string;
+  fuelType: string;
+  region: string;
+  city: string;
+  images: string[];
+  maGaday: boolean;
+  isPaid: boolean;
+}
 export const equipmentItems = [
-  // 1. TRACTOR FOR SALE: NEW TRACTOR (1/3)
   {
     title: "John Deere JD100 New Utility Tractor",
     so: "Cagaf cagaf cusub (John Deere)",
@@ -17,16 +39,13 @@ export const equipmentItems = [
     hours: 5,
     enginePower: "150HP",
     fuelType: "Diesel",
-    region: "Banaadir",
-    city: "Muqdisho",
-    district: "Hamarweyne",
-    subDistrict: "Shibis",
-    images: [
-      "https://images.unsplash.com/photo-1614977645540-7abd88ba8e56?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dHJhY3RvcnxlbnwwfHwwfHx8MA%3D%3D",
-    ],
+    region: "hamar",
+    city: "hamar",
+
+    images: ["https://images.unsplash.com/photo-1614977645540-7abd88ba8e56"],
     maGaday: true,
+    isPaid: true,
   },
-  // 2. TRACTOR FOR SALE: USED TRACTOR (1/3)
   {
     title: "Kubota KX200 Used Farm Tractor",
     so: "Cagaf cagaf la isticmaalay (Kubota)",
@@ -43,16 +62,15 @@ export const equipmentItems = [
     hours: 150,
     enginePower: "130HP",
     fuelType: "Diesel",
-    region: "Somaliland",
-    city: "Hargeysa",
-    district: "Kaaraan",
-    subDistrict: "Hargeisa Central",
+    region: "wqdl",
+    city: "hargeysa",
+
     images: [
-      "https://plus.unsplash.com/premium_photo-1664301163726-78773dc77bfd?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8dHJhY3RvcnxlbnwwfHwwfHx8MA%3D%3D",
+      "https://plus.unsplash.com/premium_photo-1664301163726-78773dc77bfd",
     ],
     maGaday: false,
+    isPaid: true,
   },
-  // 3. FARM TOOLS: PLOW/TILLAGE EQUIPMENT (1/3)
   {
     title: "Heavy-Duty Disc Plow for Sale",
     so: "Qalabka wax lagu qoto (Disc Plow)",
@@ -70,16 +88,15 @@ export const equipmentItems = [
     hours: 50,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Puntland",
-    city: "Garowe",
-    district: "Garowe District",
-    subDistrict: "Garowe Central",
+    region: "bari",
+    city: "garowe",
+
     images: [
-      "https://plus.unsplash.com/premium_photo-1661809297697-ba16de6e3646?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8dHJhY3RvcnxlbnwwfHwwfHx8MA%3D%3D",
+      "https://plus.unsplash.com/premium_photo-1661809297697-ba16de6e3646",
     ],
     maGaday: true,
+    isPaid: true,
   },
-  // 4. FERTILIZER SPREADER: MOUNTED SPREADER (1/3)
   {
     title: "Mounted Fertilizer Spreader (800L)",
     so: "Faafiyaha Mounted (800L)",
@@ -97,16 +114,13 @@ export const equipmentItems = [
     hours: 200,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Galmudug",
-    city: "Galkayo",
-    district: "Galkayo South",
-    subDistrict: "Galkayo East",
-    images: [
-      "https://images.unsplash.com/photo-1629807473015-41699c4471b5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "mudug",
+    city: "galkayo",
+
+    images: ["https://images.unsplash.com/photo-1629807473015-41699c4471b5"],
     maGaday: false,
+    isPaid: true,
   },
-  // 5. GRAIN HARVESTER: SELF-PROPELLED HARVESTER (1/3)
   {
     title: "Self-Propelled Wheat Harvester",
     so: "Harvester iswada (Qamadi)",
@@ -124,16 +138,13 @@ export const equipmentItems = [
     hours: 500,
     enginePower: "350HP",
     fuelType: "Diesel",
-    region: "Hiiraan",
-    city: "Beledweyne",
-    district: "Beledweyne District",
-    subDistrict: "Beledweyne Central",
-    images: [
-      "https://images.unsplash.com/photo-1568680870491-590cd4e224ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "hiiraan",
+    city: "beledweyne",
+
+    images: ["https://images.unsplash.com/photo-1568680870491-590cd4e224ab"],
     maGaday: true,
+    isPaid: true,
   },
-  // 6. FARM TOOLS: SEEDING EQUIPMENT (1/3)
   {
     title: "Precision Row Planter (Used)",
     so: "Qalabka abuuritaanka (Precision Planter)",
@@ -150,16 +161,13 @@ export const equipmentItems = [
     hours: 120,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Bari",
-    city: "Bosaso",
-    district: "Bosaso District",
-    subDistrict: "Bosaso Port",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "bari",
+    city: "bosaso",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: false,
+    isPaid: true,
   },
-  // 7. FARM TOOLS: HARVESTING EQUIPMENT (1/3)
   {
     title: "Small Sickle Bar Mower (Hay/Fodder)",
     so: "Qalabka goosashada (Mower)",
@@ -177,16 +185,13 @@ export const equipmentItems = [
     hours: 80,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Bay",
-    city: "Baidoa",
-    district: "Baidoa District",
-    subDistrict: "Baidoa East",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "bay",
+    city: "baidoa",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: true,
+    isPaid: true,
   },
-  // 8. TRACTOR FOR SALE: USED TRACTOR (2/3)
   {
     title: "Case IH CIH300 Used Tractor",
     so: "Cagaf cagaf la isticmaalay (Case IH)",
@@ -203,16 +208,13 @@ export const equipmentItems = [
     hours: 500,
     enginePower: "180HP",
     fuelType: "Diesel",
-    region: "Lower Shabelle",
-    city: "Merca",
-    district: "Merca District",
-    subDistrict: "Merca Port",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "shabeellaha-hoose",
+    city: "merca",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: false,
+    isPaid: true,
   },
-  // 9. FARM TOOLS: PLOW/TILLAGE EQUIPMENT (2/3)
   {
     title: "Heavy Tandem Disc Harrow",
     so: "Qalabka wax lagu qoto (Disc Harrow)",
@@ -230,16 +232,13 @@ export const equipmentItems = [
     hours: 90,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Mudug",
-    city: "Galkayo",
-    district: "Galkayo North",
-    subDistrict: "Galkayo West",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "mudug",
+    city: "galkayo",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: true,
+    isPaid: true,
   },
-  // 10. FERTILIZER SPREADER: TOWED SPREADER (1/3)
   {
     title: "High-Capacity Trailed Spreader",
     so: "Faafiyaha Towed (Capacity sare)",
@@ -257,16 +256,13 @@ export const equipmentItems = [
     hours: 10,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Gedo",
-    city: "Luuq",
-    district: "Luuq District",
-    subDistrict: "Luuq Central",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "gedo",
+    city: "luuq",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: false,
+    isPaid: true,
   },
-  // 11. GRAIN HARVESTER: PULL-TYPE HARVESTER (1/3)
   {
     title: "Pull-Type Rice Harvester",
     so: "Harvester jiidan (Bariis)",
@@ -284,16 +280,13 @@ export const equipmentItems = [
     hours: 0,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Banaadir",
-    city: "Muqdisho",
-    district: "Waberi",
-    subDistrict: "Afarta Irdoodka",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "hamar",
+    city: "hamar",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: true,
+    isPaid: true,
   },
-  // 12. FARM TOOLS: HARVESTING EQUIPMENT (2/3)
   {
     title: "Used Potato Harvester",
     so: "Qalabka goosashada (Baradho)",
@@ -311,16 +304,13 @@ export const equipmentItems = [
     hours: 0,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Somaliland",
-    city: "Boorame",
-    district: "Baki",
-    subDistrict: "Wadajir",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "awdal",
+    city: "boorame",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: false,
+    isPaid: true,
   },
-  // 13. TRACTOR FOR SALE: NEW TRACTOR (2/3)
   {
     title: "New Holland NH180 New Tractor",
     so: "Cagaf cagaf cusub (New Holland)",
@@ -337,16 +327,13 @@ export const equipmentItems = [
     hours: 5,
     enginePower: "180HP",
     fuelType: "Diesel",
-    region: "Hiiraan",
-    city: "Beledweyne",
-    district: "Beledweyne District",
-    subDistrict: "Beledweyne Central",
-    images: [
-      "https://images.unsplash.com/photo-1568680870491-590cd4e224ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "hiiraan",
+    city: "beledweyne",
+
+    images: ["https://images.unsplash.com/photo-1568680870491-590cd4e224ab"],
     maGaday: true,
+    isPaid: true,
   },
-  // 14. FARM TOOLS: PLOW/TILLAGE EQUIPMENT (3/3)
   {
     title: "Heavy Moldboard Plow",
     so: "Qalabka wax lagu qoto (Moldboard Plow)",
@@ -364,16 +351,13 @@ export const equipmentItems = [
     hours: 0,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Galmudug",
-    city: "Galkayo",
-    district: "Galkayo South",
-    subDistrict: "Galkayo East",
-    images: [
-      "https://images.unsplash.com/photo-1629807473015-41699c4471b5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "mudug",
+    city: "galkayo",
+
+    images: ["https://images.unsplash.com/photo-1629807473015-41699c4471b5"],
     maGaday: false,
+    isPaid: true,
   },
-  // 15. FERTILIZER SPREADER: MOUNTED SPREADER (2/3)
   {
     title: "Medium Mounted Spreader (1200L)",
     so: "Faafiyaha Mounted (Dhexdhexaad)",
@@ -390,16 +374,13 @@ export const equipmentItems = [
     hours: 100,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Gedo",
-    city: "Luuq",
-    district: "Luuq District",
-    subDistrict: "Luuq Central",
-    images: [
-      "https://images.unsplash.com/photo-1568680870491-590cd4e224ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "gedo",
+    city: "luuq",
+
+    images: ["https://images.unsplash.com/photo-1568680870491-590cd4e224ab"],
     maGaday: true,
+    isPaid: true,
   },
-  // 16. GRAIN HARVESTER: SELF-PROPELLED HARVESTER (2/3)
   {
     title: "Large Self-Propelled Harvester (Barley)",
     so: "Harvester iswada (Shaciir)",
@@ -417,16 +398,13 @@ export const equipmentItems = [
     hours: 900,
     enginePower: "450HP",
     fuelType: "Diesel",
-    region: "Banaadir",
-    city: "Muqdisho",
-    district: "Dharkenley",
-    subDistrict: "Garasbaaley",
-    images: [
-      "https://images.unsplash.com/photo-1614977645540-7abd88ba8e56?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dHJhY3RvcnxlbnwwfHwwfHx8MA%3D%3D",
-    ],
+    region: "hamar",
+    city: "hamar",
+
+    images: ["https://images.unsplash.com/photo-1614977645540-7abd88ba8e56"],
     maGaday: false,
+    isPaid: true,
   },
-  // 17. FARM TOOLS: SEEDING EQUIPMENT (2/3)
   {
     title: "Air Seeder for Grains",
     so: "Qalabka abuuritaanka (Air Seeder)",
@@ -443,16 +421,13 @@ export const equipmentItems = [
     hours: 150,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Somaliland",
-    city: "Hargeysa",
-    district: "Maxamed Mooge",
-    subDistrict: "New Hargeisa",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "wqdl",
+    city: "hargeysa",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: true,
+    isPaid: true,
   },
-  // 18. FERTILIZER SPREADER: TOWED SPREADER (2/3)
   {
     title: "Small Trailed Spreader (2 Tons)",
     so: "Faafiyaha Towed (Yar)",
@@ -469,16 +444,13 @@ export const equipmentItems = [
     hours: 150,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Puntland",
-    city: "Garowe",
-    district: "Garowe District",
-    subDistrict: "Garowe Central",
-    images: [
-      "https://images.unsplash.com/photo-1568680870491-590cd4e224ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "bari",
+    city: "garowe",
+
+    images: ["https://images.unsplo-1568680870491-590cd4e224ab"],
     maGaday: false,
+    isPaid: true,
   },
-  // 19. TRACTOR FOR SALE: NEW TRACTOR (3/3)
   {
     title: "Fendt F250 High-End Tractor",
     so: "Cagaf cagaf cusub (Fendt)",
@@ -496,16 +468,12 @@ export const equipmentItems = [
     hours: 8,
     enginePower: "250HP",
     fuelType: "Diesel",
-    region: "Galmudug",
-    city: "Cadaado",
-    district: "Cadaado District",
-    subDistrict: "Cadaado North",
-    images: [
-      "https://images.unsplash.com/photo-1629807473015-41699c4471b5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "galmudug",
+    city: "cadaado",
+    images: ["https://images.unsplash.com/photo-1629807473015-41699c4471b5"],
     maGaday: true,
+    isPaid: true,
   },
-  // 20. TRACTOR FOR SALE: USED TRACTOR (3/3)
   {
     title: "John Deere JD150 Used Tractor",
     so: "Cagaf cagaf la isticmaalay (John Deere)",
@@ -523,16 +491,13 @@ export const equipmentItems = [
     hours: 2500,
     enginePower: "100HP",
     fuelType: "Diesel",
-    region: "Gedo",
-    city: "Kismayo",
-    district: "Kismayo District",
-    subDistrict: "Kismayo Port",
-    images: [
-      "https://images.unsplash.com/photo-1568680870491-590cd4e224ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "jubadda-hoose",
+    city: "kismaayo",
+
+    images: ["https://images.unsplash.com/photo-1568680870491-590cd4e224ab"],
     maGaday: false,
+    isPaid: true,
   },
-  // 21. FARM TOOLS: SEEDING EQUIPMENT (3/3)
   {
     title: "Small Plot Seeder",
     so: "Qalabka abuuritaanka (Plot Seeder)",
@@ -549,16 +514,13 @@ export const equipmentItems = [
     hours: 0,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Banaadir",
-    city: "Muqdisho",
-    district: "Hamarweyne",
-    subDistrict: "Shibis",
-    images: [
-      "https://images.unsplash.com/photo-1619719826894-89d6c4fd5739?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "hamar",
+    city: "hamar",
+
+    images: ["https://images.unsplash.com/photo-1619719826894-89d6c4fd5739"],
     maGaday: true,
+    isPaid: true,
   },
-  // 22. GRAIN HARVESTER: SELF-PROPELLED HARVESTER (3/3)
   {
     title: "Medium Self-Propelled Harvester (Sorghum)",
     so: "Harvester iswada (Digir/Qasab)",
@@ -576,16 +538,13 @@ export const equipmentItems = [
     hours: 750,
     enginePower: "300HP",
     fuelType: "Diesel",
-    region: "Somaliland",
-    city: "Berbera",
-    district: "Berbera District",
-    subDistrict: "Berbera Port",
-    images: [
-      "https://images.unsplash.com/photo-1568680870491-590cd4e224ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "berbera",
+    city: "berbera",
+
+    images: ["https://images.unsplash.com/photo-1568680870491-590cd4e224ab"],
     maGaday: false,
+    isPaid: true,
   },
-  // 23. FERTILIZER SPREADER: MOUNTED SPREADER (3/3)
   {
     title: "New Mounted Spreader (600L)",
     so: "Faafiyaha Mounted (Cusub)",
@@ -602,16 +561,13 @@ export const equipmentItems = [
     hours: 0,
     enginePower: "N/A",
     fuelType: "N/A",
-    region: "Puntland",
-    city: "Bossaso",
-    district: "Bosaso District",
-    subDistrict: "Bosaso Central",
-    images: [
-      "https://images.unsplash.com/photo-1629807473015-41699c4471b5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "bari",
+    city: "bossaso",
+
+    images: ["https://images.unsplash.com/photo-1629807473015-41699c4471b5"],
     maGaday: true,
+    isPaid: true,
   },
-  // 24. FARM TOOLS: HARVESTING EQUIPMENT (3/3)
   {
     title: "Hand-Held Grass Cutter",
     so: "Qalabka goosashada (Grass Cutter)",
@@ -629,13 +585,11 @@ export const equipmentItems = [
     hours: 5,
     enginePower: "5HP",
     fuelType: "Petrol",
-    region: "Galmudug",
-    city: "Hobyo",
-    district: "Hobyo District",
-    subDistrict: "Hobyo Central",
-    images: [
-      "https://images.unsplash.com/photo-1629807473015-41699c4471b5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHRyYWN0b3J8ZW58MHx8MHx8fDA%3D%3D",
-    ],
+    region: "galmudug",
+    city: "hobyo",
+
+    images: ["https://images.unsplash.com/photo-1629807473015-41699c4471b5"],
     maGaday: false,
+    isPaid: true,
   },
 ];

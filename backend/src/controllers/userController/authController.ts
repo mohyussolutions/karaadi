@@ -25,13 +25,16 @@ export const registerUser = async (
   if (emailExists)
     throw new Error("This email is already in use. Please try another one.");
 
-  const cognitoCheck = await cognitoClient
-    .adminGetUser({
-      UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
-      Username: email,
-    })
-    .promise()
-    .catch(() => null);
+  const cognitoCheck =
+    await // The `.promise()` call might be on an JS SDK v2 client API.
+    // If yes, please remove .promise(). If not, remove this comment.
+    cognitoClient
+      .adminGetUser({
+        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        Username: email,
+      })
+      .promise()
+      .catch(() => null);
 
   if (cognitoCheck)
     throw new Error("This email is already in use. Please try another one.");

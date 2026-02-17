@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-
 import prisma from "../../core/utils/db.ts";
+import { v4 as uuidv4 } from "uuid";
 
 export const trackVisitor = async (req: Request, res: Response) => {
   try {
@@ -8,7 +8,7 @@ export const trackVisitor = async (req: Request, res: Response) => {
     const ipAddress = req.ip || req.socket.remoteAddress || "Unknown";
 
     if (!visitorId) {
-      visitorId = uuid();
+      visitorId = uuidv4();
       res.cookie("visitor_id", visitorId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -76,6 +76,3 @@ export const deleteVisitor = async (req: Request, res: Response) => {
     return res.status(500).json({ error: err.message });
   }
 };
-function uuid(): any {
-  throw new Error("Function not implemented.");
-}

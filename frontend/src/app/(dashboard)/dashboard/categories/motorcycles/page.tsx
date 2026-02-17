@@ -14,7 +14,7 @@ export default function MotorcyclesPage() {
     try {
       const res = await fetch(
         "http://localhost:8080/api/motorcycles/all-including-unpaid",
-        { cache: "no-store", credentials: "include" }
+        { cache: "no-store", credentials: "include" },
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -70,13 +70,13 @@ export default function MotorcyclesPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isPaid: newStatus }),
           credentials: "include",
-        }
+        },
       );
 
       if (!res.ok) return;
 
       setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i))
+        prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i)),
       );
     } catch (err) {
       console.error("Toggle paid error:", err);

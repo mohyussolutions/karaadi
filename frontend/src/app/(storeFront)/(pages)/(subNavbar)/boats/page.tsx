@@ -3,10 +3,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
-import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import { boatsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "@/app/(search)/SearchInput";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
 import { getBoats } from "@/actions/categories/boatActions";
 
@@ -16,15 +15,11 @@ function BoatLinks() {
   const [isError, setIsError] = useState(false);
   const [query, setQuery] = useState("");
 
-  const iconBaseClasses =
-    "flex items-center justify-center rounded-xl transition-colors duration-300";
-  const iconSizeClasses = "w-16 h-16 sm:w-16 sm:h-16 lg:w-20 lg:h-20";
-
   useEffect(() => {
     async function fetchItems() {
       try {
         const data = await getBoats();
-        setItems(data || []);
+        if (data) setItems(data);
       } catch (error) {
         setIsError(true);
       } finally {
@@ -50,79 +45,79 @@ function BoatLinks() {
     });
   }, [items, query]);
 
-  if (isLoading) return <Loading />;
-
   if (isError) {
     return (
-      <div className="text-center py-10 text-red-500">
-        Failed to load boats. Please try again later.
+      <div className="text-center py-6 text-red-500 font-medium">
+        Cilad baa ku timid soo dejinta doonyaha. Fadlan dib u tijaabi.
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-3 py-3">
+    <div className="container mx-auto px-4 py-3">
       <SearchInput onSearch={setQuery} />
-      <PathSegmentsDisplay />
+      <div className="pt-2">
+        <PathSegmentsDisplay />
+      </div>
 
-      <div className="grid grid-cols-2 gap-4 px-4 py-6 sm:grid-cols-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 py-6 max-w-4xl mx-auto">
         {boatsSubCategories.map((category) => (
           <Link
-            prefetch={false}
             key={category.title}
+            prefetch={true}
             href={
               (category as any).href ||
               `/boats/${category.title.toLowerCase().replace(/\s/g, "-")}`
             }
-            className="flex flex-col items-center text-center group space-y-0 p-1 rounded-xl transition-all duration-300 hover:scale-[1.03]"
+            className="flex flex-col items-center justify-center p-5 rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:bg-blue-50/10 group text-center"
           >
-            <div
-              className={`${iconBaseClasses} ${iconSizeClasses} text-3xl text-blue-400 group-hover:text-black`}
-            >
+            <div className="text-3xl text-blue-500 mb-3 transform transition-transform duration-300 group-hover:-translate-y-0.5">
               {category.icon}
             </div>
-            <span className="text-sm font-medium text-gray-800 leading-snug">
-              {category.so}
-            </span>
+            <div className="flex flex-col items-center w-full">
+              <span className="text-[15px] font-medium text-gray-800 leading-snug group-hover:text-blue-600">
+                {category.so}
+              </span>
+              <span className="text-[12px] text-gray-400 font-normal uppercase tracking-normal mt-1.5">
+                {category.title}
+              </span>
+            </div>
           </Link>
         ))}
       </div>
 
-      <div className="flex items-center justify-center min-h-[112px]">
+      <div className="flex items-center justify-center my-6">
         <WantSell />
       </div>
 
-      <h2 className="text-xl font-semibold mt-6 mb-4 px-4">
-        {query
-          ? `Search Results (${itemsToDisplay.length})`
-          : `All Boats (${itemsToDisplay.length})`}
-      </h2>
+      <div className="px-4 mb-4 flex justify-between items-center border-b border-gray-100 pb-2">
+        <h2 className="text-lg font-medium text-gray-700 uppercase tracking-tight">
+          {query ? "Natiijada Raadinta" : "Dhammaan Doonyaha"}
+          <span className="ml-2 text-blue-500 text-base">
+            ({itemsToDisplay.length})
+          </span>
+        </h2>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
-        {itemsToDisplay.length > 0 ? (
-          itemsToDisplay.map((item, index) => (
-            <VehicleCard
-              key={item._id || index}
-              id={item._id}
-              title={item.title}
-              description={
-                item.description
-                  ? (Array.isArray(item.description)
-                      ? item.description
-                      : [item.description]
-                    ).filter((desc: any): desc is string => !!desc)
-                  : []
-              }
-              city={item.city}
-              images={item.images}
-              price={item.price}
-            />
-          ))
-        ) : (
-          <div className="col-span-full text-center py-20 text-gray-500 min-h-[200px] border-2 border-dashed rounded-xl">
-            No boats found matching your criteria.
-          </div>
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+        {itemsToDisplay.length > 0
+          ? itemsToDisplay.map((item, index) => (
+              <UniversalCard
+                key={`boat-${item._id || index}`}
+                id={item._id}
+                title={item.title}
+                description={item.description}
+                city={item.city}
+                images={item.images}
+                price={item.price}
+                category="Boats"
+              />
+            ))
+          : !isLoading && (
+              <div className="col-span-full text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-sm">
+                Ma jiraan doonyo waafaqsan raadintaada.
+              </div>
+            )}
       </div>
     </div>
   );

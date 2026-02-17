@@ -1,6 +1,6 @@
 "use client";
 
-import { FEE_CATEGORIES } from "@/app/(links)/dashboardLinks/FEE_CATEGORIES";
+import { FEE_CATEGORIES } from "@/actions/common/FEE_CATEGORIES";
 import React from "react";
 
 interface FeeModalProps {

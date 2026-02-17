@@ -20,7 +20,7 @@ model Subscription {
   notificationCount Int       @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  isPaid            Boolean   @default(false)  
+  isPaid            Boolean   @default(false)
   payments          Payment[]
   user              User      @relation(fields: [userId], references: [id])
 
@@ -83,4 +83,17 @@ model Recommendation {
   title      String
   price      String
   views      Int    @default(0)
+}
+
+model SearchLog {
+  id        String   @id @default(cuid())
+  query     String
+  category  String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+
+  @@index([userId])
 }

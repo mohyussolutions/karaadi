@@ -1,82 +1,55 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import { useGetMarketplaceItemsQuery } from "@/app/(storeFront)/store/slices/marketplaceSlice";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import { FurnitureNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
-import { getGlobalFilteredResults } from "@/actions/categories/filterAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import {
+  getMarketplaceItems,
+  MarketplaceItem,
+} from "@/actions/categories/marketplaceActions";
 
-interface MarketplaceItem {
-  id: string;
-  title: string;
-  so: string;
-  description: string;
-  price: number;
-  mainCategory: string;
-  category: string[];
-  subcategory: string[];
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string | null;
-  images: string[];
-  extra: any;
-  userId: string;
-}
-
-function FurnitureAndInterior() {
+export default function FurnitureAndInterior() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const {
-    data: items = [],
-    isLoading,
-    error,
-  } = useGetMarketplaceItemsQuery() as unknown as {
-    data: MarketplaceItem[];
-    isLoading: boolean;
-    error: any;
-  };
-
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<MarketplaceItem[]>([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
-  const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
     {},
   );
-  const [isFiltering, setIsFiltering] = useState(false);
-  const [filteredItems, setFilteredItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadItems() {
+      try {
+        const data = await getMarketplaceItems();
+        if (data) setItems(data);
+      } catch (err) {
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadItems();
+  }, []);
 
   const allFurnitureItems = useMemo(() => {
-    return items.filter(
-      (item) => item.category && item.category.includes("Furniture & Interior"),
+    return items.filter((item) =>
+      Array.isArray(item.category)
+        ? item.category.includes("Furniture & Interior")
+        : item.category === "Furniture & Interior",
     );
   }, [items]);
-
-  const regionCityCounts = useMemo(() => {
-    const regionCounts: Record<string, number> = {};
-    const cityCounts: Record<string, number> = {};
-
-    allFurnitureItems.forEach((item) => {
-      if (item.region) {
-        regionCounts[item.region] = (regionCounts[item.region] || 0) + 1;
-      }
-      if (item.city) {
-        cityCounts[item.city] = (cityCounts[item.city] || 0) + 1;
-      }
-    });
-
-    return { regionCounts, cityCounts };
-  }, [allFurnitureItems]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -84,164 +57,83 @@ function FurnitureAndInterior() {
         setSearchResults([]);
         return;
       }
-
       const results = await getGlobalSearchResults(query);
-      const filteredFurnitureFromSearch = results.filter(
-        (item: any) =>
-          item.category && item.category.includes("Furniture & Interior"),
+      const filtered = results.filter((item: any) =>
+        Array.isArray(item.category)
+          ? item.category.includes("Furniture & Interior")
+          : item.category === "Furniture & Interior",
       );
-      setSearchResults(filteredFurnitureFromSearch);
+      setSearchResults(filtered);
     }, 400);
 
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  useEffect(() => {
-    const applyLocationFilter = async () => {
-      if (!selectedRegion && Object.keys(checkedCities).length === 0) {
-        setFilteredItems([]);
-        setIsFiltering(false);
-        return;
+  const regionCityCounts = useMemo(() => {
+    const regionCounts: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+
+    allFurnitureItems.forEach((item) => {
+      const capitalize = (s: string) =>
+        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+      if (item.region) {
+        const reg = capitalize(item.region.trim());
+        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
       }
-
-      setIsFiltering(true);
-
-      try {
-        const selectedCities = Object.entries(checkedCities)
-          .filter(([_, isChecked]) => isChecked)
-          .map(([cityName]) => cityName);
-
-        if (selectedCities.length > 0) {
-          const allResults = [];
-
-          for (const city of selectedCities) {
-            let filterParams: any = { city: city };
-
-            if (selectedRegion) {
-              filterParams.region = selectedRegion;
-            }
-
-            if (query.trim()) {
-              filterParams.q = query;
-            }
-
-            const results = await getGlobalFilteredResults(filterParams);
-
-            const filteredByCategory = results.filter(
-              (item: any) =>
-                item.category && item.category.includes("Furniture & Interior"),
-            );
-
-            const existingIds = new Set(
-              allResults.map((item) => item.id || item._id),
-            );
-            const uniqueItems = filteredByCategory.filter(
-              (item: any) => !existingIds.has(item.id || item._id),
-            );
-
-            allResults.push(...uniqueItems);
-          }
-
-          setFilteredItems(allResults);
-        } else if (selectedRegion) {
-          let filterParams: any = { region: selectedRegion };
-
-          if (query.trim()) {
-            filterParams.q = query;
-          }
-
-          const results = await getGlobalFilteredResults(filterParams);
-
-          const filteredByCategory = results.filter(
-            (item: any) =>
-              item.category && item.category.includes("Furniture & Interior"),
-          );
-
-          setFilteredItems(filteredByCategory);
-        }
-      } catch (error) {
-        console.error("Location filter error:", error);
-        setFilteredItems([]);
-      } finally {
-        setIsFiltering(false);
+      if (item.city) {
+        const cit = capitalize(item.city.trim());
+        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
       }
-    };
-
-    applyLocationFilter();
-  }, [selectedRegion, checkedCities, query]);
+    });
+    return { regionCounts, cityCounts };
+  }, [allFurnitureItems]);
 
   const itemsToDisplay = useMemo(() => {
-    if (selectedRegion || Object.keys(checkedCities).length > 0) {
-      return filteredItems;
-    }
-
-    if (query.trim()) {
-      return searchResults;
-    }
+    let list = query.trim() ? searchResults : allFurnitureItems;
 
     if (selectedSubcategory) {
-      return allFurnitureItems.filter(
+      list = list.filter((item) => {
+        const subs = Array.isArray(item.subcategory)
+          ? item.subcategory
+          : [item.subcategory];
+        return subs.some(
+          (s) => s?.toLowerCase() === selectedSubcategory.toLowerCase(),
+        );
+      });
+    }
+
+    if (selectedRegion) {
+      const activeRegs = selectedRegion.split(",");
+      list = list.filter(
         (item) =>
-          item.subcategory && item.subcategory.includes(selectedSubcategory),
+          item.region &&
+          activeRegs.some(
+            (r) => r.toLowerCase() === item.region!.toLowerCase(),
+          ),
       );
     }
 
-    return allFurnitureItems;
-  }, [
-    query,
-    searchResults,
-    selectedSubcategory,
-    allFurnitureItems,
-    selectedRegion,
-    checkedCities,
-    filteredItems,
-  ]);
-
-  const subcategoryFilters = useMemo(() => {
-    return FurnitureNestedSub.map((item) => ({
-      subcategory: item.title,
-      soName: item.so,
-    }));
-  }, []);
-
-  const currentDisplayTitle = useMemo(() => {
-    if (isFiltering) return "Filtering...";
-
-    if (selectedRegion || Object.keys(checkedCities).length > 0) {
-      let locationText = "";
-      if (selectedRegion) {
-        locationText = selectedRegion;
-      }
-      if (Object.keys(checkedCities).length > 0) {
-        const cityNames = Object.keys(checkedCities).join(", ");
-        locationText = locationText
-          ? `${locationText} - ${cityNames}`
-          : cityNames;
-      }
-      return `Location: ${locationText}`;
-    }
-
-    if (query.trim()) {
-      return `Search Results: "${query}"`;
-    }
-
-    if (!selectedSubcategory) {
-      return "Dhamaan Alaabta Guriga & Qurxinta (All Furniture & Interior)";
-    }
-
-    const foundCategory = subcategoryFilters.find(
-      (cat) => cat.subcategory === selectedSubcategory,
+    const activeCities = Object.keys(checkedCities).filter(
+      (city) => checkedCities[city],
     );
-    return foundCategory
-      ? `${foundCategory.soName} (${foundCategory.subcategory})`
-      : selectedSubcategory;
+    if (activeCities.length > 0) {
+      list = list.filter(
+        (item) =>
+          item.city &&
+          activeCities.some(
+            (c) => c.toLowerCase() === item.city!.toLowerCase(),
+          ),
+      );
+    }
+
+    return Array.from(new Map(list.map((item) => [item._id, item])).values());
   }, [
+    allFurnitureItems,
+    searchResults,
     query,
     selectedSubcategory,
-    subcategoryFilters,
     selectedRegion,
     checkedCities,
-    isFiltering,
   ]);
 
   const scroll = (direction: "left" | "right") => {
@@ -254,118 +146,103 @@ function FurnitureAndInterior() {
     }
   };
 
-  const handleCategoryClick = (subcategory: string) => {
-    setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory,
+  if (isError)
+    return (
+      <div className="text-red-500 p-10 text-center font-bold">
+        Cilad ayaa ku timid soo dejinta alaabta guriga.
+      </div>
     );
-  };
-
-  const handleLocationFilterChange = (
-    region: string | null,
-    cities: Record<string, boolean>,
-  ) => {
-    setSelectedRegion(region);
-    setCheckedCities(cities);
-  };
-
-  const handleRegionClick = (region: string | null) => {
-    setSelectedRegion(region);
-  };
-
-  if (isLoading) return <Loading />;
-  if (error) return <div className="text-red-500 p-4">erro</div>;
 
   return (
     <div className="container mx-auto px-4 pb-10">
       <SearchInput onSearch={setQuery} />
-      <PathSegmentsDisplay />
+      <div className="pt-2">
+        <PathSegmentsDisplay />
+      </div>
 
       <div className="relative py-6">
-        <div className="flex justify-center relative">
+        <div className="flex justify-center relative items-center">
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 m-2 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Bidix u dhaqaaji"
+            className="absolute left-0 z-10 bg-white shadow-md p-3 rounded-full border hover:bg-gray-100 transition-all"
           >
             <FaChevronLeft />
           </button>
-
           <div
             ref={scrollRef}
-            className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)]"
+            className="flex overflow-x-auto space-x-6 scrollbar-hide px-10 max-w-[calc(100%-100px)] py-4"
           >
-            {subcategoryFilters.map((filter) => (
-              <Link
-                key={filter.subcategory}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleCategoryClick(filter.subcategory);
-                }}
-                className={`flex-shrink-0 w-40 flex flex-col items-center text-center group rounded-lg p-4 shadow transition-all duration-300 m-6 ${
-                  selectedSubcategory === filter.subcategory
-                    ? "bg-blue-100 scale-105 shadow-md"
-                    : "bg-gray-50 hover:bg-white hover:shadow-lg hover:-translate-y-1"
+            {FurnitureNestedSub.map((filter) => (
+              <button
+                key={filter.title}
+                onClick={() =>
+                  setSelectedSubcategory((prev) =>
+                    prev === filter.title ? null : filter.title,
+                  )
+                }
+                className={`flex-shrink-0 w-44 flex flex-col items-center justify-center text-center rounded-xl p-5 border transition-all duration-300 ${
+                  selectedSubcategory === filter.title
+                    ? "bg-blue-600 border-blue-600 shadow-lg scale-105 text-white"
+                    : "bg-white border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-900"
                 }`}
               >
-                <span className="text-sm font-medium text-gray-800">
-                  {filter.soName}
+                <div className="text-2xl mb-2">{filter.icon}</div>
+                <span className="text-[15px] font-medium leading-tight">
+                  {filter.so}
                 </span>
-                <span className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors">
-                  {filter.subcategory}
+                <span
+                  className={`text-[10px] uppercase mt-1 ${selectedSubcategory === filter.title ? "text-blue-100" : "text-gray-500"}`}
+                >
+                  ({filter.title})
                 </span>
-              </Link>
+              </button>
             ))}
           </div>
-
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 m-2 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Midig u dhaqaaji"
+            className="absolute right-0 z-10 bg-white shadow-md p-3 rounded-full border hover:bg-gray-100 transition-all"
           >
             <FaChevronRight />
           </button>
         </div>
       </div>
 
-      <div className="px-4 text-sm text-gray-700 mb-4">
-        <p>
-          Waxaa la soo bandhigayaa{" "}
-          <span className="text-blue-600 font-semibold">
-            {itemsToDisplay.length}
-          </span>{" "}
-          alaab gudaha <strong>{currentDisplayTitle}</strong>
-        </p>
-      </div>
-
-      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-        <div className="sticky top-4 space-y-4">
+      <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
+        <aside className="md:w-1/3 sticky top-4 self-start">
           <LocationSelector
-            onFilterChange={handleLocationFilterChange}
+            onFilterChange={(reg, cities) => {
+              setSelectedRegion(reg);
+              setCheckedCities(cities);
+            }}
             selectedRegion={selectedRegion}
             checkedCities={checkedCities}
             regionCounts={regionCityCounts.regionCounts}
             cityCounts={regionCityCounts.cityCounts}
           />
-          <SomaliMap
-            selectedRegion={selectedRegion}
-            onRegionClick={handleRegionClick}
-            items={itemsToDisplay}
-          />
-        </div>
+          <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
+            <SomaliMap
+              selectedRegion={selectedRegion}
+              onRegionClick={setSelectedRegion}
+              items={allFurnitureItems}
+            />
+          </div>
+        </aside>
 
-        <div className="md:w-3/4 w-full">
-          {isFiltering ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-3 gap-6">
-              {itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item) => (
+        <main className="md:w-2/3 w-full">
+          <div className="mb-6 text-sm font-medium text-gray-600 bg-blue-50 py-2 px-4 rounded-lg inline-block border border-blue-100">
+            Waxaa la soo bandhigayaa{" "}
+            <span className="text-blue-700 font-bold">
+              {itemsToDisplay.length}
+            </span>{" "}
+            alaabta guriga ah.
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {itemsToDisplay.length > 0
+              ? itemsToDisplay.map((item) => (
                   <UniversalCard
-                    key={item.id || item._id}
-                    id={item.id || item._id}
+                    key={item._id}
+                    id={item._id}
                     title={item.title}
                     description={item.description}
                     city={item.city}
@@ -374,21 +251,14 @@ function FurnitureAndInterior() {
                     category="marketplace"
                   />
                 ))
-              ) : (
-                <div className="col-span-full text-center py-10 text-gray-500">
-                  {selectedRegion || Object.keys(checkedCities).length > 0
-                    ? `Ma jiro wax alaab Alaabta Guriga & Qurxinta ah ${selectedRegion ? `gobolka ${selectedRegion}` : ""}${Object.keys(checkedCities).length > 0 ? ` magaalooyinka ${Object.keys(checkedCities).join(", ")}` : ""}`
-                    : query.trim()
-                      ? `Ma jiro wax alaab Alaabta Guriga & Qurxinta ah la raadinayay "${query}"`
-                      : "Ma jiro wax alaab Alaabta Guriga & Qurxinta ah oo la helay"}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+              : !isLoading && (
+                  <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-medium">
+                    Ma jiro wax alaab ah oo la helay deegaankan.
+                  </div>
+                )}
+          </div>
+        </main>
       </div>
     </div>
   );
 }
-
-export default FurnitureAndInterior;

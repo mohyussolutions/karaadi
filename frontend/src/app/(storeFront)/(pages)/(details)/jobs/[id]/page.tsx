@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   FaBuilding,
   FaArrowLeft,
@@ -14,50 +13,58 @@ import { getJobById, getJobs } from "@/actions/categories/jobActions";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
 import PathSegmentsDisplay from "../../historyPath/pathSegmentsDisplay";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "@/app/(search)/SearchInput";
+
+interface JobItem {
+  _id: string;
+  title: string;
+  company: string;
+  location: string;
+  salary?: string | number;
+  type: string;
+  description: string;
+  images?: string[];
+}
 
 const JobDetailsPage = () => {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
-  const [job, setJob] = useState<any>(null);
-  const [relatedJobs, setRelatedJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const [job, setJob] = useState<JobItem | null>(null);
+  const [relatedJobs, setRelatedJobs] = useState<JobItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    let mounted = true;
+    (async () => {
       try {
-        setLoading(true);
         const [jobData, allJobs] = await Promise.all([
           getJobById(id),
           getJobs(),
         ]);
-        setJob(jobData);
-        setRelatedJobs(
-          allJobs?.filter((j: any) => j._id !== id).slice(0, 4) || [],
-        );
+
+        if (mounted) {
+          if (jobData) {
+            setJob(jobData as JobItem);
+          }
+          if (allJobs) {
+            const jobsList = allJobs as JobItem[];
+            setRelatedJobs(jobsList.filter((j) => j._id !== id).slice(0, 4));
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        setLoading(false);
+        if (mounted) setIsLoading(false);
       }
+    })();
+    return () => {
+      mounted = false;
     };
-
-    if (id) fetchInitialData();
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-8 flex items-center justify-center">
-        <div className="text-center text-gray-700 bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md">
-          <div className="flex justify-center mb-4">
-            <FaBriefcase size={50} className="text-gray-300 animate-pulse" />
-          </div>
-          <h1 className="text-2xl font-bold mb-4">Loading job details...</h1>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="min-h-screen bg-white" />;
 
   if (!job) {
     return (
@@ -105,10 +112,10 @@ const JobDetailsPage = () => {
             </div>
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-800">
-                {job?.title ?? "Job Title Not Specified"}
+                {job.title}
               </h1>
               <h2 className="text-xl sm:text-2xl font-semibold text-indigo-600 mt-1">
-                {job?.company ?? "Company Name Not Specified"}
+                {job.company}
               </h2>
             </div>
           </div>
@@ -118,18 +125,18 @@ const JobDetailsPage = () => {
           <div className="flex items-center">
             <FaMapMarkerAlt className="mr-2 text-indigo-500" size={18} />
             <span className="font-medium">
-              {job?.location || "Location Pending"}
+              {job.location || "Location Pending"}
             </span>
           </div>
           <div className="flex items-center">
             <FaMoneyBillWave className="mr-2 text-green-500" size={18} />
             <span className="font-medium">
-              {job?.salary ? `${job.salary} $` : "Salary Not Disclosed"}
+              {job.salary ? `${job.salary} $` : "Salary Not Disclosed"}
             </span>
           </div>
           <div className="flex items-center">
             <FaBriefcase className="mr-2 text-yellow-500" size={18} />
-            <span className="font-medium">{job?.type || "General"}</span>
+            <span className="font-medium">{job.type || "General"}</span>
           </div>
         </div>
 
@@ -138,7 +145,7 @@ const JobDetailsPage = () => {
             Job Summary
           </h3>
           <p className="text-gray-700 leading-relaxed">
-            {job?.description || "No description provided for this position."}
+            {job.description || "No description provided for this position."}
           </p>
 
           <h3 className="text-2xl font-bold text-gray-800 border-b pb-2 pt-4">
@@ -154,7 +161,7 @@ const JobDetailsPage = () => {
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={() => router.push(`/jobs/application/${id}`)}
-            className="w-full max-w-lg flex items-center justify-center py-3 px-6 border border-transparent rounded-lg shadow-lg text-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition transform hover:scale-[1.01] active:scale-95"
+            className="w-full max-w-lg flex items-center justify-center py-3 px-6 border border-transparent rounded-lg shadow-lg text-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition"
           >
             <FaPaperPlane className="mr-3" />
             Apply Now
@@ -176,7 +183,11 @@ const JobDetailsPage = () => {
               key={item._id}
               id={item._id}
               title={item.title}
-              price={item.salary}
+              price={
+                typeof item.salary === "number"
+                  ? item.salary
+                  : Number(item.salary) || 0
+              }
               description={item.description}
               city={item.location}
               images={item.images || []}

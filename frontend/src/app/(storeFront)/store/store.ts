@@ -1,45 +1,75 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { marketplaceApi } from "./slices/marketplaceSlice";
-import { realEstateApi } from "./slices/realtStateSlice";
-import { boatsApi } from "./slices/boatsSlice";
-import { carsApi } from "./slices/carsSlice";
-import { motorcyclesApi } from "./slices/motorcyclesSlice";
-import { tractorsApi } from "./slices/tractorsSlice";
-import { chatApi } from "./slices/chatSlice";
-import { userApi } from "./slices/userSlice";
-import { subscriptionApi } from "./slices/subscriptionSlice";
-import subscriptionFormReducer from "./slices/subscriptionFormSlice";
-import { paymentApi, paymentReducer } from "./slices/paymenSlice";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from "redux-persist";
+import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 
-export const store = configureStore({
-  reducer: {
-    subscriptionForm: subscriptionFormReducer,
-    payment: paymentReducer,
+const storage =
+  typeof window !== "undefined"
+    ? createWebStorage("local")
+    : {
+        getItem: (_key: any) => Promise.resolve(null),
+        setItem: (_key: any, value: any) => Promise.resolve(value),
+        removeItem: (_key: any) => Promise.resolve(),
+      };
 
-    [boatsApi.reducerPath]: boatsApi.reducer,
-    [carsApi.reducerPath]: carsApi.reducer,
-    [chatApi.reducerPath]: chatApi.reducer,
-    [marketplaceApi.reducerPath]: marketplaceApi.reducer,
-    [motorcyclesApi.reducerPath]: motorcyclesApi.reducer,
-    [realEstateApi.reducerPath]: realEstateApi.reducer,
-    [subscriptionApi.reducerPath]: subscriptionApi.reducer,
-    [tractorsApi.reducerPath]: tractorsApi.reducer,
-    [userApi.reducerPath]: userApi.reducer,
-    [paymentApi.reducerPath]: paymentApi.reducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware()
-      .concat(boatsApi.middleware)
-      .concat(carsApi.middleware)
-      .concat(chatApi.middleware)
-      .concat(marketplaceApi.middleware)
-      .concat(motorcyclesApi.middleware)
-      .concat(realEstateApi.middleware)
-      .concat(subscriptionApi.middleware)
-      .concat(tractorsApi.middleware)
-      .concat(userApi.middleware)
-      .concat(paymentApi.middleware),
+import planReducer from "./slices/planSlice";
+import boatsReducer from "./slices/boatsSlice";
+import carsReducer from "./slices/carsSlice";
+import marketplaceReducer from "./slices/marketplaceSlice";
+import motorcyclesReducer from "./slices/motorcyclesSlice";
+import realEstateReducer from "./slices/realEstateSlice";
+import tractorsReducer from "./slices/traktorsSlice";
+import authReducer from "./slices/authSlice";
+import feesReducer from "./slices/feesSlice";
+
+const persistConfig = {
+  key: "root",
+  version: 1,
+  storage,
+  whitelist: [
+    "auth",
+    "plan",
+    "boats",
+    "fees",
+    "cars",
+    "marketplace",
+    "motorcycles",
+    "realEstate",
+    "tractors",
+  ],
+};
+
+const rootReducer = combineReducers({
+  auth: authReducer,
+  plan: planReducer,
+  boats: boatsReducer,
+  fees: feesReducer,
+  cars: carsReducer,
+  marketplace: marketplaceReducer,
+  motorcycles: motorcyclesReducer,
+  realEstate: realEstateReducer,
+  tractors: tractorsReducer,
 });
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+  devTools: process.env.NODE_ENV !== "production",
+});
+
+export const persistor = persistStore(store);

@@ -1,7 +1,7 @@
 "use client";
 
 import { logout } from "@/actions/core/authAction";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "@/app/(search)/SearchInput";
 import { User } from "@/app/(storeFront)/store/slices/boatsSlice";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

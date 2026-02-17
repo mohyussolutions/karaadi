@@ -3,7 +3,7 @@
 import React, { FC } from "react";
 import Link from "next/link";
 import { FaTimes } from "react-icons/fa";
-import { sidebarLinks } from "@/app/(links)/dashboardLinks/categories";
+import { sidebarLinks } from "@/app/(links)/storeFrontLinks/categories";
 
 interface SidebarProps {
   isOpen: boolean;

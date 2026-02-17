@@ -23,6 +23,7 @@ model Chat {
   sender        User         @relation("senderChats", fields: [senderId], references: [id])
   traktor       Traktor?     @relation(fields: [traktorId], references: [id])
   messages      Message[]
+  jobs          Job[]
 
   @@unique([senderId, receiverId, boatId])
   @@unique([senderId, receiverId, carId])
@@ -33,7 +34,6 @@ model Chat {
   @@index([senderId, receiverId])
   @@index([updatedAt])
   @@index([isArchived])
-  jobs Job[]
 }
 
 model Message {

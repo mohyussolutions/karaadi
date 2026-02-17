@@ -2,100 +2,138 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import Image from "next/image";
+import Link from "next/link";
 import { toast } from "react-toastify";
 
-import VehicleImageGallery from "../VehicleImageGallery";
-import { Item } from "@/app/utils/types/vihcles";
+import { ImageControls } from "@/app/(storeFront)/components/hooks/useRenderImageControls";
 import UserCard from "@/app/(storeFront)/components/Cards/UserProfileCard";
-import { useGetCarByIdQuery } from "@/app/(storeFront)/store/slices/carsSlice";
-import { useGetBoatByIdQuery } from "@/app/(storeFront)/store/slices/boatsSlice";
-import { useGetTractorByIdQuery } from "@/app/(storeFront)/store/slices/tractorsSlice";
-import { useGetMotorcycleByIdQuery } from "@/app/(storeFront)/store/slices/motorcyclesSlice";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { verifySession } from "@/actions/core/authAction";
+import { getCarById } from "@/actions/categories/carActions";
+import { getBoatById } from "@/actions/categories/boatActions";
+import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
+import { getTraktorById } from "@/actions/categories/tractorActions";
+import { API_ENDPOINTS } from "@/actions/constant/sockets";
+
+interface VehicleItem {
+  _id: string;
+  title: string;
+  description: string | string[];
+  price: number | string;
+  images: string[];
+  region?: string;
+  city?: string;
+  brand?: string;
+  make?: string;
+  year?: number | string;
+  mileage?: number;
+  hours?: number;
+  fuelType?: string;
+  vehicleModel?: string;
+  modelName?: string;
+  boatModel?: string;
+  traktortModel?: string;
+  maGaday?: boolean;
+  user?: any;
+}
 
 export default function VehicleDetails() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [currentUser, setCurrentUser] = useState<Record<string, any> | null>(
-    null,
-  );
+
+  const [item, setItem] = useState<VehicleItem | null>(null);
+  const [category, setCategory] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true);
-
-  const { data: carItem, isLoading: isLoadingCar } = useGetCarByIdQuery(id, {
-    skip: !id,
-  });
-
-  const { data: boatItem, isLoading: isLoadingBoat } = useGetBoatByIdQuery(id, {
-    skip: !id,
-  });
-  const { data: tractorItem, isLoading: isLoadingTractor } =
-    useGetTractorByIdQuery(id, { skip: !id });
-
-  const { data: motorcycleItem, isLoading: isLoadingMotorcycle } =
-    useGetMotorcycleByIdQuery(id, { skip: !id });
-
-  const item = (carItem || boatItem || tractorItem || motorcycleItem) as
-    | Item
-    | undefined;
-
-  const loading =
-    isLoadingCar || isLoadingBoat || isLoadingTractor || isLoadingMotorcycle;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
+      if (!id) return;
       try {
-        const user = await verifySession();
-        if (mounted) setCurrentUser(user ?? null);
-      } catch {
-        if (mounted) setCurrentUser(null);
+        const [car, boat, tractor, motorcycle, user] = await Promise.all([
+          getCarById(id),
+          getBoatById(id),
+          getTraktorById(id),
+          getMotorcycleById(id),
+          verifySession(),
+        ]);
+
+        if (mounted) {
+          setCurrentUser(user ?? null);
+          if (car) {
+            setItem(car);
+            setCategory("Car");
+          } else if (boat) {
+            setItem(boat);
+            setCategory("Boat");
+          } else if (tractor) {
+            setItem(tractor);
+            setCategory("Tractor");
+          } else if (motorcycle) {
+            setItem(motorcycle);
+            setCategory("Motorcycle");
+          }
+        }
+      } catch (error) {
+        console.error("Initialization failed", error);
       } finally {
-        if (mounted) setLoadingUser(false);
+        if (mounted) setIsLoading(false);
       }
     })();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [id]);
+
+  const handleSendMessage = async () => {
+    if (!currentUser) return router.push("/login");
+    const sellerId =
+      typeof item?.user === "object" ? item.user?._id : item?.user;
+    if (!sellerId || !item?._id || item?.maGaday) return;
+
+    try {
+      const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderId: currentUser._id,
+          receiverId: sellerId,
+          itemId: item._id,
+          itemModel: category,
+        }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.chat?.id) router.push(`/messages/${result.chat.id}`);
+      } else {
+        router.push(`/messages?itemId=${item._id}&sellerId=${sellerId}`);
+      }
+    } catch {
+      router.push(`/messages?itemId=${item._id}&sellerId=${sellerId}`);
+    }
+  };
 
   const handleHeartClick = () => {
-    if (!currentUser) {
-      router.push("/login");
-      return;
-    }
+    if (!currentUser) return router.push("/login");
+    if (item?.maGaday) return toast.warning("Alaabtan waa la gatay");
     setShowModal(true);
   };
 
   const handleModalConfirm = async () => {
+    if (!item) return;
     try {
-      const userData = await verifySession();
-      if (!userData) {
-        router.push("/login");
-        return;
-      }
-
-      if (!item) {
-        toast.error("Item not found");
-        return;
-      }
-
       const descriptionText = Array.isArray(item.description)
         ? item.description.join(" ")
-        : item.description || "No description provided";
-
-      // Determine category based on which query returned the item
-      let category = "Vehicle";
-      if (carItem) category = "Car";
-      else if (boatItem) category = "Boat";
-      else if (tractorItem) category = "Tractor";
-      else if (motorcycleItem) category = "Motorcycle";
-
-      await addToFavorite({
+        : item.description || "";
+      const response: any = await addToFavorite({
         title: item.title,
         description: descriptionText,
         price: String(item.price),
@@ -104,113 +142,240 @@ export default function VehicleDetails() {
         category: category,
       });
 
-      toast.success(`"${item.title}" saved to favorites!`);
+      if (response?.message === "You have already saved this item") {
+        toast.info("Alaabtan mar horre ayaad kaydisay!");
+      } else {
+        toast.success(`"${item.title}" waa la kaydiyay!`);
+        setTimeout(() => router.push("/mine/favorites"), 1200);
+      }
       setShowModal(false);
-      setTimeout(() => router.push("/mine/favorites"), 1000);
-    } catch (error: any) {
-      console.error("Failed to save favorite:", error);
-      toast.error("Failed to save favorite. Please try again.");
+    } catch {
+      toast.error("Wuu ku fashilmay kaydinta");
     }
   };
 
-  const handleModalCancel = () => {
-    setShowModal(false);
-  };
-
-  if (loading || loadingUser)
-    return (
-      <div className="p-8 text-center">
-        <Loading />
-      </div>
-    );
+  if (isLoading) return <div className="min-h-screen bg-white" />;
   if (!item)
     return (
-      <div className="p-8 text-center text-red-600 text-lg">
-        Product not found
+      <div className="p-8 text-center text-red-600 font-bold">
+        Product Not Found
       </div>
     );
 
   const images = Array.isArray(item.images) ? item.images.filter(Boolean) : [];
-  const descriptionArray =
-    typeof item.description === "string"
-      ? [item.description]
-      : item.description || [];
+  const selectedImage = images[selectedImageIndex] || "";
 
   return (
-    <div className="my-4">
-      <div className="ml-1 font-mono text-blue-600 text-sm">
-        <p>{item.city}</p>
+    <div className="my-12 px-6 min-h-screen">
+      <div className="max-w-7xl mx-auto mb-6 font-mono text-blue-600 text-sm h-5">
+        <p>
+          {item.region}, {item.city}
+        </p>
       </div>
 
-      <div className="max-w-9xl mx-auto p-1 grid grid-cols-1 md:grid-cols-2 gap-8">
-        <VehicleImageGallery
-          images={images}
-          title={item.title}
-          onHeartClick={handleHeartClick}
-        />
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+        <div className="space-y-6">
+          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[700px]">
+            {selectedImage && (
+              <>
+                <Image
+                  src={selectedImage}
+                  alt={item.title}
+                  fill
+                  className={`object-cover cursor-pointer ${item.maGaday ? "opacity-70" : ""}`}
+                  priority
+                />
+                <ImageControls
+                  onHeartClick={handleHeartClick}
+                  onZoomClick={() => {}}
+                />
+              </>
+            )}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={() =>
+                    setSelectedImageIndex((p) =>
+                      p === 0 ? images.length - 1 : p - 1,
+                    )
+                  }
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
+                >
+                  <IoIosArrowBack className="w-6 h-6 text-white" />
+                </button>
+                <button
+                  onClick={() =>
+                    setSelectedImageIndex((p) =>
+                      p === images.length - 1 ? 0 : p + 1,
+                    )
+                  }
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
+                >
+                  <IoIosArrowForward className="w-6 h-6 text-white" />
+                </button>
+              </>
+            )}
+          </div>
+          <div className="flex gap-3 overflow-x-auto py-2 scrollbar-hide">
+            {images.map((thumb, i) => (
+              <button
+                key={i}
+                onClick={() => setSelectedImageIndex(i)}
+                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}
+              >
+                <Image
+                  src={thumb}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="100px"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
-          <GoBackBtn />
-          <h1 className="text-2xl font-bold">{item.title}</h1>
-          <div className="text-xl font-bold text-blue-700">
-            {item.price.toLocaleString()} $
+        <div className="space-y-8 pr-4">
+          <div className="space-y-4">
+            <GoBackBtn />
+            <h1 className="text-4xl font-extrabold text-gray-900 leading-tight uppercase">
+              {item.title}
+            </h1>
+            <p className="text-3xl font-bold text-blue-700">
+              ${Number(item.price).toLocaleString()}
+            </p>
           </div>
 
-          {(item.make || item.model || item.year || item.mileage) && (
-            <div className="space-y-2 mt-4">
-              <h3 className="font-semibold">Details</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {item.make && (
-                  <div>
-                    <span className="text-gray-500">Make:</span> {item.make}
-                  </div>
-                )}
-                {item.model && (
-                  <div>
-                    <span className="text-gray-500">Model:</span> {item.model}
-                  </div>
-                )}
-                {item.year && (
-                  <div>
-                    <span className="text-gray-500">Year:</span> {item.year}
-                  </div>
-                )}
-                {item.mileage && (
-                  <div>
-                    <span className="text-gray-500">Mileage:</span>{" "}
-                    {item.mileage.toLocaleString()} km
-                  </div>
-                )}
-              </div>
+          {item.maGaday && (
+            <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm">
+              <span className="text-xl uppercase tracking-widest">
+                waa la gatay
+              </span>
             </div>
           )}
 
-          <div className="text-sm text-gray-600 bg-gray-100 p-3 rounded">
-            <ul>
-              {descriptionArray.map((desc, i) => (
-                <li key={i}>{desc}</li>
-              ))}
-            </ul>
+          <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <h3 className="text-xl font-bold uppercase mb-4 border-b pb-2">
+              Technical Specs
+            </h3>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-lg">
+              {(item.brand || item.make) && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Make
+                  </span>
+                  <span className="font-bold">{item.brand || item.make}</span>
+                </div>
+              )}
+              {(item.vehicleModel ||
+                item.modelName ||
+                item.boatModel ||
+                item.traktortModel) && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Model
+                  </span>
+                  <span className="font-bold">
+                    {item.vehicleModel ||
+                      item.modelName ||
+                      item.boatModel ||
+                      item.traktortModel}
+                  </span>
+                </div>
+              )}
+              {item.year && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Year
+                  </span>
+                  <span className="font-bold">{item.year}</span>
+                </div>
+              )}
+              {item.mileage !== undefined && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Mileage
+                  </span>
+                  <span className="font-bold">
+                    {item.mileage.toLocaleString()} KM
+                  </span>
+                </div>
+              )}
+              {item.fuelType && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Fuel
+                  </span>
+                  <span className="font-bold uppercase">{item.fuelType}</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <UserCard
-            user={{
-              id: item.user?._id || "",
-              username: item.user?.username || "Unknown Seller",
-              profileImage: item.user?.profileImage || null,
-              phone: item.user?.phone || null,
-            }}
-            isLoggedIn={Boolean(currentUser)}
-            itemId={item._id}
-            itemName={item.title}
-            maGaday={false}
-          />
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <UserCard
+              user={{
+                id:
+                  typeof item.user === "object"
+                    ? item.user?._id
+                    : item.user || "",
+                username:
+                  typeof item.user === "object"
+                    ? item.user?.username
+                    : "Seller",
+                profileImage:
+                  typeof item.user === "object"
+                    ? item.user?.profileImage
+                    : null,
+                phone: typeof item.user === "object" ? item.user?.phone : null,
+              }}
+              isLoggedIn={Boolean(currentUser)}
+              itemId={item._id}
+              itemTitle={item.title}
+              itemName={category}
+              onSendMessage={handleSendMessage}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 border-b pb-2">
+              Description
+            </h2>
+            <div className="text-gray-700 leading-relaxed text-base">
+              <p className="whitespace-pre-line">
+                {typeof item.description === "string"
+                  ? isExpanded
+                    ? item.description
+                    : `${item.description.slice(0, 250)}...`
+                  : item.description.join(" ")}
+              </p>
+              {typeof item.description === "string" &&
+                item.description.length > 250 && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-blue-600 font-bold mt-2 hover:underline"
+                  >
+                    {isExpanded ? "Show Less" : "Read More"}
+                  </button>
+                )}
+            </div>
+          </div>
+
+          <div className="pt-8 mt-8 border-t border-gray-100">
+            <Link
+              href={`/components/Report/${item._id}`}
+              className="text-red-500 text-xs font-bold uppercase tracking-widest hover:text-red-700 transition-colors"
+            >
+              Report this item
+            </Link>
+          </div>
         </div>
       </div>
+
       {showModal && (
         <SaveFavoriteModel
           onConfirm={handleModalConfirm}
-          onCancel={handleModalCancel}
+          onCancel={() => setShowModal(false)}
           backgroundImage={images[0]}
         />
       )}

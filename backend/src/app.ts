@@ -1,5 +1,4 @@
 import express from "express";
-import dotenv from "dotenv";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
@@ -8,6 +7,7 @@ import morgan from "morgan";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import type { Request, Response, NextFunction } from "express";
+import compression from "compression";
 
 import marketplaceRoutes from "./routers/categoryRoute/marketplaceRouter.ts";
 import realEstateRouter from "./routers/categoryRoute/realEstateRouter.ts";
@@ -33,10 +33,29 @@ import searchRouter from "./routers/userRoute/searchRouter.ts";
 import filterRouter from "./routers/userRoute/filterRouter.ts";
 import visitorRoute from "./routers/userRoute/vissedRoute.ts";
 import uploadRouterSelector from "./routers/paymentRoute/uploadRouterSelector.ts";
+import hageRouter from "./AIrRoute/hageRouter.ts";
+import locRoutes from "./routers/categoryRoute/locRoutes.ts";
+import redisStatsRouter from "./routers/redisStatsRouter.ts";
+import { monitorEventLoopDelay } from "node:perf_hooks";
+import historySearchRoutes from "./routers/userRoute/historySearchRoutes.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
+
+const eventLoopDelay = monitorEventLoopDelay({ resolution: 20 });
+eventLoopDelay.enable();
+
+const EVENT_LOOP_LAG_THRESHOLD = 200;
+
+app.use((req, res, next) => {
+  if (eventLoopDelay.mean / 1e6 > EVENT_LOOP_LAG_THRESHOLD) {
+    return res
+      .status(503)
+      .json({ message: "Server overloaded. Try again later." });
+  }
+  next();
+});
 
 app.use(
   cors({
@@ -44,18 +63,22 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 );
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use(compression());
 
 const isProd = process.env.NODE_ENV === "production";
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "secret",
@@ -71,7 +94,6 @@ app.use(
     },
   }),
 );
-
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/real-estate", realEstateRouter);
 app.use("/api/cars", carsRoutes);
@@ -96,8 +118,12 @@ app.use("/api/visitors", visitorRoute);
 app.use("/api/search", searchRouter);
 app.use("/api/filtering", filterRouter);
 app.use("/api/upload", uploadRouterSelector);
-
+app.use("/api/hage", hageRouter);
+app.use("/api/locations", locRoutes);
+app.use("/api/redis", redisStatsRouter);
+app.use("/api/history-search", historySearchRoutes);
 app.use("/imagesStore", express.static(path.join(__dirname, "imagesStore")));
+app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => res.send("API is running"));
 

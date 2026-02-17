@@ -49,7 +49,7 @@ export default function Marketplace() {
         {
           cache: "no-store",
           credentials: "include",
-        }
+        },
       );
       if (!res.ok) {
         console.error("Failed to fetch data");
@@ -95,7 +95,7 @@ export default function Marketplace() {
           },
           body: JSON.stringify({ isPaid: newStatus }),
           credentials: "include",
-        }
+        },
       );
 
       if (!res.ok) {
@@ -104,7 +104,7 @@ export default function Marketplace() {
       }
 
       setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i))
+        prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i)),
       );
     } catch (err) {
       console.error("Toggle paid error:", err);
@@ -122,7 +122,7 @@ export default function Marketplace() {
     filtered = filtered.filter((i) =>
       Array.isArray(i.category)
         ? i.category.includes(activeCategory)
-        : i.category === activeCategory
+        : i.category === activeCategory,
     );
   }
 
@@ -131,12 +131,12 @@ export default function Marketplace() {
     filtered = filtered.filter((i) =>
       Array.isArray(i.subcategory)
         ? i.subcategory.includes(activeSubCategory)
-        : i.subcategory === activeSubCategory
+        : i.subcategory === activeSubCategory,
     );
   }
 
   const uniqueMainCategories = Array.from(
-    new Set(items.map((i) => i.mainCategory))
+    new Set(items.map((i) => i.mainCategory)),
   );
 
   // FIX: Use flatMap to handle category array/string, filter out empty values
@@ -144,8 +144,10 @@ export default function Marketplace() {
     new Set(
       items
         .filter((i) => i.mainCategory === activeMainCategory)
-        .flatMap((i) => (Array.isArray(i.category) ? i.category : [i.category]))
-    )
+        .flatMap((i) =>
+          Array.isArray(i.category) ? i.category : [i.category],
+        ),
+    ),
   ).filter(Boolean);
 
   // FIX: Use flatMap to handle subcategory array/string, filter out empty values
@@ -155,12 +157,12 @@ export default function Marketplace() {
         .filter((i) =>
           Array.isArray(i.category)
             ? i.category.includes(activeCategory)
-            : i.category === activeCategory
+            : i.category === activeCategory,
         )
         .flatMap((i) =>
-          Array.isArray(i.subcategory) ? i.subcategory : [i.subcategory]
-        )
-    )
+          Array.isArray(i.subcategory) ? i.subcategory : [i.subcategory],
+        ),
+    ),
   ).filter(Boolean);
 
   const handleSubCategoryClick = (subcategoryTitle: string) => {
@@ -230,7 +232,7 @@ export default function Marketplace() {
         <button
           onClick={resetFilters}
           className={getChipClass(
-            !activeMainCategory && !activeCategory && !activeSubCategory
+            !activeMainCategory && !activeCategory && !activeSubCategory,
           )}
         >
           {getCategoryIcon("All Items")} All Items
@@ -395,7 +397,7 @@ export default function Marketplace() {
                       <button
                         onClick={() =>
                           console.log(
-                            `Attempting to navigate to edit page for item ID: ${item.id}`
+                            `Attempting to navigate to edit page for item ID: ${item.id}`,
                           )
                         }
                         className="px-3 py-1 bg-blue-500 text-white rounded flex items-center justify-center gap-1 text-sm hover:bg-blue-600 transition"

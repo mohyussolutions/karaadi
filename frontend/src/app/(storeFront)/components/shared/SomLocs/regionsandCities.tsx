@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
-import { MdCheckBoxOutlineBlank } from "react-icons/md";
-import { CiSquareCheck } from "react-icons/ci";
-import { cities, regions } from "./SomaliaRegions";
+import React, { useState, useEffect, useMemo } from "react";
+import { MdFilterList, MdClose } from "react-icons/md";
+import { getAllRegions, getAllCities } from "@/actions/categories/geoAction";
+import RegionItem from "./RegionItem";
 
 interface City {
   id: string;
   name: string;
   regionId: string;
+  isActive?: boolean;
 }
+
 interface Region {
   id: string;
   name: string;
@@ -20,7 +22,7 @@ interface LocationSelectorProps {
     region: string | null,
     cities: Record<string, boolean>,
   ) => void;
-  selectedRegion: string | null; // This will now handle "Region1,Region2"
+  selectedRegion: string | null;
   checkedCities: Record<string, boolean>;
   regionCounts?: Record<string, number>;
   cityCounts?: Record<string, number>;
@@ -33,117 +35,139 @@ export default function LocationSelector({
   regionCounts = {},
   cityCounts = {},
 }: LocationSelectorProps) {
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [expandedRegions, setExpandedRegions] = useState<
     Record<string, boolean>
   >({});
+  const [loading, setLoading] = useState(true);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const handleRegionToggle = (regionName: string): void => {
-    // Split current regions into an array
-    const currentRegions = selectedRegion ? selectedRegion.split(",") : [];
-    let newRegions: string[];
+  useEffect(() => {
+    const fetchGeoData = async () => {
+      try {
+        const [regionsData, citiesData] = await Promise.all([
+          getAllRegions(),
+          getAllCities(),
+        ]);
+        setRegions(
+          [...regionsData].sort((a, b) => a.name.localeCompare(b.name)),
+        );
+        setCities(citiesData.filter((city: City) => city.isActive !== false));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGeoData();
+  }, []);
 
-    if (currentRegions.includes(regionName)) {
-      newRegions = currentRegions.filter((r) => r !== regionName);
-    } else {
-      newRegions = [...currentRegions, regionName];
-    }
+  const currentRegionList = useMemo(
+    () => (selectedRegion ? selectedRegion.split(",") : []),
+    [selectedRegion],
+  );
 
-    const regionString = newRegions.length > 0 ? newRegions.join(",") : null;
+  const hasActiveFilters =
+    selectedRegion || Object.values(checkedCities).some(Boolean);
 
-    // Toggle expansion visually
+  const handleRegionToggle = (regionName: string) => {
+    const nextRegions = currentRegionList.includes(regionName)
+      ? currentRegionList.filter((r) => r !== regionName)
+      : [...currentRegionList, regionName];
+
     setExpandedRegions((prev) => ({
       ...prev,
       [regionName]: !prev[regionName],
     }));
 
-    onFilterChange(regionString, checkedCities);
+    onFilterChange(
+      nextRegions.length > 0 ? nextRegions.join(",") : null,
+      checkedCities,
+    );
   };
 
-  const handleCityToggle = (cityName: string): void => {
-    const newState = {
+  const handleCityToggle = (cityName: string) => {
+    onFilterChange(selectedRegion, {
       ...checkedCities,
       [cityName]: !checkedCities[cityName],
-    };
-    onFilterChange(selectedRegion, newState);
+    });
   };
 
-  const handleClearAll = () => onFilterChange(null, {});
-
-  const currentRegionList = selectedRegion ? selectedRegion.split(",") : [];
-
   return (
-    <div className="bg-white border rounded-xl shadow-sm p-5 w-72 max-h-[85vh] overflow-y-auto">
-      <h3 className="text-xl font-bold mb-6 text-gray-800 border-b pb-3 text-center">
-        Goobta (Location)
-      </h3>
+    <div className="w-full md:w-72">
+      <button
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        className="md:hidden flex items-center justify-between w-full bg-blue-600 text-white p-4 rounded-xl mb-2 font-bold shadow-lg"
+      >
+        <span className="flex items-center gap-2">
+          <MdFilterList className="text-xl" />
+          Sifeeyaha Goobta
+        </span>
+        {isMobileOpen ? <MdClose className="text-2xl" /> : null}
+      </button>
 
-      <div className="space-y-3">
-        {(regions as Region[]).map((region) => {
-          const relatedCities = (cities as City[]).filter(
-            (c) => c.regionId === region.id,
-          );
-          const isRegionSelected = currentRegionList.includes(region.name);
-          const isExpanded = expandedRegions[region.name] || isRegionSelected;
-          const regionItemCount = regionCounts[region.name] || 0;
+      <div
+        className={`
+        ${isMobileOpen ? "block" : "hidden md:block"}
+        bg-white border border-gray-100 rounded-2xl shadow-xl md:shadow-sm p-5 max-h-[85vh] overflow-y-auto
+      `}
+      >
+        <h3 className="hidden md:block text-xl font-black mb-6 text-gray-800 border-b pb-4 text-center">
+          Goobta (Location)
+        </h3>
 
-          return (
-            <div key={region.id} className="mb-2">
-              <div
-                className="flex items-center gap-3 cursor-pointer py-1 group"
-                onClick={() => handleRegionToggle(region.name)}
-              >
-                {isRegionSelected ? (
-                  <CiSquareCheck className="text-blue-600 text-2xl" />
-                ) : (
-                  <MdCheckBoxOutlineBlank className="text-gray-400 text-2xl group-hover:text-blue-500 transition-colors" />
-                )}
-                <span
-                  className={`text-lg font-bold ${isRegionSelected ? "text-blue-600" : "text-gray-700"}`}
+        <div className="space-y-2">
+          {loading
+            ? // Skeleton Loader to prevent layout jump
+              Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center py-2 animate-pulse"
                 >
-                  {region.name} ({regionItemCount})
-                </span>
-              </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-gray-200 rounded" />
+                    <div className="h-4 w-24 bg-gray-200 rounded" />
+                  </div>
+                  <div className="w-8 h-4 bg-gray-100 rounded-full" />
+                </div>
+              ))
+            : regions.map((region) => {
+                const regionCities = cities
+                  .filter((c) => c.regionId === region.id)
+                  .sort((a, b) => a.name.localeCompare(b.name));
 
-              {isExpanded && (
-                <ul className="ml-7 mt-3 space-y-4 border-l-2 border-gray-100 pl-5">
-                  {relatedCities.map((city) => {
-                    const isCitySelected = !!checkedCities[city.name];
-                    const cityItemCount = cityCounts[city.name] || 0;
+                if (regionCities.length === 0) return null;
 
-                    return (
-                      <li
-                        key={city.id}
-                        className="flex items-center gap-3 cursor-pointer group/city"
-                        onClick={() => handleCityToggle(city.name)}
-                      >
-                        {isCitySelected ? (
-                          <CiSquareCheck className="text-green-600 text-2xl" />
-                        ) : (
-                          <MdCheckBoxOutlineBlank className="text-gray-300 text-2xl group-hover/city:text-blue-400 transition-colors" />
-                        )}
-                        <span
-                          className={`text-md ${isCitySelected ? "font-bold text-green-700" : "text-gray-600"}`}
-                        >
-                          {city.name} ({cityItemCount})
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          );
-        })}
+                return (
+                  <RegionItem
+                    key={region.id}
+                    region={region}
+                    isSelected={currentRegionList.includes(region.name)}
+                    isExpanded={
+                      expandedRegions[region.name] ||
+                      currentRegionList.includes(region.name)
+                    }
+                    count={regionCounts[region.name] || 0}
+                    cities={regionCities}
+                    checkedCities={checkedCities}
+                    cityCounts={cityCounts}
+                    onRegionToggle={handleRegionToggle}
+                    onCityToggle={handleCityToggle}
+                  />
+                );
+              })}
+        </div>
+
+        {hasActiveFilters && (
+          <button
+            onClick={() => onFilterChange(null, {})}
+            className="w-full mt-6 py-4 text-sm font-black text-gray-400 hover:text-red-500 border-t border-dashed transition-all uppercase tracking-widest"
+          >
+            Nadiifi (Clear All)
+          </button>
+        )}
       </div>
-
-      {(selectedRegion || Object.values(checkedCities).some((v) => v)) && (
-        <button
-          onClick={handleClearAll}
-          className="w-full mt-8 py-3 text-sm font-bold text-gray-400 hover:text-red-600 border-t border-dashed"
-        >
-          Nadiifi (Clear)
-        </button>
-      )}
     </div>
   );
 }

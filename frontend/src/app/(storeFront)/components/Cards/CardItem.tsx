@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import Loading from "../shared/Loading/Loading";
 import UniversalCard from "./UniversalCard";
 import SeeEmore from "../shared/buttons/SeeEmore";
 
@@ -18,8 +17,8 @@ interface ItemsGridProps {
   initialData?: any;
 }
 
-const ITEMS_PER_LOAD = 10;
-const INITIAL_LOAD = 30;
+const ITEMS_PER_LOAD = 12;
+const INITIAL_LOAD = 24;
 const MAX_ITEMS = 100;
 
 export default function ItemsGrid({
@@ -28,12 +27,11 @@ export default function ItemsGrid({
 }: ItemsGridProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
   const [allItems, setAllItems] = useState<any[]>([]);
-  const [isInitialLoading, setIsInitialLoading] = useState(!initialData);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(!initialData);
 
   const processData = useCallback((data: any) => {
     const toSafe = (res: any) => (Array.isArray(res) ? res : []);
-    return [
+    const combined = [
       ...toSafe(data.boats).map((i) => ({ ...i, category: "boats" })),
       ...toSafe(data.cars).map((i) => ({ ...i, category: "cars" })),
       ...toSafe(data.jobs).map((i) => ({ ...i, category: "jobs" })),
@@ -53,39 +51,27 @@ export default function ItemsGrid({
         ...i,
         category: "tractors",
       })),
-    ].map((item) => ({
+    ];
+
+    return combined.map((item) => ({
       ...item,
+      id: item.id || item._id,
       price: Number(item.price) || 0,
       images: Array.isArray(item.images) ? item.images : [],
     }));
   }, []);
 
-  const fetchAll = useCallback(async () => {
-    if (!fetchFunctions) return;
-    if (allItems.length === 0) setIsInitialLoading(true);
-    else setIsRefreshing(true);
+  useEffect(() => {
+    if (initialData) {
+      setAllItems(processData(initialData));
+      setIsLoading(false);
+      return;
+    }
 
-    try {
-      const [
-        boats,
-        cars,
-        jobs,
-        marketplace,
-        motorcycles,
-        realEstate,
-        tractors,
-      ] = await Promise.all([
-        fetchFunctions.getBoats(),
-        fetchFunctions.getCars(),
-        fetchFunctions.getJobs(),
-        fetchFunctions.getMarketplaceItems(),
-        fetchFunctions.getMotorcycles(),
-        fetchFunctions.getRealEstateListings(),
-        fetchFunctions.getTraktors(),
-      ]);
-
-      setAllItems(
-        processData({
+    const fetchAll = async () => {
+      if (!fetchFunctions) return;
+      try {
+        const [
           boats,
           cars,
           jobs,
@@ -93,51 +79,54 @@ export default function ItemsGrid({
           motorcycles,
           realEstate,
           tractors,
-        }),
-      );
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsInitialLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [fetchFunctions, allItems.length, processData]);
+        ] = await Promise.all([
+          fetchFunctions.getBoats(),
+          fetchFunctions.getCars(),
+          fetchFunctions.getJobs(),
+          fetchFunctions.getMarketplaceItems(),
+          fetchFunctions.getMotorcycles(),
+          fetchFunctions.getRealEstateListings(),
+          fetchFunctions.getTraktors(),
+        ]);
 
-  useEffect(() => {
-    if (initialData) {
-      setAllItems(processData(initialData));
-      setIsInitialLoading(false);
-    } else {
-      fetchAll();
-    }
-  }, [initialData, fetchAll, processData]);
+        setAllItems(
+          processData({
+            boats,
+            cars,
+            jobs,
+            marketplace,
+            motorcycles,
+            realEstate,
+            tractors,
+          }),
+        );
+      } catch (err) {
+        console.error("Data fetch error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  if (isInitialLoading)
-    return (
-      <div className="flex justify-center py-20">
-        <Loading />
-      </div>
-    );
+    fetchAll();
+  }, [fetchFunctions, initialData, processData]);
 
   const itemsToShow = allItems.slice(0, Math.min(visibleCount, MAX_ITEMS));
 
   return (
-    <div
-      className={`relative ${isRefreshing ? "opacity-60" : "opacity-100"} transition-opacity duration-300`}
-    >
-      {isRefreshing && (
-        <div className="absolute top-0 left-0 w-full h-1 bg-blue-600 animate-pulse z-10" />
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
-        {itemsToShow.map((item, index) => (
-          <UniversalCard
-            key={item.id ? `${item.category}-${item.id}` : `idx-${index}`}
-            {...item}
-          />
-        ))}
+    <div className="w-full max-w-[1400px] mx-auto px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-8">
+        {isLoading
+          ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
+          : itemsToShow.map((item, index) => (
+              <UniversalCard
+                key={item.id ? `${item.category}-${item.id}` : `idx-${index}`}
+                {...item}
+              />
+            ))}
       </div>
-      {allItems.length > visibleCount && (
-        <div className="flex justify-center pb-10">
+
+      {!isLoading && allItems.length > visibleCount && (
+        <div className="flex justify-center pb-16">
           <SeeEmore
             onClick={() =>
               setVisibleCount((prev) =>
@@ -147,6 +136,23 @@ export default function ItemsGrid({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white h-[400px] flex flex-col">
+      <div className="h-56 w-full bg-gray-200 animate-pulse" />
+      <div className="p-4 space-y-3 flex-grow">
+        <div className="h-6 w-1/3 bg-gray-200 animate-pulse rounded" />
+        <div className="h-4 w-full bg-gray-200 animate-pulse rounded" />
+        <div className="h-4 w-2/3 bg-gray-200 animate-pulse rounded" />
+        <div className="mt-auto pt-4 flex justify-between">
+          <div className="h-3 w-16 bg-gray-100 animate-pulse rounded" />
+          <div className="h-3 w-16 bg-gray-100 animate-pulse rounded" />
+        </div>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { apiUrls } from "../constant/constant";
 interface User {
   _id: string;
   username: string;
+  name?: string;
   email: string;
   profileImage?: string;
   isAdmin: boolean;
@@ -19,11 +20,11 @@ interface User {
 
 const toBool = (v: any) => v === true || v === "true" || v === 1 || v === "1";
 
-// Login function
 export async function login(email: string, password: string): Promise<User> {
   const response = await fetch(apiUrls.LOGIN, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
@@ -45,10 +46,10 @@ export async function login(email: string, password: string): Promise<User> {
     token: data.token,
   };
 
-  return normalizeUser(raw) as User;
+  const user = normalizeUser(raw) as User;
+  return { ...user, name: user.username || user.name || "" };
 }
 
-// Logout function
 export async function logout(accessToken?: string): Promise<void> {
   const headers: any = { "Content-Type": "application/json" };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
@@ -56,13 +57,13 @@ export async function logout(accessToken?: string): Promise<void> {
   const response = await fetch(apiUrls.LOGOUT, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
   });
 
   if (!response.ok) throw new Error("Logout failed");
 }
 
-// Verify session function
 export async function verifySession(
   accessToken?: string,
 ): Promise<User | null> {
@@ -75,6 +76,7 @@ export async function verifySession(
     const response = await fetch(apiUrls.VERIFY_SESSION, {
       method: "POST",
       credentials: "include",
+      cache: "no-store",
       headers,
     });
 
@@ -87,6 +89,7 @@ export async function verifySession(
     const user = {
       _id: u.sub || u.id || u._id,
       username: u.preferred_username,
+      name: u.name || u.preferred_username || "",
       email: u.email,
       profileImage: u.profileImage,
       phone: u.phone,
@@ -96,14 +99,12 @@ export async function verifySession(
       isManager: toBool(u["custom:isManager"]) || toBool(u.isManager),
       isSupport: toBool(u["custom:isSupport"]) || toBool(u.isSupport),
     };
-
     return normalizeUser(user);
   } catch {
     return null;
   }
 }
 
-// Register function
 export async function register(
   username: string,
   email: string,
@@ -112,6 +113,7 @@ export async function register(
   const response = await fetch(apiUrls.REGISTER, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, email, password }),
   });
@@ -119,7 +121,6 @@ export async function register(
   return response.json();
 }
 
-// Confirm email function
 export async function confirmEmail(
   email: string,
   code: string,
@@ -131,24 +132,24 @@ export async function confirmEmail(
   const response = await fetch(apiUrls.CONFIRM, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
     body: JSON.stringify({ email, code }),
   });
   if (!response.ok) throw new Error("Email confirmation failed");
 }
 
-// Forgot password function
 export async function forgotPassword(email: string): Promise<void> {
   const response = await fetch(apiUrls.FORGOT_PASSWORD, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
   if (!response.ok) throw new Error("Password reset failed");
 }
 
-// Reset password function
 export async function resetPassword(
   email: string,
   code: string,
@@ -157,13 +158,13 @@ export async function resetPassword(
   const response = await fetch(apiUrls.RESET_PASSWORD, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, code, newPassword }),
   });
   if (!response.ok) throw new Error("Password reset failed");
 }
 
-// Get profile function
 export async function getProfile(accessToken?: string): Promise<User> {
   const headers: any = { "Content-Type": "application/json" };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
@@ -171,13 +172,13 @@ export async function getProfile(accessToken?: string): Promise<User> {
   const response = await fetch(apiUrls.PROFILE, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
   });
   if (!response.ok) throw new Error("Failed to fetch profile");
   return response.json();
 }
 
-// Update profile function
 export async function updateProfile(
   data: Partial<User> & { profileImageFile?: File | null },
   accessToken?: string,
@@ -195,6 +196,7 @@ export async function updateProfile(
   const response = await fetch(apiUrls.PROFILE, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
     body: formData,
   });
@@ -204,7 +206,6 @@ export async function updateProfile(
   return await response.json();
 }
 
-// Get users function
 export async function getUsers(accessToken?: string): Promise<User[]> {
   const headers: any = { "Content-Type": "application/json" };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
@@ -212,14 +213,13 @@ export async function getUsers(accessToken?: string): Promise<User[]> {
   const response = await fetch(apiUrls.USERS.BASE, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
   });
   if (!response.ok) return [];
-
   return response.json();
 }
 
-// Get user by ID function
 export async function getUserById(
   id: string,
   accessToken?: string,
@@ -230,13 +230,13 @@ export async function getUserById(
   const response = await fetch(apiUrls.USERS.BY_ID(id), {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
   });
   if (!response.ok) throw new Error("Failed to fetch user");
   return response.json();
 }
 
-// Create user function
 export async function createUser(
   username: string,
   email: string,
@@ -249,6 +249,7 @@ export async function createUser(
   const response = await fetch(apiUrls.USERS.BASE, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
     body: JSON.stringify({ username, email, password }),
   });
@@ -256,7 +257,6 @@ export async function createUser(
   return response.json();
 }
 
-// Update user function
 export async function updateUser(
   id: string,
   data: Partial<User>,
@@ -268,6 +268,7 @@ export async function updateUser(
   const response = await fetch(apiUrls.USERS.BY_ID(id), {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers,
     body: JSON.stringify(data),
   });
@@ -275,7 +276,6 @@ export async function updateUser(
   return response.json();
 }
 
-// Delete user function
 export async function deleteUser(
   id: string,
   accessToken?: string,
@@ -286,6 +286,7 @@ export async function deleteUser(
   const response = await fetch(apiUrls.USERS.BY_ID(id), {
     method: "DELETE",
     credentials: "include",
+    cache: "no-store",
     headers,
   });
   if (!response.ok) throw new Error("User deletion failed");

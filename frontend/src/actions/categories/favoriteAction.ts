@@ -1,12 +1,13 @@
 "use server";
 
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { FavoriteItem } from "@/app/utils/types/favorite";
-import { apiUrlsForFavorites } from "../constant/constant";
+import { FAVORITE_ROUTES } from "../constant/constant";
 
 const getHeaders = async () => {
   const cookieStore = await cookies();
-  const idToken =
+  const token =
     cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
 
   const headers: Record<string, string> = {
@@ -14,72 +15,67 @@ const getHeaders = async () => {
     Accept: "application/json",
   };
 
-  if (idToken) {
-    headers["Authorization"] = `Bearer ${idToken}`;
-    headers["Cookie"] = `idToken=${idToken}`;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   return headers;
 };
 
 const handleResponse = async (res: Response) => {
-  if (res.status === 401) throw new Error("Unauthorized");
+  if (res.status === 401) return null;
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
+  return res.ok ? data : null;
 };
 
 export const getMyFavorites = async (): Promise<FavoriteItem[]> => {
-  const res = await fetch(`${apiUrlsForFavorites.FAVORITES_BASE}/my`, {
-    method: "GET",
-    headers: await getHeaders(),
-    cache: "no-store",
-  });
-  const data = await handleResponse(res);
-  return Array.isArray(data) ? data : [];
+  try {
+    const res = await fetch(FAVORITE_ROUTES.MY_FAVORITES, {
+      method: "GET",
+      headers: await getHeaders(),
+      next: { revalidate: 30, tags: ["user-favorites"] },
+    });
+    const data = await handleResponse(res);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 };
 
 export const addToFavorite = async (data: any) => {
-  const res = await fetch(apiUrlsForFavorites.ADD_FAVORITE, {
-    method: "POST",
-    headers: await getHeaders(),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(res);
-};
-
-export const getFavorites = async (): Promise<FavoriteItem[]> => {
-  const res = await fetch(apiUrlsForFavorites.FAVORITES_BASE, {
-    method: "GET",
-    headers: await getHeaders(),
-    cache: "no-store",
-  });
-  const data = await handleResponse(res);
-  return Array.isArray(data) ? data : [];
-};
-
-export const getFavoriteById = async (id: string): Promise<FavoriteItem> => {
-  const res = await fetch(apiUrlsForFavorites.GET_FAVORITE_BY_ID(id), {
-    method: "GET",
-    headers: await getHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const res = await fetch(FAVORITE_ROUTES.BASE, {
+      method: "POST",
+      headers: await getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse(res);
+    revalidateTag("user-favorites");
+    return result;
+  } catch {
+    return { error: "Failed to add" };
+  }
 };
 
 export const removeFavorite = async (id: string) => {
-  const res = await fetch(apiUrlsForFavorites.DELETE_FAVORITE(id), {
-    method: "DELETE",
-    headers: await getHeaders(),
-  });
-  if (res.status === 404) throw new Error("Not found");
-  return handleResponse(res);
+  try {
+    const res = await fetch(FAVORITE_ROUTES.BY_ID(id), {
+      method: "DELETE",
+      headers: await getHeaders(),
+    });
+    const result = await handleResponse(res);
+    revalidateTag("user-favorites");
+    revalidatePath("/favorites");
+    return result;
+  } catch {
+    return { error: "Failed to remove" };
+  }
 };
 
-export const updateFavorite = async (id: string, data: any) => {
-  const res = await fetch(apiUrlsForFavorites.UPDATE_FAVORITE(id), {
-    method: "PUT",
+export const getFavoriteById = async (id: string): Promise<FavoriteItem> => {
+  const res = await fetch(FAVORITE_ROUTES.GET_FAVORITE_BY_ID(id), {
+    method: "GET",
     headers: await getHeaders(),
-    body: JSON.stringify(data),
   });
   return handleResponse(res);
 };

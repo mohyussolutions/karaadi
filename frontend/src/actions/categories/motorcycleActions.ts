@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
 
 export type Motorcycle = {
@@ -28,67 +28,28 @@ export type Motorcycle = {
   description: string;
 };
 
-type CreateMotorcycleData = {
-  title: string;
-  category: string;
-  transmission?: string;
-  price: number;
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string;
-  subCategory: string;
-  subCategories: string[];
-  images: string[];
-  type: string;
-  make: string;
-  modelName: string;
-  year: number;
-  mileage: number;
-  engineSize: string;
-  fuelType: string;
-  color: string;
-  description: string;
-};
+type CreateMotorcycleData = Omit<Motorcycle, "_id" | "user">;
 
 export async function getMotorcycles(): Promise<Motorcycle[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Motorcycles, {
       method: "GET",
-      next: { tags: ["motorcycles"], revalidate: 60 },
+      next: {
+        revalidate: 300, // 5 minute background refresh
+        tags: ["motorcycles"],
+      },
     });
 
-    if (!response.ok) {
-      console.error(
-        "Failed to fetch motorcycles:",
-        response.status,
-        response.statusText,
-      );
-      return [];
-    }
+    if (!response.ok) return [];
 
     const result = await response.json();
+    const list = Array.isArray(result) ? result : result?.data || [];
 
-    const motorcycleList = Array.isArray(result)
-      ? result
-      : result && result.data && Array.isArray(result.data)
-        ? result.data
-        : [];
-
-    if (!Array.isArray(motorcycleList)) {
-      console.error(
-        "Motorcycles API returned non-array data structure:",
-        result,
-      );
-      return [];
-    }
-
-    return motorcycleList.map((item: any) => ({
+    return list.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
     })) as Motorcycle[];
   } catch (error) {
-    console.error("Network error fetching motorcycles:", error);
     return [];
   }
 }
@@ -101,32 +62,21 @@ export async function getMotorcycleById(
       `${apiUrlsForCategoryTotals.Motorcycles}/${id}`,
       {
         method: "GET",
-        next: { tags: [`motorcycle-${id}`], revalidate: 3600 },
+        next: {
+          revalidate: 600,
+          tags: [`motorcycle-${id}`],
+        },
       },
     );
 
-    if (!response.ok) {
-      console.error(
-        `Failed to fetch motorcycle ${id}:`,
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
+    if (!response.ok) return null;
 
     const item = await response.json();
-
-    if (!item || typeof item !== "object") {
-      console.error(`Motorcycle API returned invalid data for ID ${id}:`, item);
-      return null;
-    }
-
     return {
       ...item,
       _id: item._id || item.id,
     } as Motorcycle;
   } catch (error) {
-    console.error(`Network error fetching motorcycle ${id}:`, error);
     return null;
   }
 }
@@ -146,25 +96,19 @@ export async function createMotorcycle(
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result?.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result?.message || "Failed to create motorcycle listing in backend.",
-      };
-    }
-
+    // Kill the list cache so the new motorcycle shows up immediately
+    revalidateTag("motorcycles");
     revalidatePath("/motorcycles");
 
     return {
       success: true,
-      message: "Motorcycle listing created successfully.",
-      motorcycleId: result?.id,
+      message: "Listing created successfully.",
+      motorcycleId: result?.id || result?._id,
     };
   } catch (error) {
-    console.error("Network error creating motorcycle:", error);
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -187,26 +131,21 @@ export async function updateMotorcycle(
     );
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result?.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          result?.message || "Failed to update motorcycle listing in backend.",
-      };
-    }
-
+    // Update both the specific motorcycle and the general list
+    revalidateTag(`motorcycle-${id}`);
+    revalidateTag("motorcycles");
     revalidatePath(`/motorcycles/${id}`);
     revalidatePath("/motorcycles");
 
     return {
       success: true,
-      message: "Motorcycle listing updated successfully.",
-      motorcycleId: result?.id,
+      message: "Listing updated successfully.",
+      motorcycleId: id,
     };
   } catch (error) {
-    console.error("Network error updating motorcycle:", error);
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -216,29 +155,18 @@ export async function deleteMotorcycle(id: string, token: string) {
       `${apiUrlsForCategoryTotals.Motorcycles}/${id}`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       },
     );
 
-    if (!response.ok) {
-      const result = await response.json();
-      return {
-        success: false,
-        message:
-          result?.message || "Failed to delete motorcycle listing in backend.",
-      };
-    }
+    if (!response.ok) return { success: false, message: "Delete failed." };
 
+    revalidateTag(`motorcycle-${id}`);
+    revalidateTag("motorcycles");
     revalidatePath("/motorcycles");
 
-    return {
-      success: true,
-      message: "Motorcycle listing deleted successfully.",
-    };
+    return { success: true, message: "Listing deleted successfully." };
   } catch (error) {
-    console.error("Network error deleting motorcycle:", error);
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }

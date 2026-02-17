@@ -1,0 +1,13 @@
+model Region {
+  id     String @id
+  name   String
+  cities City[]
+}
+
+model City {
+  id       String  @id
+  name     String
+  regionId String
+  region   Region  @relation(fields: [regionId], references: [id])
+  isActive Boolean @default(true)
+}

@@ -1,18 +1,20 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
 
 export type Boat = {
-  name: string;
   _id: string;
   user: string;
   title: string;
-  category: string;
-  subCategory: string;
+  so: string;
+  mainCategory: "Boats";
+  category: string[];
+  subcategory: string[];
   region: string;
   city: string;
   district: string;
+  subDistrict: string | null;
   description: string;
   price: number;
   images: string[];
@@ -20,49 +22,30 @@ export type Boat = {
   boatModel: string;
   transmission: string;
   color: string;
+  maGaday: boolean;
+  isPaid: boolean;
 };
 
-type CreateBoatData = {
-  title: string;
-  category: string;
-  subCategory: string;
-  region: string;
-  city: string;
-  district: string;
-  subDistrict?: string;
-  description: string;
-  price: number;
-  images: string[];
-  type: string;
-  boatModel: string;
-  transmission: string;
-  color: string;
-  listingType?: string;
-};
+type CreateBoatData = Omit<Boat, "_id" | "user">;
 
 export async function getBoats(): Promise<Boat[] | null> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Boats, {
       method: "GET",
-      next: { tags: ["boats"], revalidate: 60 },
+      next: {
+        revalidate: 300,
+        tags: ["boats"],
+      },
     });
 
-    if (!response.ok) {
-      console.error(
-        "Failed to fetch boats:",
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
-
+    if (!response.ok) return null;
     const result: any[] = await response.json();
+
     return result.map((item) => ({
       ...item,
       _id: item._id || item.id,
     })) as Boat[];
   } catch (error) {
-    console.error("Network error fetching boats:", error);
     return null;
   }
 }
@@ -71,30 +54,25 @@ export async function getBoatById(id: string): Promise<Boat | null> {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "GET",
-      next: { tags: [`boat-${id}`], revalidate: 3600 },
+      next: {
+        revalidate: 600,
+        tags: [`boat-${id}`],
+      },
     });
 
-    if (!response.ok) {
-      console.error(
-        `Failed to fetch boat ${id}:`,
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
-
+    if (!response.ok) return null;
     const item: any = await response.json();
+
     return {
       ...item,
       _id: item._id || item.id,
     } as Boat;
   } catch (error) {
-    console.error(`Network error fetching boat ${id}:`, error);
     return null;
   }
 }
 
-export async function createBoat(data: CreateBoatData, token: string) {
+export async function createBoatAction(data: CreateBoatData, token: string) {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Boats, {
       method: "POST",
@@ -106,22 +84,18 @@ export async function createBoat(data: CreateBoatData, token: string) {
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message: result.message || "Failed to create boat listing in backend.",
-      };
-    }
-
+    revalidateTag("boats");
     revalidatePath("/boats");
+
     return {
       success: true,
       message: "Boat listing created successfully.",
-      boatId: result.id,
+      _id: result._id || result.id,
     };
   } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -141,23 +115,16 @@ export async function updateBoat(
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message: result.message || "Failed to update boat listing in backend.",
-      };
-    }
-
+    revalidateTag(`boat-${id}`);
+    revalidateTag("boats");
     revalidatePath(`/boats/${id}`);
     revalidatePath("/boats");
-    return {
-      success: true,
-      message: "Boat listing updated successfully.",
-      boatId: result.id,
-    };
+
+    return { success: true, message: "Updated successfully.", boatId: id };
   } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -165,22 +132,17 @@ export async function deleteBoat(id: string, token: string) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) {
-      const result = await response.json();
-      return {
-        success: false,
-        message: result.message || "Failed to delete boat listing in backend.",
-      };
-    }
+    if (!response.ok) return { success: false, message: "Delete failed." };
 
+    revalidateTag(`boat-${id}`);
+    revalidateTag("boats");
     revalidatePath("/boats");
-    return { success: true, message: "Boat listing deleted successfully." };
+
+    return { success: true, message: "Deleted successfully." };
   } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }

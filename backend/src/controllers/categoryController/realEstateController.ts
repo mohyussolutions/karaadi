@@ -1,20 +1,29 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { triggerSubscriptionWatch } from "../userController/subscriptionController.ts";
+import { Prisma } from "@prisma/client";
+import cacheManager from "src/services/redisserver/cacheManager.ts";
+
 export const getAllRealEstates = async (_req: Request, res: Response) => {
   try {
-    const properties = await prisma.realEstate.findMany({
-      where: { isPaid: true },
-      include: {
-        user: { select: { username: true, email: true, phone: true } },
+    const properties = await cacheManager.withCache(
+      "realestate:public:all",
+      async () => {
+        return await prisma.realEstate.findMany({
+          where: { isPaid: true },
+          include: {
+            user: { select: { username: true, email: true, phone: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        });
       },
-      orderBy: { createdAt: "desc" },
-    });
+    );
     return res.json(properties);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     return res
       .status(500)
-      .json({ message: "Server Error", error: error.message });
+      .json({ message: "Server Error", error: err.message });
   }
 };
 
@@ -23,47 +32,67 @@ export const getAllRealEstatesIncludingUnpaid = async (
   res: Response,
 ) => {
   try {
-    const properties = await prisma.realEstate.findMany({
-      include: {
-        user: { select: { username: true, email: true, phone: true } },
+    const properties = await cacheManager.withCache(
+      "realestate:admin:all",
+      async () => {
+        return await prisma.realEstate.findMany({
+          include: {
+            user: { select: { username: true, email: true, phone: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        });
       },
-      orderBy: { createdAt: "desc" },
-    });
+    );
     return res.json(properties);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     return res
       .status(500)
-      .json({ message: "Server Error", error: error.message });
+      .json({ message: "Server Error", error: err.message });
   }
 };
 
 export const getTotalRealEstates = async (_req: Request, res: Response) => {
   try {
-    const total = await prisma.realEstate.count();
+    const total = await cacheManager.withCache(
+      "realestate:total",
+      async () => {
+        return await prisma.realEstate.count();
+      },
+      600,
+    );
     return res.json({ totalRealEstates: total });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     return res
       .status(500)
-      .json({ message: "Server Error", error: error.message });
+      .json({ message: "Server Error", error: err.message });
   }
 };
 
 export const getRealEstateById = async (req: Request, res: Response) => {
-  const id = req.params.id;
   try {
-    const property = await prisma.realEstate.findUnique({
-      where: { id },
-      include: {
-        user: { select: { username: true, email: true, phone: true } },
+    const { id } = req.params;
+    const property = await cacheManager.withCache(
+      `realestate:detail:${id}`,
+      async () => {
+        return await prisma.realEstate.findUnique({
+          where: { id },
+          include: {
+            user: { select: { username: true, email: true, phone: true } },
+          },
+        });
       },
-    });
+    );
+
     if (!property)
       return res.status(404).json({ message: "Property not found" });
     return res.json(property);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     return res
       .status(500)
-      .json({ message: "Server Error", error: error.message });
+      .json({ message: "Server Error", error: err.message });
   }
 };
 
@@ -86,8 +115,6 @@ export const createRealEstate = async (req: Request, res: Response) => {
       region,
       city,
       county,
-      district,
-      subDistrict,
       images,
       userId,
     } = req.body;
@@ -101,10 +128,7 @@ export const createRealEstate = async (req: Request, res: Response) => {
       !county ||
       !userId
     ) {
-      return res.status(400).json({
-        message:
-          "Missing required fields: title, price, mainCategory, region, city, county, userId",
-      });
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
     const newProperty = await prisma.realEstate.create({
@@ -129,8 +153,6 @@ export const createRealEstate = async (req: Request, res: Response) => {
         region,
         city,
         county: county || region,
-        district: district || "",
-        subDistrict: subDistrict || "",
         images: Array.isArray(images) ? images : [],
         userId,
       },
@@ -139,20 +161,25 @@ export const createRealEstate = async (req: Request, res: Response) => {
       },
     });
 
+    await Promise.all([
+      cacheManager.deletePattern("realestate:*:all"),
+      cacheManager.delete("realestate:total"),
+    ]);
+
     await triggerSubscriptionWatch("realestate", newProperty.id);
 
     return res.status(201).json(newProperty);
-  } catch (error: any) {
-    console.error("Create Real Estate Error:", error);
-    return res.status(400).json({
-      message: "Creation failed",
-      error: error.message,
-    });
+  } catch (error) {
+    const err = error as Error;
+    return res
+      .status(400)
+      .json({ message: "Creation failed", error: err.message });
   }
 };
+
 export const updateRealEstate = async (req: Request, res: Response) => {
-  const id = req.params.id;
   try {
+    const { id } = req.params;
     const updatedProperty = await prisma.realEstate.update({
       where: { id },
       data: req.body,
@@ -160,26 +187,41 @@ export const updateRealEstate = async (req: Request, res: Response) => {
         user: { select: { username: true, email: true, phone: true } },
       },
     });
+
+    await Promise.all([
+      cacheManager.delete(`realestate:detail:${id}`),
+      cacheManager.deletePattern("realestate:*:all"),
+    ]);
+
     return res.json(updatedProperty);
-  } catch (error: any) {
-    if (error.code === "P2025")
+  } catch (error) {
+    const err = error as Prisma.PrismaClientKnownRequestError;
+    if (err.code === "P2025")
       return res.status(404).json({ message: "Property not found" });
     return res
       .status(400)
-      .json({ message: "Update failed", error: error.message });
+      .json({ message: "Update failed", error: err.message });
   }
 };
 
 export const deleteRealEstate = async (req: Request, res: Response) => {
-  const id = req.params.id;
   try {
+    const { id } = req.params;
     await prisma.realEstate.delete({ where: { id } });
+
+    await Promise.all([
+      cacheManager.delete(`realestate:detail:${id}`),
+      cacheManager.deletePattern("realestate:*:all"),
+      cacheManager.delete("realestate:total"),
+    ]);
+
     return res.json({ message: "Property deleted successfully" });
-  } catch (error: any) {
-    if (error.code === "P2025")
+  } catch (error) {
+    const err = error as Prisma.PrismaClientKnownRequestError;
+    if (err.code === "P2025")
       return res.status(404).json({ message: "Property not found" });
     return res
       .status(500)
-      .json({ message: "Server Error", error: error.message });
+      .json({ message: "Server Error", error: err.message });
   }
 };

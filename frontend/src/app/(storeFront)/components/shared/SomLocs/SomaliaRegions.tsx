@@ -1,3 +1,4 @@
+/*
 export type Region = {
   id: string;
   name: string;
@@ -31,13 +32,11 @@ export const regions: Region[] = [
 ];
 
 export const cities: City[] = [
-  // Awdal
   { id: "boorama", name: "Boorame", regionId: "awdal" },
   { id: "baki", name: "Baki", regionId: "awdal" },
   { id: "lughaya", name: "Lughaya", regionId: "awdal" },
   { id: "zaylac", name: "Zaylac", regionId: "awdal" },
 
-  // Hamar (previously Banadir)
   { id: "cabdicasiis", name: "Cabdi Casiis", regionId: "hamar" },
   { id: "bondhere", name: "Bondhere", regionId: "hamar" },
   { id: "xamar-jajab", name: "Xamar Jajab", regionId: "hamar" },
@@ -54,7 +53,6 @@ export const cities: City[] = [
   { id: "yaaqshiid", name: "Yaaqshiid", regionId: "hamar" },
   { id: "dharkeynley", name: "Dharkeynley", regionId: "hamar" },
 
-  // Bari
   { id: "bosaso", name: "Boosaaso", regionId: "bari" },
   { id: "caluula", name: "Caluula", regionId: "bari" },
   { id: "badarbeyla", name: "Badarbeyla", regionId: "bari" },
@@ -66,19 +64,16 @@ export const cities: City[] = [
   { id: "xaafuun", name: "Xaafuun", regionId: "bari" },
   { id: "isku-shuban", name: "Isku Shuban", regionId: "bari" },
 
-  // Togdheer
   { id: "burco", name: "Burco", regionId: "togdheer" },
   { id: "buuhoodle", name: "Buuhoodle", regionId: "togdheer" },
   { id: "shiikh", name: "Shiikh", regionId: "togdheer" },
   { id: "oodweyne", name: "Oodweyne", regionId: "togdheer" },
 
-  // Sool
   { id: "laas-caanood", name: "Laas Caanood", regionId: "sool" },
   { id: "caynabo", name: "Caynabo", regionId: "sool" },
   { id: "xudun", name: "Xudun", regionId: "sool" },
   { id: "taleex", name: "Taleex", regionId: "sool" },
 
-  // Galguduud
   { id: "dhusamareb", name: "Dhusamareeb", regionId: "galguduud" },
   { id: "cadaado", name: "Cadaado", regionId: "galguduud" },
   { id: "ceelbuur", name: "Ceelbuur", regionId: "galguduud" },
@@ -86,14 +81,12 @@ export const cities: City[] = [
   { id: "caabud-waaq", name: "Caabud Waaq", regionId: "galguduud" },
   { id: "gel-hareeri", name: "Gel Hareeri", regionId: "galguduud" },
 
-  // Hiiraan
   { id: "beletweyne", name: "Baladweyne", regionId: "hiiraan" },
   { id: "buula-barde", name: "Buula Barde", regionId: "hiiraan" },
   { id: "jalalaqsi", name: "Jalalaqsi", regionId: "hiiraan" },
   { id: "masax", name: "Masax", regionId: "hiiraan" },
   { id: "matabaan", name: "Matabaan", regionId: "hiiraan" },
 
-  // Gedo
   { id: "garbahaarey", name: "Garbahaarey", regionId: "gedo" },
   { id: "baardheere", name: "Baardheere", regionId: "gedo" },
   { id: "beledxaawo", name: "Beled Xaawo", regionId: "gedo" },
@@ -101,20 +94,17 @@ export const cities: City[] = [
   { id: "ceelwaaq", name: "Ceelwaaq", regionId: "gedo" },
   { id: "luuq", name: "Luuq", regionId: "gedo" },
 
-  // Woqooyi Galbeed (wqdl)
   { id: "hargeysa", name: "Hargeysa", regionId: "wqdl" },
   { id: "dacar-budhuq", name: "Dacar Budhuq", regionId: "wqdl" },
   { id: "berbera", name: "Berbera", regionId: "wqdl" },
   { id: "gebilay", name: "Gebilay", regionId: "wqdl" },
 
-  // Mudug
   { id: "galkacyo", name: "Gaalkacyo", regionId: "mudug" },
   { id: "galdogob", name: "Galdogob", regionId: "mudug" },
   { id: "xarardheere", name: "Xarardheere", regionId: "mudug" },
   { id: "hobyo", name: "Hobyo", regionId: "mudug" },
   { id: "jiriiban", name: "Jiriiban", regionId: "mudug" },
 
-  // Shabeellaha Dhexe
   { id: "jowhar", name: "Jowhar", regionId: "shabeellaha-dhexe" },
   { id: "balcad", name: "Balcad", regionId: "shabeellaha-dhexe" },
   { id: "mahadaay", name: "Mahadaay", regionId: "shabeellaha-dhexe" },
@@ -123,7 +113,6 @@ export const cities: City[] = [
   { id: "warshiikh", name: "Warshiikh", regionId: "shabeellaha-dhexe" },
   { id: "run-rugood", name: "Run Rugood", regionId: "shabeellaha-dhexe" },
 
-  // Shabeellaha Hoose
   { id: "marka", name: "Marka", regionId: "shabeellaha-hoose" },
   { id: "afgooye", name: "Afgooye", regionId: "shabeellaha-hoose" },
   { id: "awdhiigle", name: "Aw-dhiigle", regionId: "shabeellaha-hoose" },
@@ -132,41 +121,39 @@ export const cities: City[] = [
   { id: "qoryooley", name: "Qoryooley", regionId: "shabeellaha-hoose" },
   { id: "sablaale", name: "Sablaale", regionId: "shabeellaha-hoose" },
 
-  // Bay
   { id: "baydhabo", name: "Baydhabo", regionId: "bay" },
   { id: "buurxakabo", name: "Buurxakabo", regionId: "bay" },
   { id: "diinsoor", name: "Diinsoor", regionId: "bay" },
   { id: "qansaxdheere", name: "Qansaxdheere", regionId: "bay" },
 
-  // Bakool
   { id: "xudur", name: "Xudur", regionId: "bakool" },
   { id: "ceelbarde", name: "Ceelbarde", regionId: "bakool" },
   { id: "rabdhure", name: "Rab Dhure", regionId: "bakool" },
   { id: "tiyeglow", name: "Tiyeglow", regionId: "bakool" },
   { id: "biyooley", name: "Biyooley", regionId: "bakool" },
 
-  // Jubada Dhexe
   { id: "buaale", name: "Bu'aale", regionId: "jubada-dhexe" },
   { id: "dujuma", name: "Dujuma", regionId: "jubada-dhexe" },
   { id: "jilib", name: "Jilib", regionId: "jubada-dhexe" },
   { id: "saakow", name: "Saakow", regionId: "jubada-dhexe" },
 
-  // Sanaag
   { id: "ceerigaabo", name: "Ceerigaabo", regionId: "sanaag" },
   { id: "ceelafweyn", name: "Ceel Afweyn", regionId: "sanaag" },
   { id: "laasqoray", name: "Laasqoray", regionId: "sanaag" },
   { id: "badhan", name: "Badhan", regionId: "sanaag" },
 
-  // Jubada Hoose
   { id: "kismaayo", name: "Kismaayo", regionId: "jubada-hoose" },
   { id: "afmadow", name: "Afmadow", regionId: "jubada-hoose" },
   { id: "badhaadhe", name: "Badhaadhe", regionId: "jubada-hoose" },
   { id: "xagar", name: "Xagar", regionId: "jubada-hoose" },
   { id: "jamaame", name: "Jamaame", regionId: "jubada-hoose" },
 
-  // Nugaal
   { id: "garowe", name: "Garoowe", regionId: "nugaal" },
   { id: "dangorayo", name: "Dangorayo", regionId: "nugaal" },
   { id: "ayl", name: "Ayl", regionId: "nugaal" },
   { id: "burtinle", name: "Burtinle", regionId: "nugaal" },
 ];
+
+export const getCitiesByRegion = (regionId: string): City[] =>
+  cities.filter((city) => city.regionId === regionId);
+*/

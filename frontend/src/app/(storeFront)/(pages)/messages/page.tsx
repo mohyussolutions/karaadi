@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { apiService } from "@/actions/core/authAction";
 import ChatSystem from "@/app/(storeFront)/components/chats/chat/ChatSystem";
 import { FiHome, FiUser } from "react-icons/fi";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function MessagesInbox() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function MessagesInbox() {
     const loadUser = async () => {
       setLoading(true);
       try {
-        const user = await apiService.verifySession();
+        const user = await verifySession();
         if (!user) {
           router.replace("/");
         } else {

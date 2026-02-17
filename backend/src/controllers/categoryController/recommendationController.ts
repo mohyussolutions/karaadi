@@ -1,16 +1,29 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
+import cacheManager from "src/services/redisserver/cacheManager.ts";
 
 export async function getRecommendations(req: Request, res: Response) {
   try {
     const limit = parseInt(req.query.limit as string) || 6;
-    const items = await prisma.recommendation.findMany({
-      take: limit,
-      orderBy: { views: "desc" },
-    });
-    res.json(items);
+    const cacheKey = `recommendations:limit:${limit}`;
+
+    const items = await cacheManager.withCache(
+      cacheKey,
+      async () => {
+        return await prisma.recommendation.findMany({
+          take: limit,
+          orderBy: { views: "desc" },
+        });
+      },
+      300,
+    );
+
+    return res.json(items);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch recommendations" });
+    const err = error as Error;
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch recommendations", message: err.message });
   }
 }
 
@@ -33,33 +46,57 @@ export async function createRecommendation(req: Request, res: Response) {
       },
     });
 
-    res.status(201).json(item);
+    await cacheManager.deletePattern("recommendations:limit:*");
+
+    return res.status(201).json(item);
   } catch (error) {
-    res.status(500).json({ error: "Failed to create recommendation" });
+    const err = error as Error;
+    return res
+      .status(500)
+      .json({ error: "Failed to create recommendation", message: err.message });
   }
 }
 
 export async function deleteRecommendation(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const numericId = parseInt(id);
+
+    if (isNaN(numericId)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+
     await prisma.recommendation.delete({
-      where: { id: parseInt(id) },
+      where: { id: numericId },
     });
-    res.json({ success: true });
+
+    await cacheManager.deletePattern("recommendations:limit:*");
+
+    return res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete recommendation" });
+    const err = error as Error;
+    return res
+      .status(500)
+      .json({ error: "Failed to delete recommendation", message: err.message });
   }
 }
 
 export async function deleteByExternalId(req: Request, res: Response) {
   try {
     const { externalId } = req.params;
+
     await prisma.recommendation.deleteMany({
       where: { externalId },
     });
-    res.json({ success: true });
+
+    await cacheManager.deletePattern("recommendations:limit:*");
+
+    return res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete recommendation" });
+    const err = error as Error;
+    return res
+      .status(500)
+      .json({ error: "Failed to delete recommendation", message: err.message });
   }
 }
 
@@ -76,8 +113,11 @@ export async function incrementViews(req: Request, res: Response) {
       data: { views: { increment: 1 } },
     });
 
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: "Failed to update views" });
+    const err = error as Error;
+    return res
+      .status(500)
+      .json({ error: "Failed to update views", message: err.message });
   }
 }

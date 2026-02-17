@@ -10,8 +10,6 @@ model Marketplace {
   subcategory  String[]
   region       String
   city         String
-  district     String
-  subDistrict  String?
   images       String[]
   extra        Json?
   maGaday      Boolean   @default(false)
@@ -43,8 +41,6 @@ model RealEstate {
   so           String?
   city         String
   county       String
-  district     String
-  subDistrict  String
   images       String[]
   maGaday      Boolean   @default(false)
   createdAt    DateTime  @default(now())
@@ -66,8 +62,6 @@ model Boat {
   region       String
   city         String
   so           String?
-  district     String
-  subDistrict  String?
   description  String
   price        Float
   images       String[]
@@ -75,7 +69,6 @@ model Boat {
   boatModel    String
   transmission String
   color        String
-  listingType  String?
   maGaday      Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -95,7 +88,6 @@ model Car {
   mainCategory String
   category     String[]
   subcategory  String[]
-  listingType  String
   brand        String
   vehicleModel String
   year         Int?
@@ -105,8 +97,6 @@ model Car {
   color        String
   region       String
   city         String
-  district     String
-  subDistrict  String
   images       String[]
   maGaday      Boolean   @default(false)
   createdAt    DateTime  @default(now())
@@ -129,8 +119,6 @@ model Motorcycle {
   so           String?
   region       String
   city         String
-  district     String
-  subDistrict  String
   images       String[]
   type         String
   make         String
@@ -170,8 +158,6 @@ model Traktor {
   fuelType      String
   region        String
   city          String
-  district      String
-  subDistrict   String
   images        String[]
   maGaday       Boolean   @default(false)
   createdAt     DateTime  @default(now())
@@ -207,10 +193,9 @@ model Advertisement {
   @@index([userId])
 }
 
-
 model Agency {
-  id        String    @id @default(cuid())
-  userId      String
+  id        String   @id @default(cuid())
+  userId    String
   name      String
   type      String
   location  String
@@ -219,11 +204,11 @@ model Agency {
   image     String
   link      String?
   createdAt DateTime @default(now())
- users User[] @relation("UserAgencies")
+  users     User[]   @relation("UserAgencies")
 }
 
 model Job {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   userId       String
   title        String
   description  String
@@ -233,16 +218,15 @@ model Job {
   subcategory  String[]
   region       String
   city         String
-  district     String
-  subDistrict  String?
-  employmentType String
+
+  employmentType  String
   experienceLevel String
-  images       String[]
-  maGaday      Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  isPaid       Boolean   @default(false)
-  user         User      @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
-  chats        Chat[]
-  Payment      Payment[]
+  images          String[]
+  maGaday         Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  isPaid          Boolean   @default(false)
+  user            User      @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
+  chats           Chat[]
+  Payment         Payment[]
 }

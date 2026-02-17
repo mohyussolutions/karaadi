@@ -58,7 +58,6 @@ export default function AdminMonitor() {
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Check if mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -173,7 +172,6 @@ export default function AdminMonitor() {
       const res = await fetch(CHATS.CHAT_MESSAGES(chat.id, chat.senderId));
       if (res.ok) {
         const data: Message[] = await res.json();
-        // Sort messages by creation time
         const sortedMessages = data.sort((a, b) => {
           const dateA = safeParseDate(a.createdAt) || new Date(0);
           const dateB = safeParseDate(b.createdAt) || new Date(0);

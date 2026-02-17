@@ -14,9 +14,6 @@ import {
   FaTruckMoving,
   FaHome,
   FaDollarSign,
-  FaCaravan,
-  FaPuzzlePiece,
-  FaTruck,
 } from "react-icons/fa";
 import {
   GiGoat,
@@ -28,8 +25,7 @@ import {
   GiField,
   GiGrain,
 } from "react-icons/gi";
-import { FaTruckFront } from "react-icons/fa6";
-
+import { FaBus, FaTruckFront } from "react-icons/fa6";
 import { ReactElement } from "react";
 import {
   MdCarRental,
@@ -44,7 +40,7 @@ export interface TraktorSubCategoryItem {
   title: string;
   icon: ReactElement;
 }
-// MARKETPLACE
+
 export const marketplaceSubCategories: CategoryOption[] = [
   {
     so: "Alaabta qadiimiga & farshaxanka",
@@ -84,41 +80,34 @@ export const marketplaceSubCategories: CategoryOption[] = [
   },
 ];
 
-// REAL ESTATE
 export const realEstateSubCategories: CategoryOption[] = [
   {
     so: "Kirada",
     title: "For Rent",
-    description: "Starts at $175. From 15 days.",
     icon: <FaHome size={32} />,
   },
   {
     so: "Iib",
     title: "For Sale",
-    description: "Starts at $2,326.25. Until sold or 1,600 days.",
     icon: <FaDollarSign size={32} />,
   },
   {
     so: "Dhul iib ah",
     title: "Land for Sale",
-    description: "Starts at $3,750 for 30 days.",
     icon: <GiField size={32} />,
   },
   {
     so: "Beer iib ah",
     title: "Farm for Sale",
-    description: "Starts at $3,750 for 30 days.",
     icon: <GiFarmer size={32} />,
   },
   {
     so: "Ganacsi",
     title: "Commercial",
-    description: "Starts at $3,750 for 30 days.",
     icon: <GiFarmer size={32} />,
   },
 ];
 
-// CARS
 export const carsSubCategories: CategoryOption[] = [
   {
     so: "Gawaari iib ah",
@@ -134,31 +123,36 @@ export const carsSubCategories: CategoryOption[] = [
     title: "Electric Cars",
     icon: <MdElectricCar size={28} />,
   },
+  {
+    so: "Basas",
+    title: "Buses",
+    icon: <FaBus size={28} />,
+  },
 ];
 
-// MOTORCYCLES
 export const motorcyclesSubCategories: CategoryOption[] = [
   {
-    so: "Beec ah (For Sale)",
+    so: "Beec ah",
     title: "for Sale",
     icon: <FaMotorcycle size={32} />,
   },
-
   {
-    so: "Kiro ah (For Rent)",
+    so: "Kiro ah",
     title: "for Rent",
     icon: <MdCarRental size={32} />,
   },
   {
-    so: "Qaybaha (Spare Parts)",
+    so: "Qaybaha",
     title: "Spare Parts",
     icon: <MdOutlineMiscellaneousServices size={32} />,
   },
-
-  { so: "Wax Kale (Other)", title: "Other", icon: <FaToolbox size={32} /> },
+  {
+    so: "Wax Kale",
+    title: "Other",
+    icon: <FaToolbox size={32} />,
+  },
 ];
 
-// BOATS
 export const boatsSubCategories: CategoryOption[] = [
   { so: "Doomo iib ah", title: "Boats for Sale", icon: <FaShip size={28} /> },
   {
@@ -196,6 +190,7 @@ export const traktorSubCategories: TraktorSubCategoryItem[] = [
     icon: <GiGrain size={32} />,
   },
 ];
+
 export const jobsSubCategories: SubCategory[] = [
   {
     key: "FullTime",

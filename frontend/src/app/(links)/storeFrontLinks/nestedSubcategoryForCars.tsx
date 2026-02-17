@@ -1,14 +1,22 @@
 import { ReactElement } from "react";
-import { FaCarSide, FaCar, FaTrailer, FaTruckFront } from "react-icons/fa6";
+import {
+  FaCarSide,
+  FaCar,
+  FaTrailer,
+  FaTruckFront,
+  FaVanShuttle,
+} from "react-icons/fa6";
 import { MdElectricCar } from "react-icons/md";
 import { GiAutoRepair, GiCarKey } from "react-icons/gi";
 import {
   FaBus,
   FaCogs,
   FaKey,
+  FaSchool,
   FaTools,
   FaTruck,
   FaWrench,
+  FaCity,
 } from "react-icons/fa";
 
 export interface CarSubCategory {
@@ -124,6 +132,21 @@ export const TrailerNestedSub: CarSubCategory[] = [
   },
 ];
 
+export const BusSubLinks: CarSubCategory[] = [
+  { so: "Basas Waaweyn", title: "Coach Buses", icon: <FaBus size={24} /> },
+  {
+    so: "Basaska Yar-yar",
+    title: "Minibuses",
+    icon: <FaVanShuttle size={24} />,
+  },
+  {
+    so: "Basaska Dugsiyada",
+    title: "School Buses",
+    icon: <FaSchool size={24} />,
+  },
+  { so: "Basaska Magaalada", title: "City Buses", icon: <FaCity size={24} /> },
+];
+
 export const carsSubCategories: CarSubCategory[] = [
   {
     so: "Gawaari iib ah",
@@ -131,6 +154,7 @@ export const carsSubCategories: CarSubCategory[] = [
     icon: <FaCarSide size={28} />,
   },
   { so: "Gawaari kirayn", title: "Lease Cars", icon: <FaCar size={28} /> },
+  { so: "Basas", title: "Buses", icon: <FaBus size={28} /> },
   { so: "rimoor", title: "Trailers", icon: <FaTrailer size={28} /> },
   { so: "Qaybaha gawaarida", title: "Car Parts", icon: <FaTools size={28} /> },
   { so: "Baabuur xamuul", title: "Truck", icon: <FaTruckFront size={28} /> },
@@ -144,6 +168,7 @@ export const carsSubCategories: CarSubCategory[] = [
 export const carsNestedCategoriesMap: { [key: string]: CarSubCategory[] } = {
   "Cars for Sale": CarsForSaleNestedSub,
   "Lease Cars": LeaseCarsNestedSub,
+  Buses: BusSubLinks,
   Trailers: TrailerNestedSub,
   "Car Parts": CarPartsNestedSub,
   Truck: TruckNestedSub,

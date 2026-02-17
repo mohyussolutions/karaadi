@@ -93,3 +93,10 @@ export const GrainHarvesterNestedSub: TraktorSubCategoryItem[] = [
     icon: <GiGrain size={20} />,
   },
 ];
+
+export const TractorNestedSub: TraktorSubCategoryItem[] = [
+  ...TractorForSaleNestedSub,
+  ...FarmToolsNestedSub,
+  ...FertilizerSpreaderNestedSub,
+  ...GrainHarvesterNestedSub,
+];

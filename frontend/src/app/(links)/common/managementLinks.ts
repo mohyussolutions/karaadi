@@ -1,4 +1,3 @@
-// app/(dashboard)/dashboard/managment/managementData.ts
 import {
   FaShip,
   FaCar,
@@ -226,4 +225,12 @@ export const otherSections: ManagementSection[] = [
     category: "settings",
     featured: true,
   },
+];
+
+export const protectedPages = [
+  "/dashbaord",
+  "/managment",
+  "/support",
+  "/backoffice",
+  "device",
 ];

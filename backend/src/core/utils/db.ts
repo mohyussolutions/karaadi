@@ -2,10 +2,8 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-
 let prismaInstance: PrismaClient | null = null;
 let poolInstance: pg.Pool | null = null;
-
 export const getPrismaClient = () => {
   if (!prismaInstance) {
     if (!process.env.DATABASE_URL) {

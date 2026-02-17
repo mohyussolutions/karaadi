@@ -31,11 +31,12 @@ model User {
   realEstates       RealEstate[]    @relation("UserRealEstates")
   subscriptions     Subscription[]
   traktors          Traktor[]       @relation("UserTraktors")
+  jobs              Job[]           @relation("UserJobs")
+  searchLogs        SearchLog[]
 
   @@index([email])
   @@index([username])
   @@index([createdAt])
-  jobs Job[] @relation("UserJobs")
 }
 
 model Visitor {

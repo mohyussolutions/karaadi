@@ -9,13 +9,13 @@ import {
   FaEdit,
   FaShip,
 } from "react-icons/fa";
-import {   BoatEnginesForSaleNestedSub,
+import {
+  BoatEnginesForSaleNestedSub,
   BoatPartsNestedSub,
   BoatsForRentNestedSub,
-  BoatsForSaleNestedSub, } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
+  BoatsForSaleNestedSub,
+} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
 import { boatsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
-
-
 
 const apiService = {
   verifySession: async () => {
@@ -54,7 +54,7 @@ export default function BoatPages() {
         {
           credentials: "include",
           cache: "no-store",
-        }
+        },
       );
 
       if (!res.ok) {
@@ -144,7 +144,7 @@ export default function BoatPages() {
     if (!isAuthorized) {
       showStatus(
         "Unauthorized: You must be a manager to change payment status.",
-        "error"
+        "error",
       );
       return;
     }
@@ -165,7 +165,7 @@ export default function BoatPages() {
       setBoats((prev) => prev.map((b) => (b.id === boatId ? updatedBoat : b)));
       showStatus(
         `Boat marked as ${!isPaid ? "PAID" : "UNPAID"} successfully.`,
-        "success"
+        "success",
       );
     } catch (err) {
       showStatus("Error toggling payment status.", "error");
@@ -177,13 +177,13 @@ export default function BoatPages() {
     if (!isAuthorized) {
       showStatus(
         "Unauthorized: You must be a manager to delete listings.",
-        "error"
+        "error",
       );
       return;
     }
 
     const proceed = window.confirm(
-      "Are you sure you want to delete this boat?"
+      "Are you sure you want to delete this boat?",
     );
     if (!proceed) return;
 
@@ -212,8 +212,8 @@ export default function BoatPages() {
             statusMessage.type === "error"
               ? "bg-red-500"
               : statusMessage.type === "info"
-              ? "bg-blue-500"
-              : "bg-green-500"
+                ? "bg-blue-500"
+                : "bg-green-500"
           }`}
         >
           {statusMessage.text}

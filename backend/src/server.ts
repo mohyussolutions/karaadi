@@ -16,9 +16,6 @@ const server = http.createServer(app);
 socketServer(server);
 
 const startServer = async () => {
-  console.log(chalk.blue("Starting server..."));
-  console.log(chalk.magenta(`Config Loaded: ${envFile}`));
-
   try {
     await redisServer.start();
     const redisStatus = await redisServer.getStatus();

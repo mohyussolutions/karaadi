@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, JSX } from "react";
 import Link from "next/link";
 import Loading from "../../components/shared/Loading/Loading";
 import { getProfile, deleteAccount } from "@/actions/core/accountAction";
-import { apiService } from "@/actions/core/authAction";
+
 import {
   FiSmartphone,
   FiMonitor,
@@ -23,6 +23,7 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import { AccountDetailsnavLinks } from "@/app/(links)/storeFrontLinks/mineLinks";
+import { verifySession } from "@/actions/core/authAction";
 
 interface IDevice {
   name: string;
@@ -58,7 +59,7 @@ const Account: React.FC<{ accessToken: string }> = ({ accessToken }) => {
     try {
       const [profile, session] = await Promise.all([
         getProfile(accessToken),
-        apiService.verifySession(accessToken),
+        verifySession(accessToken),
       ]);
 
       if (!profile && !session) {

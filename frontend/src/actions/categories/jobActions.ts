@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
 
 export type Job = {
@@ -14,32 +14,25 @@ export type Job = {
   type: "Full-time" | "Part-time" | "Contract" | "Remote";
 };
 
-type CreateJobData = {
-  title: string;
-  description: string;
-  salary?: number;
-  location: string;
-  company: string;
-  type: "Full-time" | "Part-time" | "Contract" | "Remote";
-};
+type CreateJobData = Omit<Job, "_id" | "user">;
 
 export async function getJobs(): Promise<Job[]> {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Jobs, {
       method: "GET",
-      next: { tags: ["jobs"], revalidate: 60 },
+      next: {
+        revalidate: 600,
+        tags: ["jobs"],
+      },
     });
 
-    if (!response.ok) {
-      return [];
-    }
+    if (!response.ok) return [];
 
     const result = await response.json();
     const list = Array.isArray(result)
       ? result
-      : Array.isArray(result?.data)
-        ? result.data
-        : [];
+      : result?.data || result?.items || [];
+
     return list.map((item: any) => ({
       ...item,
       _id: item._id || item.id,
@@ -53,17 +46,13 @@ export async function getJobById(id: string): Promise<Job | null> {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Jobs}/${id}`, {
       method: "GET",
-      next: { tags: [`job-${id}`], revalidate: 3600 },
+      next: {
+        revalidate: 3600,
+        tags: [`job-${id}`],
+      },
     });
 
-    if (!response.ok) {
-      console.error(
-        `Failed to fetch job ${id}:`,
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
+    if (!response.ok) return null;
 
     const item: any = await response.json();
     return {
@@ -71,7 +60,6 @@ export async function getJobById(id: string): Promise<Job | null> {
       _id: item._id || item.id,
     } as Job;
   } catch (error) {
-    console.error(`Network error fetching job ${id}:`, error);
     return null;
   }
 }
@@ -88,22 +76,18 @@ export async function createJobListing(data: CreateJobData, token: string) {
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message: result.message || "Failed to create job listing in backend.",
-      };
-    }
-
+    revalidateTag("jobs");
     revalidatePath("/jobs");
+
     return {
       success: true,
       message: "Job listing created successfully.",
-      jobId: result.id,
+      jobId: result.id || result._id,
     };
   } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -123,23 +107,20 @@ export async function updateJobListing(
     });
 
     const result = await response.json();
+    if (!response.ok) return { success: false, message: result.message };
 
-    if (!response.ok) {
-      return {
-        success: false,
-        message: result.message || "Failed to update job listing in backend.",
-      };
-    }
-
+    revalidateTag(`job-${id}`);
+    revalidateTag("jobs");
     revalidatePath(`/jobs/${id}`);
     revalidatePath("/jobs");
+
     return {
       success: true,
       message: "Job listing updated successfully.",
-      jobId: result.id,
+      jobId: id,
     };
   } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }
 
@@ -147,22 +128,17 @@ export async function deleteJobListing(id: string, token: string) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Jobs}/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) {
-      const result = await response.json();
-      return {
-        success: false,
-        message: result.message || "Failed to delete job listing in backend.",
-      };
-    }
+    if (!response.ok) return { success: false, message: "Delete failed." };
 
+    revalidateTag(`job-${id}`);
+    revalidateTag("jobs");
     revalidatePath("/jobs");
+
     return { success: true, message: "Job listing deleted successfully." };
   } catch (error) {
-    return { success: false, message: "Network error or unable to reach API." };
+    return { success: false, message: "Network error." };
   }
 }

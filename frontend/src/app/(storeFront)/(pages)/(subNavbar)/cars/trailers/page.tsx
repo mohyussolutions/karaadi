@@ -1,23 +1,23 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { useGetCarsQuery } from "@/app/(storeFront)/store/slices/carsSlice";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { TrailerNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(storeFront)/components/shared/(search)/SearchInput";
+import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import { getCars, Car } from "@/actions/categories/carActions";
 
 export default function Trailers() {
   const subCategoryLinks = TrailerNestedSub;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { data: items = [], isLoading, isError } = useGetCarsQuery();
 
+  const [items, setItems] = useState<Car[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
@@ -28,19 +28,50 @@ export default function Trailers() {
     {},
   );
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getCars();
+        setItems(data || []);
+      } catch (err) {
+        setError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
   const allTrailerItems = useMemo(() => {
-    return Array.isArray(items)
-      ? items.filter((item: any) => {
-          const subCat = (item.subCategory || "").toLowerCase();
-          const soName = (item.so || "").toLowerCase();
-          return (
-            subCat.includes("trailer") ||
-            subCat.includes("rimoor") ||
-            soName.includes("rimoor")
-          );
-        })
-      : [];
+    if (!Array.isArray(items)) return [];
+    return items.filter((item: any) => {
+      const subCats = Array.isArray(item.subcategory)
+        ? item.subcategory
+        : [item.subcategory || ""];
+      const titles = Array.isArray(item.title)
+        ? item.title
+        : [item.title || ""];
+
+      return (
+        subCats.some((s: string) => {
+          const val = String(s).toLowerCase();
+          return val.includes("trailer") || val.includes("rimoor");
+        }) ||
+        titles.some((t: string) => String(t).toLowerCase().includes("rimoor"))
+      );
+    });
   }, [items]);
+
+  const regionCityCounts = useMemo(() => {
+    const regionCounts: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+    allTrailerItems.forEach((item) => {
+      if (item.region)
+        regionCounts[item.region] = (regionCounts[item.region] || 0) + 1;
+      if (item.city) cityCounts[item.city] = (cityCounts[item.city] || 0) + 1;
+    });
+    return { regionCounts, cityCounts };
+  }, [allTrailerItems]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -50,13 +81,13 @@ export default function Trailers() {
       }
       const results = await getGlobalSearchResults(query);
       const filtered = results.filter((item: any) => {
-        const subCat = (item.subCategory || "").toLowerCase();
-        const soName = (item.so || "").toLowerCase();
-        return (
-          subCat.includes("trailer") ||
-          subCat.includes("rimoor") ||
-          soName.includes("rimoor")
-        );
+        const subCats = Array.isArray(item.subcategory)
+          ? item.subcategory
+          : [item.subcategory || ""];
+        return subCats.some((s: string) => {
+          const val = String(s).toLowerCase();
+          return val.includes("trailer") || val.includes("rimoor");
+        });
       });
       setSearchResults(filtered);
     }, 400);
@@ -68,51 +99,65 @@ export default function Trailers() {
 
     if (selectedSubcategory) {
       const normalized = selectedSubcategory.toLowerCase();
-      return source.filter((item: any) => {
-        const titleMatch = item.title?.toLowerCase().includes(normalized);
-        const soMatch = item.so?.toLowerCase().includes(normalized);
-        const subCatMatch = item.subCategory
-          ?.toLowerCase()
+      source = source.filter((item: any) => {
+        const subCats = Array.isArray(item.subcategory)
+          ? item.subcategory
+          : [item.subcategory || ""];
+        const subMatch = subCats.some(
+          (s: string) => String(s).toLowerCase() === normalized,
+        );
+        const titleMatch = (item.title || "")
+          .toLowerCase()
           .includes(normalized);
-        return titleMatch || soMatch || subCatMatch;
+        return subMatch || titleMatch;
       });
     }
-    return source;
-  }, [query, searchResults, selectedSubcategory, allTrailerItems]);
+
+    if (selectedRegion) {
+      const selectedRegionsList = selectedRegion.split(",");
+      source = source.filter((item) =>
+        selectedRegionsList.includes(item.region),
+      );
+    }
+
+    const activeCities = Object.keys(checkedCities).filter(
+      (c) => checkedCities[c],
+    );
+    if (activeCities.length > 0) {
+      source = source.filter((item) => activeCities.includes(item.city));
+    }
+
+    return Array.from(
+      new Map(source.map((item) => [item._id || item.id, item])).values(),
+    );
+  }, [
+    query,
+    searchResults,
+    allTrailerItems,
+    selectedSubcategory,
+    selectedRegion,
+    checkedCities,
+  ]);
 
   const currentDisplayTitle = useMemo(() => {
-    if (query.trim()) return `Search Results: "${query}"`;
-    if (!selectedSubcategory) return "All Trailers (Dhammaan Rimoorrada)";
-
-    const foundCategory = subCategoryLinks.find(
-      (cat: any) =>
-        cat.so.toLowerCase() === selectedSubcategory ||
-        cat.title.toLowerCase() === selectedSubcategory,
+    if (query.trim()) return `Natiijada: "${query}"`;
+    if (!selectedSubcategory) return "Rimoorro (Trailers)";
+    const found = subCategoryLinks.find(
+      (cat) =>
+        cat.so === selectedSubcategory || cat.title === selectedSubcategory,
     );
-    return foundCategory
-      ? `${foundCategory.so} (${foundCategory.title})`
-      : selectedSubcategory;
+    return found ? `${found.so} (${found.title})` : selectedSubcategory;
   }, [query, selectedSubcategory, subCategoryLinks]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
       const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollAmount =
-        direction === "left" ? -clientWidth / 2 : clientWidth / 2;
       scrollRef.current.scrollTo({
-        left: scrollLeft + scrollAmount,
+        left: scrollLeft + (direction === "left" ? -clientWidth : clientWidth),
         behavior: "smooth",
       });
     }
   };
-
-  if (isLoading) return <Loading />;
-  if (isError)
-    return (
-      <div className="text-center py-10 text-red-500">
-        Failed to load trailers
-      </div>
-    );
 
   return (
     <div className="container mx-auto px-4 pb-10">
@@ -120,69 +165,64 @@ export default function Trailers() {
       <PathSegmentsDisplay />
 
       <div className="relative py-6">
-        <div className="flex justify-center relative">
+        <div className="flex justify-center relative items-center">
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="absolute left-0 z-10 bg-white shadow-md p-3 rounded-full border border-gray-100"
           >
             <FaChevronLeft />
           </button>
-
           <div
             ref={scrollRef}
-            className="flex overflow-x-auto space-x-4 scrollbar-hide px-8 max-w-[calc(100%-80px)]"
+            className="flex overflow-x-auto space-x-6 scrollbar-hide px-10 max-w-[calc(100%-100px)] py-4"
           >
             {subCategoryLinks.map((category: any) => (
-              <Link
+              <button
                 key={category.so}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const normalized = category.so.toLowerCase();
-                  setSelectedSubcategory(
-                    selectedSubcategory === normalized ? null : normalized,
-                  );
-                }}
-                className={`flex-shrink-0 w-40 flex flex-col items-center justify-center text-center border rounded-lg p-4 shadow-sm transition-all duration-300 m-6 ${
-                  selectedSubcategory === category.so.toLowerCase()
-                    ? "bg-blue-100 border-blue-400 scale-[1.03] shadow-md"
-                    : "bg-white border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:shadow-lg"
+                onClick={() =>
+                  setSelectedSubcategory((prev) =>
+                    prev === category.so ? null : category.so,
+                  )
+                }
+                className={`flex-shrink-0 w-44 flex flex-col items-center justify-center text-center rounded-xl p-5 border transition-all ${
+                  selectedSubcategory === category.so
+                    ? "bg-blue-600 border-blue-600 shadow-lg scale-105 text-white"
+                    : "bg-white border-gray-200 text-gray-900"
                 }`}
               >
-                <div className="text-2xl text-gray-600 mb-2">
+                <div
+                  className={`text-2xl mb-2 ${selectedSubcategory === category.so ? "text-white" : "text-blue-600"}`}
+                >
                   {category.icon}
                 </div>
-                <span className="text-sm font-medium text-gray-800">
-                  {category.so}
-                </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-sm font-bold">{category.so}</span>
+                <span
+                  className={`text-[10px] uppercase ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}
+                >
                   ({category.title})
                 </span>
-              </Link>
+              </button>
             ))}
           </div>
-
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-md p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="absolute right-0 z-10 bg-white shadow-md p-3 rounded-full border border-gray-100"
           >
             <FaChevronRight />
           </button>
         </div>
       </div>
 
-      <div className="px-4 text-sm text-gray-700 mb-4">
-        <p>
-          Showing{" "}
-          <span className="text-blue-600 font-semibold">
-            {itemsToDisplay.length}
-          </span>{" "}
-          listings in <strong>{currentDisplayTitle}</strong>
-        </p>
+      <div className="px-4 text-sm text-gray-700 mb-6 italic">
+        Waxaa la helay{" "}
+        <span className="text-blue-600 font-bold">
+          {isLoading ? "..." : itemsToDisplay.length}
+        </span>{" "}
+        rimoor: <strong>{currentDisplayTitle}</strong>
       </div>
 
-      <div className="flex flex-col-reverse md:flex-row gap-4 pt-2 ml-2">
-        <aside className="sticky top-4 space-y-4 md:w-1/4">
+      <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
+        <aside className="md:w-1/3 sticky top-4 self-start">
           <LocationSelector
             onFilterChange={(reg, cities) => {
               setSelectedRegion(reg);
@@ -190,42 +230,58 @@ export default function Trailers() {
             }}
             selectedRegion={selectedRegion}
             checkedCities={checkedCities}
+            regionCounts={regionCityCounts.regionCounts}
+            cityCounts={regionCityCounts.cityCounts}
           />
-          <SomaliMap
-            selectedRegion={selectedRegion}
-            onRegionClick={setSelectedRegion}
-          />
+          <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100">
+            <SomaliMap
+              selectedRegion={selectedRegion}
+              onRegionClick={setSelectedRegion}
+              items={allTrailerItems}
+            />
+          </div>
         </aside>
 
-        <main className="md:w-3/4 w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {itemsToDisplay.length > 0 ? (
-              itemsToDisplay.map((item: any) => (
-                <VehicleCard
-                  key={item._id}
-                  id={item._id}
-                  title={item.title || item.name}
-                  description={
-                    item.description
-                      ? (Array.isArray(item.description)
-                          ? item.description
-                          : [item.description]
-                        ).filter(Boolean)
-                      : []
-                  }
-                  city={item.city}
-                  images={item.images}
-                  price={item.price}
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-20 text-gray-500">
-                {query.trim()
-                  ? `No trailers found for "${query}"`
-                  : "No trailers found for this selection."}
-              </div>
-            )}
-          </div>
+        <main className="md:w-2/3 w-full">
+          {error ? (
+            <div className="text-center py-10 text-red-500 font-bold bg-red-50 rounded-xl">
+              Cilad baa ku timid soo dejinta xogta rimoorada.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-80 w-full bg-gray-100 animate-pulse rounded-2xl border border-gray-200"
+                  />
+                ))
+              ) : itemsToDisplay.length > 0 ? (
+                itemsToDisplay.map((item: any) => (
+                  <VehicleCard
+                    key={item._id || item.id}
+                    id={item._id || item.id}
+                    title={item.title || item.name}
+                    description={
+                      item.description
+                        ? (Array.isArray(item.description)
+                            ? item.description
+                            : [item.description]
+                          ).filter(Boolean)
+                        : []
+                    }
+                    city={item.city}
+                    images={item.images}
+                    price={item.price}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500">
+                  Lama helin rimoorro ku haboon xogta aad raadineyso.
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
     </div>

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidateTag } from "next/cache";
 import { FILTERING_ENDPOINTS } from "../constant/constant";
 
 export interface FilterParams {
@@ -24,17 +25,15 @@ export async function getGlobalFilteredResults(params: FilterParams) {
 
     const res = await fetch(url, {
       method: "GET",
-      cache: "no-store",
+      next: {
+        revalidate: 120,
+        tags: ["global-search"],
+      },
     });
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to fetch filtered results");
-    }
-
+    if (!res.ok) return [];
     return await res.json();
   } catch (error) {
-    console.error("Filter Action Error:", error);
     return [];
   }
 }
@@ -45,16 +44,19 @@ export async function getFilterMetadata() {
 
     const res = await fetch(url, {
       method: "GET",
-      next: { revalidate: 3600 },
+      next: {
+        revalidate: 86400,
+        tags: ["filter-metadata"],
+      },
     });
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch filter metadata");
-    }
-
+    if (!res.ok) return { regions: [] };
     return await res.json();
   } catch (error) {
-    console.error("Metadata Action Error:", error);
     return { regions: [] };
   }
+}
+
+export async function clearSearchCache() {
+  revalidateTag("global-search");
 }

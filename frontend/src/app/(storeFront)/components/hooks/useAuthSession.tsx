@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useVerifySessionQuery } from "@/store/slices/userSlice";
 import { useDispatch } from "react-redux";
-import { setAuthState } from "@/store/slices/authSlice";
+import { setAuthState } from "@/app/(storeFront)/store/slices/authSlice";
 
 export const useAuthSession = () => {
   const dispatch = useDispatch();
@@ -13,7 +13,7 @@ export const useAuthSession = () => {
         setAuthState({
           user: data.user,
           isAuthenticated: true,
-        })
+        }),
       );
     }
   }, [data, dispatch]);
