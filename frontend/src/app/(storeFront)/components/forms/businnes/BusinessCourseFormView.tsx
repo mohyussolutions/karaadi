@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { regions } from "../../shared/SomLocs/SomaliaRegions";
+import { useEffect, useState } from "react";
+import { getAllRegions } from "@/actions/categories/geoAction";
 
 interface BusinessType {
   title: string;
@@ -79,6 +80,10 @@ const BusinessCourseFormView: React.FC<Props> = ({
   handleSubmit,
   formRef,
 }) => {
+  const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    getAllRegions().then((data) => setRegions(data || []));
+  }, []);
   return (
     <form
       ref={formRef}
@@ -213,11 +218,20 @@ const BusinessCourseFormView: React.FC<Props> = ({
             required
           >
             <option value="">-- Select City --</option>
-            {filteredCities.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
+            {filteredCities.map((c, idx) => {
+              if (typeof c === "object" && c !== null && c.id) {
+                return (
+                  <option key={c.id} value={c.id}>
+                    {c.name || c.id}
+                  </option>
+                );
+              }
+              return (
+                <option key={c + idx} value={c}>
+                  {c}
+                </option>
+              );
+            })}
             <option value="custom">+ Add new city</option>
           </select>
         ) : (

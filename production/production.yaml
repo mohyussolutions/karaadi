@@ -1,297 +1,112 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Infrastructure for Karaadi App - RDS, Redis, Cognito, and Beanstalk
-
-Parameters:
-  VpcId: { Type: "AWS::EC2::VPC::Id" }
-  Subnets: { Type: "List<AWS::EC2::Subnet::Id>" }
-  DBPassword: { Type: String, NoEcho: true }
-  EBInstanceType:
-    Type: String
-    Default: t3.small
-    Description: EC2 instance type for Elastic Beanstalk instances
-  EnvironmentName:
-    Type: String
-    Default: karaadi-prod
-    Description: Elastic Beanstalk environment name
-  AllowedHttpCidr:
-    Type: String
-    Default: 0.0.0.0/0
-    Description: CIDR range allowed to access HTTP/HTTPS to EB
-  ACMCertificateArn:
-    Type: String
-    Description: ACM Certificate ARN for HTTPS on the load balancer
-  UseSsmForDbPassword:
-    Type: String
-    AllowedValues: ["true", "false"]
-    Default: "false"
-    Description: If true, read DB password from SSM Parameter Store (secure string)
-  DBPasswordParamName:
-    Type: String
-    Default: ""
-    Description: SSM parameter name storing the DB password (SecureString)
-  MultiAZ:
-    Type: String
-    AllowedValues: ["true", "false"]
-    Default: "false"
-    Description: Enable Multi-AZ for RDS
-  RedisTransitEncryptionEnabled:
-    Type: String
-    AllowedValues: ["true", "false"]
-    Default: "false"
-    Description: Enable in-transit encryption for Redis (requires TLS client)
-
-Conditions:
-  UseSsmForDb: !Equals [!Ref UseSsmForDbPassword, "true"]
-  EnableMultiAZ: !Equals [!Ref MultiAZ, "true"]
-  EnableRedisTransitTLS: !Equals [!Ref RedisTransitEncryptionEnabled, "true"]
+Description: Karaadi Full Production Stack - Managed API, Scaling, and DBs
 
 Resources:
+  # --- COGNITO ---
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: karaadi-user-pool
+      UserPoolName: karaadi-users
       AutoVerifiedAttributes: [email]
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: karaadi-app-client
       UserPoolId: !Ref UserPool
+      ClientName: karaadi-web-client
 
-  DBSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
+  # --- SECRETS MANAGER ---
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
     Properties:
-      DBSubnetGroupDescription: Subnet group for RDS
-      SubnetIds: !Ref Subnets
+      Name: karaadi/prod/db-pass
+      GenerateSecretString: { PasswordLength: 16, ExcludePunctuation: true }
 
-  PostgresDB:
-    Type: AWS::RDS::DBInstance
-    DeletionPolicy: Snapshot
-    Properties:
-      DBInstanceClass: db.t3.micro
-      Engine: postgres
-      AllocatedStorage: "20"
-      DBInstanceIdentifier: karaadi-postgres
-      MasterUsername: postgres
-      MasterUserPassword: !If [UseSsmForDb, !Sub "{{resolve:ssm-secure:${DBPasswordParamName}:1}}", !Ref DBPassword]
-      VPCSecurityGroups: [!Ref DBSecurityGroup]
-      DBSubnetGroupName: !Ref DBSubnetGroup
-      PubliclyAccessible: false
-      MultiAZ: !If [EnableMultiAZ, true, false]
-      StorageEncrypted: true
-      BackupRetentionPeriod: 7
-      DeletionProtection: true
-      AutoMinorVersionUpgrade: true
-
-  RedisCache:
-    Type: AWS::ElastiCache::CacheCluster
-    Properties:
-      CacheNodeType: cache.t3.micro
-      Engine: redis
-      NumCacheNodes: 1
-      VpcSecurityGroupIds: [!Ref RedisSecurityGroup]
-      CacheSubnetGroupName: !Ref RedisSubnetGroup
-      ClusterName: karaadi-redis
-      AtRestEncryptionEnabled: true
-      TransitEncryptionEnabled: !If [EnableRedisTransitTLS, true, false]
-
-  RedisSubnetGroup:
-    Type: AWS::ElastiCache::SubnetGroup
-    Properties:
-      Description: Subnet group for Redis
-      SubnetIds: !Ref Subnets
-
-  DBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow access to RDS
-      VpcId: !Ref VpcId
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
-
-  DBIngressFromEB:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref DBSecurityGroup
-      IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
-      SourceSecurityGroupId: !Ref EBSecurityGroup
-
-  RedisSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow access to Redis
-      VpcId: !Ref VpcId
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
-
-  RedisIngressFromEB:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref RedisSecurityGroup
-      IpProtocol: tcp
-      FromPort: 6379
-      ToPort: 6379
-      SourceSecurityGroupId: !Ref EBSecurityGroup
-
-  EBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Access for EB instances
-      VpcId: !Ref VpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: !Ref AllowedHttpCidr
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
-
-  EBApp:
-    Type: AWS::ElasticBeanstalk::Application
-    Properties:
-      ApplicationName: karaadi-backend
-
+  # --- IAM ROLES ---
   EBInstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
+          [
+            {
+              Effect: Allow,
+              Principal: { Service: ec2.amazonaws.com },
+              Action: "sts:AssumeRole",
+            },
+          ]
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
-        - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
-        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
-        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/SecretsManagerReadWrite
 
   EBInstanceProfile:
     Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles: [!Ref EBInstanceRole]
+    Properties: { Roles: [!Ref EBInstanceRole] }
 
-  EBServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: elasticbeanstalk.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth
-        - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy
+  # --- BACKEND + LOAD BALANCER + AUTO SCALING ---
+  EBApp:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties: { ApplicationName: karaadi-backend }
 
   EBEnv:
     Type: AWS::ElasticBeanstalk::Environment
     Properties:
       ApplicationName: !Ref EBApp
-      EnvironmentName: !Ref EnvironmentName
-      ServiceRole: !Ref EBServiceRole
+      EnvironmentName: karaadi-prod
       SolutionStackName: "64bit Amazon Linux 2023 v6.1.2 running Node.js 20"
       OptionSettings:
-        - Namespace: aws:elasticbeanstalk:environment
-          OptionName: EnvironmentType
-          Value: LoadBalanced
-        - Namespace: aws:elasticbeanstalk:container:nodejs
-          OptionName: NodeCommand
-          Value: npx tsx src/server.ts
-        - Namespace: aws:elasticbeanstalk:container:nodejs
-          OptionName: NPM_USE_PRODUCTION
-          Value: "false"
-        - Namespace: aws:elasticbeanstalk:environment:process:default
-          OptionName: Port
-          Value: "8080"
-        - Namespace: aws:elasticbeanstalk:environment:process:default
-          OptionName: Protocol
-          Value: HTTP
-        - Namespace: aws:ec2:vpc
-          OptionName: VPCId
-          Value: !Ref VpcId
-        - Namespace: aws:ec2:vpc
-          OptionName: Subnets
-          Value: !Join [",", !Ref Subnets]
-        - Namespace: aws:ec2:vpc
-          OptionName: ELBSubnets
-          Value: !Join [",", !Ref Subnets]
-        - Namespace: aws:ec2:vpc
-          OptionName: AssociatePublicIpAddress
-          Value: "true"
         - Namespace: aws:autoscaling:launchconfiguration
           OptionName: IamInstanceProfile
           Value: !Ref EBInstanceProfile
-        - Namespace: aws:autoscaling:launchconfiguration
-          OptionName: InstanceType
-          Value: !Ref EBInstanceType
-        - Namespace: aws:autoscaling:launchconfiguration
-          OptionName: SecurityGroups
-          Value: !Ref EBSecurityGroup
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: LoadBalanced
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: HealthCheckPath
+          Value: /api/health
         - Namespace: aws:autoscaling:asg
           OptionName: MinSize
-          Value: "1"
+          Value: "2"
         - Namespace: aws:autoscaling:asg
           OptionName: MaxSize
-          Value: "2"
-        - Namespace: aws:elbv2:listener:80
-          OptionName: ListenerEnabled
-          Value: "false"
-        - Namespace: aws:elbv2:listener:443
-          OptionName: ListenerEnabled
-          Value: "true"
-        - Namespace: aws:elbv2:listener:443
-          OptionName: Protocol
-          Value: HTTPS
-        - Namespace: aws:elbv2:listener:443
-          OptionName: SSLCertificateArns
-          Value: !Ref ACMCertificateArn
+          Value: "6"
         - Namespace: aws:elasticbeanstalk:application:environment
           OptionName: DATABASE_URL
-            Value: !If 
-              - UseSsmForDb
-              - !Sub "postgresql://postgres:{{resolve:ssm-secure:${DBPasswordParamName}:1}}@${PostgresDB.Endpoint.Address}:${PostgresDB.Endpoint.Port}/postgres"
-              - !Sub "postgresql://postgres:${DBPassword}@${PostgresDB.Endpoint.Address}:${PostgresDB.Endpoint.Port}/postgres"
+          Value: !Sub "postgresql://postgres:{{resolve:secretsmanager:${DBSecret}:SecretString}}@${PostgresDB.Endpoint.Address}:${PostgresDB.Endpoint.Port}/postgres"
         - Namespace: aws:elasticbeanstalk:application:environment
-          OptionName: NPM_CONFIG_PRODUCTION
-          Value: "false"
-        - Namespace: aws:elasticbeanstalk:application:environment
-          OptionName: REDIS_HOST
-          Value: !GetAtt RedisCache.ConfigurationEndpoint.Address
-        - Namespace: aws:elasticbeanstalk:application:environment
-          OptionName: REDIS_PORT
-          Value: !GetAtt RedisCache.ConfigurationEndpoint.Port
-        - Namespace: aws:elasticbeanstalk:application:environment
-          OptionName: COGNITO_USER_POOL_ID
-          Value: !Ref UserPool
-        - Namespace: aws:elasticbeanstalk:application:environment
-          OptionName: COGNITO_USER_POOL_CLIENT_ID
-          Value: !Ref UserPoolClient
+          OptionName: REDIS_URL
+          Value: !Sub "redis://${RedisCache.ConfigurationEndpoint.Address}:${RedisCache.ConfigurationEndpoint.Port}"
 
-Outputs:
-  PostgresEndpoint:
-    Description: RDS Postgres endpoint
-    Value: !Sub "${PostgresDB.Endpoint.Address}:${PostgresDB.Endpoint.Port}"
-    Export:
-      Name: !Sub "${AWS::StackName}-postgres-endpoint"
-  RedisEndpoint:
-    Description: Redis configuration endpoint
-    Value: !Sub "${RedisCache.ConfigurationEndpoint.Address}:${RedisCache.ConfigurationEndpoint.Port}"
-    Export:
-      Name: !Sub "${AWS::StackName}-redis-endpoint"
-  CognitoUserPoolId:
-    Description: Cognito User Pool ID
-    Value: !Ref UserPool
-  CognitoUserPoolClientId:
-    Description: Cognito User Pool Client ID
-    Value: !Ref UserPoolClient
-  EBEnvironmentName:
-    Description: Elastic Beanstalk Environment Name
-    Value: !Ref EBEnv
+  # --- API GATEWAY (Proxy to Load Balancer) ---
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties: { Name: KaraadiAPI }
+
+  # --- DATABASES ---
+  PostgresDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      AllocatedStorage: "20"
+      MasterUsername: postgres
+      MasterUserPassword:
+        !Join [
+          "",
+          ["{{resolve:secretsmanager:", !Ref DBSecret, ":SecretString}}"],
+        ]
+
+  RedisCache:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      { CacheNodeType: cache.t3.micro, Engine: redis, NumCacheNodes: 1 }
+
+  # --- FRONTEND ---
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: karaadi-frontend
+      Repository: !Sub "https://github.com/${AWS::AccountId}/karaadi"
+      Platform: WEB

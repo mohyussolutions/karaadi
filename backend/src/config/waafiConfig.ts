@@ -2,20 +2,15 @@ import {
   truncateAmount,
   validateAccountNumber,
 } from "../core/utils/payment.utils.ts";
-import { WaaFiConfig } from "./waafipay.config.ts";
+import { WaaFiConfig } from "../constanst/payment.constants.ts";
 import { ResponseCodes } from "./waafipay.service.responseCodes.ts";
 import chalk from "chalk";
 
 export class WaafiService {
-  private useMock(): boolean {
+  private isProduction(): boolean {
     return (
-      process.env.WAAFIPAY_ENVIRONMENT === "development" ||
-      process.env.USE_WAAFIPAY_PROD === "false" ||
-      process.env.WAAFIPAY_MODE === "mock" ||
-      (typeof process.env.WAAFIPAY_API_KEY === "string" &&
-        process.env.WAAFIPAY_API_KEY.includes("DUMMY")) ||
-      (typeof process.env.WAAFIPAY_API_USER_ID === "string" &&
-        process.env.WAAFIPAY_API_USER_ID.includes("DUMMY"))
+      process.env.NODE_ENV === "production" ||
+      process.env.WAAFIPAY_ENVIRONMENT === "production"
     );
   }
 
@@ -25,21 +20,16 @@ export class WaafiService {
     description: string,
     referenceId: string,
   ): Promise<any> {
-    const useMock = this.useMock();
+    if (!this.isProduction()) {
+      throw new Error(
+        "Payment processing is only available in production environment.",
+      );
+    }
+
     const finalAmount = Number(truncateAmount(amount));
 
     if (!validateAccountNumber(accountNo)) {
       throw new Error(ResponseCodes.INVALID_HPPKEY.message);
-    }
-
-    if (useMock) {
-      console.log(ResponseCodes.SUCCESS.key);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return {
-        responseCode: ResponseCodes.SUCCESS.code,
-        responseKey: ResponseCodes.SUCCESS.key,
-        params: { transactionId: `WAAFI-${Date.now()}`, state: "APPROVED" },
-      };
     }
 
     return this.processRealPayment(
@@ -54,28 +44,16 @@ export class WaafiService {
     url: string,
     errorResponse = ResponseCodes.CONFIGURATION_ERROR,
   ): void {
-    if (!url || url.trim() === "") {
-      console.error(chalk.red(errorResponse.message));
+    if (!url || url.trim() === "" || !url.startsWith("https")) {
+      console.error(
+        chalk.red("Production URL must be a valid HTTPS endpoint."),
+      );
       throw new Error(
         JSON.stringify({
           success: false,
           message: errorResponse.message,
           responseCode: errorResponse.code,
           key: errorResponse.key,
-        }),
-      );
-    }
-
-    if (url === "CANCELLED") {
-      console.error(
-        chalk.yellow(ResponseCodes.HPP_USERACTION_CANCELLED.message),
-      );
-      throw new Error(
-        JSON.stringify({
-          success: false,
-          message: ResponseCodes.HPP_USERACTION_CANCELLED.message,
-          responseCode: ResponseCodes.HPP_USERACTION_CANCELLED.code,
-          key: ResponseCodes.HPP_USERACTION_CANCELLED.key,
         }),
       );
     }
@@ -146,10 +124,11 @@ export class WaafiService {
 
     if (!response.ok) {
       console.error(chalk.red(ResponseCodes.GATEWAY_ERROR.message));
+      const errorData = await response.json().catch(() => ({}));
       throw new Error(
         JSON.stringify({
           success: false,
-          message: ResponseCodes.GATEWAY_ERROR.message,
+          message: errorData.description || ResponseCodes.GATEWAY_ERROR.message,
           responseCode: ResponseCodes.GATEWAY_ERROR.code,
           key: ResponseCodes.GATEWAY_ERROR.key,
         }),

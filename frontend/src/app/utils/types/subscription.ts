@@ -1,24 +1,38 @@
+export interface User {
+  _id: string;
+  username: string;
+  email: string;
+  phone?: string;
+}
+
 export interface Subscription {
   _id: string;
-  userId: {
-    _id: string;
-    username: string;
-    email: string;
-    phone?: string;
-  };
+  id?: string;
+  userId: User | string;
   title: string;
   category: string;
   subCategory?: string;
+  description?: string;
   region: string;
-  city: string;
+  cities: string[];
+  selectedCityIds?: string[];
+  customCities?: string[];
   priceMin?: number;
   priceMax?: number;
+  totalFee?: number;
+  isPaid?: boolean;
   isActive: boolean;
   status: string;
-  createdAt: string;
-  updatedAt: string;
   lastNotified?: string;
-  notificationCount?: number;
+  notificationCount: number;
+  condition?: string;
+  brand?: string;
+  model?: string;
+  specificFeatures?: string;
+  metadata?: any;
+  createdAt: string;
+  updatedAt?: string;
+  expiryDate?: string;
 }
 
 export interface SubscriptionFilters {

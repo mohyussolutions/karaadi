@@ -1,12 +1,11 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
-import { apiUrlsForCategoryTotals } from "../constant/constant";
+import { REAL_ESTATE_ENDPOINTS } from "../constant/constant";
 
 export type RealEstate = {
   id: string;
   _id: string;
-  user: string;
+  user: any;
   title: string;
   description: string;
   price: number;
@@ -15,177 +14,82 @@ export type RealEstate = {
   bathrooms?: number;
   squareFeet?: number;
   address: string;
-  hasGarage?: boolean;
-  hasGarden?: boolean;
   region: string;
   city: string;
-  district: string;
-  subDistrict: string;
   images: string[];
+  isPaid: boolean;
 };
-
-type CreateRealEstateData = Omit<RealEstate, "_id" | "user">;
-
-export async function getRealEstateListings(): Promise<RealEstate[]> {
-  try {
-    const response = await fetch(apiUrlsForCategoryTotals.RealEstate, {
-      method: "GET",
-      next: {
-        revalidate: 300,
-        tags: ["real-estate-listings"],
-      },
-    });
-
-    if (!response.ok) return [];
-
-    const result = await response.json();
-    const listingList = Array.isArray(result) ? result : (result?.data ?? []);
-
-    return listingList.map((item: any) => ({
-      ...item,
-      _id: item._id || item.id,
-    })) as RealEstate[];
-  } catch {
-    return [];
-  }
-}
 
 export async function getRealEstateById(
   id: string,
 ): Promise<RealEstate | null> {
-  try {
-    const response = await fetch(
-      `${apiUrlsForCategoryTotals.RealEstate}/${id}`,
-      {
-        method: "GET",
-        next: {
-          revalidate: 600,
-          tags: [`real-estate-${id}`],
-        },
-      },
-    );
+  const response = await fetch(REAL_ESTATE_ENDPOINTS.BY_ID(id), {
+    method: "GET",
+    cache: "no-store",
+  });
 
-    if (!response.ok) return null;
-
-    const item: any = await response.json();
-    return {
-      ...item,
-      _id: item._id || item.id,
-    } as RealEstate;
-  } catch {
-    return null;
-  }
+  if (!response.ok) return null;
+  const result = await response.json();
+  return result || null;
 }
 
-export async function createRealEstate(
-  data: CreateRealEstateData,
-  token: string,
-) {
-  try {
-    const response = await fetch(apiUrlsForCategoryTotals.RealEstate, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
+export async function getRealEstateListings(): Promise<RealEstate[]> {
+  const response = await fetch(REAL_ESTATE_ENDPOINTS.BASE, {
+    method: "GET",
+    cache: "no-store",
+  });
 
-    const result = await response.json();
-    if (!response.ok) return { success: false, message: result.message };
+  if (!response.ok) return [];
+  const result = await response.json();
+  const data = Array.isArray(result) ? result : (result?.data ?? []);
 
-    revalidateTag("real-estate-listings");
-    revalidatePath("/real-estate");
-
-    return {
-      success: true,
-      message: "Real Estate listing created successfully.",
-      realEstateId: result.id || result._id,
-    };
-  } catch {
-    return { success: false, message: "Network error." };
-  }
+  return data.map((item: any) => ({
+    ...item,
+    _id: item._id || item.id,
+  }));
 }
 
-export async function updateRealEstate(
-  id: string,
-  data: Partial<CreateRealEstateData>,
-  token: string,
-) {
-  try {
-    const response = await fetch(
-      `${apiUrlsForCategoryTotals.RealEstate}/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      },
-    );
-
-    const result = await response.json();
-    if (!response.ok) return { success: false, message: result.message };
-
-    revalidateTag(`real-estate-${id}`);
-    revalidateTag("real-estate-listings");
-    revalidatePath(`/real-estate/${id}`);
-    revalidatePath("/real-estate");
-
-    return {
-      success: true,
-      message: "Real Estate listing updated successfully.",
-      realEstateId: id,
-    };
-  } catch {
-    return { success: false, message: "Network error." };
-  }
+export async function fetchAdminRealEstate() {
+  const res = await fetch(REAL_ESTATE_ENDPOINTS.ADMIN_ALL, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return await res.json();
 }
 
-export async function deleteRealEstate(id: string, token: string) {
-  try {
-    const response = await fetch(
-      `${apiUrlsForCategoryTotals.RealEstate}/${id}`,
-      {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+export async function updatePaidStatus(id: string, newStatus: boolean) {
+  const res = await fetch(REAL_ESTATE_ENDPOINTS.BY_ID(id), {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isPaid: newStatus }),
+    cache: "no-store",
+  });
 
-    if (!response.ok) return { success: false };
-
-    revalidateTag(`real-estate-${id}`);
-    revalidateTag("real-estate-listings");
-    revalidatePath("/real-estate");
-
-    return { success: true };
-  } catch {
-    return { success: false };
-  }
+  return { success: res.ok };
 }
 
-export async function toggleRealEstatePaidStatus(
-  propertyId: string,
-  newStatus: boolean,
-): Promise<boolean> {
-  try {
-    const res = await fetch(
-      `${apiUrlsForCategoryTotals.RealEstate}/${propertyId}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPaid: newStatus }),
-      },
-    );
+export async function deleteRealEstate(id: string) {
+  const response = await fetch(REAL_ESTATE_ENDPOINTS.BY_ID(id), {
+    method: "DELETE",
+    cache: "no-store",
+  });
 
-    if (res.ok) {
-      revalidateTag(`real-estate-${propertyId}`);
-      revalidateTag("real-estate-listings");
-    }
+  return { success: response.ok };
+}
 
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function createRealEstate(data: any, token: string) {
+  const response = await fetch(REAL_ESTATE_ENDPOINTS.BASE, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+
+  const result = await response.json();
+  if (!response.ok) return { success: false, message: result.message };
+
+  return { success: true, id: result.id || result._id };
 }

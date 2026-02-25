@@ -7,7 +7,7 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import SearchInput from "@/app/(search)/SearchInput";
-import { getTraktors, Traktor } from "@/actions/categories/tractorActions";
+import { getTraktors, Traktor } from "@/actions/categories/FarmequipmentAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { TraktorTopCategories } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
 
@@ -244,7 +244,7 @@ export default function TractorForSale() {
                     city={item.city}
                     price={item.price}
                     images={item.images}
-                    category="Traktor"
+                    category="Farmequipment"
                   />
                 ))
               ) : (

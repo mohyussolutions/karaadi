@@ -24,6 +24,9 @@ export type Boat = {
   color: string;
   maGaday: boolean;
   isPaid: boolean;
+  feeAmount?: number;
+  planId?: string;
+  expiryDate?: Date | null;
 };
 
 type CreateBoatData = Omit<Boat, "_id" | "user">;
@@ -33,7 +36,7 @@ export async function getBoats(): Promise<Boat[] | null> {
     const response = await fetch(apiUrlsForCategoryTotals.Boats, {
       method: "GET",
       next: {
-        revalidate: 300,
+        revalidate: 30,
         tags: ["boats"],
       },
     });
@@ -55,7 +58,7 @@ export async function getBoatById(id: string): Promise<Boat | null> {
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "GET",
       next: {
-        revalidate: 600,
+        revalidate: 60,
         tags: [`boat-${id}`],
       },
     });
@@ -72,7 +75,7 @@ export async function getBoatById(id: string): Promise<Boat | null> {
   }
 }
 
-export async function createBoatAction(data: CreateBoatData, token: string) {
+export async function createBoat(payload: any, token: string) {
   try {
     const response = await fetch(apiUrlsForCategoryTotals.Boats, {
       method: "POST",
@@ -80,7 +83,7 @@ export async function createBoatAction(data: CreateBoatData, token: string) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
@@ -88,14 +91,9 @@ export async function createBoatAction(data: CreateBoatData, token: string) {
 
     revalidateTag("boats");
     revalidatePath("/boats");
-
-    return {
-      success: true,
-      message: "Boat listing created successfully.",
-      _id: result._id || result.id,
-    };
+    return { success: true, boatId: result._id || result.id };
   } catch (error) {
-    return { success: false, message: "Network error." };
+    return { success: false, message: "Network error" };
   }
 }
 
@@ -128,6 +126,51 @@ export async function updateBoat(
   }
 }
 
+export async function updateBoatPayment(
+  boatId: string,
+  paymentId: string,
+  planId: string,
+) {
+  try {
+    console.log(
+      `[updateBoatPayment] Updating boat ${boatId} with payment ${paymentId}`,
+    );
+
+    const response = await fetch(
+      `${apiUrlsForCategoryTotals.Boats}/${boatId}/payment`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentId,
+          planId,
+        }),
+      },
+    );
+
+    const data = await response.json();
+    console.log("[updateBoatPayment] Response:", data);
+
+    if (response.ok) {
+      revalidateTag(`boat-${boatId}`);
+      revalidateTag("boats");
+      revalidatePath(`/boats/${boatId}`);
+      revalidatePath("/boats");
+      return { success: true, data };
+    }
+
+    return {
+      success: false,
+      message: data.message || "Update failed",
+      data: data,
+    };
+  } catch (error) {
+    console.error("[updateBoatPayment] Error:", error);
+    return { success: false, message: "Network error" };
+  }
+}
 export async function deleteBoat(id: string, token: string) {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {

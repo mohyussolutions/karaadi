@@ -1,742 +1,465 @@
 "use client";
 
-import { useState, useEffect, useRef, ReactElement } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { MdOutlinePlaylistRemove } from "react-icons/md";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-import { useCreateMotorcycleMutation } from "@/app/(storeFront)/store/slices/motorcyclesSlice";
-import { User } from "@/app/utils/types/user";
 import {
-  cities,
-  Districts,
-  regions,
-} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
-import { subCategoriesMotorSomalia } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForMotorcycles";
-import { allCategories } from "@/app/(storeFront)/links/categories";
-import { motorcyclesSubCategories } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
-import { apiService } from "@/actions/core/authAction";
+  MdCategory,
+  MdAttachMoney,
+  MdCloudUpload,
+  MdClose,
+  MdSettings,
+  MdDirectionsBike,
+  MdOutlinePlaylistRemove,
+} from "react-icons/md";
+import { FaMotorcycle } from "react-icons/fa";
 
-interface MotorcycleData {
-  make: string;
-  title: string;
-  description: string;
-  price: string;
-  category: string;
-  subCategory: string;
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string;
-  type: string;
-  modelName: string;
-  transmission: string;
-  color: string;
-  year: string;
-  mileage: string;
-  engineSize: string;
-  fuelType: string;
+import { verifySession } from "@/actions/core/authAction";
+import { createMotorcycle } from "@/actions/categories/motorcycleActions";
+import {
+  getAllRegions,
+  getAllCities,
+  addCity,
+} from "@/actions/categories/geoAction";
+
+import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
+import { motorcyclesSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import {
+  MotorcyclesForNestedSub,
+  MotorcycleRentNestedSub,
+  MCPartsNestedSub,
+  OtherNestedSub,
+  MotorcycleSubCategoryItem,
+} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMotorcycles";
+
+interface User {
+  id: string;
+  token: string;
 }
 
-interface SubCategoryItem {
-  so: string;
-  title: string;
-  icon?: ReactElement;
-  href?: string;
-}
+const categoryNestedMap: Record<string, MotorcycleSubCategoryItem[]> = {
+  "for Sale": MotorcyclesForNestedSub,
+  "for Rent": MotorcycleRentNestedSub,
+  "Spare Parts": MCPartsNestedSub,
+  Other: OtherNestedSub,
+};
 
-const MotoForSellAndBuy = () => {
+export default function MotorcycleAdForm() {
   const router = useRouter();
-  const [createMotorcycle, { isLoading: isSubmittingAPI }] =
-    useCreateMotorcycleMutation();
+  const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [allCities, setAllCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [newCity, setNewCity] = useState("");
+  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [formData, setFormData] = useState<MotorcycleData>({
+  const [formData, setFormData] = useState({
+    mainCategory:
+      allCategories.find((cat) => cat.key === "Motorcycles")?.name ||
+      "Motorcycles",
+    category: "",
+    subCategory: "",
     title: "",
     description: "",
     price: "",
-    category: "",
-    subCategory: "",
     region: "",
     city: "",
-    district: "",
-    subDistrict: "",
-    type: "",
+    make: "",
     modelName: "",
-    transmission: "",
-    color: "",
     year: "",
     mileage: "",
     engineSize: "",
+    color: "",
+    transmission: "",
     fuelType: "",
-    make: "",
+    type: "",
   });
 
-  const [mainCategory, setMainCategory] = useState(
-    allCategories.find((cat) => cat.key === "Motorcycles")?.name || "",
-  );
-
-  const [images, setImages] = useState<File[]>([]);
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
-  const [filteredDistricts, setFilteredDistricts] = useState<string[]>([]);
-  const [filteredSubcategories, setFilteredSubcategories] = useState<
-    SubCategoryItem[]
-  >([]);
-  const [newCity, setNewCity] = useState("");
-  const [newDistrict, setNewDistrict] = useState("");
-  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const inputStyle =
-    "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm";
-  const labelStyle =
-    "block mb-2 font-medium text-gray-700 text-sm md:text-base";
-  const sectionHeaderStyle =
-    "text-xl font-semibold text-gray-800 border-b pb-2 mb-4";
-
-  const handleInputChange = (field: keyof MotorcycleData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   useEffect(() => {
-    const fetchUser = async () => {
-      const sessionUser = await apiService.verifySession();
-      setCurrentUser(sessionUser);
-      if (!sessionUser) router.push("/login");
-    };
-    fetchUser();
+    async function init() {
+      const sessionUser = await verifySession();
+      if (!sessionUser) return router.push("/login");
+      setCurrentUser({ id: sessionUser._id, token: sessionUser.token });
+
+      const [regs, cities] = await Promise.all([
+        getAllRegions(),
+        getAllCities(),
+      ]);
+      setRegions(regs || []);
+      setAllCities(cities || []);
+    }
+    init();
   }, [router]);
 
   useEffect(() => {
-    setIsSubmitting(isSubmittingAPI);
-  }, [isSubmittingAPI]);
-
-  useEffect(() => {
     if (formData.region) {
-      const citiesInRegion = cities
-        .filter((c: any) => c.regionId === formData.region)
-        .map((c: any) => c.name);
-      setFilteredCities([...citiesInRegion, "custom"]);
-      handleInputChange("city", "");
-      handleInputChange("district", "");
-      setFilteredDistricts([]);
-      setShowNewCityInputs(false);
-      setNewCity("");
-      setNewDistrict("");
-    } else {
-      setFilteredCities([]);
-      handleInputChange("city", "");
-      handleInputChange("district", "");
-      setFilteredDistricts([]);
-      setShowNewCityInputs(false);
-      setNewCity("");
-      setNewDistrict("");
+      setFilteredCities(
+        allCities.filter((c) => c.regionId === formData.region),
+      );
     }
-  }, [formData.region]);
+  }, [formData.region, allCities]);
 
   useEffect(() => {
-    if (formData.city === "custom") {
-      setShowNewCityInputs(true);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
-      setNewDistrict("");
-    } else if (formData.city) {
-      setShowNewCityInputs(false);
-      const cityDistrictObj = Districts.find(
-        (d: any) => d.name === formData.city,
-      );
-      setFilteredDistricts(
-        cityDistrictObj?.subDistricts.map((sd: any) => sd.name) || [],
-      );
-      handleInputChange("district", "");
-      setNewDistrict("");
-    } else {
-      setShowNewCityInputs(false);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
-      setNewDistrict("");
-    }
-  }, [formData.city]);
-
-  useEffect(() => {
-    const categoryKey = formData.category;
-    const subCategories = subCategoriesMotorSomalia[categoryKey] || [];
-    setFilteredSubcategories(subCategories);
-
-    if (categoryKey && formData.subCategory) {
-      const selectedSub = subCategories.find(
-        (sub) => sub.title === formData.subCategory,
-      );
-      handleInputChange("title", selectedSub?.so || "");
-    } else if (categoryKey && !formData.subCategory) {
-      handleInputChange("title", "");
+    const nestedSubs = categoryNestedMap[formData.category] || [];
+    if (formData.subCategory) {
+      const selected = nestedSubs.find((s) => s.title === formData.subCategory);
+      if (selected) setFormData((prev) => ({ ...prev, title: selected.so }));
     }
   }, [formData.category, formData.subCategory]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const selectedFiles = Array.from(e.target.files);
+  const onHandleSubmit = async () => {
+    if (!currentUser || isLoading) return;
 
-    const filesToProcess = selectedFiles.slice(0, 10 - images.length);
-
-    if (selectedFiles.length > filesToProcess.length) {
-      toast.warn(
-        "You can only upload up to 10 images total. Some were ignored.",
-      );
+    if (
+      !formData.category ||
+      !formData.subCategory ||
+      !formData.price ||
+      !formData.region ||
+      (showNewCityInputs ? !newCity : !formData.city)
+    ) {
+      return toast.error("Fadlan buuxi banaanada muhiimka ah");
     }
 
-    if (filesToProcess.length === 0) return;
+    if (images.length === 0)
+      return toast.error("Ugu yaraan hal sawir soo geli");
 
-    setImages((prev) => [...prev, ...filesToProcess]);
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSaveNewCityDistrict = () => {
-    if (!newCity.trim() || !newDistrict.trim()) {
-      toast.error("Please enter both city and district names.");
-      return;
-    }
-    handleInputChange("city", newCity.trim());
-    handleInputChange("district", newDistrict.trim());
-    setShowNewCityInputs(false);
-    setFilteredDistricts([newDistrict.trim()]);
-    setNewCity("");
-    setNewDistrict("");
-    toast.success("New location saved temporarily.");
-  };
-
-  const isFormValid = () => {
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.district;
-
-    const isYearValid =
-      !isNaN(Number(formData.year)) &&
-      Number(formData.year) > 1900 &&
-      Number(formData.year) <= new Date().getFullYear();
-    const isPriceValid =
-      formData.price !== "" &&
-      !isNaN(Number(formData.price)) &&
-      Number(formData.price) >= 0;
-
-    return (
-      formData.category &&
-      formData.subCategory &&
-      formData.title &&
-      formData.type &&
-      formData.make &&
-      formData.modelName &&
-      formData.transmission &&
-      formData.color &&
-      isYearValid &&
-      formData.mileage !== "" &&
-      formData.engineSize &&
-      formData.fuelType &&
-      formData.region &&
-      selectedCity &&
-      selectedDistrict &&
-      formData.description &&
-      isPriceValid &&
-      images.length > 0 &&
-      currentUser &&
-      currentUser._id
-    );
-  };
-
-  const convertImagesToBase64 = async (files: File[]): Promise<string[]> =>
-    Promise.all(
-      files.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          }),
-      ),
-    );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentUser) {
-      toast.error("User not loaded. Please log in.");
-      return;
-    }
-    if (!isFormValid()) {
-      toast.warn(
-        "Please fill out all required fields correctly (including Year, Price, and at least one image).",
-      );
-      return;
-    }
-
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.district;
-
-    const imagesBase64 = await convertImagesToBase64(images);
-    setIsSubmitting(true);
+    setIsLoading(true);
+    const toastId = toast.loading("Diiwaangelinta ayaa socota...");
 
     try {
-      const motorcycleData = {
-        mainCategory: mainCategory,
+      let finalCityName = formData.city;
+
+      if (showNewCityInputs && newCity.trim()) {
+        const cityResult = await addCity({
+          id: `mc-city-${Date.now()}`,
+          name: newCity.trim(),
+          regionId: formData.region,
+          isActive: true,
+        });
+        if (cityResult.success) {
+          finalCityName = cityResult.data.name;
+        } else {
+          setIsLoading(false);
+          return toast.error("Magaalada lama dari waayay");
+        }
+      }
+
+      const imagesBase64 = await Promise.all(
+        images.map(
+          (img) =>
+            new Promise((resolve) => {
+              const r = new FileReader();
+              r.readAsDataURL(img);
+              r.onload = () => resolve(r.result);
+            }),
+        ),
+      );
+
+      const payload = {
+        userId: currentUser.id,
         title: formData.title,
-        description: formData.description,
-        city: selectedCity,
-        district: selectedDistrict,
-        subDistrict: formData.subDistrict || null,
-        region: formData.region,
-        price: Number(formData.price),
-        images: imagesBase64,
-        category: formData.category,
-        subCategory: formData.subCategory,
-        type: formData.type,
-        make: formData.make,
-        modelName: formData.modelName,
-        year: Number(formData.year),
-        mileage: Number(formData.mileage),
-        engineSize: formData.engineSize,
-        fuelType: formData.fuelType,
-        transmission: formData.transmission,
-        color: formData.color,
-        userId: currentUser._id,
         so: formData.title,
+        description: formData.description,
+        price: Number(formData.price),
+        mainCategory: formData.mainCategory,
+        category: [formData.category],
+        subcategory: [formData.subCategory],
+        region: formData.region,
+        city: finalCityName,
+        images: imagesBase64,
+        isPaid: false,
+        extra: {
+          make: formData.make,
+          modelName: formData.modelName,
+          year: Number(formData.year),
+          mileage: Number(formData.mileage) || 0,
+          engineSize: formData.engineSize,
+          fuelType: formData.fuelType,
+          color: formData.color,
+          transmission: formData.transmission,
+          type: formData.type,
+        },
       };
 
-      console.log(motorcycleData);
+      const result = await createMotorcycle(payload, currentUser.token);
 
-      const created = await createMotorcycle(motorcycleData as any).unwrap();
-
-      toast.success("Motorcycle listing created successfully!");
-
-      setTimeout(() => {
-        router.push(`/motorcyclesSummary?id=${created._id}`);
-        formRef.current?.reset();
-      }, 1000);
-    } catch (err: any) {
-      console.error("Error details:", err);
-      const errorMessage =
-        err.data?.message ||
-        err.error ||
-        "Failed to create listing. Please try again.";
-      toast.error(errorMessage);
+      if (result.success) {
+        toast.update(toastId, {
+          render: "Guul! Xayeysiiska waa la dhajiyey.",
+          type: "success",
+          isLoading: false,
+          autoClose: 2000,
+        });
+        router.push(`/(summary)/vehicles-summary?id=${result.motorcycleId}`);
+      } else {
+        toast.update(toastId, {
+          render: result.message || "Wuu fashilmay dhajinta.",
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
+      }
+    } catch (err) {
+      toast.update(toastId, {
+        render: "Cillad farsamo ayaa dhacday.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+      console.error(err);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  if (!currentUser)
-    return <div className="text-center p-6">Loading user data...</div>;
-
   return (
-    <div className="max-w-2xl mx-auto my-12 p-8 bg-white rounded-xl shadow-2xl border border-gray-100">
-      <ToastContainer />
+    <div className="max-w-4xl mx-auto mt-6 p-4 md:p-8 bg-white rounded-2xl shadow-2xl">
+      <ToastContainer position="top-center" autoClose={3000} />
 
-      <h1 className="text-4xl font-extrabold mb-8 text-center text-blue-800">
-        🛵 Iska gad Mootooyin (Motorcycles)
+      <h1 className="text-3xl font-black text-center mb-10 text-gray-800 flex items-center justify-center gap-2">
+        Xayaysiso Mooto <FaMotorcycle className="text-blue-600" />
       </h1>
-      <form onSubmit={handleSubmit} ref={formRef} className="space-y-8">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Main Category
-          </label>
-          <select
-            value={mainCategory}
-            onChange={(e) => {
-              setMainCategory(e.target.value);
-              handleInputChange("category", "");
-              handleInputChange("subCategory", "");
-              handleInputChange("title", "");
-            }}
-            required
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-          >
-            {allCategories
-              .filter((cat) => cat.key === "Motorcycles")
-              .map((cat, index) => (
-                <option key={index} value={cat.name}>
-                  {cat.so ?? cat.name}
+
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 ml-2">
+              Main Category
+            </label>
+            <select
+              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none cursor-not-allowed"
+              disabled
+            >
+              <option>{formData.mainCategory}</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 ml-2">
+              Qaybta
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category: e.target.value,
+                  subCategory: "",
+                })
+              }
+              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+            >
+              <option value="">Dooro Qaybta</option>
+              {motorcyclesSubCategories.map((cat) => (
+                <option key={cat.title} value={cat.title}>
+                  {cat.so}
                 </option>
               ))}
-          </select>
-        </div>
-        <div>
-          <h2 className={sectionHeaderStyle}>Listing Details</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>Category</label>
-              <select
-                value={formData.category}
-                onChange={(e) => {
-                  handleInputChange("category", e.target.value);
-                  handleInputChange("subCategory", "");
-                  handleInputChange("title", "");
-                }}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select category</option>
-                {motorcyclesSubCategories.map((cat) => (
-                  <option key={cat.title} value={cat.title}>
-                    {cat.so} ({cat.title})
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 ml-2">
+              Nooca
+            </label>
+            <select
+              value={formData.subCategory}
+              onChange={(e) =>
+                setFormData({ ...formData, subCategory: e.target.value })
+              }
+              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+              disabled={!formData.category}
+            >
+              <option value="">Dooro Nooca</option>
+              {formData.category &&
+                categoryNestedMap[formData.category]?.map((sub) => (
+                  <option key={sub.title} value={sub.title}>
+                    {sub.so}
                   </option>
                 ))}
-              </select>
-            </div>
-
-            {formData.category && filteredSubcategories.length > 0 && (
-              <div className="md:col-span-2">
-                <label className={labelStyle}>Subcategory</label>
-                <select
-                  value={formData.subCategory}
-                  onChange={(e) => {
-                    handleInputChange("subCategory", e.target.value);
-                  }}
-                  required
-                  className={inputStyle}
-                >
-                  <option value="">Select subcategory</option>
-                  {filteredSubcategories.map((sub) => (
-                    <option key={sub.title} value={sub.title}>
-                      {sub.so} ({sub.title})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            </select>
           </div>
-          <div className="mt-6">
-            <label className={labelStyle}>Title (so)</label>
+        </div>
+
+        <input
+          type="text"
+          placeholder="Title-ka Mootada"
+          className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none font-bold focus:border-blue-400"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="relative flex items-center">
+            <MdDirectionsBike className="absolute left-4 text-blue-500 text-xl" />
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Title (Auto-filled by Subcategory)"
-              required
-              className={inputStyle}
+              placeholder="Shirkadda (Make)"
+              className="w-full border-2 border-gray-100 bg-gray-50 pl-11 pr-4 py-3 rounded-xl outline-none focus:border-blue-400"
+              value={formData.make}
+              onChange={(e) =>
+                setFormData({ ...formData, make: e.target.value })
+              }
+            />
+          </div>
+          <div className="relative flex items-center">
+            <MdSettings className="absolute left-4 text-gray-400 text-xl" />
+            <input
+              type="text"
+              placeholder="Model-ka"
+              className="w-full border-2 border-gray-100 bg-gray-50 pl-11 pr-4 py-3 rounded-xl outline-none focus:border-blue-400"
+              value={formData.modelName}
+              onChange={(e) =>
+                setFormData({ ...formData, modelName: e.target.value })
+              }
             />
           </div>
         </div>
 
-        <div>
-          <h2 className={sectionHeaderStyle}>Motorcycle Specifications</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>Make</label>
-              <input
-                type="text"
-                value={formData.make}
-                onChange={(e) => handleInputChange("make", e.target.value)}
-                placeholder="Make (e.g., Honda, Bajaj)"
-                required
-                className={inputStyle}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Model</label>
-              <input
-                type="text"
-                value={formData.modelName}
-                onChange={(e) => handleInputChange("modelName", e.target.value)}
-                placeholder="Model (e.g., Pulsar, CD 70)"
-                required
-                className={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>Year</label>
-              <input
-                type="number"
-                min="1900"
-                max={new Date().getFullYear()}
-                value={formData.year}
-                onChange={(e) => handleInputChange("year", e.target.value)}
-                placeholder="Year"
-                required
-                className={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>Type</label>
-              <input
-                type="text"
-                value={formData.type}
-                onChange={(e) => handleInputChange("type", e.target.value)}
-                placeholder="Type (e.g., Standard, Cruiser, Sport)"
-                required
-                className={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>Engine Size (cc)</label>
-              <input
-                type="text"
-                value={formData.engineSize}
-                onChange={(e) =>
-                  handleInputChange("engineSize", e.target.value)
-                }
-                placeholder="Engine Size (e.g., 150cc)"
-                required
-                className={inputStyle}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Mileage (km)</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.mileage}
-                onChange={(e) => handleInputChange("mileage", e.target.value)}
-                placeholder="Mileage in km"
-                required
-                className={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>Fuel Type</label>
-              <select
-                value={formData.fuelType}
-                onChange={(e) => handleInputChange("fuelType", e.target.value)}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select fuel type</option>
-                <option value="petrol">Petrol</option>
-                <option value="diesel">Diesel</option>
-                <option value="electric">Electric</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelStyle}>Transmission</label>
-              <select
-                value={formData.transmission}
-                onChange={(e) =>
-                  handleInputChange("transmission", e.target.value)
-                }
-                required
-                className={inputStyle}
-              >
-                <option value="">Select transmission</option>
-                <option value="manual">Manual</option>
-                <option value="automatic">Automatic</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className={labelStyle}>Color</label>
-              <input
-                type="text"
-                value={formData.color}
-                onChange={(e) => handleInputChange("color", e.target.value)}
-                placeholder="Color"
-                required
-                className={inputStyle}
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <input
+            type="number"
+            placeholder="Sannadka"
+            className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+            value={formData.year}
+            onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+          />
+          <input
+            type="number"
+            placeholder="Mileage"
+            className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+            value={formData.mileage}
+            onChange={(e) =>
+              setFormData({ ...formData, mileage: e.target.value })
+            }
+          />
+          <div className="relative flex items-center">
+            <MdAttachMoney className="absolute left-4 text-green-600 text-xl" />
+            <input
+              type="number"
+              placeholder="Qiimaha ($)"
+              className="w-full border-2 border-gray-100 bg-gray-50 pl-11 py-3 rounded-xl outline-none focus:border-blue-400"
+              value={formData.price}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
+            />
           </div>
         </div>
 
-        <div>
-          <h2 className={sectionHeaderStyle}>Location & Pricing</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>Region</label>
-              <select
-                value={formData.region}
-                onChange={(e) => handleInputChange("region", e.target.value)}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select region</option>
-                {regions.map((r: any) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <select
+            value={formData.region}
+            onChange={(e) =>
+              setFormData({ ...formData, region: e.target.value, city: "" })
+            }
+            className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+          >
+            <option value="">Dooro Gobol</option>
+            {regions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={showNewCityInputs ? "custom" : formData.city}
+            onChange={(e) => {
+              setShowNewCityInputs(e.target.value === "custom");
+              setFormData({
+                ...formData,
+                city: e.target.value === "custom" ? "" : e.target.value,
+              });
+            }}
+            className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+            disabled={!formData.region}
+          >
+            <option value="">Dooro Magaalo</option>
+            {filteredCities.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+            <option value="custom" className="text-blue-600 font-bold">
+              + Magaalo kale
+            </option>
+          </select>
+        </div>
 
-            <div>
-              <label className={labelStyle}>City</label>
-              <select
-                value={formData.city}
-                onChange={(e) => handleInputChange("city", e.target.value)}
-                required={!showNewCityInputs}
-                className={inputStyle}
-                disabled={!formData.region}
-              >
-                <option value="">Select city</option>
-                {filteredCities
-                  .filter((c) => c !== "custom")
-                  .map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                <option value="custom" className="font-semibold text-blue-600">
-                  + Add New City
-                </option>
-              </select>
-            </div>
+        {showNewCityInputs && (
+          <input
+            type="text"
+            placeholder="Qor Magaca Magaalada cusub"
+            className="w-full border-2 border-blue-200 bg-blue-50 px-4 py-3 rounded-xl animate-pulse outline-none"
+            onChange={(e) => setNewCity(e.target.value)}
+          />
+        )}
 
-            {showNewCityInputs && (
-              <div className="md:col-span-2 p-4 border border-blue-200 rounded-lg bg-blue-50 space-y-3">
-                <p className="font-semibold text-sm text-blue-700">
-                  Enter New Location Details
-                </p>
-                <input
-                  type="text"
-                  value={newCity}
-                  onChange={(e) => setNewCity(e.target.value)}
-                  placeholder="New City Name"
-                  required
-                  className={inputStyle}
-                />
-                <input
-                  type="text"
-                  value={newDistrict}
-                  onChange={(e) => setNewDistrict(e.target.value)}
-                  placeholder="New District Name"
-                  required
-                  className={inputStyle}
+        <textarea
+          rows={4}
+          placeholder="Faahfaahin dheeraad ah..."
+          className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+          value={formData.description}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
+        />
+
+        <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl">
+          <div className="flex flex-wrap gap-4">
+            <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+              <MdCloudUpload className="text-3xl text-gray-300" />
+              <span className="text-[10px] text-gray-400 font-bold">
+                Upload
+              </span>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) =>
+                  e.target.files &&
+                  setImages([...images, ...Array.from(e.target.files)])
+                }
+              />
+            </label>
+            {images.map((img, i) => (
+              <div key={i} className="relative w-24 h-24 group">
+                <img
+                  src={URL.createObjectURL(img)}
+                  className="w-full h-full object-cover rounded-2xl shadow-md"
+                  alt="preview"
                 />
                 <button
                   type="button"
-                  onClick={handleSaveNewCityDistrict}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  onClick={() =>
+                    setImages(images.filter((_, idx) => idx !== i))
+                  }
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                 >
-                  Save New Location
+                  <MdOutlinePlaylistRemove />
                 </button>
               </div>
-            )}
-
-            {!showNewCityInputs && filteredDistricts.length > 0 && (
-              <div>
-                <label className={labelStyle}>District</label>
-                <select
-                  value={formData.district}
-                  onChange={(e) =>
-                    handleInputChange("district", e.target.value)
-                  }
-                  required
-                  className={inputStyle}
-                >
-                  <option value="">Select district</option>
-                  {filteredDistricts.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div>
-              <label className={labelStyle}>Sub District (optional)</label>
-              <input
-                type="text"
-                value={formData.subDistrict}
-                onChange={(e) =>
-                  handleInputChange("subDistrict", e.target.value)
-                }
-                placeholder="Sub District"
-                className={inputStyle}
-              />
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label className={labelStyle}>Price ($)</label>
-            <input
-              type="number"
-              min="0"
-              value={formData.price}
-              onChange={(e) => handleInputChange("price", e.target.value)}
-              placeholder="Price in USD"
-              required
-              className={inputStyle}
-            />
-          </div>
-        </div>
-
-        <div>
-          <h2 className={sectionHeaderStyle}>Description & Media</h2>
-          <div>
-            <label className={labelStyle}>Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Describe your motorcycle's condition, features, and history..."
-              required
-              rows={5}
-              className={inputStyle}
-            />
-          </div>
-
-          <div className="mt-6">
-            <label className={labelStyle}>Images (Min 1, Max 10)</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
-            />
-            <div className="mt-4 flex flex-wrap gap-3">
-              {images.map((img, i) => (
-                <div
-                  key={i}
-                  className="relative w-20 h-20 border-2 border-gray-200 rounded-lg overflow-hidden shadow-md"
-                >
-                  <img
-                    src={URL.createObjectURL(img)}
-                    alt={`Selected ${i}`}
-                    className="object-cover w-full h-full"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(i)}
-                    className="absolute top-[-5px] right-[-5px] bg-red-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition"
-                    aria-label="Remove image"
-                  >
-                    <MdOutlinePlaylistRemove size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
 
         <button
-          type="submit"
-          disabled={!isFormValid() || isSubmitting}
-          className={`w-full py-3 rounded-xl text-white font-bold text-lg tracking-wider transition transform ${
-            isFormValid() && !isSubmitting
-              ? "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg"
-              : "bg-gray-400 cursor-not-allowed"
+          type="button"
+          onClick={onHandleSubmit}
+          disabled={isLoading}
+          className={`w-full py-4 rounded-2xl text-white font-black text-lg transition-all shadow-xl ${
+            isLoading
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 active:scale-[0.98]"
           }`}
         >
-          {isSubmitting ? "Submitting..." : "Post Motorcycle Listing"}
+          {isLoading ? "Gudbinaya..." : "Gudbi Xayeysiiska"}
         </button>
-      </form>
+      </div>
     </div>
   );
-};
-
-export default MotoForSellAndBuy;
+}

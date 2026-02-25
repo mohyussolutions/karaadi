@@ -1,195 +1,170 @@
+"use server";
+
+import { cookies } from "next/headers";
 import { SUBS_ENDPOINTS } from "../constant/constant";
 
-export async function createSubscription(data: {
-  userId: string;
+interface Subscription {
+  id: string;
   title: string;
   category: string;
-  subCategory?: string;
   region: string;
-  city: string;
-  priceMin?: string;
-  priceMax?: string;
-  description?: string;
-  condition?: string;
-  brand?: string;
-  model?: string;
-  specificFeatures?: string;
-}) {
-  const res = await fetch(SUBS_ENDPOINTS.CREATE, {
+  cities: string[];
+  priceMin?: number;
+  priceMax?: number;
+  isPaid: boolean;
+  status: string;
+  createdAt: string;
+  expiryDate?: string;
+}
+
+async function fetchApi<T>(
+  url: string,
+  options?: RequestInit,
+  retries = 2,
+): Promise<T> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+  const cacheBuster = `_t=${Date.now()}`;
+  const separator = url.includes("?") ? "&" : "?";
+  const absoluteUrl = url.startsWith("http")
+    ? `${url}${separator}${cacheBuster}`
+    : `${apiUrl}${url}${separator}${cacheBuster}`;
+
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(absoluteUrl, {
+        ...options,
+        headers: {
+          ...options?.headers,
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          Cookie: cookieHeader,
+        },
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        if (res.status === 404) {
+          throw new Error(
+            `API error 404: Not found.\nURL: ${absoluteUrl}\nPossible causes: endpoint does not exist, wrong URL, or backend route is missing. Details: ${errorText}`,
+          );
+        }
+        throw new Error(`API error ${res.status}: ${errorText}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, i)));
+    }
+  }
+  throw new Error("Request failed");
+}
+
+export async function createSubscription(data: any) {
+  return fetchApi(SUBS_ENDPOINTS.CREATE, {
     method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok)
-    throw new Error(`Failed to create subscription: ${await res.text()}`);
-  return res.json();
 }
 
-export async function getUserSubscriptions(userId: string) {
-  const res = await fetch(SUBS_ENDPOINTS.GET_USER_SUBSCRIPTIONS(userId), {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to fetch subscriptions: ${await res.text()}`);
-  const data = await res.json();
-  return data.subscriptions;
+export async function getUserSubscriptions(userId: string, options?: any) {
+  const params = new URLSearchParams();
+  if (options?.activeOnly) params.set("activeOnly", "true");
+  if (options?.page) params.set("page", String(options.page));
+  if (options?.limit) params.set("limit", String(options.limit));
+  return fetchApi(`${SUBS_ENDPOINTS.GET_USER_SUBSCRIPTIONS(userId)}?${params}`);
 }
 
-export async function searchSubscriptions(filters: {
-  category?: string;
-  subCategory?: string;
-  region?: string;
-  city?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  brand?: string;
-  model?: string;
-  condition?: string;
-}) {
+export async function searchSubscriptions(filters: Record<string, unknown>) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
-    if (value) params.append(key, value);
+    if (value != null) params.set(key, String(value));
   });
-
-  const res = await fetch(`${SUBS_ENDPOINTS.SEARCH}?${params.toString()}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to search subscriptions: ${await res.text()}`);
-  const data = await res.json();
-  return data.subscriptions;
+  return fetchApi(`${SUBS_ENDPOINTS.SEARCH}?${params}`);
 }
 
-export async function getAllSubscriptionsAdmin(filters: {
-  search?: string;
-  category?: string;
-  region?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
-}) {
-  const params = new URLSearchParams();
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value) params.append(key, String(value));
-  });
-
-  const res = await fetch(`${SUBS_ENDPOINTS.ADMIN_ALL}?${params.toString()}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to fetch subscriptions: ${await res.text()}`);
-  const data = await res.json();
-  return data.subscriptions;
-}
-
-export async function updateSubscriptionStatus(
-  id: string,
-  data: {
-    status: "active" | "inactive" | "paused";
-    isActive?: boolean;
-  },
+export async function getAllSubscriptionsAdmin(
+  filters: Record<string, unknown>,
 ) {
-  const res = await fetch(SUBS_ENDPOINTS.ADMIN_UPDATE_STATUS(id), {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, String(value));
+  });
+  const data = await fetchApi<{ subscriptions: Subscription[] }>(
+    `${SUBS_ENDPOINTS.ADMIN_ALL}?${params}`,
+  );
+  return data.subscriptions || [];
+}
+
+export async function updateSubscriptionStatus(id: string, data: any) {
+  return fetchApi(SUBS_ENDPOINTS.ADMIN_UPDATE_STATUS(id), {
     method: "PATCH",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok)
-    throw new Error(`Failed to update subscription: ${await res.text()}`);
-  return res.json();
 }
 
 export async function deleteSubscriptionAdmin(id: string) {
-  const res = await fetch(SUBS_ENDPOINTS.ADMIN_DELETE(id), {
-    method: "DELETE",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to delete subscription: ${await res.text()}`);
-  return res.json();
+  return fetchApi(SUBS_ENDPOINTS.ADMIN_DELETE(id), { method: "DELETE" });
 }
 
 export async function getSubscriptionStats(period = "all") {
-  const res = await fetch(`${SUBS_ENDPOINTS.STATS}?period=${period}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to fetch subscription stats: ${await res.text()}`);
-  const data = await res.json();
+  const data = await fetchApi<{ stats: unknown }>(
+    `${SUBS_ENDPOINTS.STATS}?period=${period}`,
+  );
   return data.stats;
 }
 
 export async function getTotalSubscriptions() {
-  const res = await fetch(SUBS_ENDPOINTS.TOTAL, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to fetch total subscriptions: ${await res.text()}`);
-  const data = await res.json();
-  return data;
+  return fetchApi(SUBS_ENDPOINTS.TOTAL);
 }
 
-export async function triggerManualNotification(data: {
-  itemType: string;
-  itemId: string;
-  mainCategory: string;
-  category: string;
-  subcategory: string;
-  region: string;
-  city: string;
-  title: string;
-  price: number;
-  posterId: string;
-}) {
-  const res = await fetch(SUBS_ENDPOINTS.ADMIN_NOTIFY, {
+export async function triggerManualNotification(data: Record<string, unknown>) {
+  return fetchApi(SUBS_ENDPOINTS.ADMIN_NOTIFY, {
     method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok)
-    throw new Error(`Failed to trigger notification: ${await res.text()}`);
-  return res.json();
 }
 
-export async function checkExistingSubscription(
-  userId: string,
-  category: string,
-  region: string,
-  city: string,
-) {
+export async function getMySubscriptions(): Promise<Subscription[]> {
   try {
-    const subscriptions = await getUserSubscriptions(userId);
-    return (
-      subscriptions?.some(
-        (sub: any) =>
-          sub.category === category &&
-          sub.region === region &&
-          sub.city === city &&
-          sub.isActive === true,
-      ) || false
-    );
-  } catch (error) {
-    console.error("Error checking existing subscription:", error);
-    return false;
+    const data = await fetchApi<{
+      success: boolean;
+      subscriptions: Subscription[];
+    }>(SUBS_ENDPOINTS.GET_MY_SUBSCRIPTIONS);
+    return data.subscriptions || [];
+  } catch (err) {
+    return [];
   }
 }
 
-export async function getAllSubscriptions() {
-  const res = await fetch(SUBS_ENDPOINTS.GET_ALL || SUBS_ENDPOINTS.CREATE, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to fetch all subscriptions: ${await res.text()}`);
-  const data = await res.json();
-  return data.subscriptions;
+export async function getAllSubscriptionPaid(): Promise<Subscription[]> {
+  try {
+    const data = await fetchApi<{
+      success: boolean;
+      subscriptions: Subscription[];
+    }>(SUBS_ENDPOINTS.GET_SUBSCRIPTION);
+    return data.subscriptions || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function getBatchSubscriptions() {
+  const [mySubs, paidSubs] = await Promise.allSettled([
+    getMySubscriptions(),
+    getAllSubscriptionPaid(),
+  ]);
+
+  return {
+    mySubs: mySubs.status === "fulfilled" ? mySubs.value : [],
+    paidSubs: paidSubs.status === "fulfilled" ? paidSubs.value : [],
+  };
 }

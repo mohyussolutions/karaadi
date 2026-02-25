@@ -1,678 +1,413 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { MdOutlinePlaylistRemove, MdCloudUpload, MdInfo } from "react-icons/md";
 import {
-  CreateCarInput,
-  ICar,
-  useCreateCarMutation,
-  User,
-} from "@/app/(storeFront)/store/slices/carsSlice";
-import {
-  cities,
-  Districts,
-  regions,
-} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
-
-import { apiService } from "@/actions/core/authAction";
+  getAllRegions,
+  getAllCities,
+  addCity,
+} from "@/actions/categories/geoAction";
+import { verifySession } from "@/actions/core/authAction";
 import {
   carsNestedCategoriesMap,
   carsSubCategories,
-  CarSubCategory,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
+import { createCar } from "@/actions/categories/carActions";
+import { getCarFees } from "@/actions/categories/feeAction";
 
 const CarsForSellOrBuy = () => {
   const router = useRouter();
-  const [createCar, { isLoading }] = useCreateCarMutation();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [allCities, setAllCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
+  const [newCity, setNewCity] = useState("");
 
-  type CarFormData = Omit<
-    ICar,
-    | "_id"
-    | "images"
-    | "user"
-    | "price"
-    | "year"
-    | "mileage"
-    | "createdAt"
-    | "updatedAt"
-  > & {
-    price: string;
-    year: number | undefined;
-    mileage: number | undefined;
-    mainCategory: string;
-  };
+  // --- Added Fee States ---
+  const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
+  const [selectedFee, setSelectedFee] = useState<string>("0");
 
-  const [formData, setFormData] = useState<CarFormData>({
-    mainCategory: "Gawaari",
-    title: "",
-    description: "",
-    price: "",
+  const [formData, setFormData] = useState({
+    mainCategory:
+      allCategories.find((c) => c.key === "Cars")?.name || "Gawaari",
     category: "",
     subCategory: "",
-    listingType: "",
+    title: "",
     brand: "",
     vehicleModel: "",
-    year: undefined,
-    mileage: undefined,
+    year: new Date().getFullYear(),
     transmission: "",
-    fuelType: "",
     color: "",
+    mileage: "",
+    fuelType: "",
     region: "",
     city: "",
-    district: "",
-    subDistrict: "",
-    area: "",
+    description: "",
+    price: "",
   });
-  const [mainCategory, setMainCategory] = useState(
-    allCategories[0]?.name || "",
-  );
-  const [images, setImages] = useState<File[]>([]);
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
-  const [filteredDistricts, setFilteredDistricts] = useState<string[]>([]);
-  const [filteredSubcategories, setFilteredSubcategories] = useState<
-    CarSubCategory[]
-  >([]);
-  const [newCity, setNewCity] = useState("");
-  const [newDistrict, setNewDistrict] = useState("");
-  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const sessionUser = await apiService.verifySession();
-        if (!sessionUser) {
-          router.push("/login");
-        } else {
-          setCurrentUser(sessionUser);
-        }
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-      }
-    };
-    fetchUser();
+    async function init() {
+      const user = await verifySession();
+      if (!user) return router.push("/login");
+      setCurrentUser(user);
+
+      const [regs, cities, feeRes] = await Promise.all([
+        getAllRegions(),
+        getAllCities(),
+        getCarFees(),
+      ]);
+
+      setRegions(regs || []);
+      setAllCities(cities || []);
+      setActiveFeeConfig(feeRes);
+    }
+    init();
   }, [router]);
 
-  const handleInputChange = (
-    field: keyof CarFormData,
-    value: string | number | undefined,
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   useEffect(() => {
-    if (!formData.region) return setFilteredCities([]);
-    const citiesInRegion = cities
-      .filter((c) => c.regionId === formData.region)
-      .map((c) => c.name);
-    setFilteredCities(citiesInRegion);
-    handleInputChange("city", "");
-    handleInputChange("district", "");
-    setFilteredDistricts([]);
-    setShowNewCityInputs(false);
-    setNewCity("");
-    setNewDistrict("");
-  }, [formData.region]);
-
-  useEffect(() => {
-    if (formData.city === "custom") {
-      setShowNewCityInputs(true);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
-      handleInputChange("subDistrict", "");
-      setNewDistrict("");
-    } else if (formData.city) {
-      setShowNewCityInputs(false);
-      const cityObj = Districts.find((d) => d.name === formData.city);
-      setFilteredDistricts(cityObj?.subDistricts.map((sd) => sd.name) || []);
-      handleInputChange("district", "");
-      handleInputChange("subDistrict", "");
-    } else {
-      setShowNewCityInputs(false);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
-      handleInputChange("subDistrict", "");
-    }
-  }, [formData.city]);
-
-  useEffect(() => {
-    if (formData.category) {
-      setFilteredSubcategories(
-        carsNestedCategoriesMap[formData.category] || [],
+    if (formData.region) {
+      setFilteredCities(
+        allCities.filter((c) => c.regionId === formData.region),
       );
-      handleInputChange("subCategory", "");
-    } else {
-      setFilteredSubcategories([]);
     }
-  }, [formData.category]);
+  }, [formData.region, allCities]);
 
+  // Handle Dynamic Title and Fee Calculation
   useEffect(() => {
     if (formData.category && formData.subCategory) {
-      const selectedSub = carsNestedCategoriesMap[formData.category]?.find(
-        (sub) => sub.title === formData.subCategory,
-      );
-      handleInputChange("title", selectedSub?.so || "");
+      const nested = carsNestedCategoriesMap[formData.category] || [];
+      const selected = nested.find((s) => s.title === formData.subCategory);
+      if (selected) setFormData((prev) => ({ ...prev, title: selected.so }));
+
+      // Map Category to Backend Fee Keys (Adjust keys to match your DB exactly)
+      let feeKey = "";
+      if (formData.category === "Cars for Sale") feeKey = "carSale";
+      else if (formData.category === "Cars for Rent") feeKey = "carRent";
+      else if (formData.category === "Car Parts") feeKey = "carParts";
+
+      if (feeKey && activeFeeConfig) {
+        setSelectedFee(activeFeeConfig[feeKey] || "0");
+      } else {
+        setSelectedFee("0");
+      }
     }
-  }, [formData.category, formData.subCategory]);
-
-  const handleSaveNewCityDistrict = () => {
-    if (!newCity.trim() || !newDistrict.trim()) {
-      toast.warn("Please enter both city and district names.");
-      return;
-    }
-    handleInputChange("city", newCity.trim());
-    handleInputChange("district", newDistrict.trim());
-    handleInputChange("subDistrict", newDistrict.trim());
-    setFilteredDistricts([newDistrict.trim()]);
-    setShowNewCityInputs(false);
-    setNewCity("");
-    setNewDistrict("");
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const selectedFiles = Array.from(e.target.files);
-    if (selectedFiles.length + images.length > 10) {
-      toast.warn("You can only upload up to 10 images.");
-      return;
-    }
-    setImages((prev) => [...prev, ...selectedFiles].slice(0, 10));
-  };
-
-  const isFormValid = () => {
-    if (!currentUser) return false;
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.district;
-    return (
-      formData.category &&
-      formData.subCategory &&
-      formData.title &&
-      formData.description &&
-      formData.price &&
-      !isNaN(Number(formData.price)) &&
-      Number(formData.price) >= 0 &&
-      formData.listingType &&
-      formData.brand &&
-      formData.vehicleModel &&
-      formData.transmission &&
-      formData.color &&
-      formData.region &&
-      selectedCity &&
-      selectedDistrict &&
-      images.length > 0
-    );
-  };
-
-  const convertImagesToBase64 = async (files: File[]): Promise<string[]> =>
-    Promise.all(
-      files.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          }),
-      ),
-    );
+  }, [formData.category, formData.subCategory, activeFeeConfig]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      toast.error("User not loaded yet.");
-      return;
-    }
-    if (!isFormValid()) {
-      toast.warn("Please fill out all required fields correctly.");
-      return;
+    if (!currentUser || isLoading) return;
+
+    if (
+      !formData.category ||
+      !formData.subCategory ||
+      !formData.price ||
+      !formData.region
+    ) {
+      return toast.error("Fadlan buuxi banaanada muhiimka ah");
     }
 
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.district;
-    const subDistrictValue = formData.subDistrict || selectedDistrict;
-
+    setIsLoading(true);
     try {
-      const imagesBase64 = await convertImagesToBase64(images);
+      let finalCity = formData.city;
+      if (showNewCityInputs && newCity.trim()) {
+        const res: any = await addCity({
+          id: `city-${Date.now()}`,
+          name: newCity.trim(),
+          regionId: formData.region,
+          isActive: true,
+        });
+        if (res.success) finalCity = res.data.name;
+      }
 
-      const payload: CreateCarInput & { mainCategory: string } = {
+      const imagesBase64 = await Promise.all(
+        images.map(
+          (img) =>
+            new Promise((resolve) => {
+              const r = new FileReader();
+              r.readAsDataURL(img);
+              r.onload = () => resolve(r.result);
+            }),
+        ),
+      );
+
+      const payload = {
+        userId: currentUser._id || currentUser.id,
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
-        mainCategory: mainCategory,
-        category: formData.category,
-        subCategory: formData.subCategory,
-        listingType: formData.listingType,
+        so: formData.title,
+        mainCategory: "Cars",
+        category: [formData.category],
+        subcategory: [formData.subCategory],
         brand: formData.brand,
         vehicleModel: formData.vehicleModel,
-        year: formData.year,
-        mileage: formData.mileage,
+        year: Number(formData.year),
+        mileage: Number(formData.mileage),
         transmission: formData.transmission,
         fuelType: formData.fuelType,
         color: formData.color,
         region: formData.region,
-        city: selectedCity,
-        district: selectedDistrict,
-        subDistrict: subDistrictValue,
-        area: formData.area,
-        user: currentUser._id,
-        images: imagesBase64,
+        city: finalCity,
+        images: imagesBase64 as string[],
+        // --- Added Payment Data ---
+        isPaid: false,
+        feeAmount: Number(selectedFee),
       };
-      console.log("........", payload);
-      const createdCar: ICar = await createCar(payload).unwrap();
-      router.push(`/carsSummary?id=${createdCar._id}`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to create car listing.");
+
+      const result = await createCar(payload as any, currentUser.token);
+
+      if (result.success) {
+        toast.success("Xayeysiiska waa la gudbiyey!");
+        // Redirect to payment plan
+        router.push(`/payment/plan?id=${result.carId}`);
+      } else {
+        toast.error(result.message || "Cillad ayaa dhacday");
+      }
+    } catch (error) {
+      toast.error("Cillad dhinaca network-ka ah");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (!currentUser) return <div>Loading user...</div>;
-
   return (
-    <div className="max-w-xl mx-auto mt-12 p-6 bg-white rounded-lg shadow-md">
-      <ToastContainer />
-      <h1 className="text-3xl font-semibold mb-6 text-center">
-        Ads Cars (Xayasiiso Gawaarida)
+    <div className="max-w-3xl mx-auto mt-10 p-6 md:p-10 bg-white rounded-3xl shadow-2xl">
+      <ToastContainer position="top-center" />
+      <h1 className="text-3xl font-black text-center mb-10 text-gray-800">
+        Xayeysiis Gawaari 🚗
       </h1>
-      <form onSubmit={handleSubmit} ref={formRef} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Main Category
-          </label>
-          <select
-            value={mainCategory}
-            onChange={(e) => {
-              setMainCategory(e.target.value);
-              handleInputChange("category", "");
-              handleInputChange("subCategory", "");
-            }}
-            required
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-          >
-            {allCategories
-              .filter((cat) => cat.key === "Cars")
-              .map((cat, index) => (
-                <option key={index} value={cat.name}>
-                  {cat.so ?? cat.name}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 ml-2">
+              Qaybta Weyn
+            </label>
+            <select
+              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none cursor-not-allowed"
+              disabled
+            >
+              <option>{formData.mainCategory}</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 ml-2">
+              Qaybta
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category: e.target.value,
+                  subCategory: "",
+                })
+              }
+              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
+            >
+              <option value="">Dooro Qaybta</option>
+              {carsSubCategories.map((cat) => (
+                <option key={cat.title} value={cat.title}>
+                  {cat.so}
                 </option>
               ))}
-          </select>
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category
-          </label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold text-gray-400 ml-2">Nooca</label>
           <select
-            value={formData.category}
-            onChange={(e) => {
-              handleInputChange("category", e.target.value);
-              handleInputChange("subCategory", "");
-              handleInputChange("title", "");
-            }}
-            required
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+            value={formData.subCategory}
+            onChange={(e) =>
+              setFormData({ ...formData, subCategory: e.target.value })
+            }
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
+            disabled={!formData.category}
           >
-            <option value="">Select category</option>
-            {carsSubCategories.map((cat) => (
-              <option key={cat.title} value={cat.title}>
-                {cat.so} ({cat.title})
+            <option value="">Dooro Nooca Gawaarida</option>
+            {(carsNestedCategoriesMap[formData.category] || []).map((sub) => (
+              <option key={sub.title} value={sub.title}>
+                {sub.so}
               </option>
             ))}
           </select>
+
+          {/* Fee Information Box */}
+          {formData.category && (
+            <div className="mt-2 flex items-center gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
+              <MdInfo className="text-blue-500" />
+              <p className="text-sm font-bold text-blue-700">
+                Lacagta Adeegga:{" "}
+                <span className="text-lg font-black ml-1">${selectedFee}</span>
+              </p>
+            </div>
+          )}
         </div>
 
-        {filteredSubcategories.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Subcategory
-            </label>
-            <select
-              value={formData.subCategory}
-              onChange={(e) => handleInputChange("subCategory", e.target.value)}
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select subcategory</option>
-              {filteredSubcategories.map((sub: CarSubCategory) => (
-                <option key={sub.title} value={sub.title}>
-                  {sub.so} ({sub.title})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <input
+          placeholder="Title-ka Xayeysiiska"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none font-bold focus:border-blue-400"
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title
-          </label>
+        {/* Brand, Model, Year, Gear */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            required
-            placeholder="Auto-filled, adjust if necessary"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+            placeholder="Brand"
+            onChange={(e) =>
+              setFormData({ ...formData, brand: e.target.value })
+            }
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
           />
+          <input
+            placeholder="Model"
+            onChange={(e) =>
+              setFormData({ ...formData, vehicleModel: e.target.value })
+            }
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+          />
+          <input
+            type="number"
+            placeholder="Year"
+            value={formData.year}
+            onChange={(e) =>
+              setFormData({ ...formData, year: Number(e.target.value) })
+            }
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+          />
+          <select
+            value={formData.transmission}
+            onChange={(e) =>
+              setFormData({ ...formData, transmission: e.target.value })
+            }
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+          >
+            <option value="">Gear</option>
+            <option value="Manual">Manual</option>
+            <option value="Automatic">Automatic</option>
+          </select>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Brand
-            </label>
-            <input
-              type="text"
-              value={formData.brand}
-              onChange={(e) => handleInputChange("brand", e.target.value)}
-              required
-              placeholder="e.g., Toyota, Ford"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Model
-            </label>
-            <input
-              type="text"
-              value={formData.vehicleModel}
-              onChange={(e) =>
-                handleInputChange("vehicleModel", e.target.value)
-              }
-              required
-              placeholder="e.g., Corolla, F-150"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Year
-            </label>
-            <input
-              type="number"
-              min="1900"
-              max={new Date().getFullYear()}
-              value={formData.year || ""}
-              onChange={(e) =>
-                handleInputChange("year", Number(e.target.value))
-              }
-              placeholder="e.g., 2018"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Transmission
-            </label>
-            <select
-              value={formData.transmission}
-              onChange={(e) =>
-                handleInputChange("transmission", e.target.value)
-              }
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select</option>
-              <option value="Manual">Manual</option>
-              <option value="Automatic">Automatic</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Color
-            </label>
-            <input
-              type="text"
-              value={formData.color}
-              onChange={(e) => handleInputChange("color", e.target.value)}
-              required
-              placeholder="e.g., White, Red"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mileage (km/mi)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={formData.mileage || ""}
-              onChange={(e) =>
-                handleInputChange("mileage", Number(e.target.value))
-              }
-              placeholder="Optional"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fuel Type
-            </label>
-            <input
-              type="text"
-              value={formData.fuelType || ""}
-              onChange={(e) => handleInputChange("fuelType", e.target.value)}
-              placeholder="e.g., Petrol, Diesel, Hybrid"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Listing Type
-            </label>
-            <input
-              type="text"
-              value={formData.listingType}
-              onChange={(e) => handleInputChange("listingType", e.target.value)}
-              required
-              placeholder="e.g., For Sale, Lease"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Region
-            </label>
-            <select
-              value={formData.region}
-              onChange={(e) => handleInputChange("region", e.target.value)}
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select region</option>
-              {regions.map((reg) => (
-                <option key={reg.id} value={reg.id}>
-                  {reg.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
-            </label>
-            <select
-              value={formData.city}
-              onChange={(e) => handleInputChange("city", e.target.value)}
-              required={!showNewCityInputs}
-              disabled={!formData.region}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select city</option>
-              {filteredCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-              <option value="custom" className="font-bold text-blue-600">
-                Add new city/district
+        {/* Region & City */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <select
+            value={formData.region}
+            onChange={(e) =>
+              setFormData({ ...formData, region: e.target.value, city: "" })
+            }
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none"
+          >
+            <option value="">Dooro Gobol</option>
+            {regions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
               </option>
-            </select>
-          </div>
+            ))}
+          </select>
+          <select
+            value={showNewCityInputs ? "custom" : formData.city}
+            onChange={(e) => {
+              setShowNewCityInputs(e.target.value === "custom");
+              setFormData({
+                ...formData,
+                city: e.target.value === "custom" ? "" : e.target.value,
+              });
+            }}
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none"
+            disabled={!formData.region}
+          >
+            <option value="">Dooro Magaalo</option>
+            {filteredCities.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+            <option value="custom" className="text-blue-600 font-bold">
+              + Magaalo kale
+            </option>
+          </select>
         </div>
 
         {showNewCityInputs && (
-          <div className="space-y-3 p-4 border border-blue-200 rounded-lg bg-blue-50">
-            <input
-              type="text"
-              value={newCity}
-              onChange={(e) => setNewCity(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-              placeholder="New City Name (Required)"
-              required
-            />
-            <input
-              type="text"
-              value={newDistrict}
-              onChange={(e) => setNewDistrict(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-              placeholder="New District Name (Required)"
-              required
-            />
-            <button
-              type="button"
-              onClick={handleSaveNewCityDistrict}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-150"
-            >
-              Save New Location
-            </button>
-          </div>
+          <input
+            placeholder="Qor magaca magaalada cusub"
+            onChange={(e) => setNewCity(e.target.value)}
+            className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl animate-pulse outline-none"
+          />
         )}
 
-        {!showNewCityInputs &&
-          formData.city &&
-          filteredDistricts.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                District
-              </label>
-              <select
-                value={formData.district}
-                onChange={(e) => handleInputChange("district", e.target.value)}
-                required
-                disabled={formData.city === "custom"}
-                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-              >
-                <option value="">Select district</option>
-                {filteredDistricts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sub District (optional)
-          </label>
-          <input
-            type="text"
-            value={formData.subDistrict}
-            onChange={(e) => handleInputChange("subDistrict", e.target.value)}
-            placeholder="e.g., Village or specific neighborhood"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Area (optional)
-          </label>
-          <input
-            type="text"
-            value={formData.area}
-            onChange={(e) => handleInputChange("area", e.target.value)}
-            placeholder="e.g., Street name or landmark"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            required
-            placeholder="Provide details about the car's condition, features, history, etc."
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            rows={4}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Price (USD)
-          </label>
+        {/* Price & Mileage */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <input
             type="number"
-            min="0"
+            placeholder="Qiimaha ($)"
             value={formData.price}
-            onChange={(e) => handleInputChange("price", e.target.value)}
-            required
-            placeholder="0.00"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+            onChange={(e) =>
+              setFormData({ ...formData, price: e.target.value })
+            }
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none font-bold text-blue-600 focus:border-blue-400"
+          />
+          <input
+            type="number"
+            placeholder="Mileage (KM)"
+            value={formData.mileage}
+            onChange={(e) =>
+              setFormData({ ...formData, mileage: e.target.value })
+            }
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Images (Min 1, Max 10)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageChange}
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          <div className="flex flex-wrap mt-2 gap-2">
+        <textarea
+          placeholder="Faahfaahin dheeraad ah..."
+          rows={4}
+          value={formData.description}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
+          className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
+        />
+
+        {/* Image Upload */}
+        <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl">
+          <div className="flex flex-wrap gap-4">
+            <label className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
+              <MdCloudUpload className="text-2xl text-gray-300" />
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) =>
+                  e.target.files &&
+                  setImages([...images, ...Array.from(e.target.files)])
+                }
+              />
+            </label>
             {images.map((img, i) => (
-              <div
-                key={i}
-                className="relative inline-block w-20 h-20 shadow-md"
-              >
+              <div key={i} className="relative w-20 h-20">
                 <img
                   src={URL.createObjectURL(img)}
-                  alt={`preview ${i}`}
-                  className="w-full h-full object-cover rounded"
+                  className="w-full h-full object-cover rounded-2xl shadow-md"
+                  alt="preview"
                 />
                 <button
                   type="button"
                   onClick={() =>
                     setImages(images.filter((_, idx) => idx !== i))
                   }
-                  className="absolute top-[-5px] right-[-5px] bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm border-2 border-white hover:bg-red-700"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg"
                 >
-                  &times;
+                  <MdOutlinePlaylistRemove size={16} />
                 </button>
               </div>
             ))}
@@ -681,14 +416,10 @@ const CarsForSellOrBuy = () => {
 
         <button
           type="submit"
-          disabled={!isFormValid() || isLoading}
-          className={`w-full py-3 rounded-lg text-white font-bold text-lg transition duration-200 shadow-md ${
-            isFormValid() && !isLoading
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
+          disabled={isLoading}
+          className={`w-full py-4 rounded-2xl text-white font-black text-lg shadow-xl transition-all ${isLoading ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:scale-95"}`}
         >
-          {isLoading ? "Submitting..." : "Submit"}
+          {isLoading ? "Gudbinaya..." : "Gudbi Xayeysiiska"}
         </button>
       </form>
     </div>

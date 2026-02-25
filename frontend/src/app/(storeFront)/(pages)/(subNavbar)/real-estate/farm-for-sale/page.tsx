@@ -6,7 +6,8 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import { RealEstateFarmForSaleNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryProperties";
 import { getGlobalFilteredResults } from "@/actions/categories/filterAction";
-import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import PriceRangeFilter from "@/app/(storeFront)/components/Filters/PriceRangeFilter";
+import RoomRangeFilter from "@/app/(storeFront)/components/Filters/RoomRangeFilter";
 import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
@@ -33,6 +34,11 @@ function FarmForSale() {
   );
   const [isFiltering, setIsFiltering] = useState(false);
   const [filteredItems, setFilteredItems] = useState<any[]>([]);
+
+  const [rangeFilters, setRangeFilters] = useState({
+    maxPrice: 1000000,
+    maxRooms: 10,
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -139,16 +145,25 @@ function FarmForSale() {
           ? searchResults
           : allFarmItems;
 
+    const maxP = Number(rangeFilters.maxPrice) || Infinity;
+    const maxR = Number(rangeFilters.maxRooms) || 10;
+
+    let list = baseList.filter((item: any) => {
+      const price = Number(item.price) || 0;
+      const rooms = Number(item.rooms) || 0;
+      return price <= maxP && rooms <= maxR;
+    });
+
     if (selectedSubcategory) {
       const norm = selectedSubcategory.toLowerCase();
-      return baseList.filter((item: any) => {
+      return list.filter((item: any) => {
         const sub = Array.isArray(item.subcategory)
           ? item.subcategory
           : [item.subcategory];
         return sub.some((s: any) => String(s).toLowerCase().includes(norm));
       });
     }
-    return baseList;
+    return list;
   }, [
     query,
     searchResults,
@@ -157,6 +172,7 @@ function FarmForSale() {
     selectedRegion,
     checkedCities,
     filteredItems,
+    rangeFilters,
   ]);
 
   const scroll = (direction: "left" | "right") => {
@@ -205,11 +221,7 @@ function FarmForSale() {
                     prev === category.so ? null : category.so,
                   )
                 }
-                className={`flex-shrink-0 w-44 flex flex-col items-center justify-center text-center rounded-xl p-5 border transition-all ${
-                  selectedSubcategory === category.so
-                    ? "bg-blue-600 border-blue-600 shadow-lg scale-105 text-white"
-                    : "bg-white border-gray-100 hover:border-blue-400 hover:shadow-md"
-                }`}
+                className={`flex-shrink-0 w-44 flex flex-col items-center justify-center text-center rounded-xl p-5 border transition-all ${selectedSubcategory === category.so ? "bg-blue-600 border-blue-600 shadow-lg scale-105 text-white" : "bg-white border-gray-100 hover:border-blue-400 hover:shadow-md"}`}
               >
                 <div
                   className={`text-2xl mb-2 ${selectedSubcategory === category.so ? "text-white" : "text-blue-500"}`}
@@ -237,7 +249,7 @@ function FarmForSale() {
       </div>
 
       <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
-        <aside className="md:w-1/3 sticky top-4 self-start">
+        <aside className="md:w-1/3 sticky top-4 self-start space-y-4">
           <LocationSelector
             onFilterChange={(reg, cities) => {
               setSelectedRegion(reg);
@@ -249,6 +261,7 @@ function FarmForSale() {
             cityCounts={regionCityCounts.cityCounts}
           />
           <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
+            <PriceRangeFilter onFilterChange={setRangeFilters} />
             <SomaliMap
               selectedRegion={selectedRegion}
               onRegionClick={setSelectedRegion}

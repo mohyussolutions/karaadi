@@ -99,6 +99,13 @@ export default function Regions() {
                   {region.cities?.length || 0} Cities Linked
                 </span>
               </div>
+              {region.cities?.length ? (
+                <ul className="text-xs text-gray-500 mt-2">
+                  {region.cities.map((city) => (
+                    <li key={city.id}>{city.name}</li>
+                  ))}
+                </ul>
+              ) : null}
               <button
                 onClick={() => router.push(`/dashboard/settings/cities`)}
                 className="text-[10px] font-bold text-gray-400 hover:text-indigo-600 transition-colors"

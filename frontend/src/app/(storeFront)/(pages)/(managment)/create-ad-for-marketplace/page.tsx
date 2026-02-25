@@ -1,29 +1,32 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import { createMarketplaceItem } from "@/actions/categories/marketplaceActions";
+import {
+  MdCategory,
+  MdOutlineDescription,
+  MdAttachMoney,
+  MdLocationOn,
+  MdAddPhotoAlternate,
+  MdCloudUpload,
+  MdClose,
+  MdLocationCity,
+} from "react-icons/md";
+import { HiOutlineTag } from "react-icons/hi";
 
-// Define CreateRealEstateItemInput if not imported from elsewhere
-type CreateRealEstateItemInput = {
-  title: string;
-  description: string;
-  price: number;
-  category: string;
-  subcategory: string;
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string;
-  extra?: object;
-  maGaday?: boolean;
-};
+import { createMarketplaceItem } from "@/actions/categories/marketplaceActions";
+import { verifySession } from "@/actions/core/authAction";
+import {
+  getAllRegions,
+  getAllCities,
+  addCity,
+} from "@/actions/categories/geoAction";
 
 import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+
 import {
   AntiquesAndArtNestedSub,
   ElectronicsNestedSub,
@@ -32,23 +35,25 @@ import {
   FurnitureNestedSub,
   FashionNestedSub,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
-import { verifySession } from "@/actions/core/authAction";
 
 interface User {
-  _id: string;
-  username?: string;
-  profileImage?: string;
-  phone?: string;
+  id: string;
 }
 
-interface SubCategoryItem {
-  so: string;
-  title: string;
-  icon: React.ReactElement;
-  href: string;
+interface Region {
+  id: string;
+  name: string;
 }
 
-const categoryNestedMap: { [key: string]: SubCategoryItem[] } = {
+interface City {
+  id: string;
+  name: string;
+  regionId: string;
+  lat?: number;
+  lng?: number;
+}
+
+const categoryNestedMap: Record<string, any[]> = {
   "Antiques & Art": AntiquesAndArtNestedSub,
   Electronics: ElectronicsNestedSub,
   "Animal & Supplies": AnimalAndSuppliesNestedSub,
@@ -57,17 +62,15 @@ const categoryNestedMap: { [key: string]: SubCategoryItem[] } = {
   Fashion: FashionNestedSub,
 };
 
-const MarketplaceAdForm = () => {
+export default function MarketplaceAdForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [allCities, setAllCities] = useState<City[]>([]);
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
 
-  type FormData = Omit<
-    CreateRealEstateItemInput,
-    "user" | "images" | "price"
-  > & { price: string };
-
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     price: "",
@@ -75,449 +78,349 @@ const MarketplaceAdForm = () => {
     subcategory: "",
     region: "",
     city: "",
-    district: "",
-    subDistrict: "",
-    extra: {},
-    maGaday: false,
   });
 
   const [mainCategory, setMainCategory] = useState(
-    allCategories[0]?.name || "",
+    allCategories.find((cat) => cat.key === "Marketplace")?.name || "",
   );
   const [images, setImages] = useState<File[]>([]);
-  const [filteredCities, setFilteredCities] = useState<City[]>([]);
-  const [filteredDistricts, setFilteredDistricts] = useState<string[]>([]);
-  const [filteredSubcategories, setFilteredSubcategories] = useState<
-    SubCategoryItem[]
-  >([]);
   const [newCity, setNewCity] = useState("");
-  const [newDistrict, setNewDistrict] = useState("");
   const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const sessionUser = await verifySession();
-      setCurrentUser(sessionUser);
-    };
-    fetchUser();
+    async function init() {
+      try {
+        const sessionUser = await verifySession();
+        if (sessionUser) {
+          setCurrentUser({ id: sessionUser._id });
+        }
+
+        const [regs, cities] = await Promise.all([
+          getAllRegions(),
+          getAllCities(),
+        ]);
+        setRegions(regs || []);
+        setAllCities(cities || []);
+      } catch (error) {
+        console.error("Initialization failed", error);
+      }
+    }
+    init();
   }, []);
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   useEffect(() => {
-    if (!formData.region) return;
-    const citiesInRegion = cities.filter(
-      (city) => city.regionId === formData.region,
-    );
-    setFilteredCities(citiesInRegion);
-    handleInputChange("city", "");
-    handleInputChange("district", "");
-    setFilteredDistricts([]);
-    setShowNewCityInputs(false);
-    setNewCity("");
-    setNewDistrict("");
-  }, [formData.region]);
-
-  useEffect(() => {
-    if (formData.city === "custom") {
-      setShowNewCityInputs(true);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
-    } else if (formData.city) {
-      setShowNewCityInputs(false);
-      handleInputChange("district", "");
-    } else {
-      setShowNewCityInputs(false);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
+    if (formData.region) {
+      setFilteredCities(
+        allCities.filter((c) => c.regionId === formData.region),
+      );
     }
-  }, [formData.city]);
+  }, [formData.region, allCities]);
 
-  useEffect(() => {
-    if (formData.category) {
-      const selectedCategoryEntry = (marketplaceSubCategories as any)[
-        formData.category
-      ];
-      const selectedCategoryTitle = selectedCategoryEntry?.title;
-      const nested = categoryNestedMap[selectedCategoryTitle] || [];
-      setFilteredSubcategories(nested);
-    } else {
-      setFilteredSubcategories([]);
-    }
-  }, [formData.category]);
-
-  const handleSaveNewCityDistrict = () => {
-    if (!newCity.trim() || !newDistrict.trim()) return;
-    handleInputChange("city", newCity.trim());
-    handleInputChange("subDistrict", newDistrict.trim());
-    handleInputChange("district", newDistrict.trim());
-    setFilteredDistricts([newDistrict.trim()]);
-    setShowNewCityInputs(false);
-    setNewCity("");
-    setNewDistrict("");
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
   };
-
-  const isFormValid = () => {
-    if (!currentUser) return false;
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.subDistrict;
-    return (
-      mainCategory &&
-      formData.category &&
-      formData.subcategory &&
-      formData.title &&
-      formData.description &&
-      formData.price &&
-      !isNaN(Number(formData.price)) &&
-      Number(formData.price) >= 0 &&
-      formData.region &&
-      selectedCity &&
-      selectedDistrict
-    );
-  };
-
-  const convertImagesToBase64 = async (files: File[]): Promise<string[]> =>
-    Promise.all(
-      files.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          }),
-      ),
-    );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      toast.error("User not loaded yet.", { position: "bottom-center" });
-      return;
-    }
-    if (!isFormValid()) {
-      toast.warn("Please fill out all required fields correctly.", {
-        position: "bottom-center",
-      });
-      return;
-    }
-
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedSubDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.subDistrict;
-
-    const categoryEntry = (marketplaceSubCategories as any)[formData.category];
-    const categoryTitle = categoryEntry
-      ? categoryEntry.title
-      : formData.category;
-
-    const imagesBase64 = await convertImagesToBase64(images);
-
-    const payload: CreateRealEstateItemInput & {
-      user: string;
-      images: string[];
-      mainCategory: string;
-    } = {
-      ...formData,
-      category: categoryTitle,
-      price: Number(formData.price),
-      user: currentUser._id,
-      images: imagesBase64,
-      city: selectedCity,
-      subDistrict: selectedSubDistrict,
-      mainCategory: mainCategory,
-    };
+    if (!currentUser || isLoading) return;
 
     try {
       setIsLoading(true);
-      const result = await createMarketplaceItem(payload);
-      if (result && result.success) {
-        toast.success("Ad submitted successfully!", { position: "top-right" });
-        setTimeout(() => {
-          router.push(`/marketplaceSummary?id=${result.id}`);
-        }, 1000);
-      } else {
-        toast.error(result?.error || "Failed to create marketplace item.", {
-          position: "top-right",
-        });
+
+      let finalCityName = formData.city.trim();
+
+      if (showNewCityInputs && newCity.trim()) {
+        const cityPayload = {
+          id: newCity.trim().toLowerCase().replace(/\s+/g, "-"),
+          name: newCity.trim(),
+          regionId: formData.region,
+          isActive: true,
+        };
+
+        const cityResult = await addCity(cityPayload);
+
+        if (cityResult.success) {
+          finalCityName = cityResult.data.name;
+          setAllCities((prev) => [...prev, cityResult.data]);
+        } else {
+          toast.error("Waa lagu guul daraystay in la kaydiyo magaalada cusub");
+          setIsLoading(false);
+          return;
+        }
       }
-    } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("Failed to create marketplace item.", {
-        position: "top-right",
-      });
+
+      const imagesBase64 = await Promise.all(
+        images.map((img) => convertToBase64(img)),
+      );
+
+      if (
+        !formData.title ||
+        !formData.description ||
+        !formData.price ||
+        !mainCategory ||
+        !formData.category ||
+        !formData.region ||
+        (!showNewCityInputs && !formData.city) ||
+        (showNewCityInputs && !newCity) ||
+        imagesBase64.length === 0
+      ) {
+        toast.error("Fadlan buuxi dhammaan xogta muhiimka ah.");
+        setIsLoading(false);
+        return;
+      }
+
+      const selectedRegion = regions.find((r) => r.id === formData.region);
+      const selectedCityData = allCities.find((c) => c.name === finalCityName);
+
+      const payload = {
+        userId: currentUser.id,
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        mainCategory: mainCategory,
+        category: [formData.category],
+        subcategory: formData.subcategory ? [formData.subcategory] : [],
+        region: selectedRegion ? selectedRegion.name : formData.region,
+        city: finalCityName,
+        images: imagesBase64,
+        extra: {
+          lat: selectedCityData?.lat ? Number(selectedCityData.lat) : 0,
+          lng: selectedCityData?.lng ? Number(selectedCityData.lng) : 0,
+        },
+      };
+
+      const result = await createMarketplaceItem(payload as any);
+      if (result?.success) {
+        toast.success("Waa lagu guuleystay!");
+        router.push(`/(summary)/items-summary?id=${result.id}`);
+      } else {
+        toast.error(result?.error || "Cillad ayaa dhacday");
+      }
+    } catch (err) {
+      toast.error("Cillad farsamo ayaa dhacday");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!currentUser) return <div>Loading user...</div>;
+  if (!currentUser)
+    return (
+      <div className="p-10 text-center font-bold text-gray-400">LOADING...</div>
+    );
 
   return (
-    <div className="max-w-4xl mx-auto mt-6 p-4 md:p-6 bg-gray-50 rounded-lg shadow-xl">
+    <div className="max-w-4xl mx-auto mt-6 p-4 md:p-8 bg-white rounded-2xl shadow-2xl border border-gray-100">
       <ToastContainer />
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Create Marketplace Ad 🚀
-      </h1>
-      <form onSubmit={handleSubmit} ref={formRef} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Main Category
-          </label>
-          <select
-            value={mainCategory}
-            onChange={(e) => {
-              setMainCategory(e.target.value);
-              handleInputChange("category", "");
-              handleInputChange("subcategory", "");
-            }}
-            required
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-          >
-            {allCategories
-              .filter((cat) => cat.key === "Marketplace")
-              .map((cat, index) => (
-                <option key={index} value={cat.name}>
-                  {cat.so ?? cat.name}
-                </option>
-              ))}
-          </select>
-        </div>
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-black text-gray-800 flex items-center justify-center gap-3">
+          Gudbi Xayeysiis <span className="text-blue-600">Marketplace</span>
+        </h1>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-4">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <MdCategory className="text-blue-600 text-lg" /> Nooca Alaabta
+          </label>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <select
+              value={mainCategory}
+              onChange={(e) => setMainCategory(e.target.value)}
+              className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none"
+            >
+              {allCategories
+                .filter((cat) => cat.key === "Marketplace")
+                .map((cat, i) => (
+                  <option key={i} value={cat.name}>
+                    {cat.so ?? cat.name}
+                  </option>
+                ))}
+            </select>
+
             <select
               value={formData.category}
-              onChange={(e) => {
-                handleInputChange("category", e.target.value);
-                handleInputChange("subcategory", "");
-                handleInputChange("title", "");
-              }}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category: e.target.value,
+                  subcategory: "",
+                })
+              }
+              className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none"
               required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
             >
-              <option value="">Select Category</option>
-              {Object.entries(marketplaceSubCategories).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {(label as any).so}
+              <option value="">Dooro Qaybta</option>
+              {marketplaceSubCategories.map((cat: any) => (
+                <option key={cat.title} value={cat.title}>
+                  {cat.so}
                 </option>
               ))}
             </select>
           </div>
 
-          {filteredSubcategories.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subcategory
-              </label>
-              <select
-                value={formData.subcategory}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <select
+              value={formData.subcategory}
+              onChange={(e) =>
+                setFormData({ ...formData, subcategory: e.target.value })
+              }
+              className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none"
+            >
+              <option value="">Qayb hoosaadka</option>
+              {(categoryNestedMap[formData.category] || []).map((sub: any) => (
+                <option key={sub.title} value={sub.title}>
+                  {sub.so}
+                </option>
+              ))}
+            </select>
+
+            <div className="relative flex items-center">
+              <MdAttachMoney className="absolute left-4 text-green-600 text-xl" />
+              <input
+                type="number"
+                step="0.01"
+                value={formData.price}
                 onChange={(e) =>
-                  handleInputChange("subcategory", e.target.value)
+                  setFormData({ ...formData, price: e.target.value })
                 }
+                className="w-full border-2 border-gray-100 bg-gray-50 pl-11 pr-4 py-3 rounded-xl outline-none"
+                placeholder="Qiimaha"
                 required
-                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-              >
-                <option value="">Select Subcategory</option>
-                {filteredSubcategories.map((sub) => (
-                  <option key={sub.title} value={sub.title}>
-                    {sub.so}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title
-          </label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            required
-            placeholder="e.g., Brand New Samsung Galaxy S21"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            required
-            rows={4}
-            placeholder="Provide a detailed description of your item..."
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price (USD)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={formData.price}
-              onChange={(e) => handleInputChange("price", e.target.value)}
-              required
-              placeholder="0.00"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Region
-            </label>
+          <div className="relative flex items-center">
+            <HiOutlineTag className="absolute left-4 text-blue-500 text-xl" />
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              className="w-full border-2 border-gray-100 bg-gray-50 pl-11 pr-4 py-3 rounded-xl outline-none"
+              placeholder="Cinwaanka xayeysiiska"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <MdLocationOn className="text-red-500 text-lg" /> Goobta
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
             <select
               value={formData.region}
-              onChange={(e) => handleInputChange("region", e.target.value)}
+              onChange={(e) =>
+                setFormData({ ...formData, region: e.target.value, city: "" })
+              }
+              className="w-full border-2 border-white bg-white px-4 py-3 rounded-xl shadow-sm outline-none"
               required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
             >
-              <option value="">Select region</option>
+              <option value="">Dooro Gobol</option>
               {regions.map((reg) => (
                 <option key={reg.id} value={reg.id}>
                   {reg.name}
                 </option>
               ))}
             </select>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
-            </label>
             <select
               value={formData.city}
-              onChange={(e) => handleInputChange("city", e.target.value)}
+              onChange={(e) => {
+                setShowNewCityInputs(e.target.value === "custom");
+                setFormData({ ...formData, city: e.target.value });
+                if (e.target.value !== "custom") setNewCity("");
+              }}
+              className="w-full border-2 border-white bg-white px-4 py-3 rounded-xl shadow-sm outline-none"
               required={!showNewCityInputs}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+              disabled={!formData.region}
             >
-              <option value="">Select city</option>
+              <option value="">Dooro Magaalada</option>
               {filteredCities.map((c) => (
                 <option key={c.id} value={c.name}>
                   {c.name}
                 </option>
               ))}
-              <option value="custom" className="font-bold text-blue-600">
-                Add new city
+              <option value="custom" className="text-blue-600 font-black">
+                + Magaalo kale
               </option>
             </select>
           </div>
-
-          {!showNewCityInputs && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                District
-              </label>
-              <select
-                value={formData.district}
-                onChange={(e) => handleInputChange("district", e.target.value)}
-                required
-                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-              >
-                <option value="">Select district</option>
-                {filteredDistricts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         {showNewCityInputs && (
-          <div className="space-y-3 p-4 border border-blue-200 rounded-lg bg-blue-50">
+          <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-4">
+            <MdLocationCity className="text-blue-500 text-2xl" />
             <input
               type="text"
+              placeholder="Qor magaca magaalada"
+              className="w-full border-2 border-white bg-white px-4 py-3 rounded-xl outline-none"
               value={newCity}
               onChange={(e) => setNewCity(e.target.value)}
-              placeholder="New City Name (Required)"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg"
               required
             />
-            <input
-              type="text"
-              value={newDistrict}
-              onChange={(e) => setNewDistrict(e.target.value)}
-              placeholder="New District Name (Required)"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-              required
-            />
-            <button
-              type="button"
-              onClick={handleSaveNewCityDistrict}
-              className="w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-150"
-            >
-              Save New Location
-            </button>
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sub District (Optional)
+        <div className="space-y-4">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <MdOutlineDescription className="text-blue-600 text-lg" />{" "}
+            Faahfaahin
           </label>
-          <input
-            type="text"
-            value={formData.subDistrict}
-            onChange={(e) => handleInputChange("subDistrict", e.target.value)}
-            placeholder="e.g., Zone A"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+          <textarea
+            value={formData.description}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
+            rows={4}
+            className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none resize-none"
+            placeholder="Sharaxaad..."
+            required
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Images (Max 10)
+        <div className="space-y-4">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <MdAddPhotoAlternate className="text-purple-600 text-lg" /> Sawirada
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) =>
-              e.target.files &&
-              setImages([...images, ...Array.from(e.target.files)].slice(0, 10))
-            }
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          <div className="flex flex-wrap mt-4 gap-3">
+          <div className="flex flex-wrap gap-4">
+            <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
+              <MdCloudUpload className="text-3xl text-gray-300" />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) =>
+                  e.target.files &&
+                  setImages(Array.from(e.target.files).slice(0, 10))
+                }
+              />
+            </label>
             {images.map((img, i) => (
-              <div key={i} className="relative w-20 h-20 shadow-md">
+              <div key={i} className="relative w-24 h-24 group">
                 <img
                   src={URL.createObjectURL(img)}
-                  alt={`Ad image ${i + 1}`}
-                  className="w-full h-full object-cover rounded-lg"
+                  className="w-full h-full object-cover rounded-2xl shadow-md border-2 border-white"
+                  alt="preview"
                 />
                 <button
                   type="button"
                   onClick={() =>
                     setImages(images.filter((_, idx) => idx !== i))
                   }
-                  className="absolute top-[-5px] right-[-5px] bg-red-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition duration-150"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:bg-red-600"
                 >
-                  ×
+                  <MdClose size={14} />
                 </button>
               </div>
             ))}
@@ -526,18 +429,16 @@ const MarketplaceAdForm = () => {
 
         <button
           type="submit"
-          disabled={!isFormValid() || isLoading}
-          className={`w-full py-3 rounded-lg text-white font-bold text-lg transition duration-200 shadow-md ${
-            isFormValid() && !isLoading
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-gray-400 cursor-not-allowed"
+          disabled={isLoading}
+          className={`w-full py-4 rounded-2xl text-white font-black text-lg transition-all shadow-xl ${
+            isLoading
+              ? "bg-gray-200 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-blue-100"
           }`}
         >
-          {isLoading ? "Submitting..." : "Submit Ad"}
+          {isLoading ? "Gudbinaya..." : "Gudbi Xayeysiiska"}
         </button>
       </form>
     </div>
   );
-};
-
-export default MarketplaceAdForm;
+}

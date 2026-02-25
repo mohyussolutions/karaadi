@@ -9,6 +9,8 @@ import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults"
 import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import PriceRangeFilter from "@/app/(storeFront)/components/Filters/PriceRangeFilter";
+import RoomRangeFilter from "@/app/(storeFront)/components/Filters/RoomRangeFilter";
 import {
   getRealEstateListings,
   RealEstate,
@@ -30,6 +32,11 @@ function ForSale() {
   const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
     {},
   );
+
+  const [rangeFilters, setRangeFilters] = useState({
+    maxPrice: 1000000,
+    maxRooms: 10,
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -98,6 +105,15 @@ function ForSale() {
   const itemsToDisplay = useMemo(() => {
     let list = query.trim() ? searchResults : allForSaleItems;
 
+    const maxP = Number(rangeFilters.maxPrice) || Infinity;
+    const maxR = Number(rangeFilters.maxRooms) || 10;
+
+    list = list.filter((item: any) => {
+      const price = Number(item.price) || 0;
+      const rooms = Number(item.rooms) || 0;
+      return price <= maxP && rooms <= maxR;
+    });
+
     if (selectedSubcategory) {
       const normalized = selectedSubcategory.toLowerCase();
       list = list.filter((item: any) =>
@@ -132,6 +148,7 @@ function ForSale() {
     allForSaleItems,
     selectedRegion,
     checkedCities,
+    rangeFilters,
   ]);
 
   const scroll = (direction: "left" | "right") => {
@@ -232,6 +249,8 @@ function ForSale() {
               cityCounts={regionCityCounts.cityCounts}
             />
             <div className="w-full bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
+              <PriceRangeFilter onFilterChange={setRangeFilters} />
+              <RoomRangeFilter onFilterChange={setRangeFilters} />
               <SomaliMap
                 selectedRegion={selectedRegion}
                 onRegionClick={setSelectedRegion}

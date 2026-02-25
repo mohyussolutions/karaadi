@@ -1,193 +1,37 @@
-name: Deploy Production
-
+name: Production Deployment
 on:
   push:
     branches: [main]
-    paths:
-      - "production/**"
-      - "frontend/**"
-      - "backend/**"
-      - ".github/workflows/deploy-production.yml"
-  workflow_dispatch:
-    inputs:
-      stack_name:
-        description: "CloudFormation stack name"
-        required: false
-        default: "karaadi-production"
-      region:
-        description: "AWS region to deploy to"
-        required: false
-        default: "us-east-1"
-      vpc_id:
-        description: "VPC ID (overrides secrets/vars)"
-        required: false
-      subnet_ids:
-        description: "Comma-separated Subnet IDs (overrides secrets/vars)"
-        required: false
-      environment_name:
-        description: "Elastic Beanstalk Environment Name"
-        required: false
-        default: "karaadi-prod"
-      eb_instance_type:
-        description: "Elastic Beanstalk Instance Type"
-        required: false
-        default: "t3.small"
-      allowed_http_cidr:
-        description: "CIDR allowed for HTTP/HTTPS to EB"
-        required: false
-        default: "0.0.0.0/0"
-      acm_certificate_arn:
-        description: "ACM Certificate ARN for HTTPS on ALB"
-        required: true
-
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   deploy:
-    name: Deploy CloudFormation
     runs-on: ubuntu-latest
-    concurrency:
-      group: production-deploy
-      cancel-in-progress: false
-    env:
-      STACK_NAME: ${{ inputs.stack_name || 'karaadi-production' }}
-      AWS_REGION: ${{ inputs.region || vars.AWS_REGION || secrets.AWS_REGION || 'us-east-1' }}
-      VPC_ID: ${{ inputs.vpc_id || vars.VPC_ID || secrets.VPC_ID }}
-      SUBNET_IDS: ${{ inputs.subnet_ids || vars.SUBNET_IDS || secrets.SUBNET_IDS }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      EB_ENVIRONMENT_NAME: ${{ inputs.environment_name || vars.EB_ENVIRONMENT_NAME || 'karaadi-prod' }}
-      EB_INSTANCE_TYPE: ${{ inputs.eb_instance_type || vars.EB_INSTANCE_TYPE || 't3.small' }}
-      ALLOWED_HTTP_CIDR: ${{ inputs.allowed_http_cidr || vars.ALLOWED_HTTP_CIDR || '0.0.0.0/0' }}
-      EB_APPLICATION_NAME: ${{ vars.EB_APPLICATION_NAME || 'karaadi-backend' }}
-      EB_S3_BUCKET: ${{ vars.EB_S3_BUCKET }}
-      ACM_CERT_ARN: ${{ inputs.acm_certificate_arn || vars.ACM_CERTIFICATE_ARN || secrets.ACM_CERTIFICATE_ARN }}
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials via OIDC (recommended)
-        if: ${{ env.AWS_ROLE_TO_ASSUME != '' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Configure AWS credentials via access keys
-        if: ${{ env.AWS_ROLE_TO_ASSUME == '' }}
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
-      - name: Validate CloudFormation template
+      - name: Deploy Infra
         run: |
-          aws cloudformation validate-template \
-            --template-body file://production/production.yaml
-
-      - name: Determine parameter overrides (env + optional parameters.json)
-        id: params
-        shell: bash
-        run: |
-          set -euo pipefail
-          PARAMS=()
-          if [ -n "${VPC_ID:-}" ]; then
-            PARAMS+=("VpcId=${VPC_ID}")
-          fi
-          if [ -n "${SUBNET_IDS:-}" ]; then
-            PARAMS+=("Subnets=${SUBNET_IDS}")
-          fi
-          if [ -n "${DB_PASSWORD:-}" ]; then
-            PARAMS+=("DBPassword=${DB_PASSWORD}")
-          fi
-            if [ -n "${EB_INSTANCE_TYPE:-}" ]; then
-              PARAMS+=("EBInstanceType=${EB_INSTANCE_TYPE}")
-            fi
-            if [ -n "${EB_ENVIRONMENT_NAME:-}" ]; then
-              PARAMS+=("EnvironmentName=${EB_ENVIRONMENT_NAME}")
-            fi
-            if [ -n "${ALLOWED_HTTP_CIDR:-}" ]; then
-              PARAMS+=("AllowedHttpCidr=${ALLOWED_HTTP_CIDR}")
-            fi
-          if [ -n "${ACM_CERT_ARN:-}" ]; then
-            PARAMS+=("ACMCertificateArn=${ACM_CERT_ARN}")
-          fi
-          if [ -f production/parameters.json ]; then
-            if command -v jq >/dev/null 2>&1; then
-              mapfile -t FROM_JSON < <(jq -r 'to_entries | map("\(.key)=\(.value)") | .[]' production/parameters.json)
-              PARAMS+=("${FROM_JSON[@]}")
-            else
-              echo "jq not found; skipping parameters.json parsing" >&2
-            fi
-          fi
-          printf "overrides=%s\n" "${PARAMS[*]}" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy stack
-        run: |
-          set -euo pipefail
-          EXTRA_ARGS=()
-          if [ -n "${{ steps.params.outputs.overrides }}" ]; then
-            EXTRA_ARGS+=(--parameter-overrides ${{ steps.params.outputs.overrides }})
-          fi
           aws cloudformation deploy \
             --template-file production/production.yaml \
-            --stack-name "${STACK_NAME}" \
-            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-            --no-fail-on-empty-changeset \
-            "${EXTRA_ARGS[@]}"
+            --stack-name karaadi-production \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 
-      - name: Output stack status
-        run: |
-          aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query 'Stacks[0].{Status:StackStatus,Id:StackId,Name:StackName}' --output table
-
-      - name: Package backend source bundle
+      - name: Build & Deploy Backend
         working-directory: backend
         run: |
-          set -euo pipefail
-          VERSION_LABEL="${GITHUB_SHA::8}-${GITHUB_RUN_NUMBER}"
-          echo "VERSION_LABEL=${VERSION_LABEL}" >> $GITHUB_ENV
-          zip -r ../backend-${VERSION_LABEL}.zip . -x "node_modules/*" ".git/*" "**/.DS_Store"
+          npm install
+          npx prisma generate
+          zip -r ../deploy.zip . -x "node_modules/*"
+          aws s3 cp ../deploy.zip s3://karaadi-deploy-bucket/v-${{ github.sha }}.zip
+          aws elasticbeanstalk create-application-version --application-name karaadi-backend --version-label ${{ github.sha }} --source-bundle S3Bucket="karaadi-deploy-bucket",S3Key="v-${{ github.sha }}.zip"
+          aws elasticbeanstalk update-environment --environment-name karaadi-prod --version-label ${{ github.sha }}
 
-      - name: Resolve EB S3 bucket
-        id: s3
-        run: |
-          set -euo pipefail
-          if [ -n "${EB_S3_BUCKET}" ]; then
-            echo "bucket=${EB_S3_BUCKET}" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          BUCKET="eb-app-${ACCOUNT_ID}-${AWS_REGION}"
-          echo "bucket=${BUCKET}" >> "$GITHUB_OUTPUT"
-          if ! aws s3 ls "s3://${BUCKET}" >/dev/null 2>&1; then
-            aws s3api create-bucket --bucket "${BUCKET}" --region "${AWS_REGION}" \
-              $( [ "${AWS_REGION}" != "us-east-1" ] && echo --create-bucket-configuration LocationConstraint="${AWS_REGION}" )
-          fi
-          aws s3api put-public-access-block --bucket "${BUCKET}" --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
-          aws s3api put-bucket-encryption --bucket "${BUCKET}" --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
-
-      - name: Upload bundle to S3
-        run: |
-          set -euo pipefail
-          aws s3 cp "backend-${VERSION_LABEL}.zip" "s3://${{ steps.s3.outputs.bucket }}/backend-${VERSION_LABEL}.zip"
-
-      - name: Create EB application version
-        run: |
-          set -euo pipefail
-          aws elasticbeanstalk create-application-version \
-            --application-name "${EB_APPLICATION_NAME}" \
-            --version-label "${VERSION_LABEL}" \
-            --source-bundle S3Bucket="${{ steps.s3.outputs.bucket }}",S3Key="backend-${VERSION_LABEL}.zip" \
-            --auto-create-application
-
-      - name: Update EB environment to new version
-        run: |
-          set -euo pipefail
-          aws elasticbeanstalk update-environment \
-            --application-name "${EB_APPLICATION_NAME}" \
-            --environment-name "${EB_ENVIRONMENT_NAME}" \
-            --version-label "${VERSION_LABEL}"
+      - name: Sync Frontend
+        run: aws amplify start-job --app-id ${{ secrets.AWS_AMPLIFY_APP_ID }} --branch-name main --job-type RELEASE

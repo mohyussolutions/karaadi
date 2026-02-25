@@ -1,91 +1,191 @@
 model Payment {
-  id             String         @id @default(cuid())
-  userId         String
-  carId          String?
-  realEstateId   String?
-  boatId         String?
-  motorcycleId   String?
-  traktorId      String?
-  marketplaceId  String?
-  subscriptionId String?
-  listingType    ListingType    @default(FEE)
-  paymentMethod  String?
-  transactionId  String?        @unique
-  baseFee        Float          @default(0.00)
-  taxAmount      Float          @default(0.00)
-  platformFee    Float          @default(0.00)
-  totalAmount    Float          @default(0.00)
-  currency       String         @default("USD")
-  status         PaymentStatus  @default(PENDING)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  paidAt         DateTime?
-  feeAmount      Float          @default(0.00)
-  notifications  Notification[] @relation("PaymentNotifications")
-  boat           Boat?          @relation(fields: [boatId], references: [id])
-  car            Car?           @relation(fields: [carId], references: [id])
-  marketplace    Marketplace?   @relation(fields: [marketplaceId], references: [id])
-  motorcycle     Motorcycle?    @relation(fields: [motorcycleId], references: [id])
-  realEstate     RealEstate?    @relation(fields: [realEstateId], references: [id])
-  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
-  traktor        Traktor?       @relation(fields: [traktorId], references: [id])
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jobs           Job[]
+  id              String         @id @default(cuid())
+  userId          String
+  transactionId   String?        @unique
+  paymentMethod   String?
+  currency        String         @default("USD")
+  feeAmount       Float          @default(0.00)
+  planAmount      Float          @default(0.00)
+  taxAmount       Float          @default(0.00)
+  platformFee     Float          @default(0.00)
+  totalAmount     Float          @default(0.00)
+  status          PaymentStatus  @default(PENDING)
+  listingType     ListingType    @default(FEE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  paidAt          DateTime?
+  
+  marketplaceId   String?
+  realEstateId    String?
+  boatId          String?
+  carId           String?
+  motorcycleId    String?
+  farmequipmentId String?
+  jobId           String?
+  subscriptionId  String?
+  marketplaceFeeId String?
+  realEstateFeeId String?
+  boatFeeId       String?
+  carFeeId        String?
+  motorcycleFeeId String?
+  equipmentFeeId  String?
+  planConfigId    String?
+
+  user            User           @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  marketplace     Marketplace?   @relation("MarketplacePayments", fields: [marketplaceId], references: [id])
+  realEstate      RealEstate?    @relation("RealEstatePayments", fields: [realEstateId], references: [id])
+  boat            Boat?          @relation("BoatPayments", fields: [boatId], references: [id])
+  car             Car?           @relation("CarPayments", fields: [carId], references: [id])
+  motorcycle      Motorcycle?    @relation("MotorcyclePayments", fields: [motorcycleId], references: [id])
+  farmequipment   Farmequipment? @relation("FarmPayments", fields: [farmequipmentId], references: [id])
+  job             Job?           @relation("JobPayments", fields: [jobId], references: [id])
+  subscription    Subscription?  @relation("SubscriptionPayments", fields: [subscriptionId], references: [id])
+  
+  marketplaceFee  MarketplaceFee?   @relation("PaymentMarketplaceFee", fields: [marketplaceFeeId], references: [id])
+  realEstateFee   RealEstateFee?    @relation("PaymentRealEstateFee", fields: [realEstateFeeId], references: [id])
+  boatFee         BoatFee?          @relation("PaymentBoatFee", fields: [boatFeeId], references: [id])
+  carFee          CarFee?           @relation("PaymentCarFee", fields: [carFeeId], references: [id])
+  motorcycleFee   MotorcycleFee?    @relation("PaymentMotorcycleFee", fields: [motorcycleFeeId], references: [id])
+  equipmentFee    EquipmentFeeConfig? @relation("PaymentEquipmentFee", fields: [equipmentFeeId], references: [id])
+  planConfig      SubPlan?          @relation("PaymentSubPlan", fields: [planConfigId], references: [id])
 
   @@index([status])
   @@index([transactionId])
-  @@index([createdAt])
-  @@index([paymentMethod])
+  @@index([userId])
+  @@index([marketplaceId])
+  @@index([realEstateId])
+  @@index([boatId])
+  @@index([carId])
+  @@index([motorcycleId])
+  @@index([farmequipmentId])
+  @@index([jobId])
+  @@index([marketplaceFeeId])
+  @@index([realEstateFeeId])
+  @@index([boatFeeId])
+  @@index([carFeeId])
+  @@index([motorcycleFeeId])
+  @@index([equipmentFeeId])
+  @@index([planConfigId])
 }
 
-model FeeConfig {
-  id             String         @id @default(cuid())
-  art            Float          @default(0.0)
-  electronics    Float          @default(0.0)
-  animal         Float          @default(0.0)
-  sports         Float          @default(0.0)
-  furniture      Float          @default(0.0)
-  fashion        Float          @default(0.0)
-  rent           Float          @default(0.0)
-  sale           Float          @default(0.0)
-  land           Float          @default(0.0)
-  farm           Float          @default(0.0)
-  business       Float          @default(0.0)
-  carSale        Float          @default(0.0)
-  carRent        Float          @default(0.0)
-  trailer        Float          @default(0.0)
-  carParts       Float          @default(0.0)
-  truck          Float          @default(0.0)
-  electricCar    Float          @default(0.0)
-  boatSale       Float          @default(0.0)
-  boatRent       Float          @default(0.0)
-  boatEngine     Float          @default(0.0)
-  boatParts      Float          @default(0.0)
-  tractorSale    Float          @default(0.0)
-  agriTool       Float          @default(0.0)
-  fertilizer     Float          @default(0.0)
-  harvester      Float          @default(0.0)
-  motoSale       Float          @default(0.0)
-  motoRent       Float          @default(0.0)
-  motoParts      Float          @default(0.0)
-  motoOther      Float          @default(0.0)
-  fullTime       Float          @default(0.0)
-  partTime       Float          @default(0.0)
-  freelance      Float          @default(0.0)
-  subStandard    Float          @default(0.0)
-  subStandard60  Float          @default(0.0)
-  subPremium     Float          @default(0.0)
-  subSixMonth    Float          @default(0.0)
-  subPremiumYear Float          @default(0.0)
-  taxRate        Float          @default(0.0)
-  waafi          Float          @default(0.0)
-  platformFee    Float          @default(0.0)
-  currency       String         @default("USD")
-  isActive       Boolean        @default(true)
-  createdBy      String?
-  updatedBy      String?
-  createdAt      DateTime       @default(now())
-  feeChangeLogs  FeeChangeLog[]
+model MarketplaceFee {
+  id          String   @id @default(cuid())
+  art         Float    @default(0.0)
+  electronics Float    @default(0.0)
+  animal      Float    @default(0.0)
+  sports      Float    @default(0.0)
+  furniture   Float    @default(0.0)
+  fashion     Float    @default(0.0)
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  
+  marketplaces Marketplace[]
+  payments     Payment[] @relation("PaymentMarketplaceFee")
+  changeLogs   FeeChangeLog[]
+}
+
+model RealEstateFee {
+  id        String   @id @default(cuid())
+  rent      Float    @default(0.0)
+  sale      Float    @default(0.0)
+  land      Float    @default(0.0)
+  farm      Float    @default(0.0)
+  business  Float    @default(0.0)
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  
+  realEstates RealEstate[]
+  payments    Payment[] @relation("PaymentRealEstateFee")
+  changeLogs  FeeChangeLog[]
+}
+
+model CarFee {
+  id          String   @id @default(cuid())
+  carSale     Float    @default(0.0)
+  carRent     Float    @default(0.0)
+  trailer     Float    @default(0.0)
+  carParts    Float    @default(0.0)
+  truck       Float    @default(0.0)
+  electricCar Float    @default(0.0)
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  
+  cars        Car[]
+  payments    Payment[] @relation("PaymentCarFee")
+  changeLogs  FeeChangeLog[]
+}
+
+model MotorcycleFee {
+  id          String   @id @default(cuid())
+  motoSale    Float    @default(0.0)
+  motoRent    Float    @default(0.0)
+  motoParts   Float    @default(0.0)
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  
+  motorcycles Motorcycle[]
+  payments    Payment[] @relation("PaymentMotorcycleFee")
+  changeLogs  FeeChangeLog[]
+}
+model BoatFee {
+  id         String   @id @default(cuid())
+  boatSale   Float    @default(0.0)
+  boatRent   Float    @default(0.0)
+  boatEngine Float    @default(0.0)
+  boatParts  Float    @default(0.0)
+  isActive   Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  
+  boats      Boat[]
+  payments   Payment[] @relation("PaymentBoatFee")
+  changeLogs FeeChangeLog[]
+}
+
+model EquipmentFeeConfig {
+  id          String   @id @default(cuid())
+  tractorSale Float    @default(0.0)
+  agriTool    Float    @default(0.0)
+  harvester   Float    @default(0.0)
+  fullTime    Float    @default(0.0)
+  partTime    Float    @default(0.0)
+  freelance   Float    @default(0.0)
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  
+  farmequipments Farmequipment[]
+  jobs           Job[]
+  payments       Payment[] @relation("PaymentEquipmentFee")
+  changeLogs     FeeChangeLog[]
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  taxRate     Float    @default(0.0)
+  platformFee Float    @default(0.0)
+  waafiFee    Float    @default(0.0)
+  currency    String   @default("USD")
+  updatedAt   DateTime @updatedAt
+  changeLogs  FeeChangeLog[]
+}
+
+model SubPlan {
+  id             String   @id @default(cuid())
+  subStandard    Float    @default(0.0)
+  subStandard60  Float    @default(0.0)
+  subPremium     Float    @default(0.0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  marketplaces   Marketplace[]
+  realEstates    RealEstate[]
+  boats          Boat[]
+  cars           Car[]
+  motorcycles    Motorcycle[]
+  farmequipments Farmequipment[]
+  jobs           Job[]
+  payments       Payment[] @relation("PaymentSubPlan")
+  changeLogs     FeeChangeLog[]
 }
 
 model FeeChangeLog {
@@ -97,8 +197,17 @@ model FeeChangeLog {
   newValues      Json
   reason         String?
   createdAt      DateTime  @default(now())
+
   changedByUser  User      @relation(fields: [changedBy], references: [id])
-  feeConfig      FeeConfig @relation(fields: [feeConfigId], references: [id], onDelete: Cascade)
+  
+  systemConfig   SystemConfig?   @relation(fields: [feeConfigId], references: [id], map: "log_sys_config")
+  subPlan        SubPlan?        @relation(fields: [feeConfigId], references: [id], map: "log_sub_plan")
+  marketplaceFee MarketplaceFee? @relation(fields: [feeConfigId], references: [id], map: "log_market_fee")
+  realEstateFee  RealEstateFee?  @relation(fields: [feeConfigId], references: [id], map: "log_estate_fee")
+  carFee         CarFee?         @relation(fields: [feeConfigId], references: [id], map: "log_car_fee")
+  motorcycleFee  MotorcycleFee?  @relation(fields: [feeConfigId], references: [id], map: "log_motorcycle_fee")
+  boatFee        BoatFee?        @relation(fields: [feeConfigId], references: [id], map: "log_boat_fee")
+  equipmentFee   EquipmentFeeConfig? @relation(fields: [feeConfigId], references: [id], map: "log_equip_fee")
 
   @@index([feeConfigId])
 }

@@ -1,43 +1,44 @@
 import express from "express";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import cors from "cors";
-import helmet from "helmet";
 import morgan from "morgan";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import type { Request, Response, NextFunction } from "express";
 import compression from "compression";
-
-import marketplaceRoutes from "./routers/categoryRoute/marketplaceRouter.ts";
-import realEstateRouter from "./routers/categoryRoute/realEstateRouter.ts";
-import boatsRoutes from "./routers/categoryRoute/boatsRouter.ts";
-import carsRoutes from "./routers/categoryRoute/carsRouter.ts";
-import traktorRoutes from "./routers/categoryRoute/traktorRouter.ts";
-import motorcyclesRoutes from "./routers/categoryRoute/motorcyclesRouter.ts";
-import myAdsRouter from "./routers/categoryRoute/myAdRoutes.ts";
-import favoriteRoutes from "./routers/categoryRoute/favoriteRoutes.ts";
-import recommendationRoutes from "./routers/categoryRoute/recommendationsRoute.ts";
-import advertisementRouter from "./routers/categoryRoute/advertisementRoutes.ts";
-import notificationRoutes from "./routers/userRoute/notificationRoute.ts";
-import subscriptionRoute from "./routers/userRoute/subsRoute.ts";
-import chatRoutes from "./routers/userRoute/chatRoute.ts";
-import contactUsRouter from "./routers/userRoute/contactUsRoutes.ts";
-import messageRoutes from "./routers/userRoute/messageRoute.ts";
-import agencyRoutes from "./routers/agencyRoutes.ts";
-import authRouters from "./routers/userRoute/authRoute.ts";
-import paymentRoutes from "./routers/paymentRoute/paymentRoutes.ts";
-import FeeRoutes from "./routers/paymentRoute/FeeRoutes.ts";
-import customerSupportRoutes from "./routers/userRoute/customersupportRoute.ts";
-import searchRouter from "./routers/userRoute/searchRouter.ts";
-import filterRouter from "./routers/userRoute/filterRouter.ts";
-import visitorRoute from "./routers/userRoute/vissedRoute.ts";
-import uploadRouterSelector from "./routers/paymentRoute/uploadRouterSelector.ts";
-import hageRouter from "./AIrRoute/hageRouter.ts";
-import locRoutes from "./routers/categoryRoute/locRoutes.ts";
-import redisStatsRouter from "./routers/redisStatsRouter.ts";
 import { monitorEventLoopDelay } from "node:perf_hooks";
-import historySearchRoutes from "./routers/userRoute/historySearchRoutes.ts";
+
+import marketplaceRoutes from "./routers/categoryRoute/marketplaceRouter.js";
+import realEstateRouter from "./routers/categoryRoute/realEstateRouter.js";
+import boatsRoutes from "./routers/categoryRoute/boatsRouter.js";
+import carsRoutes from "./routers/categoryRoute/carsRouter.js";
+
+import motorcyclesRoutes from "./routers/categoryRoute/motorcyclesRouter.js";
+import myAdsRouter from "./routers/categoryRoute/myAdRoutes.js";
+import favoriteRoutes from "./routers/categoryRoute/favoriteRoutes.js";
+import recommendationRoutes from "./routers/categoryRoute/recommendationsRoute.js";
+import advertisementRouter from "./routers/categoryRoute/advertisementRoutes.js";
+import notificationRoutes from "./routers/userRoute/notificationRoute.js";
+import subscriptionRoute from "./routers/categoryRoute/subsRoute.js";
+import chatRoutes from "./routers/userRoute/chatRoute.js";
+import contactUsRouter from "./routers/userRoute/contactUsRoutes.js";
+import messageRoutes from "./routers/userRoute/messageRoute.js";
+import agencyRoutes from "./routers/agencyRoutes.js";
+import authRouters from "./routers/userRoute/authRoute.js";
+import paymentRoutes from "./routers/paymentRoute/paymentRoutes.js";
+import FeeRoutes from "./routers/paymentRoute/FeeRoutes.js";
+import customerSupportRoutes from "./routers/userRoute/customersupportRoute.js";
+import searchRouter from "./routers/userRoute/searchRouter.js";
+import filterRouter from "./routers/userRoute/filterRouter.js";
+import visitorRoute from "./routers/userRoute/vissedRoute.js";
+import uploadRouterSelector from "./routers/paymentRoute/uploadRouterSelector.js";
+import hageRouter from "./AIrRoute/hageRouter.js";
+import locRoutes from "./routers/categoryRoute/locRoutes.js";
+import redisStatsRouter from "./routers/redisStatsRouter.js";
+import historySearchRoutes from "./routers/userRoute/historySearchRoutes.js";
+import { setupSecurity } from "./core/middelware/securityMiddleware.ts";
+import traktorRoutes from "./routers/categoryRoute/FarmequipmentRouter.ts";
+import jobsRouter from "./routers/categoryRoute/jobsRouter.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -56,23 +57,17 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.use((req, res, next) => {
+  if (
+    req.headers["x-forwarded-proto"] !== "https" &&
+    process.env.NODE_ENV === "production"
+  ) {
+    return res.redirect(`https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+setupSecurity(app);
 
-app.use(
-  cors({
-    origin: (process.env.ALLOWED_ORIGINS || "").split(","),
-    credentials: true,
-  }),
-);
-
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  }),
-);
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(compression());
@@ -94,6 +89,7 @@ app.use(
     },
   }),
 );
+
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/real-estate", realEstateRouter);
 app.use("/api/cars", carsRoutes);
@@ -119,11 +115,20 @@ app.use("/api/search", searchRouter);
 app.use("/api/filtering", filterRouter);
 app.use("/api/upload", uploadRouterSelector);
 app.use("/api/hage", hageRouter);
+app.use("/api/jobs", jobsRouter);
 app.use("/api/locations", locRoutes);
 app.use("/api/redis", redisStatsRouter);
 app.use("/api/history-search", historySearchRoutes);
-app.use("/imagesStore", express.static(path.join(__dirname, "imagesStore")));
-app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/assets", express.static(path.join(__dirname, "../assets")));
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
 
 app.get("/", (req, res) => res.send("API is running"));
 

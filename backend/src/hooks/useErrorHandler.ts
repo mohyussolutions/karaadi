@@ -1,7 +1,9 @@
+import { logger } from "src/core/middelware/logger.ts";
 import { ResponseCodes } from "../config/waafipay.service.responseCodes.ts";
 
 export const useErrorHandler = (error: any) => {
   if (!error) {
+    logger.error("Unknown error occurred");
     return {
       success: false,
       message: "An unknown error occurred.",
@@ -11,6 +13,7 @@ export const useErrorHandler = (error: any) => {
   }
 
   if (error instanceof Error) {
+    logger.error(error.message, { stack: error.stack });
     return {
       success: false,
       message: error.message,
@@ -19,6 +22,7 @@ export const useErrorHandler = (error: any) => {
     };
   }
 
+  logger.error(error.message || "An unexpected error occurred.", error);
   return {
     success: false,
     message: error.message || "An unexpected error occurred.",

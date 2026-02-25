@@ -8,7 +8,6 @@ import {
   getTotalMotorcycles,
   getAllMotorcyclesIncludingUnpaid,
 } from "../../controllers/categoryController/motorcyclesController.ts";
-import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const motorcyclesRoutes = Router();
 
@@ -28,15 +27,15 @@ motorcyclesRoutes.get("/:id", (req, res, next) => {
   getMotorcycleById(req, res).catch(next);
 });
 
-motorcyclesRoutes.post("/", ProtectRoute, (req, res, next) => {
+motorcyclesRoutes.post("/", (req, res, next) => {
   createMotorcycle(req, res).catch(next);
 });
 
-motorcyclesRoutes.patch("/:id", ProtectRoute, (req, res, next) => {
+motorcyclesRoutes.patch("/:id", (req, res, next) => {
   updateMotorcycle(req, res).catch(next);
 });
 
-motorcyclesRoutes.delete("/:id", ProtectRoute, (req, res, next) => {
+motorcyclesRoutes.delete("/:id", (req, res, next) => {
   deleteMotorcycle(req, res).catch(next);
 });
 

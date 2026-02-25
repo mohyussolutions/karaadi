@@ -16,7 +16,7 @@ import { verifySession } from "@/actions/core/authAction";
 import { getCarById } from "@/actions/categories/carActions";
 import { getBoatById } from "@/actions/categories/boatActions";
 import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
-import { getTraktorById } from "@/actions/categories/tractorActions";
+import { getTraktorById } from "@/actions/categories/FarmequipmentAction";
 import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 interface VehicleItem {

@@ -11,7 +11,7 @@ interface RealEstateCardProps {
   price: number;
   city: string;
   region?: string;
-  purpose?: "iib" | "kiro" | "ganacsi";
+  purpose?: string;
   area?: string;
   rooms?: number;
   images?: string[];
@@ -19,12 +19,16 @@ interface RealEstateCardProps {
   maGaday?: boolean;
 }
 
-const getValidSrc = (src?: string | null): string | null => {
-  if (!src || src.length === 0) return null;
-  if (!src.startsWith("http") && !src.startsWith("/")) {
-    return `/${src}`;
+const getValidSrc = (src?: string | null): string => {
+  if (!src) return "";
+  if (
+    src.startsWith("data:") ||
+    src.startsWith("http") ||
+    src.startsWith("/")
+  ) {
+    return src;
   }
-  return src;
+  return `/${src}`;
 };
 
 export default function RealEstateCard({
@@ -40,169 +44,81 @@ export default function RealEstateCard({
   description,
   maGaday,
 }: RealEstateCardProps) {
-  const rawPrimaryImage = images?.[0];
-  const primaryImage = getValidSrc(rawPrimaryImage);
   const [imgError, setImgError] = useState(false);
+  const placeholder = "not-found-image";
+  const primaryImage = getValidSrc(images?.[0]);
   const url = id ? `/real-estate/${id}` : null;
-
-  const getPurposeDisplay = (purpose?: string) => {
-    if (!purpose) return "";
-
-    switch (purpose.toLowerCase()) {
-      case "iib":
-      case "for sale":
-        return "For Sale";
-      case "kiro":
-      case "for rent":
-        return "For Rent";
-      case "ganacsi":
-        return "Ganacsi";
-      default:
-        return purpose;
-    }
-  };
 
   const truncateDescription = (desc?: string | string[]) => {
     if (!desc) return "";
-
-    let text = "";
-    if (Array.isArray(desc)) {
-      text = desc.join(" ");
-    } else {
-      text = desc;
-    }
-
-    if (text.length <= 100) return text;
-    return text.substring(0, 100) + "...";
+    let text = Array.isArray(desc) ? desc.join(" ") : desc;
+    return text.length <= 80 ? text : text.substring(0, 80) + "...";
   };
 
-  const purposeDisplay = getPurposeDisplay(purpose);
-  const truncatedDescription = truncateDescription(description);
-
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm transition-shadow duration-300">
-      {url ? (
-        <Link prefetch={false} href={url} className="block">
-          <div className="relative w-full h-44 sm:h-52 md:h-64 lg:h-60 group overflow-hidden border-b-2 border-gray-300">
-            {primaryImage ? (
-              <Image
-                src={imgError ? "/logo.jpg" : primaryImage}
-                alt={title || "Real Estate Listing Image"}
-                fill
-                priority
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover transition-transform duration-300"
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400">
-                No Image
-              </div>
-            )}
+    <div className="group border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full">
+      <Link
+        href={url || "#"}
+        className={`flex flex-col h-full ${!url && "cursor-default"}`}
+      >
+        <div className="relative w-full h-48 overflow-hidden bg-gray-100">
+          <Image
+            src={imgError || !primaryImage ? placeholder : primaryImage}
+            alt={title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={() => setImgError(true)}
+          />
 
-            <div className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md cursor-pointer hover:scale-110 transition">
-              <AiOutlineHeart
-                className="text-gray-600 hover:text-red-500"
-                size={20}
-              />
-            </div>
+          <div className="absolute top-2 right-2 z-10">
+            <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-600 hover:text-red-500 transition-colors">
+              <AiOutlineHeart size={18} />
+            </button>
+          </div>
 
-            {purposeDisplay && (
-              <span className="absolute top-3 left-3 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                {purposeDisplay}
+          {purpose && (
+            <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] uppercase font-bold px-2 py-1 rounded-md shadow-sm">
+              {purpose}
+            </span>
+          )}
+        </div>
+
+        <div className="p-4 flex flex-col flex-grow">
+          {maGaday && (
+            <span className="text-[10px] font-bold text-orange-600 uppercase bg-orange-50 px-2 py-0.5 rounded border border-orange-100 w-fit mb-2">
+              Waa la gatay
+            </span>
+          )}
+
+          <h3 className="font-bold text-gray-900 text-base line-clamp-1 mb-1">
+            {title}
+          </h3>
+
+          <p className="text-xs text-gray-500 line-clamp-2 mb-3 h-8">
+            {truncateDescription(description)}
+          </p>
+
+          <div className="mt-auto">
+            <div className="flex items-center gap-1 text-green-700 text-xs font-medium mb-1">
+              <span className="truncate">
+                {city}
+                {region ? `, ${region}` : ""}
               </span>
-            )}
-          </div>
-          <div className="flex-grow flex flex-col p-3">
-            {maGaday === true && (
-              <div className="bg-[oklch(92%_0.3_91.605)] rounded px-2 py-1 mb-2 w-fit">
-                <h6 className="text-xs md:text-sm m-0 font-medium text-gray-900">
-                  waa la gatay
-                </h6>
-              </div>
-            )}
-
-            <h3 className="text-lg font-semibold line-clamp-2">{title}</h3>
-
-            {truncatedDescription && (
-              <p className="text-sm text-gray-600 font-normal mt-1 mb-2 line-clamp-2">
-                {truncatedDescription}
-              </p>
-            )}
-
-            <p className="text-gray-500 text-sm font-normal">
-              {city && (
-                <span className="text-green-600 font-semibold">{city}</span>
-              )}
-              {region && city && !city.includes(region) && (
-                <span className="text-green-600 font-semibold">{`, ${region}`}</span>
-              )}
-              {region && !city && (
-                <span className="text-green-600 font-semibold">{region}</span>
-              )}
-            </p>
-
-            <p className="text-xl font-bold text-blue-600 mt-2">
-              ${price.toLocaleString()}
-            </p>
-
-            <div className="flex justify-between text-sm text-gray-500 font-normal mt-2">
-              {area && <span>{area} m²</span>}
-              {rooms && <span>{rooms} rooms</span>}
             </div>
-          </div>
-        </Link>
-      ) : (
-        <div className="block cursor-not-allowed">
-          <div className="relative w-full h-44 sm:h-52 md:h-64 lg:h-60 group overflow-hidden border-b-2 border-gray-300">
-            {primaryImage ? (
-              <Image
-                src={imgError ? "/logo.jpg" : primaryImage}
-                alt={title || "Real Estate Listing Image"}
-                fill
-                priority
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover"
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400">
-                No Image
-              </div>
-            )}
-            {purposeDisplay && (
-              <span className="absolute top-3 left-3 bg-gray-400 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                {purposeDisplay}
+
+            <div className="flex justify-between items-end">
+              <span className="text-lg font-black text-blue-600">
+                ${price?.toLocaleString()}
               </span>
-            )}
-          </div>
-          <div className="flex-grow flex flex-col p-3">
-            <h3 className="text-lg font-semibold line-clamp-2">{title}</h3>
-            {truncatedDescription && (
-              <p className="text-sm text-gray-600 font-normal mt-1 mb-2 line-clamp-2">
-                {truncatedDescription}
-              </p>
-            )}
-            <p className="text-gray-500 text-sm font-normal">
-              <span>{city}</span>
-              {region && city && !city.includes(region) && (
-                <span className="text-green-600 font-semibold">{`, ${region}`}</span>
-              )}
-              {region && !city && (
-                <span className="text-green-600 font-semibold">{region}</span>
-              )}
-            </p>
-            <p className="text-xl font-bold text-blue-600 mt-2">
-              ${price.toLocaleString()}
-            </p>
-            <div className="flex justify-between text-sm text-gray-500 font-normal mt-2">
-              {area && <span>{area} m²</span>}
-              {rooms && <span>{rooms} rooms</span>}
+              <div className="flex gap-2 text-[10px] text-gray-400">
+                {area && <span>{area} m²</span>}
+                {rooms && <span>{rooms} Qol</span>}
+              </div>
             </div>
-            <span className="mt-2 text-xs text-gray-500">ID unavailable</span>
           </div>
         </div>
-      )}
+      </Link>
     </div>
   );
 }

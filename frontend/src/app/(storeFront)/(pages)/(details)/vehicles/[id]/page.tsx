@@ -16,7 +16,7 @@ import { verifySession } from "@/actions/core/authAction";
 import { getCarById } from "@/actions/categories/carActions";
 import { getBoatById } from "@/actions/categories/boatActions";
 import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
-import { getTraktorById } from "@/actions/categories/tractorActions";
+import { getTraktorById } from "@/actions/categories/FarmequipmentAction";
 import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 interface VehicleItem {
@@ -58,32 +58,32 @@ export default function VehicleDetails() {
     (async () => {
       if (!id) return;
       try {
-        const [car, boat, tractor, motorcycle, user] = await Promise.all([
-          getCarById(id),
-          getBoatById(id),
-          getTraktorById(id),
-          getMotorcycleById(id),
-          verifySession(),
-        ]);
-
+        let vehicle = null;
+        let vehicleCategory = "";
+        vehicle = await getCarById(id);
+        if (vehicle) vehicleCategory = "Car";
+        if (!vehicle) {
+          vehicle = await getBoatById(id);
+          if (vehicle) vehicleCategory = "Boat";
+        }
+        if (!vehicle) {
+          vehicle = await getTraktorById(id);
+          if (vehicle) vehicleCategory = "Tractor";
+        }
+        if (!vehicle) {
+          vehicle = await getMotorcycleById(id);
+          if (vehicle) vehicleCategory = "Motorcycle";
+        }
+        const user = await verifySession();
         if (mounted) {
           setCurrentUser(user ?? null);
-          if (car) {
-            setItem(car);
-            setCategory("Car");
-          } else if (boat) {
-            setItem(boat);
-            setCategory("Boat");
-          } else if (tractor) {
-            setItem(tractor);
-            setCategory("Tractor");
-          } else if (motorcycle) {
-            setItem(motorcycle);
-            setCategory("Motorcycle");
+          if (vehicle) {
+            setItem(vehicle);
+            setCategory(vehicleCategory);
           }
         }
       } catch (error) {
-        console.error("Initialization failed", error);
+        console.error(error);
       } finally {
         if (mounted) setIsLoading(false);
       }

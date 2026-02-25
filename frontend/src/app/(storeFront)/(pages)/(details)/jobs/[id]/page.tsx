@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   FaBuilding,
   FaArrowLeft,
@@ -9,94 +9,57 @@ import {
   FaBriefcase,
 } from "react-icons/fa6";
 import { FaMapMarkerAlt, FaPaperPlane } from "react-icons/fa";
-import { getJobById, getJobs } from "@/actions/categories/jobActions";
-import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
-import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
-import PathSegmentsDisplay from "../../historyPath/pathSegmentsDisplay";
-import SearchInput from "@/app/(search)/SearchInput";
 
-interface JobItem {
-  _id: string;
+interface Job {
+  id: string;
   title: string;
-  company: string;
-  location: string;
-  salary?: string | number;
-  type: string;
+  company?: string;
+  city: string;
+  region: string;
+  salary?: number;
+  category: string[];
   description: string;
-  images?: string[];
+  employmentType: string;
 }
 
-const JobDetailsPage = () => {
-  const params = useParams();
-  const router = useRouter();
-  const id = params?.id as string;
+interface JobDetailsPageProps {
+  params: Promise<{ id: string }> | { id: string };
+}
 
-  const [job, setJob] = useState<JobItem | null>(null);
-  const [relatedJobs, setRelatedJobs] = useState<JobItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+const JobDetailsPage = ({ params }: JobDetailsPageProps) => {
+  const router = useRouter();
+  const resolvedParams = React.use(params as Promise<{ id: string }>);
+  const [job, setJob] = useState<Job | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    const fetchJob = async () => {
       try {
-        const [jobData, allJobs] = await Promise.all([
-          getJobById(id),
-          getJobs(),
-        ]);
-
-        if (mounted) {
-          if (jobData) {
-            setJob(jobData as JobItem);
-          }
-          if (allJobs) {
-            const jobsList = allJobs as JobItem[];
-            setRelatedJobs(jobsList.filter((j) => j._id !== id).slice(0, 4));
-          }
+        const response = await fetch(
+          `http://localhost:8080/api/jobs/${resolvedParams.id}`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setJob(data);
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        if (mounted) setIsLoading(false);
+        console.error(error);
       }
-    })();
-    return () => {
-      mounted = false;
     };
-  }, [id]);
+    fetchJob();
+  }, [resolvedParams.id]);
 
-  if (isLoading) return <div className="min-h-screen bg-white" />;
+  const handleApplyClick = () => {
+    router.push(`/jobs/application/${resolvedParams.id}`);
+  };
 
-  if (!job) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-8 flex items-center justify-center">
-        <div className="text-center text-gray-700 bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md">
-          <div className="flex justify-center mb-4">
-            <FaBriefcase size={50} className="text-gray-300" />
-          </div>
-          <h1 className="text-3xl font-bold mb-4">Shaqada lama helin</h1>
-          <p className="text-gray-500 mb-6">
-            Shaqadan aad raadinayso ma jirto ama waa laga saaray bogga.
-          </p>
-          <button
-            onClick={() => router.push("/jobs")}
-            className="w-full flex items-center justify-center py-3 px-4 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition font-bold"
-          >
-            <FaArrowLeft className="mr-2" /> Ku laabo Shaqooyinka
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!job) return null;
 
   return (
-    <div className="container mx-auto px-4 py-4 font-sans">
-      <PathSegmentsDisplay />
-      <SearchInput />
-
-      <div className="w-full max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl mt-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans">
+      <div className="w-full max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl">
         <button
           onClick={() => router.push("/jobs")}
-          className="text-indigo-600 hover:text-indigo-800 mb-6 transition font-medium flex items-center bg-transparent border-none cursor-pointer"
+          className="text-indigo-600 hover:text-indigo-800 mb-6 transition duration-150 font-medium flex items-center bg-transparent border-none cursor-pointer"
         >
           <FaArrowLeft className="mr-2" size={14} />
           Back to Job Listings
@@ -104,18 +67,20 @@ const JobDetailsPage = () => {
 
         <div className="mb-8 border-b pb-4">
           <div className="w-full h-48 bg-gray-100 rounded-xl mb-6 flex items-center justify-center overflow-hidden">
-            <p className="text-gray-400 italic">No Header Image Available</p>
+            <p className="text-gray-500">Job Header Image</p>
           </div>
+
           <div className="flex items-start">
             <div className="w-20 h-20 bg-white border border-gray-200 rounded-xl shadow-md flex items-center justify-center mr-4 -mt-12 flex-shrink-0">
               <FaBuilding size={32} className="text-indigo-500" />
             </div>
+
             <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-800">
+              <h1 className="text-4xl font-extrabold text-gray-800">
                 {job.title}
               </h1>
-              <h2 className="text-xl sm:text-2xl font-semibold text-indigo-600 mt-1">
-                {job.company}
+              <h2 className="text-2xl font-semibold text-indigo-600 mt-1">
+                {job.company || "Company Confidential"}
               </h2>
             </div>
           </div>
@@ -125,80 +90,53 @@ const JobDetailsPage = () => {
           <div className="flex items-center">
             <FaMapMarkerAlt className="mr-2 text-indigo-500" size={18} />
             <span className="font-medium">
-              {job.location || "Location Pending"}
+              {job.city}, {job.region}
             </span>
           </div>
           <div className="flex items-center">
             <FaMoneyBillWave className="mr-2 text-green-500" size={18} />
             <span className="font-medium">
-              {job.salary ? `${job.salary} $` : "Salary Not Disclosed"}
+              {job.salary ? `$${job.salary}` : "Negotiable"}
             </span>
           </div>
           <div className="flex items-center">
             <FaBriefcase className="mr-2 text-yellow-500" size={18} />
-            <span className="font-medium">{job.type || "General"}</span>
+            <span className="font-medium">{job.employmentType}</span>
           </div>
         </div>
 
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-gray-800 border-b pb-2">
-            Job Summary
+            Job Description
           </h3>
-          <p className="text-gray-700 leading-relaxed">
-            {job.description || "No description provided for this position."}
+          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {job.description}
           </p>
 
           <h3 className="text-2xl font-bold text-gray-800 border-b pb-2 pt-4">
-            Responsibilities
+            Category
           </h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-            <li>Lead the planning and execution of projects.</li>
-            <li>Collaborate with cross-functional teams.</li>
-            <li>Ensure all project goals are met on time and budget.</li>
-          </ul>
+          <div className="flex flex-wrap gap-2">
+            {job.category.map((cat, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium"
+              >
+                {cat}
+              </span>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-10 text-center">
           <button
-            onClick={() => router.push(`/jobs/application/${id}`)}
-            className="w-full max-w-lg flex items-center justify-center py-3 px-6 border border-transparent rounded-lg shadow-lg text-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition"
+            onClick={handleApplyClick}
+            className="w-full max-w-lg flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150 transform hover:scale-[1.01] mx-auto"
           >
             <FaPaperPlane className="mr-3" />
             Apply Now
           </button>
         </div>
-      </div>
-
-      <div className="mt-12 mb-8">
-        <WantSell />
-      </div>
-
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 px-2">
-        Related Jobs
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 pb-10">
-        {relatedJobs.length > 0 ? (
-          relatedJobs.map((item) => (
-            <UniversalCard
-              key={item._id}
-              id={item._id}
-              title={item.title}
-              price={
-                typeof item.salary === "number"
-                  ? item.salary
-                  : Number(item.salary) || 0
-              }
-              description={item.description}
-              city={item.location}
-              images={item.images || []}
-              category="jobs"
-            />
-          ))
-        ) : (
-          <div className="col-span-full text-center py-10 text-gray-500">
-            No related jobs found at this time.
-          </div>
-        )}
       </div>
     </div>
   );

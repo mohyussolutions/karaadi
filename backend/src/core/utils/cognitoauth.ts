@@ -14,6 +14,23 @@ interface VerifiedTokenData {
   username: string;
   token?: string;
 }
+
+interface RoleUpdateData {
+  isAdmin?: string;
+  isManager?: string;
+  isSupport?: string;
+}
+
+interface UserAttributes {
+  email?: string;
+  preferred_username?: string;
+  phone_number?: string;
+  profile?: string;
+  "custom:isAdmin"?: string;
+  "custom:isManager"?: string;
+  "custom:isSupport"?: string;
+}
+
 export const cognitoClient = new AWS.CognitoIdentityServiceProvider({
   region: "eu-west-1",
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -57,10 +74,7 @@ export const signIn = async (
       .initiateAuth({
         AuthFlow: "USER_PASSWORD_AUTH",
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
-        AuthParameters: {
-          USERNAME: email,
-          PASSWORD: password,
-        },
+        AuthParameters: { USERNAME: email, PASSWORD: password },
       })
       .promise();
 
@@ -94,7 +108,6 @@ export const signIn = async (
       req.session.idToken = idToken;
       req.session.refreshToken = refreshToken;
       req.session.accessToken = accessToken;
-
       req.session.user = {
         sub: decodedToken.sub,
         username,
@@ -123,9 +136,7 @@ export const signIn = async (
     };
   } catch (error: unknown) {
     console.error("Error during sign-in:", error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("An unknown error occurred");
   }
 };
@@ -155,7 +166,6 @@ export const verifySession = async (
     const userRecord = await prisma.user.findUnique({
       where: { id: decoded.sub },
     });
-
     if (!userRecord) return res.status(404).json({ message: "User not found" });
 
     const responseUser = {
@@ -169,10 +179,9 @@ export const verifySession = async (
       isSupport: decoded["custom:isSupport"],
     };
 
-    return res.status(200).json({
-      message: "Session valid",
-      user: responseUser,
-    });
+    return res
+      .status(200)
+      .json({ message: "Session valid", user: responseUser });
   } catch (err) {
     res.clearCookie("idToken");
     res.clearCookie("refreshToken");
@@ -194,44 +203,150 @@ export const confirmSignUp = async (email: string, code: string) => {
   }
 };
 
+export const updateUserAttributes = async (
+  accessToken: string,
+  attributes: UserAttributes,
+): Promise<void> => {
+  if (!accessToken) throw new Error("No access token");
+
+  const userAttributes: AWS.CognitoIdentityServiceProvider.AttributeType[] = [];
+
+  if (attributes.preferred_username) {
+    userAttributes.push({
+      Name: "preferred_username",
+      Value: attributes.preferred_username,
+    });
+  }
+  if (attributes.email) {
+    userAttributes.push({ Name: "email", Value: attributes.email });
+  }
+  if (attributes.phone_number) {
+    userAttributes.push({
+      Name: "phone_number",
+      Value: attributes.phone_number,
+    });
+  }
+  if (attributes.profile) {
+    userAttributes.push({ Name: "profile", Value: attributes.profile });
+  }
+  if (attributes["custom:isAdmin"]) {
+    userAttributes.push({
+      Name: "custom:isAdmin",
+      Value: attributes["custom:isAdmin"],
+    });
+  }
+  if (attributes["custom:isManager"]) {
+    userAttributes.push({
+      Name: "custom:isManager",
+      Value: attributes["custom:isManager"],
+    });
+  }
+  if (attributes["custom:isSupport"]) {
+    userAttributes.push({
+      Name: "custom:isSupport",
+      Value: attributes["custom:isSupport"],
+    });
+  }
+
+  if (userAttributes.length === 0) return;
+
+  await cognitoClient
+    .updateUserAttributes({
+      AccessToken: accessToken,
+      UserAttributes: userAttributes,
+    })
+    .promise();
+};
+
 export const updateUserProfileCognito = async (req: Request): Promise<void> => {
   const accessToken = req.headers.authorization?.split(" ")[1];
   if (!accessToken) throw new Error("No access token");
 
   const { username, email, phone } = req.body;
+  const attributes: UserAttributes = {};
 
-  const attributes: AWS.CognitoIdentityServiceProvider.AttributeType[] = [];
-
-  if (username) {
-    attributes.push({ Name: "preferred_username", Value: username });
-  }
-
-  if (email) {
-    attributes.push({ Name: "email", Value: email });
-  }
-
-  if (phone) {
-    attributes.push({ Name: "phone_number", Value: phone });
-  }
-
+  if (username) attributes.preferred_username = username;
+  if (email) attributes.email = email;
+  if (phone) attributes.phone_number = phone;
   if (req.file) {
-    const profileImageUrl = `${process.env.CDN_BASE_URL}/uploads/${req.file.originalname}`;
-    attributes.push({ Name: "profile", Value: profileImageUrl });
+    attributes.profile = `${process.env.CDN_BASE_URL}/uploads/${req.file.originalname}`;
   }
 
-  if (attributes.length === 0) return;
+  await updateUserAttributes(accessToken, attributes);
+};
 
-  await cognitoClient
-    .updateUserAttributes({
-      AccessToken: accessToken,
-      UserAttributes: attributes,
-    })
-    .promise();
+export const updateUserRole = async (
+  requesterAccessToken: string,
+  targetEmail: string,
+  rolesToUpdate: RoleUpdateData,
+): Promise<{ message: string }> => {
+  try {
+    const requester = await verifyToken(requesterAccessToken);
+    if (!requester) throw new Error("Invalid or expired access token.");
+
+    const requesterIsAdmin = requester["custom:isAdmin"];
+    const requesterIsManager = requester["custom:isManager"];
+
+    if (requesterIsAdmin !== "true" && requesterIsManager !== "true") {
+      throw new Error("You are not authorized to update user roles.");
+    }
+
+    if (!targetEmail) throw new Error("Target user email is required.");
+
+    const attributes: UserAttributes = {};
+    if (rolesToUpdate.isAdmin !== undefined)
+      attributes["custom:isAdmin"] = rolesToUpdate.isAdmin;
+    if (rolesToUpdate.isManager !== undefined)
+      attributes["custom:isManager"] = rolesToUpdate.isManager;
+    if (rolesToUpdate.isSupport !== undefined)
+      attributes["custom:isSupport"] = rolesToUpdate.isSupport;
+
+    if (Object.keys(attributes).length === 0) {
+      throw new Error("No role attributes provided for update.");
+    }
+
+    await cognitoClient
+      .adminUpdateUserAttributes({
+        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        Username: targetEmail,
+        UserAttributes: Object.entries(attributes).map(([key, value]) => ({
+          Name: key,
+          Value: value!,
+        })),
+      })
+      .promise();
+
+    return { message: "User roles updated successfully." };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update user role.");
+  }
+};
+
+export const adminUpdateUser = async (
+  username: string,
+  attributesToUpdate: UserAttributes,
+): Promise<void> => {
+  try {
+    const userAttributes = Object.entries(attributesToUpdate)
+      .filter(([_, value]) => value !== undefined)
+      .map(([key, value]) => ({ Name: key, Value: value! }));
+
+    if (userAttributes.length === 0) return;
+
+    await cognitoClient
+      .adminUpdateUserAttributes({
+        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        Username: username,
+        UserAttributes: userAttributes,
+      })
+      .promise();
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update user attributes.");
+  }
 };
 
 export const resendVerificationCode = async (email: string) => {
   try {
-    console.log(email);
     await cognitoClient
       .resendConfirmationCode({
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
@@ -255,6 +370,7 @@ export const forgotPassword = async (email: string) => {
     throw new Error(error.message || "Failed to send password reset code.");
   }
 };
+
 export const resetPassword = async (
   email: string,
   newPassword: string,
@@ -276,23 +392,13 @@ export const resetPassword = async (
 
 export const signOut = async (accessToken: string) => {
   try {
-    if (!accessToken) {
-      throw new Error("Access token is required");
-    }
+    if (!accessToken) throw new Error("Access token is required");
 
     const decoded = jwt.decode(accessToken) as { sub?: string };
-
-    if (!decoded?.sub) {
-      throw new Error("Invalid token: missing user ID");
-    }
-    const userId = decoded.sub;
+    if (!decoded?.sub) throw new Error("Invalid token: missing user ID");
 
     await cognitoClient.globalSignOut({ AccessToken: accessToken }).promise();
-
-    // Prisma fix
-    await prisma.cookie.delete({
-      where: { userId },
-    });
+    await prisma.cookie.delete({ where: { userId: decoded.sub } });
 
     return { message: "User logged out successfully" };
   } catch (error: any) {
@@ -314,7 +420,7 @@ export const verifyToken = async (
     const decoded: any = jwt.decode(token);
     if (!decoded || !decoded.sub || !decoded.email) return null;
 
-    const user: VerifiedTokenData = {
+    return {
       sub: decoded.sub,
       email: decoded.email,
       username: decoded["preferred_username"] || "",
@@ -323,8 +429,6 @@ export const verifyToken = async (
       "custom:isSupport": decoded["custom:isSupport"],
       token,
     };
-
-    return user;
   } catch {
     return null;
   }
@@ -343,118 +447,7 @@ export const refreshTokenLogic = async (
 
   const accessToken = response.AuthenticationResult?.AccessToken;
   if (!accessToken) throw new Error("No access token in response");
-
   return accessToken;
-};
-
-export const adminUpdateUser = async (
-  username: string,
-  attributesToUpdate: {
-    email?: string;
-    preferred_username?: string;
-    "custom:isAdmin"?: string;
-    "custom:isManager"?: string;
-    "custom:isSupport"?: string;
-  },
-): Promise<void> => {
-  try {
-    const userAttributes = Object.entries(attributesToUpdate).map(
-      ([key, value]) => ({
-        Name: key,
-        Value: value!,
-      }),
-    );
-
-    await cognitoClient
-      .adminUpdateUserAttributes({
-        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
-        Username: username,
-        UserAttributes: userAttributes,
-      })
-      .promise();
-  } catch (error: any) {
-    throw new Error(error.message || "Failed to update user attributes.");
-  }
-};
-
-export const deleteFromCognito = async (username: string) => {
-  try {
-    await cognitoClient
-      .adminDeleteUser({
-        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
-        Username: username,
-      })
-      .promise();
-  } catch (error: any) {
-    const errorMsg = error?.message || error?.code || "Unknown Cognito error";
-    console.error(`Failed to delete Cognito user "${username}":`, errorMsg);
-    throw new Error(`Cognito deletion error: ${errorMsg}`);
-  }
-};
-export const updateUserRole = async (
-  requesterAccessToken: string,
-  targetEmail: string,
-  rolesToUpdate: {
-    isAdmin?: string;
-    isManager?: string;
-    isSupport?: string;
-  },
-): Promise<{ message: string }> => {
-  try {
-    const requester = await verifyToken(requesterAccessToken);
-    if (!requester) throw new Error("Invalid or expired access token.");
-
-    const requesterIsAdmin = requester["custom:isAdmin"];
-    const requesterIsManager = requester["custom:isManager"];
-    const requesterIsSupport = requester["custom:isSupport"];
-
-    if (requesterIsAdmin !== "true" && requesterIsManager !== "true") {
-      throw new Error("You are not authorized to update user roles.");
-    }
-
-    if (!targetEmail) {
-      throw new Error("Target user email is required.");
-    }
-
-    const attributesToUpdate: { Name: string; Value: string }[] = [];
-
-    if (rolesToUpdate.isAdmin !== undefined) {
-      attributesToUpdate.push({
-        Name: "custom:isAdmin",
-        Value: rolesToUpdate.isAdmin,
-      });
-    }
-
-    if (rolesToUpdate.isManager !== undefined) {
-      attributesToUpdate.push({
-        Name: "custom:isManager",
-        Value: rolesToUpdate.isManager,
-      });
-    }
-
-    if (rolesToUpdate.isSupport !== undefined) {
-      attributesToUpdate.push({
-        Name: "custom:isSupport",
-        Value: rolesToUpdate.isSupport,
-      });
-    }
-
-    if (attributesToUpdate.length === 0) {
-      throw new Error("No role attributes provided for update.");
-    }
-
-    await cognitoClient
-      .adminUpdateUserAttributes({
-        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
-        Username: targetEmail,
-        UserAttributes: attributesToUpdate,
-      })
-      .promise();
-
-    return { message: "User roles updated successfully." };
-  } catch (error: any) {
-    throw new Error(error.message || "Failed to update user role.");
-  }
 };
 
 export const refreshTokenLogicV2 = async (
@@ -470,15 +463,12 @@ export const refreshTokenLogicV2 = async (
       .initiateAuth({
         AuthFlow: "REFRESH_TOKEN_AUTH",
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
-        AuthParameters: {
-          REFRESH_TOKEN: refreshToken,
-        },
+        AuthParameters: { REFRESH_TOKEN: refreshToken },
       })
       .promise();
 
-    if (!response.AuthenticationResult) {
+    if (!response.AuthenticationResult)
       throw new Error("Failed to refresh token");
-    }
 
     return {
       accessToken: response.AuthenticationResult.AccessToken!,
@@ -489,5 +479,20 @@ export const refreshTokenLogicV2 = async (
   } catch (error: any) {
     console.error("Error refreshing token in Cognito:", error.message);
     throw new Error("Error refreshing token");
+  }
+};
+
+export const deleteFromCognito = async (username: string) => {
+  try {
+    await cognitoClient
+      .adminDeleteUser({
+        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        Username: username,
+      })
+      .promise();
+  } catch (error: any) {
+    const errorMsg = error?.message || error?.code || "Unknown Cognito error";
+    console.error(`Failed to delete Cognito user "${username}":`, errorMsg);
+    throw new Error(`Cognito deletion error: ${errorMsg}`);
   }
 };

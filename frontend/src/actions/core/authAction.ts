@@ -1,5 +1,3 @@
-"use client";
-
 import { normalizeUser } from "@/app/(storeFront)/components/hooks/useNormalizeUser";
 import { apiUrls } from "../constant/constant";
 
@@ -25,15 +23,16 @@ export async function login(email: string, password: string): Promise<User> {
     method: "POST",
     credentials: "include",
     cache: "no-store",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "max-age=0, must-revalidate",
+    },
     body: JSON.stringify({ email, password }),
   });
-
   if (!response.ok) throw new Error("Login failed");
   const data = await response.json();
   const u = data.user || data;
-
-  const raw = {
+  const user = normalizeUser({
     _id: u._id || u.id,
     username: u.username,
     email: u.email,
@@ -44,9 +43,7 @@ export async function login(email: string, password: string): Promise<User> {
     phone: u.phone,
     accessToken: data.accessToken || data.token,
     token: data.token,
-  };
-
-  const user = normalizeUser(raw) as User;
+  }) as User;
   return { ...user, name: user.username || user.name || "" };
 }
 
@@ -70,23 +67,20 @@ export async function verifySession(
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "Cache-Control": "max-age=0, must-revalidate",
     };
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
     const response = await fetch(apiUrls.VERIFY_SESSION, {
       method: "POST",
       credentials: "include",
       cache: "no-store",
       headers,
     });
-
     if (response.status === 401) return null;
     if (!response.ok) throw new Error("Session verification failed");
-
     const data = await response.json();
     const u = data.user;
-
-    const user = {
+    return normalizeUser({
       _id: u.sub || u.id || u._id,
       username: u.preferred_username,
       name: u.name || u.preferred_username || "",
@@ -98,8 +92,7 @@ export async function verifySession(
       isAdmin: toBool(u["custom:isAdmin"]) || toBool(u.isAdmin),
       isManager: toBool(u["custom:isManager"]) || toBool(u.isManager),
       isSupport: toBool(u["custom:isSupport"]) || toBool(u.isSupport),
-    };
-    return normalizeUser(user);
+    });
   } catch {
     return null;
   }

@@ -108,7 +108,7 @@ export const realEstateSubCategories: CategoryOption[] = [
   },
 ];
 
-export const carsSubCategories: CategoryOption[] = [
+export const carsSubCategory: CategoryOption[] = [
   {
     so: "Gawaari iib ah",
     title: "Cars for Sale",

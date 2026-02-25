@@ -17,25 +17,31 @@ import {
 import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 import { signIn, verifySession } from "../../core/utils/cognitoauth.ts";
 import { setAuthCookies } from "../../core/utils/cookiesDB.ts";
-
+import { validate } from "src/core/middelware/validator.ts";
+import { Request, Response, NextFunction } from "express";
+import { loginLimiter } from "src/core/middelware/securityMiddleware.ts";
 const authRouters = express.Router();
 const upload = multer();
 
-authRouters.post("/auth", async (req, res, next) => {
-  const { email, password } = req.body;
+authRouters.post(
+  "/auth",
+  loginLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
 
-  try {
-    const { token, refreshToken, userData } = await signIn(email, password);
+    try {
+      const { token, refreshToken, userData } = await signIn(email, password);
 
-    await setAuthCookies(res, { idToken: token, refreshToken });
+      await setAuthCookies(res, { idToken: token, refreshToken });
 
-    return res.json({ token, user: userData });
-  } catch (err) {
-    console.error("Cognito login failed for user:", email, err);
-    return res.status(401).json({ error: "Login failed" });
-  }
-});
-authRouters.get("/all-users", async (req, res) => {
+      return res.json({ token, user: userData });
+    } catch (err) {
+      console.error("Cognito login failed for user:", email, err);
+      return res.status(401).json({ error: "Login failed" });
+    }
+  },
+);
+authRouters.get("/all-users", async (req: Request, res: Response) => {
   try {
     await getAllUsers(req, res);
   } catch (error: any) {
@@ -43,21 +49,26 @@ authRouters.get("/all-users", async (req, res) => {
   }
 });
 
-authRouters.post("/register", async (req, res) => {
-  try {
-    const { email, password, username } = req.body;
-    const cognitoResult = await registerUser(email, password, username);
-    res.json({ message: "User registered successfully", cognitoResult });
-  } catch (error: any) {
-    res.status(400).json({ error: error.message || "Register failed" });
-  }
-});
+authRouters.post(
+  "/register",
+  validate.register,
+  validate.handleErrors,
+  async (req: Request, res: Response) => {
+    try {
+      const { email, password, username } = req.body;
+      const cognitoResult = await registerUser(email, password, username);
+      res.json({ message: "User registered successfully", cognitoResult });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Register failed" });
+    }
+  },
+);
 
 authRouters.post("/confirm", confirmUserSignUp);
 
 authRouters.post("/verify-session", ProtectRoute, verifySession);
 
-authRouters.post("/resend-code", async (req, res) => {
+authRouters.post("/resend-code", async (req: Request, res: Response) => {
   try {
     await resetCodeUser(req, res);
   } catch (error: any) {
@@ -87,7 +98,7 @@ authRouters.delete(
   async (req, res) => await deleteAccount(req as any, res),
 );
 
-authRouters.get("/total-users", async (req, res) => {
+authRouters.get("/total-users", async (req: Request, res: Response) => {
   try {
     await getUsersCount(req, res);
   } catch (error: any) {

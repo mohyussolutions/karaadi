@@ -1,13 +1,14 @@
-import { Request, Response } from "express";
 import { Status, Role } from "@prisma/client";
+import { Request, Response } from "express";
 import { EncryptionController } from "../encryptionController/encryptionController.ts";
 import prisma from "../../core/utils/db.ts";
 
 export const createSupportTicket = async (req: Request, res: Response) => {
   try {
     const { senderName, senderEmail, subject, body, priority } = req.body;
-    if (!senderName || !senderEmail || !subject || !body)
+    if (!senderName || !senderEmail || !subject || !body) {
       return res.status(400).json({ error: "Missing fields" });
+    }
 
     const encryptedBody = EncryptionController.encrypt(body);
 
@@ -48,13 +49,22 @@ export const createSupportTicket = async (req: Request, res: Response) => {
 export const addMessageToTicket = async (req: Request, res: Response) => {
   try {
     const { ticketId } = req.params;
+    const ticketIdValue = Array.isArray(ticketId) ? ticketId[0] : ticketId;
+    const ticketIdNum = parseInt(ticketIdValue, 10);
+
+    if (isNaN(ticketIdNum)) {
+      return res.status(400).json({ error: "Invalid ticket ID format" });
+    }
+
     const { body, senderName, senderEmail, senderRole } = req.body;
-    if (!body || !senderName || !senderEmail)
+
+    if (!body || !senderName || !senderEmail) {
       return res.status(400).json({ error: "Missing fields" });
+    }
 
     const message = await prisma.ticketMessage.create({
       data: {
-        ticketId: parseInt(ticketId),
+        ticketId: ticketIdNum,
         senderName,
         senderEmail,
         body: EncryptionController.encrypt(body),
@@ -64,7 +74,7 @@ export const addMessageToTicket = async (req: Request, res: Response) => {
 
     if (["SUPPORT_MANAGER", "ADMIN"].includes(senderRole)) {
       await prisma.customerSupportTicket.update({
-        where: { id: parseInt(ticketId) },
+        where: { id: ticketIdNum },
         data: { status: Status.IN_PROGRESS },
       });
     }
@@ -80,8 +90,16 @@ export const addMessageToTicket = async (req: Request, res: Response) => {
 
 export const getTicketDetails = async (req: Request, res: Response) => {
   try {
+    const { ticketId } = req.params;
+    const ticketIdValue = Array.isArray(ticketId) ? ticketId[0] : ticketId;
+    const ticketIdNum = parseInt(ticketIdValue, 10);
+
+    if (isNaN(ticketIdNum)) {
+      return res.status(400).json({ error: "Invalid ticket ID format" });
+    }
+
     const ticket = await prisma.customerSupportTicket.findUnique({
-      where: { id: parseInt(req.params.ticketId) },
+      where: { id: ticketIdNum },
       include: { messages: { orderBy: { createdAt: "asc" } } },
     });
 
@@ -121,14 +139,22 @@ export const getAllTickets = async (req: Request, res: Response) => {
 
 export const updateTicketStatus = async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.ticketId);
+    const { ticketId } = req.params;
+    const ticketIdValue = Array.isArray(ticketId) ? ticketId[0] : ticketId;
+    const ticketIdNum = parseInt(ticketIdValue, 10);
+
+    if (isNaN(ticketIdNum)) {
+      return res.status(400).json({ error: "Invalid ticket ID format" });
+    }
+
     const ticket = await prisma.customerSupportTicket.update({
-      where: { id },
+      where: { id: ticketIdNum },
       data: {
         status: req.body.status as Status,
         resolvedAt: req.body.status === "DONE" ? new Date() : null,
       },
     });
+
     return res.json({
       ...ticket,
       subject: EncryptionController.decrypt(ticket.subject),
@@ -143,12 +169,14 @@ export const getSupportStats = async (req: Request, res: Response) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     const [total, dayCount] = await Promise.all([
       prisma.customerSupportTicket.count(),
       prisma.customerSupportTicket.count({
         where: { createdAt: { gte: today } },
       }),
     ]);
+
     return res.json({ total, today: dayCount });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -157,9 +185,17 @@ export const getSupportStats = async (req: Request, res: Response) => {
 
 export const deleteTicket = async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.ticketId);
-    await prisma.ticketMessage.deleteMany({ where: { ticketId: id } });
-    await prisma.customerSupportTicket.delete({ where: { id } });
+    const { ticketId } = req.params;
+    const ticketIdValue = Array.isArray(ticketId) ? ticketId[0] : ticketId;
+    const ticketIdNum = parseInt(ticketIdValue, 10);
+
+    if (isNaN(ticketIdNum)) {
+      return res.status(400).json({ error: "Invalid ticket ID format" });
+    }
+
+    await prisma.ticketMessage.deleteMany({ where: { ticketId: ticketIdNum } });
+    await prisma.customerSupportTicket.delete({ where: { id: ticketIdNum } });
+
     return res.json({ message: "Deleted" });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -168,9 +204,18 @@ export const deleteTicket = async (req: Request, res: Response) => {
 
 export const deleteMessage = async (req: Request, res: Response) => {
   try {
+    const { messageId } = req.params;
+    const messageIdValue = Array.isArray(messageId) ? messageId[0] : messageId;
+    const messageIdNum = parseInt(messageIdValue, 10);
+
+    if (isNaN(messageIdNum)) {
+      return res.status(400).json({ error: "Invalid message ID format" });
+    }
+
     await prisma.ticketMessage.delete({
-      where: { id: parseInt(req.params.messageId) },
+      where: { id: messageIdNum },
     });
+
     return res.json({ message: "Deleted" });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });

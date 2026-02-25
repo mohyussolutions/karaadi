@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FaBell, FaBars, FaCog, FaUserCircle } from "react-icons/fa";
 import Sidebar from "./Sidebar/Sidebar";
 import { backToDashboard } from "@/app/(links)/devicesLinks/devicesLinks";
-import { AdminRoute } from "@/app/Guard/ProtectedRoute";
+import AdminRoute from "@/app/common/Guard/AdminRoute";
 
 interface DevicesLayoutProps {
   children: ReactNode;

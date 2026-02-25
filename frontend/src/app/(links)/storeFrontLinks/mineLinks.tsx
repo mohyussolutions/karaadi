@@ -14,31 +14,19 @@ import {
 } from "react-icons/fa";
 import { FiHeart, FiList, FiSearch, FiSettings, FiClock } from "react-icons/fi";
 
-interface INavLink {
-  name: string;
-  href: string;
-  icon: JSX.Element;
-}
-
-interface INavLink {
+export interface INavLink {
   name: string;
   href: string;
   icon: JSX.Element;
   color?: string;
 }
+
 export interface Setting {
   title: string;
   description: string;
   href: string;
   icon: React.ReactNode;
 }
-export const AccountDetailsnavLinks: INavLink[] = [
-  { name: "My Ads", href: "/mine/my-ads", icon: <FiList /> },
-  { name: "Favorites", href: "/mine/favorites", icon: <FiHeart /> },
-  { name: "Saved", href: "/mine/saved-searches", icon: <FiSearch /> },
-  { name: "Tickets", href: "/mine/TicketHistory", icon: <FiClock /> },
-  { name: "Settings", href: "/mine/settings", icon: <FiSettings /> },
-];
 
 export const navLinks: INavLink[] = [
   { name: "My Ads", href: "/mine/my-ads", icon: <FiList /> },
@@ -48,6 +36,8 @@ export const navLinks: INavLink[] = [
   { name: "Settings", href: "/mine/settings", icon: <FiSettings /> },
 ];
 
+export const AccountDetailsnavLinks = navLinks;
+
 export const settingsOptions: Setting[] = [
   {
     title: "Privacy",
@@ -55,7 +45,6 @@ export const settingsOptions: Setting[] = [
     href: "/mine/settings/privacy",
     icon: <FaShieldAlt className="text-blue-600 w-12 h-12" />,
   },
-
   {
     title: "secuity",
     description: "Hagaaji ilaalinta akoonkaaga iyo qalabkaaga.",
@@ -118,5 +107,11 @@ export const accountOptions = [
     description: "Track your support requests and messages",
     href: "/mine/TicketHistory",
     icon: <FaHistory className="text-pink-600 w-6 h-6" />,
+  },
+  {
+    title: "My Subscriptions",
+    description: "Manage your subscriptions and payment plans",
+    href: "/mine/my-subscription",
+    icon: <FaBell className="text-yellow-500 w-6 h-6" />,
   },
 ];

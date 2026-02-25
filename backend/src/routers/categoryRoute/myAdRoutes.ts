@@ -1,12 +1,11 @@
+import express from "express";
+import { Response, Request } from "express";
+import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 import {
   deleteAd,
   getAds,
   updateAd,
 } from "../../controllers/categoryController/myAdController.ts";
-
-import express from "express";
-import { Response, Request } from "express";
-import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const myAdsRouter = express.Router();
 

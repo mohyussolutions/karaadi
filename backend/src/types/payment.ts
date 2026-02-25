@@ -1,14 +1,16 @@
-// src/types/payment.ts
-import {
-  ListingType,
-  ItemCategory,
-  Payment as PrismaPayment,
-} from "@prisma/client";
-import { FEE_KEYS } from "../config/contstanst.js";
+import { ListingType } from "@prisma/client";
 
-export { ListingType, ItemCategory };
+export { ListingType };
 
-export type FeeConfigKeyType = (typeof FEE_KEYS)[number];
+export enum ItemCategory {
+  CAR = "CAR",
+  BOAT = "BOAT",
+  REAL_ESTATE = "REAL_ESTATE",
+  MOTORCYCLE = "MOTORCYCLE",
+  MARKETPLACE = "MARKETPLACE",
+  FARMEQUIPMENT = "FARMEQUIPMENT",
+  JOB = "JOB",
+}
 
 export enum PaymentStatus {
   PENDING = "PENDING",
@@ -18,7 +20,6 @@ export enum PaymentStatus {
   CANCELLED = "CANCELLED",
 }
 
-// Define PaymentMethod enum manually since it's not in Prisma
 export enum PaymentMethod {
   WAAFI = "WAAFI",
   EVC = "EVC",
@@ -61,38 +62,14 @@ export interface PaymentStats {
     maxPayment?: number;
     totalTax: number;
     totalPlatformFee: number;
-    totalBaseFee: number;
     totalFee: number;
   };
   breakdown: {
     status: Array<{ status: string } & PaymentBreakdownBase>;
     paymentMethods: Array<{ paymentMethod: string } & PaymentBreakdownBase>;
-    categories: Array<{ itemCategory: string } & PaymentBreakdownBase>;
     regions: Array<{ region: string } & PaymentBreakdownBase>;
     cities: Array<{ city: string } & PaymentBreakdownBase>;
   };
-}
-
-export interface Payment extends Omit<
-  PrismaPayment,
-  "createdAt" | "updatedAt" | "paidAt"
-> {
-  user: PaymentUser;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-  paidAt: string | Date | null;
-  listingType: ListingType;
-  itemCategory: ItemCategory | null;
-  region: string | null;
-  city: string | null;
-  jobId: string | null;
-  carId: string | null;
-  motorcycleId: string | null;
-  traktorId: string | null;
-  realEstateId: string | null;
-  boatId: string | null;
-  marketplaceId: string | null;
-  subscriptionId: string | null;
 }
 
 export interface PaymentRequest {
@@ -110,5 +87,3 @@ export interface PaymentRequest {
   feeAmount?: number;
   currency?: string;
 }
-
-export type PaymentMethodData = PaymentMethod;

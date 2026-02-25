@@ -9,10 +9,12 @@ import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults"
 import SearchInput from "@/app/(search)/SearchInput";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
+
 import {
   getRealEstateListings,
   RealEstate,
 } from "@/actions/categories/realEstateActions";
+import RoomRangeFilter from "@/app/(storeFront)/components/Filters/RoomRangeFilter";
 
 function ForRent() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -28,6 +30,10 @@ function ForRent() {
   const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
     {},
   );
+
+  const [rangeFilters, setRangeFilters] = useState({
+    maxRooms: 10,
+  });
 
   useEffect(() => {
     async function loadInitialData() {
@@ -97,6 +103,11 @@ function ForRent() {
   const finalItems = useMemo(() => {
     let list = query.trim() ? searchResults : allForRentItems;
 
+    list = list.filter((item: any) => {
+      const rooms = Number(item.rooms) || 0;
+      return rooms >= 0 && rooms <= Number(rangeFilters.maxRooms);
+    });
+
     if (selectedSubcategory) {
       const normalized = selectedSubcategory.toLowerCase();
       list = list.filter(
@@ -138,6 +149,7 @@ function ForRent() {
     allForRentItems,
     selectedRegion,
     checkedCities,
+    rangeFilters,
   ]);
 
   const scroll = (direction: "left" | "right") => {
@@ -227,6 +239,7 @@ function ForRent() {
             cityCounts={regionCityCounts.cityCounts}
           />
           <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
+            <RoomRangeFilter onFilterChange={setRangeFilters} />
             <SomaliMap
               selectedRegion={selectedRegion}
               onRegionClick={setSelectedRegion}

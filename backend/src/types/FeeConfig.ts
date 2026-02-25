@@ -1,4 +1,4 @@
-export interface FeeConfigKeysPros {
+export interface MarketplaceFee {
   id?: string;
   art: number;
   electronics: number;
@@ -6,47 +6,80 @@ export interface FeeConfigKeysPros {
   sports: number;
   furniture: number;
   fashion: number;
+  isActive?: boolean;
+}
+
+export interface RealEstateFee {
+  id?: string;
   rent: number;
   sale: number;
   land: number;
   farm: number;
   business: number;
+  isActive?: boolean;
+}
+
+export interface VehicleFee {
+  id?: string;
   carSale: number;
   carRent: number;
   trailer: number;
   carParts: number;
   truck: number;
   electricCar: number;
-  boatSale: number;
-  boatRent: number;
-  boatEngine: number;
-  boatParts: number;
-  tractorSale: number;
-  agriTool: number;
-  fertilizer: number;
-  harvester: number;
   motoSale: number;
   motoRent: number;
   motoParts: number;
   motoOther: number;
+  isActive?: boolean;
+}
+
+export interface BoatFee {
+  id?: string;
+  boatSale: number;
+  boatRent: number;
+  boatEngine: number;
+  boatParts: number;
+  isActive?: boolean;
+}
+
+export interface EquipmentAndJobFee {
+  id?: string;
+  tractorSale: number;
+  agriTool: number;
+  fertilizer: number;
+  harvester: number;
   fullTime: number;
   partTime: number;
   freelance: number;
-  // New Tiers Added Below
+  isActive?: boolean;
+}
+
+export interface SubPlanConfig {
+  id?: string;
   subStandard: number;
   subStandard60: number;
   subPremium: number;
-  subSixMonth: number;
-  subPremiumYear: number;
-  // ---
+  isActive?: boolean;
+}
+
+export interface SystemConfig {
+  id?: string;
   taxRate: number;
   waafi: number;
   platformFee: number;
   currency: string;
-  isActive?: boolean;
   createdBy?: string;
   updatedBy?: string;
   createdAt?: Date;
 }
 
-export type FeeConfigKeyType = keyof FeeConfigKeysPros;
+export type GlobalFeeConfig = MarketplaceFee &
+  RealEstateFee &
+  VehicleFee &
+  BoatFee &
+  EquipmentAndJobFee &
+  SubPlanConfig &
+  SystemConfig;
+
+export type FeeConfigKeyType = keyof GlobalFeeConfig;

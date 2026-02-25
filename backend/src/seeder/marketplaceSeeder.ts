@@ -128,7 +128,7 @@ export const marketplaceSeederData: MarketplaceItem[] = [
     mainCategory: "Marketplace",
     category: ["Antiques & Art"],
     region: "nugaal",
-    city: "garowe",
+    city: "Garoowe",
     images: [
       "https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c",
       "https://images.unsplash.com/photo-1509130298739-651801c76e96",

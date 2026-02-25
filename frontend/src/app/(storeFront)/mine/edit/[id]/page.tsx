@@ -2,9 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { apiService } from "@/actions/core/authAction";
 import { getMyAds, updateAd } from "@/actions/core/my-adsAction";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { verifySession } from "@/actions/core/authAction";
+
+const getCategoryType = (category: string): string => {
+  const vehicleCategories = ["boat", "car", "motorcycle", "farmequipment"];
+  const realEstateCategories = ["realEstate"];
+  const itemCategories = ["marketplace", "job", "advertisement"];
+
+  if (vehicleCategories.includes(category)) return "vehicle";
+  if (realEstateCategories.includes(category)) return "real-estate";
+  if (itemCategories.includes(category)) return "item-details";
+
+  return "item-details";
+};
 
 interface IAd {
   id: string;
@@ -15,6 +27,7 @@ interface IAd {
   price: number;
   type: string;
   user: any;
+  category?: string;
 }
 
 export default function Edit() {
@@ -30,7 +43,7 @@ export default function Edit() {
       setError(null);
 
       try {
-        const session = await apiService.verifySession();
+        const session = await verifySession();
         if (!session) {
           return router.push("/login");
         }
@@ -50,6 +63,7 @@ export default function Edit() {
         const adData = {
           ...foundAd,
           id: foundAd.id || foundAd._id || "",
+          category: foundAd.type || foundAd.category || "marketplace",
         };
 
         setAd(adData as IAd);
@@ -80,7 +94,7 @@ export default function Edit() {
     }
 
     try {
-      const session = await apiService.verifySession();
+      const session = await verifySession();
       if (!session) {
         router.push("/login");
         return;
@@ -101,6 +115,14 @@ export default function Edit() {
     } catch (err: any) {
       alert(`Error: ${err.message || "Failed to update ad"}`);
     }
+  };
+
+  const handleViewAd = () => {
+    if (!ad) return;
+    const categoryType = getCategoryType(
+      ad.category || ad.type || "marketplace",
+    );
+    router.push(`/item/${ad.id}?category=${categoryType}`);
   };
 
   if (loading) return <Loading />;
@@ -137,7 +159,13 @@ export default function Edit() {
 
   return (
     <div className="container mx-auto max-w-md p-6 space-y-6 border rounded shadow mt-6">
-      <h2 className="text-2xl font-bold">{ad.title}</h2>
+      <div className="flex justify-between items-start">
+        <h2 className="text-2xl font-bold">{ad.title}</h2>
+        <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
+          Type: {ad.type || ad.category}
+        </span>
+      </div>
+
       <p className="text-gray-600">{ad.description}</p>
       <p className="text-lg font-bold text-green-600">${ad.price}</p>
 
@@ -156,6 +184,13 @@ export default function Edit() {
           />
         </button>
       </div>
+
+      <button
+        onClick={handleViewAd}
+        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+      >
+        View Ad
+      </button>
 
       {ad.images?.length > 0 && (
         <img

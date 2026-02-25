@@ -15,10 +15,14 @@ export const getMyAds = async (accessToken?: string) => {
 
   const data = await res.json();
   return data.map((ad: any) => ({
-    ...ad,
     id: ad.id || ad._id,
-    type: ad.type || "marketplace",
+    title: ad.title,
+    description: ad.description,
+    price: ad.price,
+    maGaday: ad.maGaday,
+    isPaid: ad.isPaid,
     image: ad.images?.[0] || ad.image,
+    type: ad.type || "marketplace",
   }));
 };
 
@@ -28,7 +32,6 @@ export const updateAd = async (id: string, data: Record<string, any>) => {
     description: data.description,
     price: data.price,
     maGaday: data.maGaday,
-    type: data.type,
   };
 
   const res = await fetch(`${apiUrlsForAds.UPDATEAds}/${id}`, {
@@ -42,6 +45,7 @@ export const updateAd = async (id: string, data: Record<string, any>) => {
   if (!res.ok) throw new Error(result?.message || "Failed to update ad");
   return result;
 };
+
 export const deleteAd = async (id: string) => {
   try {
     const res = await fetch(`${apiUrlsForAds.DELETEAds}/${id}`, {

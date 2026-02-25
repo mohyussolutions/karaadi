@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  fetchAdminRealEstate,
+  deleteRealEstate,
+  updatePaidStatus,
+} from "@/actions/categories/realEstateActions";
 import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import React, { useEffect, useState } from "react";
 
@@ -9,82 +14,73 @@ export default function RealEstatePage() {
   const [activeCategory, setActiveCategory] = useState<string>("");
 
   useEffect(() => {
-    const fetchRealEstates = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:8080/api/real-estate/all-including-unpaid",
-          {
-            cache: "no-store",
-            credentials: "include",
-          },
-        );
-
-        if (res.ok) {
-          const data = await res.json();
-          setItems(data);
-        }
-      } catch (err) {
-        console.error("Error fetching real estate:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRealEstates();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchAdminRealEstate();
+      setItems(data);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete?")) return;
+    try {
+      const res = await deleteRealEstate(id);
+      if (res.success) {
+        setItems((prev) => prev.filter((item) => item.id !== id));
+        alert("Deleted successfully");
+      } else {
+        alert("Delete failed on server");
+      }
+    } catch (err) {
+      alert("Delete failed");
+    }
+  };
+
+  const handleTogglePaid = async (item: any) => {
+    try {
+      const newStatus = !item.isPaid;
+      const res = await updatePaidStatus(item.id, newStatus);
+
+      if (res.success) {
+        setItems((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i)),
+        );
+      } else {
+        alert("Failed to update status");
+      }
+    } catch (err) {
+      alert("Update failed");
+    }
+  };
 
   const filtered =
     activeCategory === ""
       ? items
       : items.filter((i) => i.subCategory === activeCategory);
 
-  const deleteItem = async (id: string) => {
-    const confirmDelete = confirm("Are you sure you want to delete?");
-    if (!confirmDelete) return;
-
-    try {
-      await fetch(`http://localhost:8080/api/real-estate/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      setItems((prev) => prev.filter((item) => item.id !== id));
-      alert("Deleted successfully");
-    } catch (err) {
-      console.error("Delete error:", err);
-    }
-  };
-
-  const togglePaidStatus = async (item: any) => {
-    try {
-      const newStatus = !item.isPaid;
-
-      const res = await fetch(
-        `http://localhost:8080/api/real-estate/${item.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isPaid: newStatus }),
-          credentials: "include",
-        },
-      );
-
-      if (!res.ok) return;
-
-      setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, isPaid: newStatus } : i)),
-      );
-    } catch (err) {
-      console.error("Toggle paid error:", err);
-    }
-  };
-
   return (
     <div className="px-4 py-6">
-      <h1 className="text-2xl font-bold mb-4">Real Estate</h1>
+      <h1 className="text-2xl font-bold mb-4">Real Estate Dashboard</h1>
 
-      {/* Somali categories */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-6">
+        <button
+          onClick={() => setActiveCategory("")}
+          className={`px-3 py-2 rounded-lg border text-sm transition text-center ${
+            activeCategory === ""
+              ? "bg-blue-600 text-white border-blue-600"
+              : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          All
+        </button>
         {realEstateSubCategories.map((cat) => (
           <button
             key={cat.so}
@@ -98,22 +94,13 @@ export default function RealEstatePage() {
             {cat.so}
           </button>
         ))}
-
-        <button
-          onClick={() => setActiveCategory("")}
-          className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition text-sm text-center"
-        >
-          All
-        </button>
       </div>
 
-      {loading && (
-        <div className="text-center py-10 text-gray-500">
-          Loading real estate...
+      {loading ? (
+        <div className="text-center py-10 text-gray-500 font-medium">
+          Loading property listings...
         </div>
-      )}
-
-      {!loading && (
+      ) : (
         <div className="overflow-x-auto mt-6">
           <table className="w-full border-collapse border border-gray-300">
             <thead className="bg-gray-100 text-left">
@@ -121,98 +108,90 @@ export default function RealEstatePage() {
                 <th className="border p-2">Image</th>
                 <th className="border p-2">Title</th>
                 <th className="border p-2">Price</th>
-                <th className="border p-2">Region</th>
-                <th className="border p-2">City</th>
-                <th className="border p-2">Subcategory</th>
-                <th className="border p-2">Beds</th>
-                <th className="border p-2">Baths</th>
-                <th className="border p-2">SqFt</th>
+                <th className="border p-2">Location</th>
+                <th className="border p-2">Category</th>
+                <th className="border p-2">Details</th>
                 <th className="border p-2">Seller</th>
-                <th className="border p-2">Paid</th>
+                <th className="border p-2">Status</th>
                 <th className="border p-2">Actions</th>
               </tr>
             </thead>
-
             <tbody>
               {filtered.length > 0 ? (
                 filtered.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="border p-2">
                       <img
-                        src={item.images?.[0]}
+                        src={item.images?.[0] || "/placeholder-house.png"}
                         alt={item.title}
-                        className="w-20 h-20 object-cover rounded"
+                        className="w-16 h-16 object-cover rounded shadow-sm"
                       />
                     </td>
-
                     <td className="border p-2 font-medium">{item.title}</td>
-                    <td className="border p-2">${item.price}</td>
-                    <td className="border p-2">{item.region}</td>
-                    <td className="border p-2">{item.city}</td>
-                    <td className="border p-2">{item.subCategory}</td>
-                    <td className="border p-2">{item.bedrooms}</td>
-                    <td className="border p-2">{item.bathrooms}</td>
-                    <td className="border p-2">{item.squareFeet}</td>
-
+                    <td className="border p-2 text-blue-700 font-bold">
+                      ${item.price.toLocaleString()}
+                    </td>
+                    <td className="border p-2 text-sm">
+                      {item.region}, {item.city}
+                    </td>
+                    <td className="border p-2 text-sm italic">
+                      {item.subCategory}
+                    </td>
+                    <td className="border p-2 text-xs leading-relaxed">
+                      {item.bedrooms}B / {item.bathrooms}Ba <br />
+                      {item.squareFeet} sqft
+                    </td>
                     <td className="border p-2">
-                      <div className="flex flex-col">
-                        <span className="font-semibold">
-                          {item.user?.username}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {item.user?.email}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {item.user?.phone}
-                        </span>
+                      <div className="text-xs">
+                        <p className="font-bold">
+                          {item.user?.username || "N/A"}
+                        </p>
+                        <p className="text-gray-500">{item.user?.phone}</p>
                       </div>
                     </td>
-
-                    <td className="border p-2">
-                      {item.isPaid ? (
-                        <span className="text-green-600 font-semibold">
-                          PAID
-                        </span>
-                      ) : (
-                        <span className="text-red-600 font-semibold">
-                          NOT PAID
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="border p-2 flex gap-2">
-                      <button
-                        onClick={() => alert("Edit " + item.id)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => togglePaidStatus(item)}
-                        className={`px-3 py-1 rounded text-white ${
-                          item.isPaid ? "bg-yellow-500" : "bg-green-600"
+                    <td className="border p-2 text-center">
+                      <span
+                        className={`px-2 py-1 rounded text-[10px] uppercase font-bold ${
+                          item.isPaid
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {item.isPaid ? "Unmark" : "Mark Paid"}
-                      </button>
-
-                      <button
-                        onClick={() => deleteItem(item.id)}
-                        className="px-3 py-1 bg-red-500 text-white rounded"
-                      >
-                        Delete
-                      </button>
+                        {item.isPaid ? "Paid" : "Unpaid"}
+                      </span>
+                    </td>
+                    <td className="border p-2">
+                      <div className="flex flex-col gap-1.5">
+                        <button
+                          onClick={() => handleTogglePaid(item)}
+                          className={`px-2 py-1 text-xs text-white rounded font-medium transition ${
+                            item.isPaid
+                              ? "bg-orange-500 hover:bg-orange-600"
+                              : "bg-green-600 hover:bg-green-700"
+                          }`}
+                        >
+                          {item.isPaid ? "Unmark" : "Mark Paid"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="px-2 py-1 text-xs bg-red-500 text-white rounded font-medium hover:bg-red-600 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td
-                    colSpan={12}
-                    className="text-center py-10 text-gray-500 border"
+                    colSpan={9}
+                    className="text-center py-12 border text-gray-400 italic"
                   >
-                    No properties found
+                    No properties found in this category.
                   </td>
                 </tr>
               )}

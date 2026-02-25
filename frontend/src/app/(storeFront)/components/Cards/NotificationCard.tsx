@@ -1,4 +1,6 @@
 import React from "react";
+import Link from "next/link";
+import { FiTrash2, FiExternalLink, FiCheck } from "react-icons/fi";
 
 type NotificationCardProps = {
   notification: any;
@@ -21,43 +23,46 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 }) => {
   return (
     <div
-      className={`p-4 bg-white rounded-xl border ${isUrgent ? "border-red-500" : "border-gray-200"} shadow-sm flex flex-col gap-2`}
+      className={`p-4 bg-white rounded-xl border transition-all ${isUrgent ? "border-red-500 ring-1 ring-red-100 bg-red-50/30" : "border-gray-200"} shadow-sm flex flex-col gap-3`}
     >
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="font-bold text-gray-800">
-            {notification.title || notification.message || "Notification"}
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-gray-900 text-sm">
+              {notification.title}
+            </span>
+            {isSubscriptionAlert && (
+              <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
+                Match
+              </span>
+            )}
           </div>
-          <div className="text-xs text-gray-400">
+          <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
+          <span className="text-[9px] text-gray-400 font-bold uppercase mt-2 block">
             {formatTime(notification.createdAt)}
-          </div>
+          </span>
         </div>
         <button
           onClick={() => onDelete(notification.id)}
-          className="text-xs text-red-500 hover:underline"
+          className="text-gray-300 hover:text-red-500"
         >
-          Delete
+          <FiTrash2 size={14} />
         </button>
       </div>
-      <div className="flex gap-2 mt-2">
-        <a
+      <div className="flex items-center gap-4 pt-3 border-t border-gray-50">
+        <Link
           href={getItemLink(notification)}
-          className="text-blue-600 text-xs hover:underline"
+          className="text-blue-600 text-[10px] font-black uppercase flex items-center gap-1 hover:opacity-70"
         >
-          View Item
-        </a>
+          <FiExternalLink size={10} /> View Detail
+        </Link>
         {!notification.isRead && (
           <button
             onClick={() => onMarkRead(notification.id)}
-            className="text-xs text-green-600 hover:underline"
+            className="text-gray-400 hover:text-green-600 text-[10px] font-black uppercase flex items-center gap-1"
           >
-            Mark as read
+            <FiCheck size={10} /> Mark Read
           </button>
-        )}
-        {isSubscriptionAlert && (
-          <span className="text-xs text-red-500 font-bold ml-2">
-            Subscription Alert
-          </span>
         )}
       </div>
     </div>

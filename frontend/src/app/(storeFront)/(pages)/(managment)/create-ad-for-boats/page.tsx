@@ -1,93 +1,57 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { MdOutlinePlaylistRemove } from "react-icons/md";
+import { MdOutlinePlaylistRemove, MdCloudUpload, MdInfo } from "react-icons/md";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaShip, FaTools } from "react-icons/fa";
-import { GiBoatFishing, GiBoatPropeller } from "react-icons/gi";
+import { verifySession } from "@/actions/core/authAction";
+
 import {
-  cities,
-  regions,
-} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
-import { User } from "@/app/utils/types/user";
+  getAllRegions,
+  getAllCities,
+  addCity,
+} from "@/actions/categories/geoAction";
 import {
-  CreateBoatInput,
-  useCreateBoatMutation,
-} from "@/app/(storeFront)/store/slices/boatsSlice";
-import {
-  BoatEnginesForSaleNestedSub,
   BoatPartsNestedSub,
   BoatsForRentNestedSub,
   BoatsForSaleNestedSub,
+  BoatEnginesNestedSub,
   BoatSubCategoryItem,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
-import { verifySession } from "@/actions/core/authAction";
+import { createBoat } from "@/actions/categories/boatActions";
 import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
+import { getBoatFees } from "@/actions/categories/feeAction";
 
-interface CategoryOption {
-  so: string;
-  title: string;
-  icon: React.ReactElement;
-}
-
-const boatMainCategories: CategoryOption[] = [
-  { so: "Doomo iib ah", title: "Boats for Sale", icon: <FaShip size={28} /> },
-  {
-    so: "Doomo kireysi ah",
-    title: "Boats for Rent",
-    icon: <GiBoatFishing size={28} />,
-  },
-  {
-    so: "Matoorada doomo iib ah",
-    title: "Boat Engines for Sale",
-    icon: <GiBoatPropeller size={28} />,
-  },
-  { so: "Qaybaha doomo", title: "Boat Parts", icon: <FaTools size={28} /> },
-];
-
+const boatsMainCategory = allCategories.find((c) => c.key === "Boats");
+const boatsSubCategories = boatsMainCategory?.subCategories || [];
 const boatsNestedCategoriesMap: { [key: string]: BoatSubCategoryItem[] } = {
   "Boats for Sale": BoatsForSaleNestedSub,
   "Boats for Rent": BoatsForRentNestedSub,
-  "Boat Engines for Sale": BoatEnginesForSaleNestedSub,
+  "Boat Engines for Sale": BoatEnginesNestedSub,
   "Boat Parts": BoatPartsNestedSub,
 };
 
-type BoatFormData = {
-  mainCategory: string;
-  title: string;
-  category: string;
-  subCategory: string;
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string;
-  description: string;
-  price: string;
-  type: string;
-  boatModel: string;
-  transmission: string;
-  color: string;
-};
-
 const BoatForSellAndBuy = () => {
-  const [mainCategory, setMainCategory] = useState(
-    allCategories[0]?.name || "",
-  );
   const router = useRouter();
-  const [createBoat, { isLoading }] = useCreateBoatMutation();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+  const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
+  const [selectedFee, setSelectedFee] = useState<string>("0");
+  const [images, setImages] = useState<File[]>([]);
+  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
+  const [newCity, setNewCity] = useState("");
 
-  const [formData, setFormData] = useState<BoatFormData>({
-    mainCategory: "Doomo",
-    title: "",
+  const [formData, setFormData] = useState({
+    mainCategory: boatsMainCategory?.so || "Doomo",
     category: "",
     subCategory: "",
+    title: "",
     region: "",
     city: "",
-    district: "",
-    subDistrict: "",
     description: "",
     price: "",
     type: "",
@@ -96,529 +60,335 @@ const BoatForSellAndBuy = () => {
     color: "",
   });
 
-  const [images, setImages] = useState<File[]>([]);
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
-  const [filteredDistricts, setFilteredDistricts] = useState<string[]>([]);
-  const [filteredSubcategories, setFilteredSubcategories] = useState<
-    BoatSubCategoryItem[]
-  >([]);
-  const [newCity, setNewCity] = useState("");
-  const [newDistrict, setNewDistrict] = useState("");
-  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-
   useEffect(() => {
-    const fetchUser = async () => {
+    async function init() {
       const sessionUser = await verifySession();
-      if (!sessionUser) {
-        router.push("/login");
-      } else {
-        setUser(sessionUser);
-      }
-    };
-    fetchUser();
+      if (!sessionUser) return router.push("/login");
+      setUser(sessionUser);
+
+      const [regs, cits, feeRes] = await Promise.all([
+        getAllRegions(),
+        getAllCities(),
+        getBoatFees(),
+      ]);
+
+      setRegions(regs || []);
+      setCities(cits || []);
+      setActiveFeeConfig(feeRes);
+    }
+    init();
   }, [router]);
 
-  const handleInputChange = (field: keyof BoatFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   useEffect(() => {
-    if (!formData.region) return setFilteredCities([]);
-    const citiesInRegion = cities
-      .filter((c) => c.regionId === formData.region)
-      .map((c) => c.name);
-    setFilteredCities(citiesInRegion);
-    handleInputChange("city", "");
-    handleInputChange("district", "");
-    setFilteredDistricts([]);
-    setShowNewCityInputs(false);
-    setNewCity("");
-    setNewDistrict("");
-  }, [formData.region]);
-
-  useEffect(() => {
-    if (formData.city === "custom") {
-      setShowNewCityInputs(true);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
-      handleInputChange("subDistrict", "");
-      setNewDistrict("");
-    } else if (formData.city) {
-      setShowNewCityInputs(false);
-      const cityDistrictObj = Districts.find((d) => d.name === formData.city);
-      setFilteredDistricts(
-        cityDistrictObj?.subDistricts.map((sd) => sd.name) || [],
-      );
-      handleInputChange("district", "");
-      handleInputChange("subDistrict", "");
-    } else {
-      setShowNewCityInputs(false);
-      setFilteredDistricts([]);
-      handleInputChange("district", "");
-      handleInputChange("subDistrict", "");
+    if (formData.region) {
+      setFilteredCities(cities.filter((c) => c.regionId === formData.region));
     }
-  }, [formData.city]);
-
-  useEffect(() => {
-    if (formData.category) {
-      setFilteredSubcategories(
-        boatsNestedCategoriesMap[formData.category] || [],
-      );
-      handleInputChange("subCategory", "");
-      handleInputChange("title", "");
-    } else {
-      setFilteredSubcategories([]);
-    }
-  }, [formData.category]);
+  }, [formData.region, cities]);
 
   useEffect(() => {
     if (formData.category && formData.subCategory) {
-      const selectedSub = boatsNestedCategoriesMap[formData.category]?.find(
-        (sub) => sub.title === formData.subCategory,
-      );
-      handleInputChange("title", selectedSub?.so || "");
+      const nested = boatsNestedCategoriesMap[formData.category] || [];
+      const selected = nested.find((s) => s.title === formData.subCategory);
+      if (selected) setFormData((prev) => ({ ...prev, title: selected.so }));
+
+      let feeKey = "";
+      if (formData.category === "Boats for Rent") feeKey = "boatRent";
+      else if (formData.category === "Boats for Sale") feeKey = "boatSale";
+      else if (formData.category === "Boat Engines for Sale")
+        feeKey = "boatEngine";
+      else if (formData.category === "Boat Parts") feeKey = "boatParts";
+
+      if (feeKey && activeFeeConfig) {
+        setSelectedFee(activeFeeConfig[feeKey] || "0");
+      } else {
+        setSelectedFee("0");
+      }
     }
-  }, [formData.category, formData.subCategory]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const selectedFiles = Array.from(e.target.files);
-    if (selectedFiles.length + images.length > 10) {
-      toast.warn("You can only upload up to 10 images.", {
-        position: "bottom-center",
-      });
-      return;
-    }
-    setImages((prev) => [...prev, ...selectedFiles].slice(0, 10));
-  };
-
-  const handleRemoveImage = (indexToRemove: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== indexToRemove));
-  };
-
-  const handleSaveNewCityDistrict = () => {
-    if (!newCity.trim() || !newDistrict.trim()) {
-      toast.warn("Please enter both city and district names.", {
-        position: "bottom-center",
-      });
-      return;
-    }
-    handleInputChange("city", newCity.trim());
-    handleInputChange("district", newDistrict.trim());
-    handleInputChange("subDistrict", newDistrict.trim());
-    setShowNewCityInputs(false);
-    setFilteredDistricts([newDistrict.trim()]);
-    setNewCity("");
-    setNewDistrict("");
-  };
-
-  const isFormValid = () => {
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.district;
-
-    return (
-      formData.category &&
-      formData.subCategory &&
-      formData.title &&
-      formData.region &&
-      selectedCity &&
-      selectedDistrict &&
-      formData.description &&
-      formData.price &&
-      !isNaN(Number(formData.price)) &&
-      Number(formData.price) >= 0 &&
-      formData.type &&
-      formData.boatModel &&
-      formData.transmission &&
-      formData.color &&
-      images.length > 0 &&
-      user
-    );
-  };
-
-  const convertImagesToBase64 = async (files: File[]): Promise<string[]> =>
-    Promise.all(
-      files.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          }),
-      ),
-    );
+  }, [formData.category, formData.subCategory, activeFeeConfig]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user || loading) return;
 
-    if (!isFormValid()) {
-      toast.warn("Please fill out all required fields correctly.", {
-        position: "bottom-center",
-      });
-      return;
+    if (
+      !formData.category ||
+      !formData.subCategory ||
+      !formData.price ||
+      !formData.region
+    ) {
+      return toast.error("Fadlan buuxi banaanada muhiimka ah");
     }
 
-    if (!user || !user._id) {
-      toast.error("User session not found. Please log in.", {
-        position: "top-right",
-      });
-      return;
-    }
-
-    const selectedCity = showNewCityInputs ? newCity.trim() : formData.city;
-    const selectedDistrict = showNewCityInputs
-      ? newDistrict.trim()
-      : formData.district;
-
+    setLoading(true);
     try {
-      const imageBase64Array = await convertImagesToBase64(images);
-
-      const payload: CreateBoatInput & { mainCategory: string } = {
-        user: user._id,
-        mainCategory: formData.mainCategory,
-        title: formData.title.trim(),
-        category: formData.category,
-        subCategory: formData.subCategory,
-        region: formData.region,
-        city: selectedCity,
-        district: selectedDistrict,
-        subDistrict: formData.subDistrict || selectedDistrict,
-        description: formData.description.trim(),
-        price: Number(formData.price),
-        images: imageBase64Array,
-        type: formData.type.trim(),
-        boatModel: formData.boatModel.trim(),
-        transmission: formData.transmission.trim(),
-        color: formData.color.trim(),
-      };
-
-      console.log("the form", payload);
-      const response = await createBoat(payload).unwrap();
-      const boatId = response._id;
-
-      if (!boatId) {
-        throw new Error("Boat ID is missing from API response.");
+      let finalCity = formData.city;
+      if (showNewCityInputs && newCity.trim()) {
+        const res: any = await addCity({
+          id: `city-${Date.now()}`,
+          name: newCity.trim(),
+          regionId: formData.region,
+          isActive: true,
+        });
+        if (res.success) finalCity = res.data.name;
       }
 
-      toast.success("Boat listing created successfully!", {
-        position: "top-right",
-      });
-      router.push(`/boatsSummary?id=${boatId}`);
-    } catch (error) {
-      console.log("API Error Response:", error);
-      toast.error("Error saving the boat listing.", { position: "top-right" });
+      const base64Images = await Promise.all(
+        images.map(
+          (img) =>
+            new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(img);
+            }),
+        ),
+      );
+
+      const payload = {
+        userId: user._id || user.id,
+        mainCategory: "Boats",
+        category: [formData.category],
+        subcategory: [formData.subCategory],
+        title: formData.title,
+        region: formData.region,
+        city: finalCity,
+        description: formData.description,
+        price: Number(formData.price),
+        type: formData.type,
+        boatModel: formData.boatModel,
+        transmission: formData.transmission,
+        color: formData.color,
+        images: base64Images,
+        so: formData.title,
+        isPaid: false,
+        feeAmount: Number(selectedFee),
+      };
+
+      const result = await createBoat(payload, user.token);
+
+      if (result.success) {
+        toast.success("Waa la xayeysiiyey!");
+        router.push(`/payment/plan?id=${result.boatId}`);
+      } else {
+        toast.error(result.message);
+      }
+    } catch {
+      toast.error("Cillad dhinaca network-ka ah.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!user) return <p className="text-center mt-10">Loading user...</p>;
-
   return (
-    <div className="max-w-4xl mx-auto mt-6 p-4 md:p-6 bg-gray-50 rounded-lg shadow-xl">
-      <ToastContainer />
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Ads Boat (Xayasiiso Doomo) 🛥️
+    <div className="max-w-3xl mx-auto mt-10 p-6 md:p-10 bg-white rounded-3xl shadow-2xl">
+      <ToastContainer position="top-center" />
+      <h1 className="text-3xl font-black text-center mb-10 text-gray-800">
+        Xayeysiis Doomo 🛥️
       </h1>
-
-      <form onSubmit={handleSubmit} ref={formRef} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 ml-2 uppercase">
               Main Category
             </label>
             <select
-              value={mainCategory}
-              onChange={(e) => {
-                setMainCategory(e.target.value);
-                handleInputChange("category", "");
-                handleInputChange("subCategory", "");
-              }}
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none cursor-not-allowed"
+              disabled
             >
-              {allCategories
-                .filter((cat) => cat.key === "Boats")
-                .map((cat, index) => (
-                  <option key={index} value={cat.name}>
-                    {cat.so ?? cat.name}
-                  </option>
-                ))}
+              <option>{formData.mainCategory}</option>
             </select>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 ml-2 uppercase">
               Category
             </label>
             <select
               value={formData.category}
-              onChange={(e) => {
-                handleInputChange("category", e.target.value);
-                handleInputChange("subCategory", "");
-                handleInputChange("title", "");
-              }}
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category: e.target.value,
+                  subCategory: "",
+                })
+              }
+              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
             >
-              <option value="">Select category</option>
-              {boatMainCategories.map((cat) => (
+              <option value="">Dooro Qaybta</option>
+              {boatsSubCategories.map((cat) => (
                 <option key={cat.title} value={cat.title}>
-                  {cat.so} ({cat.title})
+                  {cat.so}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {formData.category && filteredSubcategories.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Subcategory
-            </label>
-            <select
-              value={formData.subCategory}
-              onChange={(e) => handleInputChange("subCategory", e.target.value)}
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select subcategory</option>
-              {filteredSubcategories.map((sub) => (
-                <option key={sub.title} value={sub.title}>
-                  {sub.so} ({sub.title})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold text-gray-400 ml-2 uppercase">
+            Subcategory
           </label>
+          <select
+            value={formData.subCategory}
+            onChange={(e) =>
+              setFormData({ ...formData, subCategory: e.target.value })
+            }
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
+            disabled={!formData.category}
+          >
+            <option value="">Dooro Nooca</option>
+            {(boatsNestedCategoriesMap[formData.category] || []).map((sub) => (
+              <option key={sub.title} value={sub.title}>
+                {sub.so}
+              </option>
+            ))}
+          </select>
+
+          {formData.category && (
+            <div className="mt-2 flex items-center gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
+              <MdInfo className="text-blue-500" />
+              <p className="text-sm font-bold text-blue-700">
+                Lacagta Adeegga ({formData.category}):{" "}
+                <span className="text-lg font-black ml-1">${selectedFee}</span>
+              </p>
+            </div>
+          )}
+        </div>
+
+        <input
+          placeholder="Title-ka Xayeysiiska"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none font-bold focus:border-blue-400"
+        />
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            required
-            placeholder="Auto-filled, adjust if necessary"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+            placeholder="Type"
+            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+          />
+          <input
+            placeholder="Model"
+            onChange={(e) =>
+              setFormData({ ...formData, boatModel: e.target.value })
+            }
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+          />
+          <select
+            onChange={(e) =>
+              setFormData({ ...formData, transmission: e.target.value })
+            }
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+          >
+            <option value="">Gearbox</option>
+            <option value="Manual">Manual</option>
+            <option value="Automatic">Automatic</option>
+          </select>
+          <input
+            placeholder="Color"
+            onChange={(e) =>
+              setFormData({ ...formData, color: e.target.value })
+            }
+            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Boat Type
-            </label>
-            <input
-              type="text"
-              value={formData.type}
-              onChange={(e) => handleInputChange("type", e.target.value)}
-              required
-              placeholder="e.g., Catamaran, Dinghy, Speedboat"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Model/Make
-            </label>
-            <input
-              type="text"
-              value={formData.boatModel}
-              onChange={(e) => handleInputChange("boatModel", e.target.value)}
-              required
-              placeholder="e.g., Yamaha, Boston Whaler"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Transmission
-            </label>
-            <select
-              value={formData.transmission}
-              onChange={(e) =>
-                handleInputChange("transmission", e.target.value)
-              }
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select transmission</option>
-              <option value="Manual">Manual</option>
-              <option value="Automatic">Automatic</option>
-              <option value="N/A">N/A (Sailing/Non-Motorized)</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Color
-            </label>
-            <input
-              type="text"
-              value={formData.color}
-              onChange={(e) => handleInputChange("color", e.target.value)}
-              required
-              placeholder="e.g., White, Blue"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Region
-            </label>
-            <select
-              value={formData.region}
-              onChange={(e) => handleInputChange("region", e.target.value)}
-              required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select region</option>
-              {regions.map((reg) => (
-                <option key={reg.id} value={reg.id}>
-                  {reg.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
-            </label>
-            <select
-              value={formData.city}
-              onChange={(e) => handleInputChange("city", e.target.value)}
-              required={!showNewCityInputs}
-              disabled={!formData.region}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            >
-              <option value="">Select city</option>
-              {filteredCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-              <option value="custom" className="font-bold text-blue-600">
-                Add new city/district
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <select
+            value={formData.region}
+            onChange={(e) =>
+              setFormData({ ...formData, region: e.target.value, city: "" })
+            }
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none"
+          >
+            <option value="">Dooro Gobol</option>
+            {regions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
               </option>
-            </select>
-          </div>
+            ))}
+          </select>
+          <select
+            value={showNewCityInputs ? "custom" : formData.city}
+            onChange={(e) => {
+              setShowNewCityInputs(e.target.value === "custom");
+              setFormData({
+                ...formData,
+                city: e.target.value === "custom" ? "" : e.target.value,
+              });
+            }}
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none"
+            disabled={!formData.region}
+          >
+            <option value="">Dooro Magaalo</option>
+            {filteredCities.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+            <option value="custom" className="text-blue-600 font-bold">
+              + Magaalo kale
+            </option>
+          </select>
         </div>
 
-        {showNewCityInputs ? (
-          <div className="space-y-3 p-4 border border-blue-200 rounded-lg bg-blue-50">
-            <input
-              type="text"
-              value={newCity}
-              onChange={(e) => setNewCity(e.target.value)}
-              placeholder="New City Name (Required)"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-              required
-            />
-            <input
-              type="text"
-              value={newDistrict}
-              onChange={(e) => setNewDistrict(e.target.value)}
-              placeholder="New District Name (Required)"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-              required
-            />
-            <button
-              type="button"
-              onClick={handleSaveNewCityDistrict}
-              className="w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-150"
-            >
-              Save New Location
-            </button>
-          </div>
-        ) : (
-          formData.city &&
-          filteredDistricts.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                District
-              </label>
-              <select
-                value={formData.district}
-                onChange={(e) => handleInputChange("district", e.target.value)}
-                required
-                disabled={!formData.city || formData.city === "custom"}
-                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-              >
-                <option value="">Select district</option>
-                {filteredDistricts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )
+        {showNewCityInputs && (
+          <input
+            placeholder="Qor magaca magaalada cusub"
+            onChange={(e) => setNewCity(e.target.value)}
+            className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl animate-pulse outline-none"
+          />
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Price (USD)
-          </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <input
             type="number"
-            min="0"
+            placeholder="Qiimaha ($ USD)"
             value={formData.price}
-            onChange={(e) => handleInputChange("price", e.target.value)}
-            required
-            placeholder="0.00"
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+            onChange={(e) =>
+              setFormData({ ...formData, price: e.target.value })
+            }
+            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none font-bold text-blue-600 focus:border-blue-400"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            required
-            placeholder="Detail the boat's condition, engine hours, size, and any included accessories."
-            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            rows={4}
-          />
-        </div>
+        <textarea
+          placeholder="Faahfaahin dheeraad ah..."
+          rows={4}
+          value={formData.description}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
+          className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Images (Min 1, Max 10)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageChange}
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          <div className="flex flex-wrap mt-4 gap-3">
+        <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl">
+          <div className="flex flex-wrap gap-4">
+            <label className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
+              <MdCloudUpload className="text-2xl text-gray-300" />
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) =>
+                  e.target.files &&
+                  setImages([...images, ...Array.from(e.target.files)])
+                }
+              />
+            </label>
             {images.map((img, i) => (
-              <div key={i} className="relative w-20 h-20 shadow-md">
+              <div key={i} className="relative w-20 h-20">
                 <img
                   src={URL.createObjectURL(img)}
-                  alt={`preview ${i}`}
-                  className="w-full h-full object-cover rounded-lg"
+                  className="w-full h-full object-cover rounded-2xl shadow-md"
+                  alt="preview"
                 />
                 <button
                   type="button"
-                  onClick={() => handleRemoveImage(i)}
-                  className="absolute top-[-5px] right-[-5px] bg-red-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition duration-150"
-                  aria-label="Remove image"
+                  onClick={() =>
+                    setImages(images.filter((_, idx) => idx !== i))
+                  }
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg"
                 >
                   <MdOutlinePlaylistRemove size={16} />
                 </button>
@@ -629,14 +399,14 @@ const BoatForSellAndBuy = () => {
 
         <button
           type="submit"
-          disabled={!isFormValid() || isLoading}
-          className={`w-full py-3 rounded-lg text-white font-bold text-lg transition duration-200 shadow-md ${
-            isFormValid() && !isLoading
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-gray-400 cursor-not-allowed"
+          disabled={loading}
+          className={`w-full py-4 rounded-2xl text-white font-black text-lg shadow-xl transition-all ${
+            loading
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 active:scale-95"
           }`}
         >
-          {isLoading ? "Submitting..." : "Submit Boat Ad"}
+          {loading ? "Gudbinaya..." : "Gudbi Xayeysiiska"}
         </button>
       </form>
     </div>

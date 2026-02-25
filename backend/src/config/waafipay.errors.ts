@@ -1,6 +1,4 @@
 import { ResponseCodes } from "./waafipay.service.responseCodes.ts";
-
-// Define or import WaafiRawResponse type
 type WaafiRawResponse = {
   responseCode?: string | number;
   errorCode?: string | number;
@@ -13,7 +11,6 @@ type WaafiRawResponse = {
   };
 };
 
-// Define WaafiError type
 type WaafiError = {
   isSuccess: boolean;
   message: string;

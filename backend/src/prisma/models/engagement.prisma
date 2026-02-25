@@ -1,64 +1,85 @@
 model Subscription {
   id                String    @id @default(cuid())
   userId            String
+  user              User      @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  
   title             String
   category          String
   subCategory       String?
+  description       String?
+  
+  region            String
+  cities            String[]
+  
   priceMin          Int?
   priceMax          Int?
-  region            String
-  city              String
-  description       String?
+  totalFee          Float?
+  isPaid            Boolean   @default(false)
+  paymentId         String?
+  payments          Payment[] @relation("SubscriptionPayments")
+  expiryDate        DateTime?
+  
   condition         String?
   brand             String?
   model             String?
   specificFeatures  String?
+  
   isActive          Boolean   @default(true)
   status            String    @default("active")
   lastNotified      DateTime?
   read              Boolean   @default(false)
   notificationCount Int       @default(0)
+  
+  selectedCityIds   String[]
+  customCities      String[]
+  
+  metadata          Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  isPaid            Boolean   @default(false)
-  payments          Payment[]
-  user              User      @relation(fields: [userId], references: [id])
+
+  notifications     Notification[] @relation("SubscriptionNotifications")
 
   @@index([userId])
   @@index([category, subCategory])
   @@index([isActive])
   @@index([status])
   @@index([region])
+  @@index([cities])
   @@index([createdAt])
+  @@index([expiryDate])
 }
 
 model Notification {
-  id          String    @id @default(cuid())
-  userId      String
-  senderId    String
-  paymentId   String?
-  title       String
-  message     String?
-  category    String
-  subCategory String?
-  itemId      String?
-  itemType    String?
-  region      String?
-  city        String?
-  isRead      Boolean   @default(false)
-  readAt      DateTime?
-  actionUrl   String?
-  metadata    Json?
-  createdAt   DateTime  @default(now())
-  payment     Payment?  @relation("PaymentNotifications", fields: [paymentId], references: [id])
-  sender      User      @relation("NotificationSender", fields: [senderId], references: [id])
-  user        User      @relation("NotificationReceiver", fields: [userId], references: [id])
+  id             String    @id @default(cuid())
+  userId         String
+  senderId       String?   
+  subscriptionId String?   
+  title          String
+  message        String
+  category       String    
+  subCategory    String?
+  itemId         String?   
+  itemType       String?   
+  region         String?
+  city           String?
+  isRead         Boolean   @default(false)
+  isDelivered    Boolean   @default(false)
+  readAt         DateTime?
+  metadata       Json?     
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  @@index([userId, isRead])
+  user           User        @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  sender         User?       @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  subscription   Subscription? @relation("SubscriptionNotifications", fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([senderId])
+  @@index([subscriptionId])
   @@index([createdAt])
-  @@index([category])
+  @@index([isRead])
+  @@index([itemId, itemType])
 }
-
 model Favorite {
   id          String   @id @default(cuid())
   userId      String

@@ -3,10 +3,28 @@
 import { useRouter } from "next/navigation";
 import { User } from "@/app/utils/types/user";
 import { getNavItems } from "@/app/(links)/storeFrontLinks/MainLinks";
+import { useEffect, useState } from "react";
+import { fetchNotifications } from "@/actions/core/notificationsAction";
+
 const NavItems = ({ user }: { user: User | null }) => {
   const router = useRouter();
   const isUserValid = Boolean(user?._id);
-  const navItems = getNavItems(isUserValid);
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  useEffect(() => {
+    if (isUserValid && user?._id) {
+      fetchNotifications(user._id).then((data) => {
+        const unread = Array.isArray(data)
+          ? data.filter((n: any) => !n.isRead).length
+          : 0;
+        setNotificationCount(unread);
+      });
+    } else {
+      setNotificationCount(0);
+    }
+  }, [isUserValid, user]);
+
+  const navItems = getNavItems(isUserValid, notificationCount);
 
   const handleClick = (href: string) => {
     if (!isUserValid && href !== "/login") {

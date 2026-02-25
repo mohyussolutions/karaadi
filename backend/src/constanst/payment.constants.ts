@@ -21,9 +21,9 @@ export const MODEL_MAP: Record<ItemCategory, string> = {
   [ItemCategory.BOAT]: "boat",
   [ItemCategory.REAL_ESTATE]: "realEstate",
   [ItemCategory.MOTORCYCLE]: "motorcycle",
-  [ItemCategory.TRAKTOR]: "traktor",
   [ItemCategory.MARKETPLACE]: "marketplace",
-  [ItemCategory.SUBSCRIPTION]: "subscription",
+  [ItemCategory.FARMEQUIPMENT]: "farmequipment",
+  [ItemCategory.JOB]: "job",
 } as const;
 
 export const CATEGORY_FIELD_MAP: Record<ItemCategory, string> = {
@@ -31,7 +31,7 @@ export const CATEGORY_FIELD_MAP: Record<ItemCategory, string> = {
   [ItemCategory.BOAT]: "boatId",
   [ItemCategory.REAL_ESTATE]: "realEstateId",
   [ItemCategory.MOTORCYCLE]: "motorcycleId",
-  [ItemCategory.TRAKTOR]: "traktorId",
   [ItemCategory.MARKETPLACE]: "marketplaceId",
-  [ItemCategory.SUBSCRIPTION]: "subscriptionId",
+  [ItemCategory.FARMEQUIPMENT]: "farmequipmentId",
+  [ItemCategory.JOB]: "jobId",
 } as const;

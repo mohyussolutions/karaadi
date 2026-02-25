@@ -21,7 +21,8 @@ model Chat {
   realEstate    RealEstate?  @relation(fields: [realEstateId], references: [id])
   receiver      User         @relation("receiverChats", fields: [receiverId], references: [id])
   sender        User         @relation("senderChats", fields: [senderId], references: [id])
-  traktor       Traktor?     @relation(fields: [traktorId], references: [id])
+  farmequipmentId String?
+  farmequipment Farmequipment?     @relation(fields: [farmequipmentId], references: [id])
   messages      Message[]
   jobs          Job[]
 
@@ -30,7 +31,7 @@ model Chat {
   @@unique([senderId, receiverId, motorcycleId])
   @@unique([senderId, receiverId, realEstateId])
   @@unique([senderId, receiverId, marketplaceId])
-  @@unique([senderId, receiverId, traktorId])
+  @@unique([senderId, receiverId, farmequipmentId])
   @@index([senderId, receiverId])
   @@index([updatedAt])
   @@index([isArchived])

@@ -53,7 +53,10 @@ const FeeModal = ({
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        [fee.key]: e.target.value,
+                        [fee.key]:
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value),
                       })
                     }
                   />

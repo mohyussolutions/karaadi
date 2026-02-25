@@ -2,10 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Loading from "../../components/shared/Loading/Loading";
 import { deleteAd, getMyAds, payToRelist } from "@/actions/core/my-adsAction";
 import { useGetRoute } from "../../components/hooks/useGetRoute";
+
+export const itemLinks = ["vehicle", "item-details", "real-estate"];
+
+const getCategoryType = (ad: any): string => {
+  const type = ad.type || ad.category || "marketplace";
+  const vehicleTypes = ["boat", "car", "motorcycle", "farmequipment"];
+  const realEstateTypes = ["realEstate"];
+
+  if (vehicleTypes.includes(type)) return "vehicles";
+  if (realEstateTypes.includes(type)) return "real-estate";
+  return "item-details";
+};
 
 function MyAds() {
   const [ads, setAds] = useState<any[]>([]);
@@ -29,6 +39,7 @@ function MyAds() {
 
   const handleDeleteAd = (adId: string) => async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this ad?")) return;
 
     try {
@@ -43,6 +54,7 @@ function MyAds() {
 
   const handleUpdateAd = (adId: string) => (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     router.push(`/mine/edit/${adId}`);
   };
 
@@ -64,7 +76,19 @@ function MyAds() {
     }
   };
 
-  if (loading) return <Loading />;
+  const handleViewAd = (ad: any) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    const route = useGetRoute({ category: getCategoryType(ad) });
+    router.push(`/${route}/${ad.id}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -84,14 +108,14 @@ function MyAds() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {ads.map((ad) => {
-            const routePrefix = useGetRoute(ad);
             const isSold = ad.maGaday === true;
+            const needsPayment = !ad.isPaid && !isSold;
 
             return (
-              <Link
+              <div
                 key={ad.id}
-                href={`/${routePrefix}/${ad.id}`}
-                className="border rounded-lg p-4 shadow-sm hover:shadow-md flex flex-col group transition-all bg-white"
+                onClick={handleViewAd(ad)}
+                className="border rounded-lg p-4 shadow-sm hover:shadow-md flex flex-col group transition-all bg-white cursor-pointer"
               >
                 {ad.image && (
                   <img
@@ -103,6 +127,12 @@ function MyAds() {
                 <h3 className="text-xl font-semibold mb-2 group-hover:text-blue-600 transition">
                   {ad.title}
                 </h3>
+
+                <div className="mb-2">
+                  <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
+                    {ad.type || ad.category || "item"}
+                  </span>
+                </div>
 
                 {isSold && (
                   <div className="mb-3">
@@ -127,7 +157,10 @@ function MyAds() {
                   ${ad.price}
                 </p>
 
-                <div className="flex space-x-2 mt-auto pt-4">
+                <div
+                  className="flex space-x-2 mt-auto pt-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {needsPayment ? (
                     <button
                       onClick={(e) => handlePayToRelist(ad.id, e)}
@@ -144,13 +177,13 @@ function MyAds() {
                     </button>
                   )}
                   <button
-                    onClick={handleDeleteAd(ad.id)}
+                    onClick={(e) => handleDeleteAd(ad.id)(e)}
                     className="flex-1 bg-gray-100 text-red-600 font-semibold px-4 py-2 rounded text-sm hover:bg-red-50 transition"
                   >
                     Delete
                   </button>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

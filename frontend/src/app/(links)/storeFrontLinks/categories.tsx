@@ -24,13 +24,12 @@ import {
   SidebarLink,
 } from "@/app/utils/types/categoriestype";
 
-import { MohyusLogoIcon } from "@/app/(storeFront)/icons/customerIcons";
+import { MohyusLogoIcon } from "@/app/utils/icons/customerIcons";
 import { LuSofa } from "react-icons/lu";
 import { IoIosBoat } from "react-icons/io";
 import { IoCreate } from "react-icons/io5";
 import {
   boatsSubCategories,
-  carsSubCategories,
   jobsSubCategories,
   marketplaceSubCategories,
   motorcyclesSubCategories,
@@ -38,6 +37,7 @@ import {
   traktorSubCategories,
 } from "./subCategories";
 import { FiBarChart2 } from "react-icons/fi";
+import { carsSubCategories } from "./nestedSubcategoryForCars";
 
 export const allCategories: MainCategory[] = [
   {

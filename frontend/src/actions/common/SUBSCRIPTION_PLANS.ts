@@ -6,9 +6,9 @@ export const SUBSCRIPTION_PLANS = [
     iconName: "zap",
     popular: false,
     features: [
-      "30 maalmood muuqaal ah",
-      "Mudnaanta raadinta aasaasiga ah",
-      "10 Sawir oo tayo leh",
+      "30 Maalmood",
+      "Raadinta aasaasiga ah",
+      "10 Sawir",
       "Taageero email",
     ],
   },
@@ -19,11 +19,11 @@ export const SUBSCRIPTION_PLANS = [
     iconName: "rocket",
     popular: true,
     features: [
-      "60 maalmood muuqaal ah",
+      "60 Maalmood",
       "Social Media Boost",
-      "Mudnaanta raadinta sare",
-      "20 Sawir + Muuqaal gaaban",
-      "Taageero email & chat",
+      "Raadinta sare",
+      "Sawirro & Muuqaal",
+      "Taageero chat",
     ],
   },
   {
@@ -33,11 +33,11 @@ export const SUBSCRIPTION_PLANS = [
     iconName: "crown",
     popular: false,
     features: [
-      "90 maalmood muuqaal ah",
-      "Meel sare (Top of Search)",
+      "90 Maalmood",
+      "Safka hore (Top)",
       "Premium Badge",
       "Sawirro aan xadidnayn",
-      "Taageero mudnaan leh 24/7",
+      "Taageero 24/7 ah",
     ],
   },
 ];

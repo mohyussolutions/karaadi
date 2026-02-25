@@ -12,7 +12,7 @@ import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults"
 import SearchInput from "@/app/(search)/SearchInput";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import { getTraktors, Traktor } from "@/actions/categories/tractorActions";
+import { getTraktors, Traktor } from "@/actions/categories/FarmequipmentAction";
 
 export default function Farmtools() {
   const scrollRef = useRef<HTMLDivElement>(null);

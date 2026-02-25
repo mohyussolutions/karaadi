@@ -7,6 +7,7 @@ import {
   generateTransactionId,
   parseWaafiResponse,
   truncateAmount,
+  validateAccountNumber,
 } from "../../core/utils/payment.utils.ts";
 import {
   ItemCategory,
@@ -69,7 +70,6 @@ export class PaymentService {
       userId,
       listingType,
       feeAmount,
-      baseFee,
       taxAmount,
       platformFee,
       totalAmount,
@@ -92,9 +92,11 @@ export class PaymentService {
     itemId: string,
   ): Promise<boolean> {
     const modelName = MODEL_MAP[itemCategory as keyof typeof MODEL_MAP];
-    if (!modelName || !prisma[modelName as keyof typeof prisma]) return false;
+    if (!modelName) return false;
 
     const model = prisma[modelName as keyof typeof prisma] as any;
+    if (!model || typeof model.findUnique !== "function") return false;
+
     const item = await model.findUnique({ where: { id: itemId } });
     return !!item;
   }
@@ -105,9 +107,11 @@ export class PaymentService {
     isPaid: boolean,
   ) {
     const modelName = MODEL_MAP[itemCategory as keyof typeof MODEL_MAP];
-    if (!modelName || !prisma[modelName as keyof typeof prisma]) return;
+    if (!modelName) return;
 
     const model = prisma[modelName as keyof typeof prisma] as any;
+    if (!model || typeof model.update !== "function") return;
+
     await model.update({ where: { id: itemId }, data: { isPaid } });
   }
 
@@ -264,24 +268,20 @@ export class PaymentService {
       include: { user: { select: { id: true, username: true, email: true } } },
     };
 
-    const [car, motorcycle, traktor, realEstate, boat, marketplace] =
-      await Promise.all([
-        prisma.car.findUnique({ where: { id }, ...includeOptions }),
-        prisma.motorcycle.findUnique({ where: { id }, ...includeOptions }),
-        prisma.traktor.findUnique({ where: { id }, ...includeOptions }),
-        prisma.realEstate.findUnique({ where: { id }, ...includeOptions }),
-        prisma.boat.findUnique({ where: { id }, ...includeOptions }),
-        prisma.marketplace.findUnique({ where: { id }, ...includeOptions }),
-      ]);
+    const [car, motorcycle, realEstate, boat, marketplace] = await Promise.all([
+      prisma.car.findUnique({ where: { id }, ...includeOptions }),
+      prisma.motorcycle.findUnique({ where: { id }, ...includeOptions }),
+      prisma.realEstate.findUnique({ where: { id }, ...includeOptions }),
+      prisma.boat.findUnique({ where: { id }, ...includeOptions }),
+      prisma.marketplace.findUnique({ where: { id }, ...includeOptions }),
+    ]);
 
-    const item =
-      car || motorcycle || traktor || realEstate || boat || marketplace;
+    const item = car || motorcycle || realEstate || boat || marketplace;
     if (!item) return null;
 
     let category = "";
     if (car) category = "car";
     else if (motorcycle) category = "motorcycle";
-    else if (traktor) category = "traktor";
     else if (realEstate) category = "real-estate";
     else if (boat) category = "boat";
     else if (marketplace) category = "marketplace";
@@ -291,50 +291,34 @@ export class PaymentService {
 
   async getPaymentStats(region?: string, city?: string) {
     const where: any = {};
-    if (region) where.region = region;
-    if (city) where.city = city;
 
-    const [aggregate, statusData, methodData, regionData, cityData] =
-      await Promise.all([
-        prisma.payment.aggregate({
-          where,
-          _sum: {
-            totalAmount: true,
-            taxAmount: true,
-            platformFee: true,
-            baseFee: true,
-            feeAmount: true,
-          },
-          _count: { id: true },
-          _avg: { totalAmount: true },
-          _min: { totalAmount: true },
-          _max: { totalAmount: true },
-        }),
-        prisma.payment.groupBy({
-          by: ["status"] as any,
-          where,
-          _count: { id: true },
-          _sum: { totalAmount: true },
-        }),
-        prisma.payment.groupBy({
-          by: ["paymentMethod"] as any,
-          where,
-          _count: { id: true },
-          _sum: { totalAmount: true },
-        }),
-        prisma.payment.groupBy({
-          by: ["region"] as any,
-          where,
-          _count: { id: true },
-          _sum: { totalAmount: true },
-        }),
-        prisma.payment.groupBy({
-          by: ["city"] as any,
-          where,
-          _count: { id: true },
-          _sum: { totalAmount: true },
-        }),
-      ]);
+    const [aggregate, statusData, methodData] = await Promise.all([
+      prisma.payment.aggregate({
+        where,
+        _sum: {
+          totalAmount: true,
+          taxAmount: true,
+          platformFee: true,
+          feeAmount: true,
+        },
+        _count: { id: true },
+        _avg: { totalAmount: true },
+        _min: { totalAmount: true },
+        _max: { totalAmount: true },
+      }),
+      prisma.payment.groupBy({
+        by: ["status"],
+        where,
+        _count: { id: true },
+        _sum: { totalAmount: true },
+      }),
+      prisma.payment.groupBy({
+        by: ["paymentMethod"],
+        where,
+        _count: { id: true },
+        _sum: { totalAmount: true },
+      }),
+    ]);
 
     return {
       summary: {
@@ -345,15 +329,11 @@ export class PaymentService {
         maxPayment: aggregate._max?.totalAmount || 0,
         totalTax: aggregate._sum?.taxAmount || 0,
         totalPlatformFee: aggregate._sum?.platformFee || 0,
-        totalBaseFee: aggregate._sum?.baseFee || 0,
         totalFee: aggregate._sum?.feeAmount || 0,
       },
       breakdown: {
         status: statusData,
         paymentMethods: methodData,
-        categories: [],
-        regions: regionData,
-        cities: cityData,
       },
     };
   }

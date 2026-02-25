@@ -1,24 +1,82 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import { triggerSubscriptionWatch } from "../userController/subscriptionController.ts";
 import { Prisma } from "@prisma/client";
+import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  calculateExpiryDate,
+  getDaysUntilExpiry,
+  formatExpiryDate,
+  isExpired,
+} from "src/hooks/useExpire.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 
-export const getAllRealEstates = async (_req: Request, res: Response) => {
+const selectUserBasic = {
+  select: {
+    username: true,
+    email: true,
+    phone: true,
+    profileImage: true,
+  },
+};
+
+const selectUserMinimal = {
+  select: { username: true },
+};
+
+const CACHE_KEYS = {
+  ALL_ADMIN: "realestate:admin:all",
+  TOTAL: "realestate:total",
+  ALL_PAID: (page: number, limit: number) =>
+    `realestate:paid:page:${page}:limit:${limit}`,
+  DETAIL: (id: string) => `realestate:detail:${id}`,
+};
+
+export const getAllRealEstates = async (req: Request, res: Response) => {
   try {
+    const { page, limit, skip } = getPaginationParams(
+      req.query.page as string,
+      req.query.pageSize as string,
+    );
+
+    const cacheKey = CACHE_KEYS.ALL_PAID(page, limit);
     const properties = await cacheManager.withCache(
-      "realestate:public:all",
+      cacheKey,
       async () => {
         return await prisma.realEstate.findMany({
           where: { isPaid: true },
-          include: {
-            user: { select: { username: true, email: true, phone: true } },
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            mainCategory: true,
+            category: true,
+            region: true,
+            city: true,
+            images: true,
+            createdAt: true,
+            expiryDate: true,
+            isPaid: true,
+            user: selectUserMinimal,
           },
           orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
         });
       },
+      CACHE_TTL.LIST,
     );
-    return res.json(properties);
+
+    const propertiesWithStatus = properties.map((item) => ({
+      ...item,
+      isExpired: isExpired(item.expiryDate),
+      status: isExpired(item.expiryDate)
+        ? "expired"
+        : item.isPaid
+          ? "active"
+          : "pending",
+    }));
+
+    return res.json(propertiesWithStatus);
   } catch (error) {
     const err = error as Error;
     return res
@@ -33,15 +91,15 @@ export const getAllRealEstatesIncludingUnpaid = async (
 ) => {
   try {
     const properties = await cacheManager.withCache(
-      "realestate:admin:all",
+      CACHE_KEYS.ALL_ADMIN,
       async () => {
         return await prisma.realEstate.findMany({
-          include: {
-            user: { select: { username: true, email: true, phone: true } },
-          },
+          include: { user: selectUserBasic },
           orderBy: { createdAt: "desc" },
+          take: 100,
         });
       },
+      CACHE_TTL.LIST,
     );
     return res.json(properties);
   } catch (error) {
@@ -55,11 +113,9 @@ export const getAllRealEstatesIncludingUnpaid = async (
 export const getTotalRealEstates = async (_req: Request, res: Response) => {
   try {
     const total = await cacheManager.withCache(
-      "realestate:total",
-      async () => {
-        return await prisma.realEstate.count();
-      },
-      600,
+      CACHE_KEYS.TOTAL,
+      async () => await prisma.realEstate.count(),
+      CACHE_TTL.STATS,
     );
     return res.json({ totalRealEstates: total });
   } catch (error) {
@@ -72,22 +128,31 @@ export const getTotalRealEstates = async (_req: Request, res: Response) => {
 
 export const getRealEstateById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const cacheKey = CACHE_KEYS.DETAIL(id);
+
     const property = await cacheManager.withCache(
-      `realestate:detail:${id}`,
+      cacheKey,
       async () => {
         return await prisma.realEstate.findUnique({
           where: { id },
-          include: {
-            user: { select: { username: true, email: true, phone: true } },
-          },
+          include: { user: selectUserBasic },
         });
       },
+      CACHE_TTL.DETAIL,
     );
 
     if (!property)
       return res.status(404).json({ message: "Property not found" });
-    return res.json(property);
+
+    const expired = isExpired(property.expiryDate);
+    return res.json({
+      ...property,
+      isExpired: expired,
+      status: expired ? "expired" : property.isPaid ? "active" : "pending",
+      daysUntilExpiry: getDaysUntilExpiry(property.expiryDate),
+      formattedExpiry: formatExpiryDate(property.expiryDate),
+    });
   } catch (error) {
     const err = error as Error;
     return res
@@ -107,7 +172,6 @@ export const createRealEstate = async (req: Request, res: Response) => {
       subcategory,
       bedrooms,
       bathrooms,
-      isPaid,
       squareFeet,
       address,
       hasGarage,
@@ -117,6 +181,9 @@ export const createRealEstate = async (req: Request, res: Response) => {
       county,
       images,
       userId,
+      isPaid,
+      planId,
+      planAmount,
     } = req.body;
 
     if (
@@ -130,6 +197,9 @@ export const createRealEstate = async (req: Request, res: Response) => {
     ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
+
+    const expiryDate =
+      planId && planAmount ? calculateExpiryDate(planId, planAmount) : null;
 
     const newProperty = await prisma.realEstate.create({
       data: {
@@ -155,18 +225,17 @@ export const createRealEstate = async (req: Request, res: Response) => {
         county: county || region,
         images: Array.isArray(images) ? images : [],
         userId,
+        planId: planId || null,
+        planAmount: planAmount || 0,
+        expiryDate,
       },
-      include: {
-        user: { select: { username: true, email: true, phone: true } },
-      },
+      include: { user: selectUserBasic },
     });
 
     await Promise.all([
       cacheManager.deletePattern("realestate:*:all"),
-      cacheManager.delete("realestate:total"),
+      cacheManager.delete(CACHE_KEYS.TOTAL),
     ]);
-
-    await triggerSubscriptionWatch("realestate", newProperty.id);
 
     return res.status(201).json(newProperty);
   } catch (error) {
@@ -179,17 +248,21 @@ export const createRealEstate = async (req: Request, res: Response) => {
 
 export const updateRealEstate = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { planId, planAmount, ...updateData } = req.body;
+
+    if (planId && planAmount) {
+      updateData.expiryDate = calculateExpiryDate(planId, planAmount);
+    }
+
     const updatedProperty = await prisma.realEstate.update({
       where: { id },
-      data: req.body,
-      include: {
-        user: { select: { username: true, email: true, phone: true } },
-      },
+      data: updateData,
+      include: { user: selectUserBasic },
     });
 
     await Promise.all([
-      cacheManager.delete(`realestate:detail:${id}`),
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
       cacheManager.deletePattern("realestate:*:all"),
     ]);
 
@@ -206,13 +279,14 @@ export const updateRealEstate = async (req: Request, res: Response) => {
 
 export const deleteRealEstate = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
     await prisma.realEstate.delete({ where: { id } });
 
     await Promise.all([
-      cacheManager.delete(`realestate:detail:${id}`),
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
       cacheManager.deletePattern("realestate:*:all"),
-      cacheManager.delete("realestate:total"),
+      cacheManager.delete(CACHE_KEYS.TOTAL),
     ]);
 
     return res.json({ message: "Property deleted successfully" });

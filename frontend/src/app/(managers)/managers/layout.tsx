@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import ManagerSidebar from "@/app/(managers)/managers/ManagerSidebar";
-import { ManagerRoute } from "@/app/Guard/ProtectedRoute";
+// FIX: ManagerRoute import missing. Please create '@/app/common/Guard/ManagerRoute' or update import path.
+// import { ManagerRoute } from "@/app/Guard/ProtectedRoute";
 import ManagerNavbar from "@/app/(backoffice)/Backoffice/ManagerNavbar";
 
 export default function ManagerLayout({

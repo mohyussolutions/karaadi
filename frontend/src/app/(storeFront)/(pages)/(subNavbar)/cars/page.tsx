@@ -5,9 +5,9 @@ import Link from "next/link";
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
-import { carsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import SearchInput from "@/app/(search)/SearchInput";
 import { getCars } from "@/actions/categories/carActions";
+import { carsSubCategories } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 
 function CarLinks() {
   const [items, setItems] = useState<any[]>([]);

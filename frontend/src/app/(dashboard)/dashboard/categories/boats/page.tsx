@@ -10,10 +10,10 @@ import {
   FaShip,
 } from "react-icons/fa";
 import {
-  BoatEnginesForSaleNestedSub,
   BoatPartsNestedSub,
   BoatsForRentNestedSub,
   BoatsForSaleNestedSub,
+  BoatEnginesNestedSub,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
 import { boatsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 
@@ -109,7 +109,7 @@ export default function BoatPages() {
     const allNested = [
       ...BoatsForSaleNestedSub,
       ...BoatsForRentNestedSub,
-      ...BoatEnginesForSaleNestedSub,
+      ...BoatEnginesNestedSub,
       ...BoatPartsNestedSub,
     ];
     const nestedCat = allNested.find((cat) => cat.so === title);
@@ -132,7 +132,7 @@ export default function BoatPages() {
       case "Doomo kireysi ah":
         return BoatsForRentNestedSub;
       case "Matoorada doomo iib ah":
-        return BoatEnginesForSaleNestedSub;
+        return BoatEnginesNestedSub;
       case "Qaybaha doomo":
         return BoatPartsNestedSub;
       default:

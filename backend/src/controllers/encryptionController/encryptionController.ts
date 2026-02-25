@@ -36,7 +36,7 @@ export const EncryptionController = {
       const decipher = crypto.createDecipheriv(
         ALGORITHM,
         KEY,
-        Buffer.from(ivHex, "hex")
+        Buffer.from(ivHex, "hex"),
       );
 
       decipher.setAuthTag(Buffer.from(tagHex, "hex"));

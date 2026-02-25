@@ -55,7 +55,7 @@ export const globalFiltering = async (req: Request, res: Response) => {
       return where;
     };
 
-    const [market, real, cars, boats, motos, traktors, jobs] =
+    const [market, real, cars, boats, motos, farmequipments, jobs] =
       await Promise.all([
         prisma.marketplace
           .findMany({ where: buildWhereClause() })
@@ -72,7 +72,7 @@ export const globalFiltering = async (req: Request, res: Response) => {
         prisma.motorcycle
           .findMany({ where: buildWhereClause(["make"]) })
           .catch(() => []),
-        prisma.traktor
+        prisma.farmequipment
           .findMany({ where: buildWhereClause(["make"]) })
           .catch(() => []),
         prisma.job
@@ -86,7 +86,7 @@ export const globalFiltering = async (req: Request, res: Response) => {
       ...cars.map((i) => ({ ...i, itemType: "car" })),
       ...boats.map((i) => ({ ...i, itemType: "boat" })),
       ...motos.map((i) => ({ ...i, itemType: "motorcycle" })),
-      ...traktors.map((i) => ({ ...i, itemType: "traktor" })),
+      ...farmequipments.map((i) => ({ ...i, itemType: "farmequipment" })),
       ...jobs.map((i) => ({ ...i, itemType: "job" })),
     ].sort(
       (a, b) =>
@@ -111,7 +111,7 @@ export const getFilterMetadata = async (req: Request, res: Response) => {
       prisma.car.findMany({ where, select }),
       prisma.boat.findMany({ where, select }),
       prisma.motorcycle.findMany({ where, select }),
-      prisma.traktor.findMany({ where, select }),
+      prisma.farmequipment.findMany({ where, select }),
       prisma.job.findMany({ where, select }),
     ]);
 
@@ -155,5 +155,70 @@ export const getFilterMetadata = async (req: Request, res: Response) => {
     res.json({ regions });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch metadata" });
+  }
+};
+
+export const rangePriceAndRooms = async (req: Request, res: Response) => {
+  const { region, city, minPrice, maxPrice, minRooms, maxRooms, type } =
+    req.query;
+
+  try {
+    const mode: Prisma.QueryMode = "insensitive";
+
+    const regionArray = region
+      ? String(region)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+    const cityArray = city
+      ? String(city)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+    const where: any = {
+      AND: [{ isPaid: true }],
+    };
+
+    if (type) {
+      where.AND.push({ type: String(type) });
+    }
+
+    if (regionArray.length > 0) {
+      where.AND.push({ region: { in: regionArray, mode } });
+    }
+
+    if (cityArray.length > 0) {
+      where.AND.push({ city: { in: cityArray, mode } });
+    }
+
+    const priceFilter: any = {};
+    if (minPrice !== undefined && minPrice !== "")
+      priceFilter.gte = Number(minPrice);
+    if (maxPrice !== undefined && maxPrice !== "")
+      priceFilter.lte = Number(maxPrice);
+    if (Object.keys(priceFilter).length > 0) {
+      where.AND.push({ price: priceFilter });
+    }
+
+    const roomFilter: any = {};
+    if (minRooms !== undefined && minRooms !== "")
+      roomFilter.gte = Number(minRooms);
+    if (maxRooms !== undefined && maxRooms !== "")
+      roomFilter.lte = Number(maxRooms);
+    if (Object.keys(roomFilter).length > 0) {
+      where.AND.push({ rooms: roomFilter });
+    }
+
+    const results = await prisma.realEstate.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: "Filtering failed" });
   }
 };

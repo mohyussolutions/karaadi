@@ -7,12 +7,12 @@ import { TiArrowSortedUp } from "react-icons/ti";
 import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 import {
   boatsSubCategories,
-  carsSubCategories,
   marketplaceSubCategories,
   motorcyclesSubCategories,
   realEstateSubCategories,
   traktorSubCategories,
 } from "@/app/(links)/storeFrontLinks/subCategories";
+import { carsSubCategories } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 
 interface CategoryOption {
   title: string;
@@ -28,15 +28,15 @@ const categoryOptions: { [key: string]: CategoryOption[] } = {
   Cars: carsSubCategories,
   Motorcycles: motorcyclesSubCategories,
   Boats: boatsSubCategories,
-  Traktor: traktorSubCategories,
+  Farmequipment: traktorSubCategories,
 };
 
 const getAdCreationPath = (categoryKey: string): string | null => {
   switch (categoryKey) {
     case "RealEstate":
       return "/create-ad-for-real-estate";
-    case "Traktor":
-      return "/create-ad-for-traktor";
+    case "Farmequipment":
+      return "/create-ad-for-farmequipment";
     case "Motorcycles":
       return "/create-ad-for-motorcycles";
     case "Boats":

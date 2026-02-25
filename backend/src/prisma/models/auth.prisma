@@ -12,6 +12,7 @@ model User {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   lastSeenAt        DateTime?       @updatedAt
+  
   agencies          Agency[]        @relation("UserAgencies")
   advertisements    Advertisement[]
   boats             Boat[]          @relation("UserBoats")
@@ -20,24 +21,25 @@ model User {
   sentChats         Chat[]          @relation("senderChats")
   cookies           Cookie?         @relation("UserCookies")
   favorites         Favorite[]      @relation("UserFavorites")
-  feeChangeLogs     FeeChangeLog[]
   marketplaces      Marketplace[]   @relation("UserMarketplaces")
   receivedMessages  Message[]       @relation("ReceivedMessages")
   sentMessages      Message[]       @relation("SentMessages")
   motorcycles       Motorcycle[]    @relation("UserMotorcycles")
-  sentNotifications Notification[]  @relation("NotificationSender")
-  notifications     Notification[]  @relation("NotificationReceiver")
-  payments          Payment[]
+  sentNotifications Notification[]  @relation("SentNotifications")
+  receivedNotifications Notification[]  @relation("UserNotifications")
   realEstates       RealEstate[]    @relation("UserRealEstates")
-  subscriptions     Subscription[]
-  traktors          Traktor[]       @relation("UserTraktors")
+  farmequipments    Farmequipment[] @relation("UserFarmequipments")
   jobs              Job[]           @relation("UserJobs")
   searchLogs        SearchLog[]
+  subscriptions     Subscription[]  @relation("UserSubscriptions")
+  payments          Payment[]       @relation("UserPayments")
+  feeChangeLogs     FeeChangeLog[]
 
   @@index([email])
   @@index([username])
   @@index([createdAt])
 }
+
 
 model Visitor {
   id        String   @id @default(cuid())

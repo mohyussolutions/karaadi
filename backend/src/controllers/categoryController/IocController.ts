@@ -1,35 +1,29 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 
-const capitalize = (str: string | null) => {
-  if (!str) return str;
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-};
-
-export const getAllRegions = async (_req: Request, res: Response) => {
+export const getAllRegions = async (req: Request, res: Response) => {
   try {
-    const cacheKey = "locations:regions:all";
-    const formatted = await cacheManager.withCache(cacheKey, async () => {
-      const data = await prisma.region.findMany({
-        include: {
-          _count: { select: { cities: true } },
-          cities: true,
-        },
-      });
+    const pageParam = req.query.page;
+    const pageSizeParam = req.query.pageSize;
 
-      return data.map((region) => ({
-        ...region,
-        name: capitalize(region.name),
-        cities:
-          region.cities?.map((city) => ({
-            ...city,
-            name: capitalize(city.name),
-          })) || [],
-      }));
+    const page =
+      parseInt(typeof pageParam === "string" ? pageParam : "1", 10) || 1;
+    const pageSize =
+      parseInt(typeof pageSizeParam === "string" ? pageSizeParam : "20", 10) ||
+      20;
+    const skip = (page - 1) * pageSize;
+
+    const data = await prisma.region.findMany({
+      include: {
+        _count: { select: { cities: true } },
+        cities: true,
+      },
+      skip,
+      take: pageSize,
+      orderBy: { name: "asc" },
     });
 
-    res.status(200).json(formatted);
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -38,28 +32,15 @@ export const getAllRegions = async (_req: Request, res: Response) => {
 export const getRegionById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const cacheKey = `locations:region:${id}`;
+    const regionId = Array.isArray(id) ? id[0] : id;
 
-    const formatted = await cacheManager.withCache(cacheKey, async () => {
-      const data = await prisma.region.findUnique({
-        where: { id },
-        include: { cities: true },
-      });
-      if (!data) return null;
-
-      return {
-        ...data,
-        name: capitalize(data.name),
-        cities:
-          data.cities?.map((city) => ({
-            ...city,
-            name: capitalize(city.name),
-          })) || [],
-      };
+    const data = await prisma.region.findUnique({
+      where: { id: regionId },
+      include: { cities: true },
     });
 
-    if (!formatted) return res.status(404).json({ error: "Region not found" });
-    res.status(200).json(formatted);
+    if (!data) return res.status(404).json({ error: "Region not found" });
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -69,12 +50,6 @@ export const createRegion = async (req: Request, res: Response) => {
   try {
     const { id, name } = req.body;
     const data = await prisma.region.create({ data: { id, name } });
-
-    await Promise.all([
-      cacheManager.delete("locations:regions:all"),
-      cacheManager.delete("locations:stats"),
-    ]);
-
     res.status(201).json(data);
   } catch (error) {
     res.status(400).json({ error: "Create failed" });
@@ -84,16 +59,13 @@ export const createRegion = async (req: Request, res: Response) => {
 export const updateRegion = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const regionId = Array.isArray(id) ? id[0] : id;
     const { name } = req.body;
+
     const data = await prisma.region.update({
-      where: { id },
+      where: { id: regionId },
       data: { name },
     });
-
-    await Promise.all([
-      cacheManager.delete("locations:regions:all"),
-      cacheManager.delete(`locations:region:${id}`),
-    ]);
 
     res.status(200).json(data);
   } catch (error) {
@@ -104,25 +76,21 @@ export const updateRegion = async (req: Request, res: Response) => {
 export const deleteRegion = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.region.delete({ where: { id } });
-
-    await Promise.all([
-      cacheManager.delete("locations:regions:all"),
-      cacheManager.delete(`locations:region:${id}`),
-      cacheManager.delete("locations:stats"),
-    ]);
-
+    const regionId = Array.isArray(id) ? id[0] : id;
+    await prisma.region.delete({ where: { id: regionId } });
     res.status(204).send();
   } catch (error) {
     res.status(400).json({ error: "Delete failed" });
   }
 };
 
-export const getAllCities = async (_req: Request, res: Response) => {
+export const getAllCities = async (req: Request, res: Response) => {
   try {
-    const cacheKey = "locations:cities:all";
-    const data = await cacheManager.withCache(cacheKey, async () => {
-      return await prisma.city.findMany();
+    const data = await prisma.city.findMany({
+      include: {
+        region: { select: { name: true } },
+      },
+      orderBy: [{ region: { name: "asc" } }, { name: "asc" }],
     });
     res.status(200).json(data);
   } catch (error) {
@@ -147,14 +115,6 @@ export const createCity = async (req: Request, res: Response) => {
         isActive: isActive !== undefined ? isActive : true,
       },
     });
-
-    await Promise.all([
-      cacheManager.delete("locations:cities:all"),
-      cacheManager.delete(`locations:region:${regionId}`),
-      cacheManager.delete("locations:regions:all"),
-      cacheManager.delete("locations:stats"),
-    ]);
-
     res.status(201).json(data);
   } catch (error) {
     res.status(400).json({ error: "Operation failed" });
@@ -164,18 +124,8 @@ export const createCity = async (req: Request, res: Response) => {
 export const deleteCity = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const city = await prisma.city.findUnique({ where: { id } });
-    await prisma.city.delete({ where: { id } });
-
-    if (city) {
-      await Promise.all([
-        cacheManager.delete("locations:cities:all"),
-        cacheManager.delete(`locations:region:${city.regionId}`),
-        cacheManager.delete("locations:regions:all"),
-        cacheManager.delete("locations:stats"),
-      ]);
-    }
-
+    const cityId = Array.isArray(id) ? id[0] : id;
+    await prisma.city.delete({ where: { id: cityId } });
     res.status(204).send();
   } catch (error) {
     res.status(400).json({ error: "Delete failed" });
@@ -184,23 +134,14 @@ export const deleteCity = async (req: Request, res: Response) => {
 
 export const getLocationStats = async (_req: Request, res: Response) => {
   try {
-    const cacheKey = "locations:stats";
-    const stats = await cacheManager.withCache(
-      cacheKey,
-      async () => {
-        const [regionCount, cityCount] = await Promise.all([
-          prisma.region.count(),
-          prisma.city.count(),
-        ]);
-        return {
-          totalRegions: regionCount,
-          totalCities: cityCount,
-        };
-      },
-      3600,
-    );
-
-    res.status(200).json(stats);
+    const [regionCount, cityCount] = await Promise.all([
+      prisma.region.count(),
+      prisma.city.count(),
+    ]);
+    res.status(200).json({
+      totalRegions: regionCount,
+      totalCities: cityCount,
+    });
   } catch (error) {
     res.status(500).json({ error: "Could not fetch stats" });
   }
@@ -233,9 +174,6 @@ export const syncAllLocations = async (req: Request, res: Response) => {
       },
       { timeout: 60000 },
     );
-
-    await cacheManager.deletePattern("locations:*");
-
     res.status(200).json({ message: "Synced successfully" });
   } catch (error) {
     res.status(500).json({ error: "Sync failed" });

@@ -61,8 +61,12 @@ function AdminSubscriptionsPage() {
       (sub) =>
         (!s ||
           sub.title.toLowerCase().includes(s) ||
-          sub.userId?.username?.toLowerCase().includes(s) ||
-          sub.region.toLowerCase().includes(s)) &&
+          (typeof sub.userId === "object" &&
+            sub.userId?.username?.toLowerCase().includes(s)) ||
+          (typeof sub.userId === "object" &&
+            sub.userId?.email?.toLowerCase().includes(s)) ||
+          sub.region.toLowerCase().includes(s) ||
+          sub.cities?.some((city) => city.toLowerCase().includes(s))) &&
         (!filters.region || sub.region === filters.region) &&
         (!filters.category || sub.category === filters.category),
     );
@@ -82,20 +86,37 @@ function AdminSubscriptionsPage() {
       setLoading(true);
       const subs = await getAllSubscriptionsAdmin(filters);
       const mapped = subs.map((sub: any) => ({
+        id: sub.id,
         _id: sub.id,
-        userId: {
-          _id: sub.user?.id || "",
-          username: sub.user?.username || "Unknown",
-          email: sub.user?.email || "",
-          phone: sub.user?.phone || "",
-        },
+        userId: sub.user
+          ? {
+              _id: sub.user.id || "",
+              username: sub.user.username || "Unknown",
+              email: sub.user.email || "",
+              phone: sub.user.phone || "",
+            }
+          : sub.userId || "",
         title: sub.title,
         category: sub.category,
+        subCategory: sub.subCategory,
         region: sub.region,
+        cities: sub.cities || [],
+        selectedCityIds: sub.selectedCityIds || [],
+        customCities: sub.customCities || [],
+        priceMin: sub.priceMin,
+        priceMax: sub.priceMax,
+        totalFee: sub.totalFee,
+        isPaid: sub.isPaid || false,
         isActive: sub.isActive,
         status: sub.status,
         createdAt: sub.createdAt,
+        lastNotified: sub.lastNotified,
         notificationCount: sub.notificationCount || 0,
+        condition: sub.condition,
+        brand: sub.brand,
+        model: sub.model,
+        specificFeatures: sub.specificFeatures,
+        metadata: sub.metadata,
       }));
 
       setSubscriptions(mapped);
@@ -134,12 +155,12 @@ function AdminSubscriptionsPage() {
       await updateSubscriptionStatus(id, { status: newStatus as any });
       setSubscriptions((prev) =>
         prev.map((s) =>
-          s._id === id
-            ? ({
+          s.id === id
+            ? {
                 ...s,
                 status: newStatus,
                 isActive: newStatus === "active",
-              } as any)
+              }
             : s,
         ),
       );
@@ -162,12 +183,18 @@ function AdminSubscriptionsPage() {
   const handleExportCSV = () => {
     setExporting(true);
     try {
-      const headers = "ID,User,Title,Category,Region,Status,Date\n";
+      const headers =
+        "ID,User,Email,Title,Category,Region,Cities,Price Min,Price Max,Status,Created\n";
       const rows = filteredSubscriptions
-        .map(
-          (s) =>
-            `${s._id},${s.userId?.username},"${s.title}",${s.category},${s.region},${s.status},${s.createdAt}`,
-        )
+        .map((s) => {
+          const username =
+            typeof s.userId === "object"
+              ? s.userId?.username || "Unknown"
+              : "Unknown";
+          const email =
+            typeof s.userId === "object" ? s.userId?.email || "" : "";
+          return `${s._id},${username},${email},"${s.title}",${s.category},${s.region},"${s.cities?.join("|")}",${s.priceMin || ""},${s.priceMax || ""},${s.status},${s.createdAt}`;
+        })
         .join("\n");
 
       const blob = new Blob([headers + rows], { type: "text/csv" });

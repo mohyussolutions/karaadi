@@ -7,30 +7,18 @@ import {
   deleteBoat,
   getTotalBoats,
   getAllBoatsIncludingUnpaid,
+  updateBoatPayment,
 } from "../../controllers/categoryController/boatsController.ts";
 
 const boatsRoutes = Router();
+
 boatsRoutes.get("/total", getTotalBoats);
-
 boatsRoutes.get("/all-including-unpaid", getAllBoatsIncludingUnpaid);
-boatsRoutes.get("/", (req, res, next) => {
-  getAllBoats(req, res).catch(next);
-});
-
-boatsRoutes.get("/:id", (req, res, next) => {
-  getBoatById(req, res).catch(next);
-});
-
-boatsRoutes.post("/", (req, res, next) => {
-  createBoat(req, res).catch(next);
-});
-
-boatsRoutes.put("/:id", (req, res, next) => {
-  updateBoat(req, res).catch(next);
-});
-
-boatsRoutes.delete("/:id", (req, res, next) => {
-  deleteBoat(req, res).catch(next);
-});
+boatsRoutes.get("/", getAllBoats);
+boatsRoutes.get("/:id", getBoatById);
+boatsRoutes.post("/", createBoat);
+boatsRoutes.put("/:id/payment", updateBoatPayment);
+boatsRoutes.put("/:id", updateBoat);
+boatsRoutes.delete("/:id", deleteBoat);
 
 export default boatsRoutes;

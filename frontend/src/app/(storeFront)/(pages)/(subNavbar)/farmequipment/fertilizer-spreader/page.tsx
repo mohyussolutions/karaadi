@@ -8,7 +8,7 @@ import {
   FertilizerSpreaderNestedSub,
   TraktorSubCategoryItem,
 } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
-import { getTraktors, Traktor } from "@/actions/categories/tractorActions";
+import { getTraktors, Traktor } from "@/actions/categories/FarmequipmentAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";

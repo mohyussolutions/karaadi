@@ -13,7 +13,8 @@ export const socketServer = (server: any) => {
   });
 
   io.on("connection", async (socket: Socket) => {
-    const userId = socket.handshake.auth.userId;
+    const rawUserId = socket.handshake.auth.userId;
+    const userId = Array.isArray(rawUserId) ? rawUserId[0] : rawUserId;
 
     console.log(
       chalk.yellow(
@@ -28,10 +29,12 @@ export const socketServer = (server: any) => {
     socket.on("disconnect", async () => {
       try {
         await prisma.user.update({
-          where: { id: userId },
+          where: { id: userId as string },
           data: { lastSeenAt: new Date() },
         });
-      } catch {}
+      } catch (error) {
+        console.error(chalk.red(`Status update failed for user: ${userId}`));
+      }
 
       console.log(chalk.red(`User ${userId} disconnected`));
     });

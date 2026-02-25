@@ -2,11 +2,20 @@ import { FaRegUser, FaRegUserCircle } from "react-icons/fa";
 import { IoAddCircleOutline, IoNotificationsOutline } from "react-icons/io5";
 import { FaRegMessage } from "react-icons/fa6";
 
-export const getNavItems = (isUserValid: boolean) => [
+export const getNavItems = (isUserValid: boolean, notificationCount = 0) => [
   {
     label: "Notifications",
     href: "/notifications",
-    icon: <IoNotificationsOutline className="w-6 h-5" />,
+    icon: (
+      <div className="relative">
+        <IoNotificationsOutline className="w-6 h-5" />
+        {notificationCount > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">
+            {notificationCount}
+          </span>
+        )}
+      </div>
+    ),
   },
   {
     label: "New Ad",

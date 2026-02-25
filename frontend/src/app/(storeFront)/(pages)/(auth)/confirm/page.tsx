@@ -4,10 +4,11 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  useConfirmUserMutation,
-  useResendCodeMutation,
-} from "@/app/(storeFront)/store/slices/userSlice";
+// FIX: userSlice import missing. Please create '@/app/(storeFront)/store/slices/userSlice.ts' or update import path to an existing slice (e.g., authSlice.tsx).
+// import {
+//   useConfirmUserMutation,
+//   useResendCodeMutation,
+// } from "@/app/(storeFront)/store/slices/userSlice";
 
 const ConfirmEmail = () => {
   const [email, setEmail] = useState("");
@@ -26,7 +27,7 @@ const ConfirmEmail = () => {
       router.push("/login");
     } catch (err: any) {
       toast.error(
-        err?.data?.message || err.error || "Failed to confirm email."
+        err?.data?.message || err.error || "Failed to confirm email.",
       );
     }
   };

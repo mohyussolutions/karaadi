@@ -16,10 +16,25 @@ model Marketplace {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   isPaid       Boolean   @default(false)
-  chats        Chat[]
+  expiryDate   DateTime?
+  feeId        String?
+  feeAmount    Float     @default(0)
+  planId       String?
+  planAmount   Float     @default(0)
+  
   user         User      @relation("UserMarketplaces", fields: [userId], references: [id], onDelete: Cascade)
-  Payment      Payment[]
+  payments     Payment[] @relation("MarketplacePayments")
+  chats        Chat[]
   messages     Message[] @relation("MarketplaceToMessage")
+  fee          MarketplaceFee? @relation(fields: [feeId], references: [id])
+  plan         SubPlan?  @relation(fields: [planId], references: [id])
+
+  @@index([isPaid])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([region])
+  @@index([feeId])
+  @@index([planId])
 }
 
 model RealEstate {
@@ -46,10 +61,25 @@ model RealEstate {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   isPaid       Boolean   @default(false)
-  chats        Chat[]
-  payments     Payment[]
+  expiryDate   DateTime?
+  feeId        String?
+  feeAmount    Float     @default(0)
+  planId       String?
+  planAmount   Float     @default(0)
+  
   user         User      @relation("UserRealEstates", fields: [userId], references: [id], onDelete: Cascade)
+  payments     Payment[] @relation("RealEstatePayments")
+  chats        Chat[]
   messages     Message[] @relation("MessageToRealEstate")
+  fee          RealEstateFee? @relation(fields: [feeId], references: [id])
+  plan         SubPlan?  @relation(fields: [planId], references: [id])
+
+  @@index([isPaid])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([region])
+  @@index([feeId])
+  @@index([planId])
 }
 
 model Boat {
@@ -73,9 +103,24 @@ model Boat {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   isPaid       Boolean   @default(false)
+  expiryDate   DateTime?
+  feeId        String?
+  feeAmount    Float     @default(0)
+  planId       String?
+  planAmount   Float     @default(0)
+  
   user         User      @relation("UserBoats", fields: [userId], references: [id], onDelete: Cascade)
+  payments     Payment[] @relation("BoatPayments")
   chats        Chat[]
-  Payment      Payment[]
+  fee          BoatFee?  @relation(fields: [feeId], references: [id])
+  plan         SubPlan?  @relation(fields: [planId], references: [id])
+
+  @@index([isPaid])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([region])
+  @@index([feeId])
+  @@index([planId])
 }
 
 model Car {
@@ -102,10 +147,26 @@ model Car {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   isPaid       Boolean   @default(false)
+  expiryDate   DateTime?
+  feeId        String?
+  feeAmount    Float     @default(0)
+  planId       String?
+  planAmount   Float     @default(0)
+  
   user         User      @relation("UserCars", fields: [userId], references: [id], onDelete: Cascade)
+  payments     Payment[] @relation("CarPayments")
   chats        Chat[]
-  Payment      Payment[]
+  fee          CarFee?   @relation(fields: [feeId], references: [id])
+  plan         SubPlan?  @relation(fields: [planId], references: [id])
+
+  @@index([isPaid])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([region])
+  @@index([feeId])
+  @@index([planId])
 }
+
 
 model Motorcycle {
   id           String    @id @default(cuid())
@@ -133,12 +194,27 @@ model Motorcycle {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   isPaid       Boolean   @default(false)
+  expiryDate   DateTime?
+  feeId        String?
+  feeAmount    Float     @default(0)
+  planId       String?
+  planAmount   Float     @default(0)
+  
+  user         User           @relation("UserMotorcycles", fields: [userId], references: [id], onDelete: Cascade)
+  payments     Payment[]      @relation("MotorcyclePayments")
   chats        Chat[]
-  user         User      @relation("UserMotorcycles", fields: [userId], references: [id], onDelete: Cascade)
-  Payment      Payment[]
+  fee          MotorcycleFee? @relation(fields: [feeId], references: [id])
+  plan         SubPlan?       @relation(fields: [planId], references: [id])
+
+  @@index([isPaid])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([region])
+  @@index([feeId])
+  @@index([planId])
 }
 
-model Traktor {
+model Farmequipment {
   id            String    @id @default(cuid())
   userId        String
   title         String
@@ -150,10 +226,10 @@ model Traktor {
   so            String?
   type          String
   make          String
-  traktortModel String
+  farmequipmentModel String
   year          Int
   condition     String
-  hours         Int
+  hours         Int?
   enginePower   String
   fuelType      String
   region        String
@@ -163,9 +239,62 @@ model Traktor {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   isPaid        Boolean   @default(false)
-  Chat          Chat[]
-  Payment       Payment[]
-  user          User      @relation("UserTraktors", fields: [userId], references: [id], onDelete: Cascade)
+  expiryDate    DateTime?
+  feeId         String?
+  feeAmount     Float     @default(0)
+  planId        String?
+  planAmount    Float     @default(0)
+  
+  user          User      @relation("UserFarmequipments", fields: [userId], references: [id], onDelete: Cascade)
+  payments      Payment[] @relation("FarmPayments")
+  chats         Chat[]
+  fee           EquipmentFeeConfig? @relation(fields: [feeId], references: [id])
+  plan          SubPlan?  @relation(fields: [planId], references: [id])
+
+  @@index([isPaid])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([region])
+  @@index([feeId])
+  @@index([planId])
+}
+
+model Job {
+  id           String    @id @default(cuid())
+  userId       String
+  title        String
+  description  String
+  salary       Float
+  mainCategory String
+  category     String[]
+  subcategory  String[]
+  region       String
+  city         String
+  employmentType  String
+  experienceLevel String
+  images          String[]
+  maGaday         Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  isPaid          Boolean   @default(false)
+  expiryDate      DateTime?
+  feeId           String?
+  feeAmount       Float     @default(0)
+  planId          String?
+  planAmount      Float     @default(0)
+  
+  user            User      @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
+  payments        Payment[] @relation("JobPayments")
+  chats           Chat[]
+  fee             EquipmentFeeConfig? @relation(fields: [feeId], references: [id])
+  plan            SubPlan?  @relation(fields: [planId], references: [id])
+
+  @@index([isPaid])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([region])
+  @@index([feeId])
+  @@index([planId])
 }
 
 model Advertisement {
@@ -205,28 +334,4 @@ model Agency {
   link      String?
   createdAt DateTime @default(now())
   users     User[]   @relation("UserAgencies")
-}
-
-model Job {
-  id           String   @id @default(cuid())
-  userId       String
-  title        String
-  description  String
-  salary       Float
-  mainCategory String
-  category     String[]
-  subcategory  String[]
-  region       String
-  city         String
-
-  employmentType  String
-  experienceLevel String
-  images          String[]
-  maGaday         Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  isPaid          Boolean   @default(false)
-  user            User      @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
-  chats           Chat[]
-  Payment         Payment[]
 }

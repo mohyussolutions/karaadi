@@ -1,4 +1,3 @@
-import prisma from "../core/utils/db.ts";
 import { boatItems } from "../seeder/boatSeeder.ts";
 import { carItems } from "../seeder/cars.ts";
 import { userItems } from "../seeder/users.ts";
@@ -10,14 +9,18 @@ import { equipmentItems } from "../seeder/equipmentSeeder.ts";
 import { subscriptionItems } from "../seeder/subscription.ts";
 import { supportTicketSeedData } from "../seeder/ticketData.ts";
 import { cities, regions } from "../seeder/SomaliaRegionsSeeder.ts";
+import { jobsData } from "../seeder/jobsSeed.ts";
+import "dotenv/config";
+import prisma from "../core/utils/db.ts";
 
 const importData = async () => {
   try {
+    await prisma.job.deleteMany();
     await prisma.message.deleteMany();
     await prisma.chat.deleteMany();
     await prisma.notification.deleteMany();
     await prisma.subscription.deleteMany();
-    await prisma.traktor.deleteMany();
+    await prisma.farmequipment.deleteMany();
     await prisma.boat.deleteMany();
     await prisma.car.deleteMany();
     await prisma.motorcycle.deleteMany();
@@ -30,10 +33,7 @@ const importData = async () => {
 
     await prisma.region.createMany({ data: regions, skipDuplicates: true });
     await prisma.city.createMany({
-      data: cities.map((city) => ({
-        ...city,
-        isActive: true,
-      })),
+      data: cities.map((city) => ({ ...city, isActive: true })),
       skipDuplicates: true,
     });
 
@@ -45,6 +45,15 @@ const importData = async () => {
         ...item,
         userId: usersFromDb[Math.floor(Math.random() * usersFromDb.length)].id,
       }));
+
+    await prisma.job.createMany({
+      data: assignUser(jobsData).map((job) => ({
+        ...job,
+        isPaid: true,
+        expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      })),
+      skipDuplicates: true,
+    });
 
     await prisma.boat.createMany({
       data: assignUser(boatItems),
@@ -66,7 +75,7 @@ const importData = async () => {
       data: assignUser(realEstateItems),
       skipDuplicates: true,
     });
-    await prisma.traktor.createMany({
+    await prisma.farmequipment.createMany({
       data: assignUser(equipmentItems),
       skipDuplicates: true,
     });
@@ -93,10 +102,11 @@ const importData = async () => {
 
 const deleteData = async () => {
   try {
+    await prisma.job.deleteMany();
     await prisma.message.deleteMany();
     await prisma.chat.deleteMany();
     await prisma.notification.deleteMany();
-    await prisma.traktor.deleteMany();
+    await prisma.farmequipment.deleteMany();
     await prisma.boat.deleteMany();
     await prisma.car.deleteMany();
     await prisma.motorcycle.deleteMany();

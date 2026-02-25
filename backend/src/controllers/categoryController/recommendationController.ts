@@ -1,11 +1,18 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
+import { CACHE_TTL } from "src/config/contstanst.ts";
+
+const CACHE_KEYS = {
+  RECOMMENDATIONS: (limit: number) => `recommendations:limit:${limit}`,
+};
 
 export async function getRecommendations(req: Request, res: Response) {
   try {
-    const limit = parseInt(req.query.limit as string) || 6;
-    const cacheKey = `recommendations:limit:${limit}`;
+    const limitParam = req.query.limit;
+    const limit =
+      parseInt(typeof limitParam === "string" ? limitParam : "6", 10) || 6;
+    const cacheKey = CACHE_KEYS.RECOMMENDATIONS(limit);
 
     const items = await cacheManager.withCache(
       cacheKey,
@@ -13,9 +20,18 @@ export async function getRecommendations(req: Request, res: Response) {
         return await prisma.recommendation.findMany({
           take: limit,
           orderBy: { views: "desc" },
+          select: {
+            id: true,
+            externalId: true,
+            source: true,
+            category: true,
+            title: true,
+            price: true,
+            views: true,
+          },
         });
       },
-      300,
+      CACHE_TTL.LIST,
     );
 
     return res.json(items);
@@ -59,7 +75,7 @@ export async function createRecommendation(req: Request, res: Response) {
 
 export async function deleteRecommendation(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const numericId = parseInt(id);
 
     if (isNaN(numericId)) {
@@ -83,7 +99,9 @@ export async function deleteRecommendation(req: Request, res: Response) {
 
 export async function deleteByExternalId(req: Request, res: Response) {
   try {
-    const { externalId } = req.params;
+    const externalId = Array.isArray(req.params.externalId)
+      ? req.params.externalId[0]
+      : req.params.externalId;
 
     await prisma.recommendation.deleteMany({
       where: { externalId },
@@ -112,6 +130,8 @@ export async function incrementViews(req: Request, res: Response) {
       where: { externalId },
       data: { views: { increment: 1 } },
     });
+
+    await cacheManager.deletePattern("recommendations:limit:*");
 
     return res.json({ success: true });
   } catch (error) {

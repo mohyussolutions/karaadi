@@ -8,7 +8,6 @@ export const userItems = [
     phone: "+1234567890",
     isAdmin: false,
     isManager: false,
-    // Added lastSeenAt field
     lastSeenAt: new Date("2025-12-13T12:00:00Z"),
   },
   {
@@ -20,7 +19,6 @@ export const userItems = [
     phone: "+1234567891",
     isAdmin: false,
     isManager: false,
-    // Added lastSeenAt field
     lastSeenAt: new Date("2025-12-13T12:05:00Z"),
   },
 ];

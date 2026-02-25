@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
+import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+
+const parseId = (id: any) => (Array.isArray(id) ? id[0] : id);
 
 export const getAgencyStats = async (_req: Request, res: Response) => {
   try {
@@ -13,94 +16,81 @@ export const getAgencyStats = async (_req: Request, res: Response) => {
         ]);
         return { total, verified };
       },
-      600,
+      CACHE_TTL.STATS,
     );
-
     res.status(200).json({ success: true, ...stats });
   } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
+};
+
+export const getAllAgencies = async (req: Request, res: Response) => {
+  try {
+    const { page, limit, skip } = getPaginationParams(
+      req.query.page as string,
+      req.query.pageSize as string,
+    );
+    const cacheKey = `agency:all:page:${page}:limit:${limit}`;
+
+    const agencies = await cacheManager.withCache(
+      cacheKey,
+      () =>
+        prisma.agency.findMany({
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+      CACHE_TTL.LIST,
+    );
+    res.status(200).json({ success: true, agencies });
+  } catch (error) {
+    res.status(500).json({ success: false, error: (error as Error).message });
   }
 };
 
 export const createAgency = async (req: Request, res: Response) => {
   try {
-    const { name, type, location, specialty, image, link, userId } = req.body;
-
-    const agency = await prisma.agency.create({
-      data: {
-        name,
-        type,
-        location,
-        specialty: specialty || "",
-        image: image || "",
-        link: link || "",
-        userId,
-      },
-    });
-
-    await Promise.all([
-      cacheManager.delete("agency:all"),
-      cacheManager.delete("agency:stats"),
-    ]);
-
+    const agency = await prisma.agency.create({ data: req.body });
+    // Activity: Delete lists and stats so they refresh on next GET
+    await cacheManager.deletePattern("agency:all:*");
+    await cacheManager.delete("agency:stats");
     res.status(201).json({ success: true, agency });
   } catch (error) {
-    const err = error as Error;
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
-
-export const getAllAgencies = async (_req: Request, res: Response) => {
-  try {
-    const agencies = await cacheManager.withCache("agency:all", async () => {
-      return await prisma.agency.findMany({
-        orderBy: { createdAt: "desc" },
-      });
-    });
-
-    res.status(200).json({ success: true, agencies });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: (error as Error).message });
   }
 };
 
 export const updateAgency = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = parseId(req.params.id);
     const agency = await prisma.agency.update({
       where: { id },
       data: req.body,
     });
 
     await Promise.all([
-      cacheManager.delete("agency:all"),
+      cacheManager.deletePattern("agency:all:*"),
       cacheManager.delete("agency:stats"),
       cacheManager.delete(`agency:detail:${id}`),
     ]);
-
     res.status(200).json({ success: true, agency });
   } catch (error) {
-    const err = error as Error;
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: (error as Error).message });
   }
 };
 
 export const deleteAgency = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = parseId(req.params.id);
     await prisma.agency.delete({ where: { id } });
 
     await Promise.all([
-      cacheManager.delete("agency:all"),
+      cacheManager.deletePattern("agency:all:*"),
       cacheManager.delete("agency:stats"),
       cacheManager.delete(`agency:detail:${id}`),
     ]);
-
     res.status(200).json({ success: true, message: "Deleted" });
   } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: (error as Error).message });
   }
 };

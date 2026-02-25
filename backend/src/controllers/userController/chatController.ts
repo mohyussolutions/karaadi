@@ -90,8 +90,10 @@ export const createChat = async (req: Request, res: Response) => {
 export const getUserChats = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+    const userIdValue = Array.isArray(userId) ? userId[0] : userId;
+
     const chats = await prisma.chat.findMany({
-      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
+      where: { OR: [{ senderId: userIdValue }, { receiverId: userIdValue }] },
       include: {
         sender: {
           select: { id: true, username: true, profileImage: true, email: true },
@@ -121,17 +123,29 @@ export const getUserChats = async (req: Request, res: Response) => {
 export const getChatMessages = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
-    const { userId } = req.query;
+    const chatIdValue = Array.isArray(chatId) ? chatId[0] : chatId;
+    const chatIdNum = parseInt(chatIdValue, 10);
+
+    if (isNaN(chatIdNum)) {
+      return res.status(400).json({ error: "Invalid chat ID format" });
+    }
+
+    const userId = req.query.userId;
+    const userIdValue = Array.isArray(userId) ? userId[0] : (userId as string);
 
     const chat = await prisma.chat.findUnique({
-      where: { id: parseInt(chatId) },
+      where: { id: chatIdNum },
     });
-    if (!chat || (chat.senderId !== userId && chat.receiverId !== userId)) {
+
+    if (
+      !chat ||
+      (chat.senderId !== userIdValue && chat.receiverId !== userIdValue)
+    ) {
       return res.status(403).json({ error: "Access denied" });
     }
 
     const messages = await prisma.message.findMany({
-      where: { chatId: parseInt(chatId) },
+      where: { chatId: chatIdNum },
       orderBy: { timestamp: "asc" },
       include: {
         sender: {
@@ -154,15 +168,30 @@ export const getChatMessages = async (req: Request, res: Response) => {
 export const deleteChat = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
-    const { userId } = req.query;
+    const chatIdValue = Array.isArray(chatId) ? chatId[0] : chatId;
+    const chatIdNum = parseInt(chatIdValue, 10);
+
+    if (isNaN(chatIdNum)) {
+      return res.status(400).json({ error: "Invalid chat ID format" });
+    }
+
+    const userId = req.query.userId;
+    const userIdValue = Array.isArray(userId) ? userId[0] : (userId as string);
+
     const chat = await prisma.chat.findUnique({
-      where: { id: parseInt(chatId) },
+      where: { id: chatIdNum },
     });
-    if (!chat || (chat.senderId !== userId && chat.receiverId !== userId)) {
+
+    if (
+      !chat ||
+      (chat.senderId !== userIdValue && chat.receiverId !== userIdValue)
+    ) {
       return res.status(403).json({ error: "Access denied" });
     }
-    await prisma.message.deleteMany({ where: { chatId: parseInt(chatId) } });
-    await prisma.chat.delete({ where: { id: parseInt(chatId) } });
+
+    await prisma.message.deleteMany({ where: { chatId: chatIdNum } });
+    await prisma.chat.delete({ where: { id: chatIdNum } });
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -172,8 +201,15 @@ export const deleteChat = async (req: Request, res: Response) => {
 export const getChatById = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
+    const chatIdValue = Array.isArray(chatId) ? chatId[0] : chatId;
+    const chatIdNum = parseInt(chatIdValue, 10);
+
+    if (isNaN(chatIdNum)) {
+      return res.status(400).json({ error: "Invalid chat ID format" });
+    }
+
     const chat = await prisma.chat.findUnique({
-      where: { id: parseInt(chatId) },
+      where: { id: chatIdNum },
       include: {
         sender: {
           select: { id: true, username: true, profileImage: true, email: true },
@@ -183,6 +219,7 @@ export const getChatById = async (req: Request, res: Response) => {
         },
       },
     });
+
     res.json(chat);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -191,12 +228,19 @@ export const getChatById = async (req: Request, res: Response) => {
 
 export const getConversation = async (req: Request, res: Response) => {
   try {
-    const { userId, otherUserId } = req.query;
+    const userId = req.query.userId;
+    const otherUserId = req.query.otherUserId;
+
+    const userIdValue = Array.isArray(userId) ? userId[0] : (userId as string);
+    const otherUserIdValue = Array.isArray(otherUserId)
+      ? otherUserId[0]
+      : (otherUserId as string);
+
     const chat = await prisma.chat.findFirst({
       where: {
         OR: [
-          { senderId: userId as string, receiverId: otherUserId as string },
-          { senderId: otherUserId as string, receiverId: userId as string },
+          { senderId: userIdValue, receiverId: otherUserIdValue },
+          { senderId: otherUserIdValue, receiverId: userIdValue },
         ],
       },
       include: {
@@ -225,9 +269,16 @@ export const getConversation = async (req: Request, res: Response) => {
 export const updateChat = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
+    const chatIdValue = Array.isArray(chatId) ? chatId[0] : chatId;
+    const chatIdNum = parseInt(chatIdValue, 10);
+
+    if (isNaN(chatIdNum)) {
+      return res.status(400).json({ error: "Invalid chat ID format" });
+    }
+
     const { isArchived } = req.body;
     const updated = await prisma.chat.update({
-      where: { id: parseInt(chatId) },
+      where: { id: chatIdNum },
       data: { isArchived },
     });
     res.json(updated);
@@ -239,9 +290,11 @@ export const updateChat = async (req: Request, res: Response) => {
 export const getArchivedChats = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+    const userIdValue = Array.isArray(userId) ? userId[0] : userId;
+
     const chats = await prisma.chat.findMany({
       where: {
-        OR: [{ senderId: userId }, { receiverId: userId }],
+        OR: [{ senderId: userIdValue }, { receiverId: userIdValue }],
         isArchived: true,
       },
       include: {

@@ -1,4 +1,5 @@
 export interface BoatItem {
+  id: string;
   title: string;
   so: string;
   description: string;
@@ -16,11 +17,25 @@ export interface BoatItem {
   userId: string;
   maGaday: boolean;
   isPaid: boolean;
-  id: string;
+  // New fields
+  feeAmount: number;
+  feeId?: string | null;
+  planId?: string | null;
+  planAmount: number;
+  expiryDate?: Date | null;
 }
+
 const USER_A = "user_74x01";
 const USER_B = "user_89y02";
 const USER_C = "user_56z03";
+
+// Helper to calculate expiry date (30 days from now if paid)
+const getExpiryDate = (isPaid: boolean): Date | null => {
+  if (!isPaid) return null;
+  const date = new Date();
+  date.setDate(date.getDate() + 30);
+  return date;
+};
 
 export const boatItems: BoatItem[] = [
   {
@@ -35,7 +50,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doon kalluumaysi", "Doomo iib ah"],
     region: "Hamar",
     city: "Xamar Jajab",
-
     images: ["https://images.unsplash.com/photo-1520626639860-f0f34bd63189"],
     type: "Dhow",
     boatModel: "Traditional-2024",
@@ -44,6 +58,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_A,
     maGaday: false,
     isPaid: true,
+    feeAmount: 25.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_002",
@@ -57,7 +76,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doon yar", "Doomo iib ah"],
     region: "Jubada Hoose",
     city: "Kismaayo",
-
     images: [
       "https://plus.unsplash.com/premium_photo-1668723712079-7665d7a2d524",
     ],
@@ -68,6 +86,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_B,
     maGaday: false,
     isPaid: true,
+    feeAmount: 25.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_003",
@@ -81,7 +104,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doon raaxo", "Doomo iib ah"],
     region: "Hamar",
     city: "Cabdi Casiis",
-
     images: ["https://images.unsplash.com/photo-1517217004452-4ff260cb5598"],
     type: "Yacht",
     boatModel: "Elite-50",
@@ -90,6 +112,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_A,
     maGaday: true,
     isPaid: true,
+    feeAmount: 25.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_004",
@@ -103,7 +130,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doomo kireysi ah", "Rental"],
     region: "Hamar",
     city: "Dharkeynley",
-
     images: [
       "https://plus.unsplash.com/premium_photo-1668723712079-7665d7a2d524",
     ],
@@ -114,6 +140,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_B,
     maGaday: false,
     isPaid: true,
+    feeAmount: 35.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_005",
@@ -127,7 +158,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Matoorada doomo iib ah", "Outboard"],
     region: "Hamar",
     city: "Hodan",
-
     images: ["https://images.unsplash.com/photo-1520626639860-f0f34bd63189"],
     type: "Engine",
     boatModel: "Yamaha-V6",
@@ -136,6 +166,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_C,
     maGaday: false,
     isPaid: true,
+    feeAmount: 20.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_006",
@@ -149,7 +184,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Qaybaha doomo", "Propeller"],
     region: "Jubada Hoose",
     city: "Kismaayo",
-
     images: ["https://images.unsplash.com/photo-1528154291023-a6525fabe5b4"],
     type: "Part",
     boatModel: "Universal-X",
@@ -158,6 +192,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_C,
     maGaday: false,
     isPaid: true,
+    feeAmount: 10.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_007",
@@ -170,7 +209,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doomo kireysi ah", "Charter"],
     region: "Woqooyi Galbeed",
     city: "Berbera",
-
     images: ["https://images.unsplash.com/photo-1517217004452-4ff260cb5598"],
     type: "Yacht",
     boatModel: "Charter-Luxe",
@@ -179,6 +217,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_A,
     maGaday: false,
     isPaid: true,
+    feeAmount: 35.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_008",
@@ -192,7 +235,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Matoorada doomo iib ah", "Engine"],
     region: "Hamar",
     city: "Waaberi",
-
     images: ["https://images.unsplash.com/photo-1520626639860-f0f34bd63189"],
     type: "Engine",
     boatModel: "Suzuki-Four",
@@ -201,6 +243,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_B,
     maGaday: false,
     isPaid: true,
+    feeAmount: 20.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_009",
@@ -214,7 +261,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Qaybaha doomo", "Electronics"],
     region: "Hamar",
     city: "Hodan",
-
     images: ["https://images.unsplash.com/photo-1528154291023-a6525fabe5b4"],
     type: "Part",
     boatModel: "Navi-Sea",
@@ -223,6 +269,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_C,
     maGaday: false,
     isPaid: true,
+    feeAmount: 10.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_010",
@@ -236,7 +287,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doomo iib ah", "Speedboat"],
     region: "Hamar",
     city: "Xamar Weyne",
-
     images: ["https://images.unsplash.com/photo-1528154291023-a6525fabe5b4"],
     type: "Speedboat",
     boatModel: "Swift-20",
@@ -245,6 +295,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_A,
     maGaday: false,
     isPaid: true,
+    feeAmount: 25.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_011",
@@ -258,7 +313,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Matoorada doomo iib ah", "Inboard"],
     region: "Shabeellaha Hoose",
     city: "Marka",
-
     images: ["https://images.unsplash.com/photo-1517217004452-4ff260cb5598"],
     type: "Engine",
     boatModel: "Mercury-V8",
@@ -267,6 +321,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_C,
     maGaday: false,
     isPaid: true,
+    feeAmount: 20.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_012",
@@ -280,7 +339,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Qaybaha doomo", "Electrical"],
     region: "Hamar",
     city: "Dharkeynley",
-
     images: ["https://images.unsplash.com/photo-1520626639860-f0f34bd63189"],
     type: "Part",
     boatModel: "Sea-Power",
@@ -289,6 +347,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_B,
     maGaday: false,
     isPaid: true,
+    feeAmount: 10.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_013",
@@ -302,7 +365,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doomo kireysi ah", "Rescue"],
     region: "Jubada Hoose",
     city: "Kismaayo",
-
     images: ["https://images.unsplash.com/photo-1528154291023-a6525fabe5b4"],
     type: "Inflatable",
     boatModel: "Rescue-S",
@@ -311,6 +373,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_A,
     maGaday: false,
     isPaid: true,
+    feeAmount: 35.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_014",
@@ -323,7 +390,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doomo iib ah", "Traditional"],
     region: "Awdal",
     city: "Zaylac",
-
     images: ["https://images.unsplash.com/photo-1517217004452-4ff260cb5598"],
     type: "Sailboat",
     boatModel: "Trad-Heritage",
@@ -332,6 +398,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_B,
     maGaday: false,
     isPaid: true,
+    feeAmount: 25.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_015",
@@ -345,7 +416,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Qaybaha doomo", "Steering"],
     region: "Hamar",
     city: "Xamar Weyne",
-
     images: ["https://images.unsplash.com/photo-1520626639860-f0f34bd63189"],
     type: "Part",
     boatModel: "Hydro-Turn",
@@ -354,6 +424,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_C,
     maGaday: false,
     isPaid: true,
+    feeAmount: 10.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_016",
@@ -367,7 +442,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doomo iib ah", "Cargo"],
     region: "Woqooyi Galbeed",
     city: "Berbera",
-
     images: [
       "https://plus.unsplash.com/premium_photo-1668723712079-7665d7a2d524",
     ],
@@ -378,6 +452,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_A,
     maGaday: false,
     isPaid: true,
+    feeAmount: 25.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_017",
@@ -391,7 +470,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Matoorada doomo iib ah", "Used Engine"],
     region: "Hamar",
     city: "Cabdi Casiis",
-
     images: ["https://images.unsplash.com/photo-1520626639860-f0f34bd63189"],
     type: "Engine",
     boatModel: "Enduro-40",
@@ -400,6 +478,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_B,
     maGaday: true,
     isPaid: true,
+    feeAmount: 20.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_018",
@@ -413,7 +496,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Doomo kireysi ah", "Diving"],
     region: "Hamar",
     city: "Shangaani",
-
     images: ["https://images.unsplash.com/photo-1528154291023-a6525fabe5b4"],
     type: "Diving Boat",
     boatModel: "Deep-Sea-10",
@@ -422,6 +504,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_C,
     maGaday: false,
     isPaid: true,
+    feeAmount: 35.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_019",
@@ -435,7 +522,6 @@ export const boatItems: BoatItem[] = [
     subcategory: ["Qaybaha doomo", "Hardware"],
     region: "Shabeellaha Hoose",
     city: "Marka",
-
     images: ["https://images.unsplash.com/photo-1517217004452-4ff260cb5598"],
     type: "Part",
     boatModel: "Anchor-HD",
@@ -444,6 +530,11 @@ export const boatItems: BoatItem[] = [
     userId: USER_A,
     maGaday: false,
     isPaid: true,
+    feeAmount: 10.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
   {
     id: "boat_020",
@@ -465,5 +556,10 @@ export const boatItems: BoatItem[] = [
     userId: USER_B,
     maGaday: false,
     isPaid: true,
+    feeAmount: 20.0,
+    feeId: null,
+    planId: null,
+    planAmount: 0,
+    expiryDate: getExpiryDate(true),
   },
 ];

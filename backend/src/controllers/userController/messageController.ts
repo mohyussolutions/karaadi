@@ -2,19 +2,24 @@ import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { EncryptionController } from "../encryptionController/encryptionController.ts";
 import { getIO } from "../../services/sockets/socketServer.ts";
+
 export const getChatMessages = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
-    const { userId } = req.query;
+    const chatIdValue = Array.isArray(chatId) ? chatId[0] : chatId;
+    const chatIdNum = parseInt(chatIdValue, 10);
 
-    if (!chatId || !userId) {
+    const userId = req.query.userId;
+    const userIdValue = Array.isArray(userId) ? userId[0] : (userId as string);
+
+    if (!chatIdNum || !userIdValue) {
       return res.status(400).json({
         error: "Chat ID and User ID are required",
       });
     }
 
     const chat = await prisma.chat.findUnique({
-      where: { id: parseInt(chatId) },
+      where: { id: chatIdNum },
       select: { senderId: true, receiverId: true },
     });
 
@@ -22,12 +27,12 @@ export const getChatMessages = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Chat not found" });
     }
 
-    if (chat.senderId !== userId && chat.receiverId !== userId) {
+    if (chat.senderId !== userIdValue && chat.receiverId !== userIdValue) {
       return res.status(403).json({ error: "Access denied" });
     }
 
     const messages = await prisma.message.findMany({
-      where: { chatId: parseInt(chatId) },
+      where: { chatId: chatIdNum },
       orderBy: { timestamp: "asc" },
       include: {
         sender: {
@@ -47,8 +52,8 @@ export const getChatMessages = async (req: Request, res: Response) => {
 
     await prisma.message.updateMany({
       where: {
-        chatId: parseInt(chatId),
-        receiverId: userId as string,
+        chatId: chatIdNum,
+        receiverId: userIdValue,
         read: false,
       },
       data: { read: true },
@@ -80,7 +85,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     }
 
     const chat = await prisma.chat.findUnique({
-      where: { id: parseInt(chatId) },
+      where: { id: parseInt(chatId, 10) },
       select: { senderId: true, receiverId: true },
     });
 
@@ -102,7 +107,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const message = await prisma.message.create({
       data: {
-        chatId: parseInt(chatId),
+        chatId: parseInt(chatId, 10),
         senderId,
         receiverId,
         content: encryptedContent,
@@ -120,7 +125,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     await prisma.chat.update({
-      where: { id: parseInt(chatId) },
+      where: { id: parseInt(chatId, 10) },
       data: {
         updatedAt: new Date(),
         lastMessageAt: new Date(),
@@ -149,14 +154,15 @@ export const sendMessage = async (req: Request, res: Response) => {
 export const getUnreadCount = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+    const userIdValue = Array.isArray(userId) ? userId[0] : userId;
 
-    if (!userId) {
+    if (!userIdValue) {
       return res.status(400).json({ error: "User ID is required" });
     }
 
     const count = await prisma.message.count({
       where: {
-        receiverId: userId,
+        receiverId: userIdValue,
         read: false,
       },
     });
@@ -171,9 +177,12 @@ export const getUnreadCount = async (req: Request, res: Response) => {
 export const markAllAsRead = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
+    const chatIdValue = Array.isArray(chatId) ? chatId[0] : chatId;
+    const chatIdNum = parseInt(chatIdValue, 10);
+
     const { userId } = req.body;
 
-    if (!chatId || !userId) {
+    if (!chatIdNum || !userId) {
       return res.status(400).json({
         error: "Chat ID and User ID are required",
       });
@@ -181,7 +190,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
 
     const updated = await prisma.message.updateMany({
       where: {
-        chatId: parseInt(chatId),
+        chatId: chatIdNum,
         receiverId: userId,
         read: false,
       },
@@ -190,8 +199,8 @@ export const markAllAsRead = async (req: Request, res: Response) => {
       },
     });
 
-    getIO().to(`chat_${chatId}`).emit("messagesMarkedAsRead", {
-      chatId,
+    getIO().to(`chat_${chatIdNum}`).emit("messagesMarkedAsRead", {
+      chatId: chatIdNum,
       userId,
     });
 
@@ -208,16 +217,19 @@ export const markAllAsRead = async (req: Request, res: Response) => {
 export const updateMessage = async (req: Request, res: Response) => {
   try {
     const { messageId } = req.params;
+    const messageIdValue = Array.isArray(messageId) ? messageId[0] : messageId;
+    const messageIdNum = parseInt(messageIdValue, 10);
+
     const content = req.body?.content;
     const userId =
       req.body?.userId || req.query?.userId || (req as any).user?.id;
 
-    if (!messageId || !userId || !content) {
+    if (!messageIdNum || !userId || !content) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     const message = await prisma.message.findUnique({
-      where: { id: parseInt(messageId) },
+      where: { id: messageIdNum },
     });
 
     if (!message || message.senderId !== userId) {
@@ -227,7 +239,7 @@ export const updateMessage = async (req: Request, res: Response) => {
     const encryptedContent = EncryptionController.encrypt(content);
 
     const updatedMessage = await prisma.message.update({
-      where: { id: parseInt(messageId) },
+      where: { id: messageIdNum },
       data: {
         content: encryptedContent,
         edited: true,
@@ -257,11 +269,14 @@ export const updateMessage = async (req: Request, res: Response) => {
 export const deleteMessage = async (req: Request, res: Response) => {
   try {
     const { messageId } = req.params;
+    const messageIdValue = Array.isArray(messageId) ? messageId[0] : messageId;
+    const messageIdNum = parseInt(messageIdValue, 10);
+
     const userId =
       req.body?.userId || req.query?.userId || (req as any).user?.id;
 
     const message = await prisma.message.findUnique({
-      where: { id: parseInt(messageId) },
+      where: { id: messageIdNum },
     });
 
     if (
@@ -272,7 +287,7 @@ export const deleteMessage = async (req: Request, res: Response) => {
     }
 
     const deletedMessage = await prisma.message.update({
-      where: { id: parseInt(messageId) },
+      where: { id: messageIdNum },
       data: {
         deleted: true,
         deletedAt: new Date(),
@@ -294,9 +309,12 @@ export const deleteMessage = async (req: Request, res: Response) => {
 export const replyToMessage = async (req: Request, res: Response) => {
   try {
     const { messageId } = req.params;
+    const messageIdValue = Array.isArray(messageId) ? messageId[0] : messageId;
+    const messageIdNum = parseInt(messageIdValue, 10);
+
     const { chatId, senderId, receiverId, content } = req.body;
 
-    if (!messageId || !chatId || !senderId || !receiverId || !content) {
+    if (!messageIdNum || !chatId || !senderId || !receiverId || !content) {
       return res.status(400).json({
         error: "Missing required fields",
         required: ["messageId", "chatId", "senderId", "receiverId", "content"],
@@ -304,7 +322,7 @@ export const replyToMessage = async (req: Request, res: Response) => {
     }
 
     const originalMessage = await prisma.message.findUnique({
-      where: { id: parseInt(messageId) },
+      where: { id: messageIdNum },
     });
 
     if (!originalMessage) {
@@ -315,11 +333,11 @@ export const replyToMessage = async (req: Request, res: Response) => {
 
     const reply = await prisma.message.create({
       data: {
-        chatId: parseInt(chatId),
+        chatId: parseInt(chatId, 10),
         senderId,
         receiverId,
         content: encryptedContent,
-        replyToId: parseInt(messageId),
+        replyToId: messageIdNum,
       },
       include: {
         sender: {
@@ -333,7 +351,7 @@ export const replyToMessage = async (req: Request, res: Response) => {
     });
 
     await prisma.chat.update({
-      where: { id: parseInt(chatId) },
+      where: { id: parseInt(chatId, 10) },
       data: {
         updatedAt: new Date(),
         lastMessageAt: new Date(),
@@ -361,16 +379,20 @@ export const replyToMessage = async (req: Request, res: Response) => {
 export const getMessageReplies = async (req: Request, res: Response) => {
   try {
     const { messageId } = req.params;
-    const { userId } = req.query;
+    const messageIdValue = Array.isArray(messageId) ? messageId[0] : messageId;
+    const messageIdNum = parseInt(messageIdValue, 10);
 
-    if (!messageId || !userId) {
+    const userId = req.query.userId;
+    const userIdValue = Array.isArray(userId) ? userId[0] : (userId as string);
+
+    if (!messageIdNum || !userIdValue) {
       return res.status(400).json({
         error: "Message ID and User ID are required",
       });
     }
 
     const originalMessage = await prisma.message.findUnique({
-      where: { id: parseInt(messageId) },
+      where: { id: messageIdNum },
       include: {
         chat: {
           select: {
@@ -386,15 +408,15 @@ export const getMessageReplies = async (req: Request, res: Response) => {
     }
 
     if (
-      originalMessage.chat.senderId !== userId &&
-      originalMessage.chat.receiverId !== userId
+      originalMessage.chat.senderId !== userIdValue &&
+      originalMessage.chat.receiverId !== userIdValue
     ) {
       return res.status(403).json({ error: "Access denied" });
     }
 
     const replies = await prisma.message.findMany({
       where: {
-        replyToId: parseInt(messageId),
+        replyToId: messageIdNum,
         deleted: false,
       },
       orderBy: { timestamp: "asc" },

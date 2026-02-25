@@ -6,7 +6,7 @@ import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
 import SearchInput from "@/app/(search)/SearchInput";
-import { getTraktors, Traktor } from "@/actions/categories/tractorActions";
+import { getTraktors, Traktor } from "@/actions/categories/FarmequipmentAction";
 import { TraktorTopCategories } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
 
 function TractorLinks() {
@@ -109,7 +109,7 @@ function TractorLinks() {
                 city={item.city}
                 price={item.price}
                 images={item.images}
-                category="Traktor"
+                category="farmequipment"
               />
             ))
           : !isLoading && (

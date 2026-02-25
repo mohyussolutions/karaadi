@@ -1,16 +1,24 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { geoEndpoints } from "../constant/constant";
+import { FILTERING_ENDPOINTS, geoEndpoints } from "../constant/constant";
 import { GeoStats, Region } from "@/app/utils/types/geoTypes";
+
+export const getTotalOfCities = async (): Promise<number> => {
+  const stats = await getGeoStats();
+  return stats.totalCities || 0;
+};
+
+export const getTotalOfRegions = async (): Promise<number> => {
+  const stats = await getGeoStats();
+  return stats.totalRegions || 0;
+};
 
 export const getAllRegions = async (): Promise<Region[]> => {
   try {
     const res = await fetch(geoEndpoints.GET_ALL_REGIONS, {
-      next: {
-        revalidate: 86400,
-        tags: ["geo-regions"],
-      },
+      cache: "no-store",
+      next: { tags: ["geo-regions"] },
     });
     return res.ok ? await res.json() : [];
   } catch {
@@ -25,7 +33,6 @@ export const addRegion = async (data: { id: string; name: string }) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-
     if (res.ok) {
       revalidateTag("geo-regions");
       revalidateTag("geo-stats");
@@ -44,7 +51,6 @@ export const updateRegion = async (id: string, name: string) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
-
     if (res.ok) {
       revalidateTag("geo-regions");
       revalidatePath("/");
@@ -60,7 +66,6 @@ export const deleteRegion = async (id: string) => {
     const res = await fetch(geoEndpoints.DELETE_REGION(id), {
       method: "DELETE",
     });
-
     if (res.ok) {
       revalidateTag("geo-regions");
       revalidateTag("geo-stats");
@@ -72,13 +77,15 @@ export const deleteRegion = async (id: string) => {
   }
 };
 
-export const getAllCities = async () => {
+export const getAllCities = async (regionId?: string) => {
   try {
-    const res = await fetch(geoEndpoints.GET_ALL_CITIES, {
-      next: {
-        revalidate: 86400,
-        tags: ["geo-cities"],
-      },
+    const url = regionId
+      ? `${geoEndpoints.GET_ALL_CITIES}?regionId=${regionId}`
+      : geoEndpoints.GET_ALL_CITIES;
+
+    const res = await fetch(url, {
+      cache: "no-store",
+      next: { tags: ["geo-cities"] },
     });
     return res.ok ? await res.json() : [];
   } catch {
@@ -99,13 +106,17 @@ export const addCity = async (data: {
       body: JSON.stringify(data),
     });
 
+    const result = await res.json();
+
     if (res.ok) {
       revalidateTag("geo-cities");
       revalidateTag("geo-stats");
+      return { success: true, data: result };
     }
-    return { success: res.ok, data: await res.json() };
+
+    return { success: false, message: result.error || "Lama darid karo" };
   } catch {
-    return { success: false };
+    return { success: false, message: "Cillad ayaa dhacday" };
   }
 };
 
@@ -125,26 +136,14 @@ export const deleteCity = async (id: string) => {
 
 export const getGeoStats = async (): Promise<GeoStats> => {
   try {
-    const res = await fetch(geoEndpoints.TOTAL_STATS, {
-      next: {
-        revalidate: 3600,
-        tags: ["geo-stats"],
-      },
+    const res = await fetch(geoEndpoints.GET_GEO_STATS, {
+      cache: "no-store",
+      next: { tags: ["geo-stats"] },
     });
     return res.ok ? await res.json() : { totalRegions: 0, totalCities: 0 };
   } catch {
     return { totalRegions: 0, totalCities: 0 };
   }
-};
-
-export const getTotalOfRegions = async (): Promise<number> => {
-  const stats = await getGeoStats();
-  return stats.totalRegions;
-};
-
-export const getTotalOfCities = async (): Promise<number> => {
-  const stats = await getGeoStats();
-  return stats.totalCities;
 };
 
 export const syncGeoData = async (payload: any) => {
@@ -154,7 +153,6 @@ export const syncGeoData = async (payload: any) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
     if (res.ok) {
       revalidateTag("geo-regions");
       revalidateTag("geo-cities");
@@ -164,5 +162,36 @@ export const syncGeoData = async (payload: any) => {
     return { success: res.ok, data: await res.json() };
   } catch {
     return { success: false };
+  }
+};
+
+export const filterByPriceAndRooms = async (filters: {
+  region?: string;
+  city?: string;
+  minPrice?: string | number;
+  maxPrice?: string | number;
+  minRooms?: string | number;
+  maxRooms?: string | number;
+}) => {
+  try {
+    const params = new URLSearchParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== "") {
+        params.append(key, value.toString());
+      }
+    });
+
+    const url = `${FILTERING_ENDPOINTS.RANGE_PRICE_ROOMS}?${params.toString()}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    return [];
   }
 };

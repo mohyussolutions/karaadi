@@ -19,39 +19,27 @@ export const ProtectRoute = async (
       ? req.headers.authorization.split(" ")[1]
       : req.cookies?.idToken;
 
-    if (!token) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
+    if (!token) return res.status(401).json({ message: "Not authorized" });
 
     const decoded: any = await verifyToken(token);
-
-    if (!decoded || !decoded.sub) {
+    if (!decoded || !decoded.sub)
       return res.status(401).json({ message: "Invalid token" });
-    }
 
     const userId = decoded.sub;
 
-    const session = await prisma.cookie.findUnique({
-      where: { userId: userId },
-    });
-
+    const session = await prisma.cookie.findUnique({ where: { userId } });
     if (!session || session.expiresAt < new Date()) {
-      if (session) {
-        await prisma.cookie.delete({ where: { id: session.id } });
-      }
+      if (session) await prisma.cookie.delete({ where: { id: session.id } });
       res.clearCookie("idToken");
       return res.status(401).json({ message: "Session expired" });
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     req.user = user;
     next();
-  } catch (err: any) {
+  } catch (err) {
     res.clearCookie("idToken");
     res.status(401).json({ message: "Unauthorized" });
   }
@@ -63,7 +51,7 @@ export const adminAndManager = (
   next: NextFunction,
 ): void => {
   if (!req.user) {
-    res.status(401).json({ message: "Not authorized, no user data" });
+    res.status(401).json({ message: "Not authorized" });
     return;
   }
 
@@ -71,7 +59,7 @@ export const adminAndManager = (
   const isManager = req.user["custom:isManager"] === "true";
 
   if (!isAdmin && !isManager) {
-    res.status(403).json({ message: "Forbidden: Admin or Manager only" });
+    res.status(403).json({ message: "Forbidden" });
     return;
   }
 
@@ -85,6 +73,6 @@ export const deleteExpiredTokens = async () => {
       where: { expiresAt: { lte: now } },
     });
   } catch (e) {
-    console.error("Error deleting expired tokens:", e);
+    console.error(e);
   }
 };

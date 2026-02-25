@@ -5,19 +5,16 @@ import {
   FaTrailer,
   FaTruckFront,
   FaVanShuttle,
-} from "react-icons/fa6";
-import { MdElectricCar } from "react-icons/md";
-import { GiAutoRepair, GiCarKey } from "react-icons/gi";
-import {
   FaBus,
-  FaCogs,
   FaKey,
   FaSchool,
-  FaTools,
   FaTruck,
   FaWrench,
   FaCity,
-} from "react-icons/fa";
+} from "react-icons/fa6";
+import { MdElectricCar } from "react-icons/md";
+import { GiAutoRepair, GiCarKey } from "react-icons/gi";
+import { FaCogs, FaTools } from "react-icons/fa";
 
 export interface CarSubCategory {
   so: string;
@@ -164,13 +161,3 @@ export const carsSubCategories: CarSubCategory[] = [
     icon: <MdElectricCar size={28} />,
   },
 ];
-
-export const carsNestedCategoriesMap: { [key: string]: CarSubCategory[] } = {
-  "Cars for Sale": CarsForSaleNestedSub,
-  "Lease Cars": LeaseCarsNestedSub,
-  Buses: BusSubLinks,
-  Trailers: TrailerNestedSub,
-  "Car Parts": CarPartsNestedSub,
-  Truck: TruckNestedSub,
-  "Electric Cars": ElectricCarsNestedSub,
-};

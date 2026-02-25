@@ -1,49 +1,37 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import { triggerSubscriptionWatch } from "../userController/subscriptionController.ts";
 import { Prisma } from "@prisma/client";
+import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  calculateExpiryDate,
+  getDaysUntilExpiry,
+  formatExpiryDate,
+  isExpired,
+} from "src/hooks/useExpire.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 
-export const getAllMotorcyclesIncludingUnpaid = async (
-  _req: Request,
-  res: Response,
-) => {
-  try {
-    const items = await cacheManager.withCache(
-      "motorcycles:all:unfiltered",
-      async () => {
-        return await prisma.motorcycle.findMany({
-          include: {
-            user: {
-              select: {
-                username: true,
-                email: true,
-                phone: true,
-                profileImage: true,
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        });
-      },
-    );
-    return res.json(items);
-  } catch (error) {
-    const err = error as Error;
-    return res
-      .status(500)
-      .json({ message: "Server Error", error: err.message });
-  }
+const selectUserBasic = {
+  select: { username: true, email: true, phone: true, profileImage: true },
+};
+
+const selectUserMinimal = {
+  select: { username: true },
+};
+
+const CACHE_KEYS = {
+  TOTAL: "motorcycles:total",
+  UNFILTERED: "motorcycles:all:unfiltered",
+  ALL_PAID: (page: number, limit: number, type?: string, region?: string) =>
+    `motorcycles:paid:${page}:${limit}:${type || "all"}:${region || "all"}`,
+  DETAIL: (id: string) => `motorcycle:detail:${id}`,
 };
 
 export const getTotalMotorcycles = async (_req: Request, res: Response) => {
   try {
     const total = await cacheManager.withCache(
-      "motorcycles:total",
-      async () => {
-        return await prisma.motorcycle.count();
-      },
-      600,
+      CACHE_KEYS.TOTAL,
+      async () => await prisma.motorcycle.count({}),
+      CACHE_TTL.STATS,
     );
     return res.json({ totalMotorcycles: total });
   } catch (error) {
@@ -54,18 +42,21 @@ export const getTotalMotorcycles = async (_req: Request, res: Response) => {
   }
 };
 
-export const getAllMotorcycles = async (_req: Request, res: Response) => {
+export const getAllMotorcyclesIncludingUnpaid = async (
+  _req: Request,
+  res: Response,
+) => {
   try {
     const motorcycles = await cacheManager.withCache(
-      "motorcycles:all:paid",
+      CACHE_KEYS.UNFILTERED,
       async () => {
         return await prisma.motorcycle.findMany({
-          where: { isPaid: true },
-          include: {
-            user: { select: { username: true, email: true, phone: true } },
-          },
+          include: { user: selectUserBasic },
+          orderBy: { createdAt: "desc" },
+          take: 100,
         });
       },
+      CACHE_TTL.LIST,
     );
     return res.json(motorcycles);
   } catch (error) {
@@ -76,24 +67,86 @@ export const getAllMotorcycles = async (_req: Request, res: Response) => {
   }
 };
 
+export const getAllMotorcycles = async (req: Request, res: Response) => {
+  try {
+    const { page, limit, skip } = getPaginationParams(
+      req.query.page as string,
+      req.query.pageSize as string,
+    );
+    const { type, region, city } = req.query;
+
+    const cacheKey = CACHE_KEYS.ALL_PAID(
+      page,
+      limit,
+      type as string,
+      region as string,
+    );
+
+    const motorcycles = await cacheManager.withCache(
+      cacheKey,
+      async () => {
+        const filter: Prisma.MotorcycleWhereInput = { isPaid: true };
+        if (type) filter.type = { contains: String(type), mode: "insensitive" };
+        if (region) filter.region = String(region);
+        if (city) filter.city = String(city);
+
+        return await prisma.motorcycle.findMany({
+          where: filter,
+          include: { user: selectUserMinimal },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        });
+      },
+      CACHE_TTL.LIST,
+    );
+
+    const motorcyclesWithStatus = motorcycles.map((item) => ({
+      ...item,
+      isExpired: isExpired(item.expiryDate),
+      status: isExpired(item.expiryDate)
+        ? "expired"
+        : item.isPaid
+          ? "active"
+          : "pending",
+    }));
+
+    return res.json(motorcyclesWithStatus);
+  } catch (error) {
+    const err = error as Error;
+    return res
+      .status(500)
+      .json({ message: "Server Error", error: err.message });
+  }
+};
+
 export const getMotorcycleById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const cacheKey = CACHE_KEYS.DETAIL(id);
+
     const motorcycle = await cacheManager.withCache(
-      `motorcycle:detail:${id}`,
+      cacheKey,
       async () => {
         return await prisma.motorcycle.findUnique({
           where: { id },
-          include: {
-            user: { select: { username: true, email: true, phone: true } },
-          },
+          include: { user: selectUserBasic },
         });
       },
+      CACHE_TTL.DETAIL,
     );
 
     if (!motorcycle)
       return res.status(404).json({ message: "Motorcycle not found" });
-    return res.json(motorcycle);
+
+    const expired = isExpired(motorcycle.expiryDate);
+    return res.json({
+      ...motorcycle,
+      isExpired: expired,
+      status: expired ? "expired" : motorcycle.isPaid ? "active" : "pending",
+      daysUntilExpiry: getDaysUntilExpiry(motorcycle.expiryDate),
+      formattedExpiry: formatExpiryDate(motorcycle.expiryDate),
+    });
   } catch (error) {
     const err = error as Error;
     return res
@@ -104,61 +157,114 @@ export const getMotorcycleById = async (req: Request, res: Response) => {
 
 export const createMotorcycle = async (req: Request, res: Response) => {
   try {
-    const data = {
-      ...req.body,
-      category: Array.isArray(req.body.category)
-        ? req.body.category
-        : [req.body.category].filter(Boolean),
-      subcategory: Array.isArray(req.body.subcategory)
-        ? req.body.subcategory
-        : [req.body.subcategory].filter(Boolean),
-      images: Array.isArray(req.body.images) ? req.body.images : [],
-    };
+    const {
+      userId,
+      title,
+      description,
+      price,
+      mainCategory,
+      category,
+      subcategory,
+      region,
+      city,
+      images,
+      so,
+      isPaid,
+      planId,
+      planAmount,
+      ...extra
+    } = req.body;
 
-    const newMotorcycle = await prisma.motorcycle.create({
-      data,
-      include: {
-        user: { select: { username: true, email: true, phone: true } },
+    if (!userId) return res.status(400).json({ message: "userId is required" });
+
+    const expiryDate =
+      planId && planAmount ? calculateExpiryDate(planId, planAmount) : null;
+
+    const newAd = await prisma.motorcycle.create({
+      data: {
+        userId,
+        title,
+        description,
+        price: parseFloat(price) || 0,
+        mainCategory: mainCategory || "Motorcycles",
+        category: Array.isArray(category)
+          ? category
+          : [category].filter(Boolean),
+        subcategory: Array.isArray(subcategory)
+          ? subcategory
+          : [subcategory].filter(Boolean),
+        region,
+        city,
+        images: Array.isArray(images) ? images : [],
+        so,
+        isPaid: isPaid === true || isPaid === "true",
+        planId: planId || null,
+        planAmount: planAmount || 0,
+        expiryDate,
+        type: extra.type || "Other",
+        make: extra.make || "N/A",
+        modelName: extra.modelName || "N/A",
+        year: parseInt(extra.year) || 0,
+        mileage: parseInt(extra.mileage) || 0,
+        engineSize: extra.engineSize || "N/A",
+        fuelType: extra.fuelType || "Petrol",
+        color: extra.color || "N/A",
+        transmission: extra.transmission || "Manual",
       },
     });
 
     await Promise.all([
       cacheManager.deletePattern("motorcycles:all:*"),
-      cacheManager.delete("motorcycles:total"),
+      cacheManager.delete(CACHE_KEYS.TOTAL),
     ]);
 
-    await triggerSubscriptionWatch("motorcycle", newMotorcycle.id);
-
-    return res.status(201).json(newMotorcycle);
+    return res.status(201).json(newAd);
   } catch (error) {
     const err = error as Error;
     return res
-      .status(400)
-      .json({ message: "Invalid data", error: err.message });
+      .status(500)
+      .json({ message: "Failed to create", error: err.message });
   }
 };
 
 export const updateMotorcycle = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const updatedMotorcycle = await prisma.motorcycle.update({
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { planId, planAmount, extra, ...rest } = req.body;
+
+    const updateData: any = { ...rest };
+
+    if (planId && planAmount) {
+      updateData.expiryDate = calculateExpiryDate(planId, planAmount);
+      updateData.planId = planId;
+      updateData.planAmount = planAmount;
+    }
+
+    if (extra) {
+      if (extra.year) updateData.year = parseInt(extra.year);
+      if (extra.mileage) updateData.mileage = parseInt(extra.mileage);
+      if (extra.make) updateData.make = extra.make;
+      if (extra.modelName) updateData.modelName = extra.modelName;
+      if (extra.type) updateData.type = extra.type;
+      if (extra.engineSize) updateData.engineSize = extra.engineSize;
+      if (extra.fuelType) updateData.fuelType = extra.fuelType;
+      if (extra.color) updateData.color = extra.color;
+      if (extra.transmission) updateData.transmission = extra.transmission;
+    }
+
+    const updated = await prisma.motorcycle.update({
       where: { id },
-      data: req.body,
-      include: {
-        user: { select: { username: true, email: true, phone: true } },
-      },
+      data: updateData,
     });
 
     await Promise.all([
-      cacheManager.delete(`motorcycle:detail:${id}`),
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
       cacheManager.deletePattern("motorcycles:all:*"),
     ]);
 
-    return res.json(updatedMotorcycle);
+    return res.json(updated);
   } catch (error) {
-    const err = error as Prisma.PrismaClientKnownRequestError;
-    if (err.code === "P2025")
-      return res.status(404).json({ message: "Motorcycle not found" });
+    const err = error as Error;
     return res
       .status(400)
       .json({ message: "Update failed", error: err.message });
@@ -167,20 +273,19 @@ export const updateMotorcycle = async (req: Request, res: Response) => {
 
 export const deleteMotorcycle = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
     await prisma.motorcycle.delete({ where: { id } });
 
     await Promise.all([
-      cacheManager.delete(`motorcycle:detail:${id}`),
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
       cacheManager.deletePattern("motorcycles:all:*"),
-      cacheManager.delete("motorcycles:total"),
+      cacheManager.delete(CACHE_KEYS.TOTAL),
     ]);
 
     return res.json({ message: "Motorcycle deleted successfully" });
   } catch (error) {
-    const err = error as Prisma.PrismaClientKnownRequestError;
-    if (err.code === "P2025")
-      return res.status(404).json({ message: "Motorcycle not found" });
+    const err = error as Error;
     return res
       .status(500)
       .json({ message: "Server Error", error: err.message });

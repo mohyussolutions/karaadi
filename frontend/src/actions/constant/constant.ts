@@ -1,4 +1,6 @@
 import { BASE_API_URL } from "./BASE_API_URL";
+export const AUTH_TOKEN_KEY = "auth_token";
+export const SEARCH_ENDPOINT = `${BASE_API_URL}/api/search`;
 
 export const AUTH_ENDPOINTS = {
   USERS_BASE: `${BASE_API_URL}/api/users`,
@@ -17,7 +19,6 @@ export const AUTH_ENDPOINTS = {
 export const USER_ENDPOINTS = {
   PROFILE: `${AUTH_ENDPOINTS.USERS_BASE}/profile`,
   DELETE_ACCOUNT: `${AUTH_ENDPOINTS.USERS_BASE}/delete`,
-
   GET_USER_BY_ID: (id: string) => `${AUTH_ENDPOINTS.USERS_BASE}/${id}`,
 };
 
@@ -57,6 +58,7 @@ export const CATEGORY_TOTALS_ENDPOINTS = {
   Motorcycles: `${BASE_API_URL}/api/motorcycles`,
   RealEstate: `${BASE_API_URL}/api/real-estate`,
   Traktors: `${BASE_API_URL}/api/traktor`,
+  TraktorsAdmin: `${BASE_API_URL}/api/traktor/all-including-unpaid`,
   Marketplace: `${BASE_API_URL}/api/marketplace`,
 };
 
@@ -80,11 +82,10 @@ export const apiUrlsForCategoryTotals = {
   Motorcycles: CATEGORY_TOTALS_ENDPOINTS.Motorcycles,
   RealEstate: CATEGORY_TOTALS_ENDPOINTS.RealEstate,
   Traktors: CATEGORY_TOTALS_ENDPOINTS.Traktors,
+  TraktorsAdmin: CATEGORY_TOTALS_ENDPOINTS.TraktorsAdmin,
   Marketplace: CATEGORY_TOTALS_ENDPOINTS.Marketplace,
-
   Jobs: CATEGORY_TOTALS_ENDPOINTS.Jobs,
 };
-export const AUTH_TOKEN_KEY = "auth_token";
 
 export const ADVERTISEMENT_ENDPOINTS = {
   BASE: `${BASE_API_URL}/api/advertisements`,
@@ -99,17 +100,6 @@ export const ADVERTISEMENT_ENDPOINTS = {
   USER_ADS: (userId: string) =>
     `${BASE_API_URL}/api/advertisements/user/${userId}`,
 };
-export const FEE_ENDPOINTS = {
-  GET_ACTIVE: `${BASE_API_URL}/api/Fee/active`,
-  GET_ALL: `${BASE_API_URL}/api/Fee`,
-  GET_LOGS: (id: string) => `${BASE_API_URL}/api/Fee/${id}/logs`,
-  CREATE: `${BASE_API_URL}/api/Fee`,
-  UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/${id}`,
-  DELETE: (id: string) => `${BASE_API_URL}/api/Fee/${id}`,
-  STATS: `${BASE_API_URL}/api/Fee/stats`,
-  CALCULATE: `${BASE_API_URL}/api/Fee/calculate`,
-  TOTAL_FEE: `${BASE_API_URL}/api/Fee/total-fee`,
-} as const;
 
 export const PAYMENT_ENDPOINTS = {
   CREATE: `${BASE_API_URL}/api/payments`,
@@ -123,18 +113,20 @@ export const PAYMENT_ENDPOINTS = {
 };
 
 export const SUBS_ENDPOINTS = {
-  CREATE: `${BASE_API_URL}/api/Subscription`,
+  CREATE: `${BASE_API_URL}/api/subscription`,
   GET_USER_SUBSCRIPTIONS: (userId: string) =>
-    `${BASE_API_URL}/api/Subscription/user/${userId}`,
-  SEARCH: `${BASE_API_URL}/api/Subscription/search`,
-  GET_ALL: `${BASE_API_URL}/api/Subscription`,
-  ADMIN_ALL: `${BASE_API_URL}/api/Subscription/admin/all`,
-  ADMIN_DELETE: (id: string) => `${BASE_API_URL}/api/Subscription/admin/${id}`,
+    `${BASE_API_URL}/api/subscription/user/${userId}`,
+  SEARCH: `${BASE_API_URL}/api/subscription/search`,
+  GET_ALL: `${BASE_API_URL}/api/subscription`,
+  ADMIN_ALL: `${BASE_API_URL}/api/subscription/admin/all`,
+  ADMIN_DELETE: (id: string) => `${BASE_API_URL}/api/subscription/admin/${id}`,
   ADMIN_UPDATE_STATUS: (id: string) =>
-    `${BASE_API_URL}/api/Subscription/admin/${id}/status`,
-  ADMIN_NOTIFY: `${BASE_API_URL}/api/Subscription/admin/notify`,
-  STATS: `${BASE_API_URL}/api/Subscription/stats`,
-  TOTAL: `${BASE_API_URL}/api/Subscription/total`,
+    `${BASE_API_URL}/api/subscription/admin/${id}/status`,
+  ADMIN_NOTIFY: `${BASE_API_URL}/api/subscription/admin/notify`,
+  STATS: `${BASE_API_URL}/api/subscription/stats`,
+  TOTAL: `${BASE_API_URL}/api/subscription/total`,
+  GET_SUBSCRIPTION: `${BASE_API_URL}/api/subscription/allpaid`,
+  GET_MY_SUBSCRIPTIONS: `${BASE_API_URL}/api/subscription/my`,
 } as const;
 export const AGENCY_ENDPOINTS = {
   STATS: `${BASE_API_URL}/api/agencies/stats`,
@@ -150,11 +142,12 @@ export const REPORT_ENDPOINTS = {
   DELETE: (id: string) => `${BASE_API_URL}/api/reports/${id}`,
   STATS: `${BASE_API_URL}/api/reports/stats`,
 };
-export const SEARCH_ENDPOINT = `${BASE_API_URL}/api/search`;
+
 export const FILTERING_ENDPOINTS = {
   BASE: `${BASE_API_URL}/api/filtering`,
-  GLOBAL: `/global-filter`,
-  METADATA: `/metadata`,
+  GLOBAL: `${BASE_API_URL}/api/filtering/global-filter`,
+  METADATA: `${BASE_API_URL}/api/filtering/metadata`,
+  RANGE_PRICE_ROOMS: `${BASE_API_URL}/api/filtering/range-price-rooms`,
 };
 
 export const SUPPORT_ENDPOINTS = {
@@ -166,7 +159,11 @@ export const SUPPORT_ENDPOINTS = {
   CLOSE_TICKET: (id: string) =>
     `${BASE_API_URL}/api/support/tickets/${id}/close`,
 };
-
+export const REAL_ESTATE_ENDPOINTS = {
+  BASE: `${BASE_API_URL}/api/real-estate`,
+  ADMIN_ALL: `${BASE_API_URL}/api/real-estate/all-including-unpaid`,
+  BY_ID: (id: string) => `${BASE_API_URL}/api/real-estate/${id}`,
+};
 export const geoEndpoints = {
   GET_ALL_REGIONS: `${BASE_API_URL}/api/locations/regions`,
   GET_REGION_BY_ID: (id: string) =>
@@ -174,13 +171,12 @@ export const geoEndpoints = {
   ADD_REGION: `${BASE_API_URL}/api/locations/regions`,
   UPDATE_REGION: (id: string) => `${BASE_API_URL}/api/locations/regions/${id}`,
   DELETE_REGION: (id: string) => `${BASE_API_URL}/api/locations/regions/${id}`,
-
+  GET_GEO_STATS: `${BASE_API_URL}/api/locations/stats`,
   GET_ALL_CITIES: `${BASE_API_URL}/api/locations/cities`,
   GET_CITY_BY_ID: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
   ADD_CITY: `${BASE_API_URL}/api/locations/cities`,
   UPDATE_CITY: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
   DELETE_CITY: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
-
   TOTAL_STATS: `${BASE_API_URL}/api/locations/stats`,
   SYNC_DATA: `${BASE_API_URL}/sync`,
 };
@@ -204,3 +200,61 @@ export const SEARCH_HISTORY_ENDPOINTS = {
   DELETE_BY_ID: (id: string) => `${BASE_API_URL}/history-search/delete/${id}`,
   SEARCH_ITEMS: (query: string) => `${BASE_API_URL}/api/search?q=${query}`,
 };
+
+export const FEE_ENDPOINTS = {
+  MARKETPLACE: {
+    GET_ALL: `${BASE_API_URL}/api/Fee/marketplace`,
+    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/marketplace/${id}`,
+    CREATE: `${BASE_API_URL}/api/Fee/marketplace`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/marketplace/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/marketplace/${id}`,
+  },
+  REAL_ESTATE: {
+    GET_ALL: `${BASE_API_URL}/api/Fee/real-estate`,
+    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/real-estate/${id}`,
+    CREATE: `${BASE_API_URL}/api/Fee/real-estate`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/real-estate/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/real-estate/${id}`,
+  },
+  CARS: {
+    GET_ALL: `${BASE_API_URL}/api/Fee/cars`,
+    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/cars/${id}`,
+    CREATE: `${BASE_API_URL}/api/Fee/cars`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/cars/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/cars/${id}`,
+  },
+  MOTORCYCLES: {
+    GET_ALL: `${BASE_API_URL}/api/Fee/motorcycles`,
+    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/motorcycles/${id}`,
+    CREATE: `${BASE_API_URL}/api/Fee/motorcycles`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/motorcycles/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/motorcycles/${id}`,
+  },
+  BOATS: {
+    GET_ALL: `${BASE_API_URL}/api/Fee/boats`,
+    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/boats/${id}`,
+    CREATE: `${BASE_API_URL}/api/Fee/boats`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/boats/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/boats/${id}`,
+  },
+  EQUIPMENT: {
+    GET_ALL: `${BASE_API_URL}/api/Fee/equipment`,
+    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/equipment/${id}`,
+    CREATE: `${BASE_API_URL}/api/Fee/equipment`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/equipment/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/equipment/${id}`,
+  },
+  SYSTEM_CONFIG: {
+    GET: `${BASE_API_URL}/api/Fee/system-config`,
+    CREATE: `${BASE_API_URL}/api/Fee/system-config`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/system-config/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/system-config/${id}`,
+  },
+  SUB_PLANS: {
+    GET_ALL: `${BASE_API_URL}/api/Fee/sub-plans`,
+    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/sub-plans/${id}`,
+    CREATE: `${BASE_API_URL}/api/Fee/sub-plans`,
+    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/sub-plans/${id}`,
+    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/sub-plans/${id}`,
+  },
+} as const;

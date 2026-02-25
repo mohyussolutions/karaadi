@@ -1,4 +1,18 @@
+import { io } from "socket.io-client";
 import { BASE_API_URL } from "./BASE_API_URL";
+
+export const createSocket = (userId: string) => {
+  const socket = io("http://localhost:8080", {
+    auth: { userId },
+  });
+  socket.on("newNotification", (data: any) => {
+    alert(data.message);
+  });
+  socket.on("newSubscriptionMatch", (data: any) => {
+    alert(data.message);
+  });
+  return socket;
+};
 
 export const CHATS = {
   CREATE: `${BASE_API_URL}/api/chats/create`,
@@ -13,7 +27,7 @@ export const CHATS = {
     userId: string,
     otherUserId: string,
     itemId: string,
-    itemModel: string
+    itemModel: string,
   ) =>
     `${BASE_API_URL}/api/chats/conversation/find?userId=${userId}&otherUserId=${otherUserId}&itemId=${itemId}&itemModel=${itemModel}`,
   UPDATE_CHAT: (chatId: number) => `${BASE_API_URL}/api/chats/${chatId}`,
@@ -66,7 +80,6 @@ export const SUBSCRIPTION_ENDPOINTS = {
   DELETE_SUBSCRIPTION: (id: string) => `${BASE_API_URL}/api/Subscription/${id}`,
   TRIGGER_NOTIFICATION: `${BASE_API_URL}/api/Subscription/notify`,
 };
-
 export const NOTIFICATION_ENDPOINTS = {
   GET_NOTIFICATIONS_BY_USER: (userId: string) =>
     `${BASE_API_URL}/api/notifications/user/${userId}`,
@@ -77,10 +90,20 @@ export const NOTIFICATION_ENDPOINTS = {
   DELETE_NOTIFICATION: (id: string) =>
     `${BASE_API_URL}/api/notifications/${id}`,
   CLEAR_ALL_NOTIFICATIONS: (userId: string) =>
-    `${BASE_API_URL}/api/notification/${userId}/clear-all`,
+    `${BASE_API_URL}/api/notifications/user/${userId}/clear-all`,
   GET_NOTIFICATION_STATS: (userId: string) =>
-    `${BASE_API_URL}/api/notification/${userId}/stats`,
+    `${BASE_API_URL}/api/notifications/user/${userId}/stats`,
+  MARK_DELIVERED: (userId: string) =>
+    `${BASE_API_URL}/api/notifications/user/${userId}/delivered`,
+  GET_SUBSCRIPTION_NOTIFICATIONS: (subscriptionId: string) =>
+    `${BASE_API_URL}/api/notifications/subscription/${subscriptionId}`,
+  CREATE_NOTIFICATION: `${BASE_API_URL}/api/notifications`,
+  GET_UNREAD_COUNT: (userId: string) =>
+    `${BASE_API_URL}/api/notifications/user/${userId}/unread-count`,
+  GET_CATEGORY_COUNTS: (userId: string) =>
+    `${BASE_API_URL}/api/notifications/user/${userId}/categories`,
 };
+
 export const API_ENDPOINTS = {
   CHATS,
   MESSAGES,

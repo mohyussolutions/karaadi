@@ -50,13 +50,14 @@ export const getAllVisitors = async (_req: Request, res: Response) => {
 
 export const updateVisitor = async (req: Request, res: Response) => {
   const { userId } = req.params;
+  const userIdValue = Array.isArray(userId) ? userId[0] : userId;
   const dataToUpdate = req.body;
 
-  if (!userId) return res.status(400).json({ error: "userId required" });
+  if (!userIdValue) return res.status(400).json({ error: "userId required" });
 
   try {
     const updatedVisitor = await prisma.visitor.update({
-      where: { userId },
+      where: { userId: userIdValue },
       data: dataToUpdate,
     });
     return res.json(updatedVisitor);
@@ -67,10 +68,12 @@ export const updateVisitor = async (req: Request, res: Response) => {
 
 export const deleteVisitor = async (req: Request, res: Response) => {
   const { userId } = req.params;
-  if (!userId) return res.status(400).json({ error: "userId required" });
+  const userIdValue = Array.isArray(userId) ? userId[0] : userId;
+
+  if (!userIdValue) return res.status(400).json({ error: "userId required" });
 
   try {
-    await prisma.visitor.delete({ where: { userId } });
+    await prisma.visitor.delete({ where: { userId: userIdValue } });
     return res.json({ message: "Deleted" });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });

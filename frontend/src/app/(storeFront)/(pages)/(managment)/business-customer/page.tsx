@@ -3,21 +3,26 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import BusinessCourseFormView from "@/app/(storeFront)/components/forms/businnes/BusinessCourseFormView";
-import { cities } from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
+import {
+  addCity,
+  getAllCities,
+  getAllRegions,
+} from "@/actions/categories/geoAction";
+import allowedData from "./allowedCompanies.json";
 
 const BusinessCourseForm = () => {
-  const initialBusinessTypes: any[] = [];
-
   const [courseTitle, setCourseTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [streetName, setStreetName] = useState("");
   const [businessType, setBusinessType] = useState("");
   const [newBusinessType, setNewBusinessType] = useState("");
-  const [businessTypes, setBusinessTypes] = useState(initialBusinessTypes);
+  const [businessTypes, setBusinessTypes] = useState<any[]>([]);
 
+  const [regions, setRegions] = useState<any[]>([]);
+  const [allCities, setAllCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
   const [region, setRegion] = useState("");
   const [city, setCity] = useState("");
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
   const [newCity, setNewCity] = useState("");
   const [showNewCityInputs, setShowNewCityInputs] = useState(false);
 
@@ -25,7 +30,6 @@ const BusinessCourseForm = () => {
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
-
   const [showNewBusinessTypeInput, setShowNewBusinessTypeInput] =
     useState(false);
 
@@ -33,36 +37,33 @@ const BusinessCourseForm = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (region) {
-      const citiesInRegion = cities
-        .filter((c) => c.regionId === region)
-        .map((c) => c.name);
-
-      setFilteredCities(citiesInRegion);
-      setCity("");
-      setShowNewCityInputs(false);
-      setNewCity("");
-    } else {
-      setFilteredCities([]);
-      setCity("");
-      setShowNewCityInputs(false);
-      setNewCity("");
+    async function fetchGeoData() {
+      try {
+        const [regs, cities] = await Promise.all([
+          getAllRegions(),
+          getAllCities(),
+        ]);
+        setRegions(regs || []);
+        setAllCities(cities || []);
+      } catch (error) {
+        console.error(error);
+      }
     }
-  }, [region]);
+    fetchGeoData();
+  }, []);
 
   useEffect(() => {
-    if (
-      businessType &&
-      !businessTypes.find((bt: { title: string }) => bt.title === businessType)
-    ) {
-      setBusinessTypes((prev) => [...prev, { title: businessType }]);
+    if (region) {
+      setFilteredCities(allCities.filter((c) => c.regionId === region));
+    } else {
+      setFilteredCities([]);
     }
-  }, [businessType, businessTypes]);
+    setCity("");
+  }, [region, allCities]);
 
   const handleAddNewBusinessType = () => {
     const trimmed = newBusinessType.trim();
     if (!trimmed) return;
-
     if (
       !businessTypes.find(
         (bt) => bt.title.toLowerCase() === trimmed.toLowerCase(),
@@ -70,7 +71,6 @@ const BusinessCourseForm = () => {
     ) {
       setBusinessTypes((prev) => [...prev, { title: trimmed }]);
     }
-
     setBusinessType(trimmed);
     setShowNewBusinessTypeInput(false);
     setNewBusinessType("");
@@ -78,14 +78,11 @@ const BusinessCourseForm = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-
     const selectedFiles = Array.from(e.target.files);
-
     if (selectedFiles.length > 10) {
-      setImageError("You can upload up to 10 images only.");
+      setImageError("Ugu badnaan 10 sawir ayaa la ogol yahay.");
       return;
     }
-
     setImages(selectedFiles);
     setImageError(null);
   };
@@ -96,10 +93,14 @@ const BusinessCourseForm = () => {
 
   const isFormValid = () => {
     const selectedCity = showNewCityInputs ? newCity.trim() : city;
+    const isAllowed = allowedData.companies.some(
+      (name) => name.toLowerCase() === companyName.trim().toLowerCase(),
+    );
 
     return (
       courseTitle.trim() &&
       companyName.trim() &&
+      isAllowed &&
       streetName.trim() &&
       businessType.trim() &&
       region.trim() &&
@@ -107,55 +108,41 @@ const BusinessCourseForm = () => {
       description.trim() &&
       price &&
       !isNaN(Number(price)) &&
-      Number(price) >= 0 &&
-      images.length > 0 &&
-      images.length <= 10 &&
-      !imageError
+      images.length > 0
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const isCompanyAllowed = allowedData.companies.some(
+      (name) => name.toLowerCase() === companyName.trim().toLowerCase(),
+    );
 
-    if (!isFormValid()) {
-      alert("Please fill all required fields correctly.");
+    if (!isCompanyAllowed) {
+      alert("Shirkaddan looma ogola inay abuurto koorsooyin.");
       return;
     }
 
-    const selectedCity = showNewCityInputs ? newCity.trim() : city;
+    if (!isFormValid()) {
+      alert("Fadlan buuxi bannaannada loo baahan yahay.");
+      return;
+    }
 
-    const message = `
-Ready to post Business Course ad:
-Title: ${courseTitle}
-Company Name: ${companyName}
-Street Name: ${streetName}
-Business Type: ${businessType}
-Region: ${region}
-City: ${selectedCity}
-Description: ${description}
-Price: ${price}
-Images Count: ${images.length}
-`.trim();
-
-    router.push("/sumary/businessSummary");
-
-    formRef.current?.reset();
-    setCourseTitle("");
-    setCompanyName("");
-    setStreetName("");
-    setBusinessType("");
-    setRegion("");
-    setCity("");
-    setDescription("");
-    setPrice("");
-    setImages([]);
-    setImageError(null);
-    setFilteredCities([]);
-    setNewCity("");
-    setShowNewCityInputs(false);
-    setBusinessTypes(initialBusinessTypes);
-    setShowNewBusinessTypeInput(false);
-    setNewBusinessType("");
+    try {
+      let finalCityName = city;
+      if (showNewCityInputs && newCity.trim()) {
+        const cityResult = await addCity({
+          id: `city-${Date.now()}`,
+          name: newCity.trim(),
+          regionId: region,
+          isActive: true,
+        });
+        if (cityResult.success) finalCityName = cityResult.data.name;
+      }
+      router.push("/sumary/businessSummary");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (

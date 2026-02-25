@@ -25,9 +25,7 @@ const ROUTE_MAP: Record<string, string> = {
   cars: "vehicles",
   boats: "vehicles",
   motorcycles: "vehicles",
-  farmequipment: "farmequipment",
-  traktor: "farmequipment",
-  tractor: "farmequipment",
+  farmequipment: "vehicles",
   vehicle: "vehicles",
   "real-estate": "real-estate",
   property: "real-estate",
@@ -35,18 +33,31 @@ const ROUTE_MAP: Record<string, string> = {
   careers: "jobs",
   marketplace: "item-details",
   "item-details": "item-details",
+  subscribetions: "subscriptions",
 };
 
 export default function UniversalCard(item: UniversalCardProps) {
   const [imgSrc, setImgSrc] = useState<string>("/placeholder.png");
 
   const detailUrl = useMemo(() => {
-    const rawCategory = Array.isArray(item.category)
+    let rawCategory = Array.isArray(item.category)
       ? item.category[0]
       : item.category;
-    const cat =
-      typeof rawCategory === "string" ? rawCategory.toLowerCase() : "";
-    const segment = ROUTE_MAP[cat] || "item-details";
+    if (typeof rawCategory === "string") {
+      rawCategory = rawCategory.trim().toLowerCase();
+    } else {
+      rawCategory = "";
+    }
+    const segment = ROUTE_MAP[rawCategory] || "item-details";
+    // Debug log
+    console.log(
+      "UniversalCard category:",
+      item.category,
+      "mapped:",
+      rawCategory,
+      "segment:",
+      segment,
+    );
     return `/${segment}/${item.id}`;
   }, [item.category, item.id]);
 
