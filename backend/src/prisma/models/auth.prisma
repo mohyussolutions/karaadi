@@ -34,13 +34,30 @@ model User {
   subscriptions     Subscription[]  @relation("UserSubscriptions")
   payments          Payment[]       @relation("UserPayments")
   feeChangeLogs     FeeChangeLog[]
+  views             UserView[]
+  reports           Report[]        @relation("UserReports")
+  
 
   @@index([email])
   @@index([username])
   @@index([createdAt])
+
 }
 
+model UserView {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  itemId    String
+  category  String
+  viewedAt  DateTime @default(now())
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@index([viewedAt])
+  @@map("user_views")
+}
 model Visitor {
   id        String   @id @default(cuid())
   userId    String   @unique
@@ -53,14 +70,16 @@ model Visitor {
 }
 
 model Cookie {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  token     String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation("UserCookies", fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  token       String
+  accessToken String?  
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation("UserCookies", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
+  @@index([accessToken])
   @@index([expiresAt])
 }

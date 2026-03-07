@@ -24,11 +24,11 @@ export default function Profile() {
   const { name, email, role, joined, avatar } = user;
 
   return (
-    // CHANGE: Removed 'max-w-xl' and 'mx-auto' and added 'w-full'
     <div className="w-full bg-white shadow-xl rounded-2xl p-8 border">
       <div className="flex flex-col sm:flex-row items-center gap-6">
-        {/* FIX: Corrected tag to <Image /> and added src/alt */}
-        <image
+        <Image
+          src={avatar}
+          alt={name + "'s avatar"}
           width={110}
           height={110}
           className="rounded-full border shadow"

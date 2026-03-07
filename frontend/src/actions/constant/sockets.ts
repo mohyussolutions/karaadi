@@ -1,16 +1,27 @@
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { BASE_API_URL } from "./BASE_API_URL";
 
-export const createSocket = (userId: string) => {
-  const socket = io("http://localhost:8080", {
+export const HAGE_API_URL = `${BASE_API_URL}/api/hage/chat`;
+
+interface SocketMessageData {
+  message: string;
+  [key: string]: unknown;
+}
+
+export const createSocket = (userId: string): Socket => {
+  const socket = io(BASE_API_URL, {
     auth: { userId },
+    transports: ["websocket"],
   });
-  socket.on("newNotification", (data: any) => {
+
+  socket.on("newNotification", (data: SocketMessageData) => {
     alert(data.message);
   });
-  socket.on("newSubscriptionMatch", (data: any) => {
+
+  socket.on("newSubscriptionMatch", (data: SocketMessageData) => {
     alert(data.message);
   });
+
   return socket;
 };
 
@@ -61,10 +72,10 @@ export const USERS_COMM = {
 
 export const CONTACT = {
   STATS: `${BASE_API_URL}/api/contactUs/stats`,
-  CREATE_TICKET: `${BASE_API_URL}/api/contact/tickets`,
-  GET_TICKETS: `${BASE_API_URL}/api/contact/tickets`,
+  CREATE_TICKET: `${BASE_API_URL}/api/contactUs/tickets`,
+  GET_TICKETS: `${BASE_API_URL}/api/contactUs/tickets`,
   UPDATE_TICKET: (ticketId: string) =>
-    `${BASE_API_URL}/api/contact/tickets/${ticketId}`,
+    `${BASE_API_URL}/api/contactUs/tickets/${ticketId}`,
 };
 
 export const VISITORS = {
@@ -73,13 +84,14 @@ export const VISITORS = {
 };
 
 export const SUBSCRIPTION_ENDPOINTS = {
-  SUBSCRIPTION_BASE: `${BASE_API_URL}/api/Subscription`,
-  CREATE_SUBSCRIPTION: `${BASE_API_URL}/api/Subscription`,
+  SUBSCRIPTION_BASE: `${BASE_API_URL}/api/subscription`,
+  CREATE_SUBSCRIPTION: `${BASE_API_URL}/api/subscription`,
   GET_USER_SUBSCRIPTIONS: (userId: string) =>
-    `${BASE_API_URL}/api/Subscription/${userId}`,
-  DELETE_SUBSCRIPTION: (id: string) => `${BASE_API_URL}/api/Subscription/${id}`,
-  TRIGGER_NOTIFICATION: `${BASE_API_URL}/api/Subscription/notify`,
+    `${BASE_API_URL}/api/subscription/${userId}`,
+  DELETE_SUBSCRIPTION: (id: string) => `${BASE_API_URL}/api/subscription/${id}`,
+  TRIGGER_NOTIFICATION: `${BASE_API_URL}/api/subscription/notify`,
 };
+
 export const NOTIFICATION_ENDPOINTS = {
   GET_NOTIFICATIONS_BY_USER: (userId: string) =>
     `${BASE_API_URL}/api/notifications/user/${userId}`,

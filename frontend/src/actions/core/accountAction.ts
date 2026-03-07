@@ -1,14 +1,13 @@
 "use server";
 
-const API_URL = "http://localhost:8080/api/users";
+import { USER_ENDPOINTS } from "../constant/constant";
+import { revalidatePath } from "next/cache";
 
 export async function getProfile(accessToken: string) {
-  if (!accessToken) {
-    return { error: "No access token provided", status: 401 };
-  }
+  if (!accessToken) return { error: "No token", status: 401 };
 
   try {
-    const res = await fetch(`${API_URL}/verify-session`, {
+    const res = await fetch(USER_ENDPOINTS.VERIFY_SESSION, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -17,51 +16,52 @@ export async function getProfile(accessToken: string) {
       cache: "no-store",
     });
 
-    if (res.status === 401) {
-      return { error: "Session expired. Please log in again.", status: 401 };
-    }
+    if (!res.ok) return { error: "Session invalid", status: res.status };
 
-    if (!res.ok) {
-      return { error: "Failed to fetch profile", status: res.status };
-    }
-
-    const data = await res.json();
-    return data;
+    return await res.json();
   } catch (error) {
-    console.error("getProfile Error:", error);
-    return { error: "Network error. Is the backend running?", status: 500 };
+    return { error: "Network error", status: 500 };
   }
 }
 
 export async function updateProfile(formData: FormData, accessToken: string) {
   try {
-    const res = await fetch(`${API_URL}/profile`, {
+    const res = await fetch(USER_ENDPOINTS.PROFILE, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
       body: formData,
+      cache: "no-store",
     });
 
-    if (!res.ok) throw new Error("Failed to update profile");
-    return await res.json();
+    if (!res.ok) {
+      const errorMsg = await res.text();
+      throw new Error(errorMsg || "Update failed");
+    }
+
+    const data = await res.json();
+    revalidatePath("/profile");
+    return { success: true, data };
   } catch (error) {
-    throw error;
+    return { success: false, error: (error as Error).message };
   }
 }
 
 export async function deleteAccount(accessToken: string) {
   try {
-    const res = await fetch(`${API_URL}/delete-account`, {
+    const res = await fetch(USER_ENDPOINTS.DELETE_ACCOUNT, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
+      cache: "no-store",
     });
 
-    if (!res.ok) throw new Error("Failed to delete account");
-    return await res.json();
+    if (!res.ok) throw new Error("Delete failed");
+
+    return { success: true };
   } catch (error) {
-    throw error;
+    return { success: false, error: (error as Error).message };
   }
 }

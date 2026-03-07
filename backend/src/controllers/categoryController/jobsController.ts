@@ -77,6 +77,26 @@ export const getJobById = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteJob = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (typeof id !== "string") {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
+
+    const deletedJob = await prisma.job.delete({
+      where: { id },
+    });
+
+    await cacheManager.delete(CACHE_KEYS.JOBS_ALL_PAID);
+    await cacheManager.delete(CACHE_KEYS.JOBS_TOTAL_COUNT);
+
+    return res.json({ message: "Job deleted", job: deletedJob });
+  } catch (error) {
+    return res.status(500).json({ message: "Server Error" });
+  }
+};
+
 export const createJob = async (req: Request, res: Response) => {
   try {
     const data = req.body;

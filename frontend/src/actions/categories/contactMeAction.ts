@@ -1,0 +1,209 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { CONTACT_ENDPOINTS } from "../constant/constant";
+import { cookies } from "next/headers";
+
+interface TicketData {
+  senderName: string;
+  senderEmail: string;
+  subject: string;
+  body: string;
+}
+
+interface MessageData {
+  body: string;
+  senderName: string;
+  senderEmail: string;
+  senderRole: "USER" | "SUPPORT_MANAGER" | "ADMIN";
+}
+
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+export async function createTicket(data: TicketData) {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+      cache: "no-store",
+    });
+
+    if (res.ok) {
+      revalidatePath("/mine/TicketHistory");
+    }
+
+    return { success: res.ok, status: res.status };
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
+}
+
+export async function getTicketHistory(email: string) {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
+      headers,
+      cache: "no-store",
+    });
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return data
+      .filter((t: any) => t.senderEmail === email)
+      .sort((a: any, b: any) => b.id - a.id);
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function getTicketDetails(id: string | number) {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(id), {
+      headers,
+      cache: "no-store",
+    });
+    return res.ok ? await res.json() : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function addTicketMessage(
+  ticketId: string | number,
+  messageData: MessageData,
+) {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.MESSAGES(ticketId), {
+      method: "POST",
+      headers,
+      body: JSON.stringify(messageData),
+      cache: "no-store",
+    });
+
+    if (res.ok) {
+      revalidatePath("/mine/TicketHistory");
+    }
+
+    return { success: res.ok };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function updateTicketStatus(
+  ticketId: string | number,
+  status: string,
+) {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(ticketId), {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ status }),
+      cache: "no-store",
+    });
+
+    if (res.ok) {
+      revalidatePath("/admin/tickets");
+    }
+
+    return { success: res.ok };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function deleteTicket(ticketId: string | number) {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(ticketId), {
+      method: "DELETE",
+      headers,
+      cache: "no-store",
+    });
+
+    if (res.ok) {
+      revalidatePath("/admin/tickets");
+    }
+
+    return { success: res.ok };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function deleteMessage(messageId: string | number) {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(
+      `${CONTACT_ENDPOINTS.TICKETS}/messages/${messageId}`,
+      {
+        method: "DELETE",
+        headers,
+        cache: "no-store",
+      },
+    );
+
+    return { success: res.ok };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function getAllTickets() {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
+      headers,
+      cache: "no-store",
+    });
+
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function getTicketStats() {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(CONTACT_ENDPOINTS.STATS, {
+      headers,
+      cache: "no-store",
+    });
+
+    if (!res.ok) return { total: 0, today: 0 };
+    return await res.json();
+  } catch (error) {
+    return { total: 0, today: 0 };
+  }
+}

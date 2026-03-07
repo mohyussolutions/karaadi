@@ -1,11 +1,11 @@
 import { Router } from "express";
 
 import {
-  getMyFavorites,
   getFavoritesCount,
   getFavoriteById,
-  createFavorite,
   updateFavorite,
+  getMyFavorites,
+  createFavorite,
   deleteFavorite,
 } from "../../controllers/categoryController/favoriteController.ts";
 import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";

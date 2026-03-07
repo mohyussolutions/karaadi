@@ -1,44 +1,34 @@
 export const EXPIRY_CONFIG = {
-  DEFAULT_DAYS: 30,
-  PREMIUM_DAYS: 60,
-  ENTERPRISE_DAYS: 90,
-  THRESHOLD: {
-    PREMIUM: 50,
-    ENTERPRISE: 100,
-  },
+  BASIC_DAYS: 30,
+  STANDARD_DAYS: 60,
+  PREMIUM_DAYS: 90,
 };
 
 export const calculateExpiryDate = (
-  planId: string | null,
+  subPlan: { basic30: number; standard60: number; premium90: number } | null,
   planAmount: number,
 ): Date | null => {
-  if (!planId && planAmount === 0) return null;
+  if (!subPlan || planAmount <= 0) return null;
 
   const now = new Date();
 
-  if (planAmount > 0) {
-    if (
-      planId?.includes("60") ||
-      planAmount > EXPIRY_CONFIG.THRESHOLD.PREMIUM
-    ) {
-      return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.PREMIUM_DAYS));
-    }
-    if (
-      planId?.includes("90") ||
-      planAmount > EXPIRY_CONFIG.THRESHOLD.ENTERPRISE
-    ) {
-      return new Date(
-        now.setDate(now.getDate() + EXPIRY_CONFIG.ENTERPRISE_DAYS),
-      );
-    }
-    return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.DEFAULT_DAYS));
+  if (planAmount === subPlan.premium90) {
+    return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.PREMIUM_DAYS));
   }
 
-  return null;
+  if (planAmount === subPlan.standard60) {
+    return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.STANDARD_DAYS));
+  }
+
+  if (planAmount === subPlan.basic30) {
+    return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.BASIC_DAYS));
+  }
+
+  return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.BASIC_DAYS));
 };
 
 export const getDefaultExpiryDate = (
-  days: number = EXPIRY_CONFIG.DEFAULT_DAYS,
+  days: number = EXPIRY_CONFIG.BASIC_DAYS,
 ): Date => {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 };

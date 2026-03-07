@@ -2,6 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { ADVERTISEMENT_ENDPOINTS } from "../constant/constant";
+import { cookies } from "next/headers";
 
 export interface Advertisement {
   createdAt: string | number | Date;
@@ -20,20 +21,44 @@ export interface Advertisement {
   endDate?: Date;
 }
 
+async function getAuthHeaders(token?: string) {
+  const cookieStore = await cookies();
+  const cookieToken =
+    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
+  const authToken = token || cookieToken;
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+
+  return headers;
+}
+
+const addCacheBuster = (url: string) => {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}_t=${Date.now()}`;
+};
+
 export const getAdvertisements = async (
   position?: string,
   limit?: number,
 ): Promise<Advertisement[]> => {
-  const url = new URL(`${ADVERTISEMENT_ENDPOINTS.GET_ALL}`);
+  const url = new URL(addCacheBuster(ADVERTISEMENT_ENDPOINTS.GET_ALL));
   if (position) url.searchParams.append("position", position);
   if (limit) url.searchParams.append("limit", limit.toString());
 
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(url.toString(), {
-      next: {
-        revalidate: 300,
-        tags: ["ads", `ads-${position || "all"}`],
-      },
+      headers,
+      cache: "no-store",
     });
     if (!response.ok) return [];
     return await response.json();
@@ -46,9 +71,31 @@ export const getAdvertisementById = async (
   id: string,
 ): Promise<Advertisement | null> => {
   try {
-    const response = await fetch(ADVERTISEMENT_ENDPOINTS.GET_BY_ID(id), {
-      next: { revalidate: 600, tags: [`ad-${id}`] },
-    });
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      addCacheBuster(ADVERTISEMENT_ENDPOINTS.GET_BY_ID(id)),
+      {
+        headers,
+        cache: "no-store",
+      },
+    );
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getAdvertisementStats = async (): Promise<any> => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      addCacheBuster(ADVERTISEMENT_ENDPOINTS.STATS),
+      {
+        headers,
+        cache: "no-store",
+      },
+    );
     if (!response.ok) return null;
     return await response.json();
   } catch (error) {
@@ -58,8 +105,10 @@ export const getAdvertisementById = async (
 
 export const trackAdClick = async (adId: string): Promise<void> => {
   try {
-    await fetch(ADVERTISEMENT_ENDPOINTS.CLICK(adId), {
+    const headers = await getAuthHeaders();
+    await fetch(addCacheBuster(ADVERTISEMENT_ENDPOINTS.CLICK(adId)), {
       method: "POST",
+      headers,
       cache: "no-store",
     });
   } catch (error) {
@@ -69,13 +118,19 @@ export const trackAdClick = async (adId: string): Promise<void> => {
 
 export const createAdvertisement = async (
   data: Partial<Advertisement>,
+  accessToken?: string,
 ): Promise<any> => {
   try {
-    const response = await fetch(ADVERTISEMENT_ENDPOINTS.CREATE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    const headers = await getAuthHeaders(accessToken);
+    const response = await fetch(
+      addCacheBuster(ADVERTISEMENT_ENDPOINTS.CREATE),
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+        cache: "no-store",
+      },
+    );
     const result = await response.json();
     revalidateTag("ads");
     revalidateTag("ad-stats");
@@ -88,13 +143,19 @@ export const createAdvertisement = async (
 export const updateAdvertisement = async (
   id: string,
   data: Partial<Advertisement>,
+  accessToken?: string,
 ): Promise<any> => {
   try {
-    const response = await fetch(ADVERTISEMENT_ENDPOINTS.UPDATE(id), {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    const headers = await getAuthHeaders(accessToken);
+    const response = await fetch(
+      addCacheBuster(ADVERTISEMENT_ENDPOINTS.UPDATE(id)),
+      {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data),
+        cache: "no-store",
+      },
+    );
     const result = await response.json();
     revalidateTag("ads");
     revalidateTag(`ad-${id}`);
@@ -105,11 +166,20 @@ export const updateAdvertisement = async (
   }
 };
 
-export const deleteAdvertisement = async (id: string): Promise<boolean> => {
+export const deleteAdvertisement = async (
+  id: string,
+  accessToken?: string,
+): Promise<boolean> => {
   try {
-    const response = await fetch(ADVERTISEMENT_ENDPOINTS.DELETE(id), {
-      method: "DELETE",
-    });
+    const headers = await getAuthHeaders(accessToken);
+    const response = await fetch(
+      addCacheBuster(ADVERTISEMENT_ENDPOINTS.DELETE(id)),
+      {
+        method: "DELETE",
+        headers,
+        cache: "no-store",
+      },
+    );
     if (!response.ok) return false;
     revalidateTag("ads");
     revalidateTag("ad-stats");
@@ -122,9 +192,14 @@ export const deleteAdvertisement = async (id: string): Promise<boolean> => {
 
 export const getAdStats = async (): Promise<any> => {
   try {
-    const response = await fetch(ADVERTISEMENT_ENDPOINTS.STATS, {
-      next: { revalidate: 300, tags: ["ad-stats"] },
-    });
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      addCacheBuster(ADVERTISEMENT_ENDPOINTS.STATS),
+      {
+        headers,
+        cache: "no-store",
+      },
+    );
     if (!response.ok) return null;
     return await response.json();
   } catch (error) {

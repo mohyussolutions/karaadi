@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import ChatSystem from "@/app/(storeFront)/components/chats/chat/ChatSystem";
-import { FiHome, FiUser } from "react-icons/fi";
+import { FiHome, FiMessageSquare } from "react-icons/fi";
 import { verifySession } from "@/actions/core/authAction";
+import Loading from "../../components/shared/Loading/Loading";
 
 export default function MessagesInbox() {
   const router = useRouter();
@@ -28,7 +29,6 @@ export default function MessagesInbox() {
           setCurrentUser(user);
         }
       } catch (error) {
-        console.error("Failed to load user:", error);
         router.replace("/");
       } finally {
         setLoading(false);
@@ -39,67 +39,49 @@ export default function MessagesInbox() {
 
   const updateChatUrl = (newChatId: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    newChatId
-      ? params.set("chatId", newChatId.toString())
-      : params.delete("chatId");
+    if (newChatId) {
+      params.set("chatId", newChatId.toString());
+    } else {
+      params.delete("chatId");
+    }
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const navigateToHome = () => {
-    router.push("/");
-  };
-
-  const navigateBack = () => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  };
-
-  if (!currentUser) {
+  if (loading || !currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-r from-red-100 to-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiUser className="text-red-400 text-3xl" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">
-            Session Expired
-          </h2>
-          <p className="text-slate-600 mb-6">Please sign in to continue</p>
-          <button
-            onClick={() => router.push("/")}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl"
-          >
-            Go to Homepage
-          </button>
-        </div>
+      <div className="h-screen w-full flex items-center justify-center bg-white">
+        <Loading />
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-slate-50 flex flex-col overflow-hidden fixed inset-0 z-0 pt-12 md:pt-16">
-      <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full h-full">
-        <div className="px-4 py-2 md:px-6 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900">
-                Meldinger
-              </h1>
+    <div className="h-screen w-full bg-gray-50 flex flex-col fixed inset-0 z-50">
+      {/* Header Area */}
+      <header className="bg-white border-b border-gray-200 px-4 h-14 md:h-16 flex items-center justify-center flex-shrink-0">
+        <div className="max-w-6xl w-full flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <FiMessageSquare className="text-blue-600 text-lg" />
             </div>
-            <button
-              onClick={navigateToHome}
-              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
-            >
-              <FiHome className="inline mr-1" />
-              Home
-            </button>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900">
+              Meldinger
+            </h1>
           </div>
-        </div>
 
-        <div className="flex-1 bg-white md:rounded-t-2xl shadow-lg border-t md:border-x border-slate-200 flex flex-col min-h-0 overflow-hidden">
+          <button
+            onClick={() => router.push("/")}
+            className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-full transition-all active:scale-95"
+          >
+            <FiHome />
+            <span className="hidden sm:inline">Hjem</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Chat Container */}
+      <main className="flex-1 max-w-6xl mx-auto w-full h-full overflow-hidden flex flex-col md:p-4 lg:p-6">
+        <div className="flex-1 bg-white md:rounded-2xl shadow-sm border-gray-200 md:border overflow-hidden flex flex-col">
           <ChatSystem
             currentUserId={currentUser._id}
             sellerId={sellerId || undefined}
@@ -108,7 +90,7 @@ export default function MessagesInbox() {
             onChatChange={updateChatUrl}
           />
         </div>
-      </div>
+      </main>
     </div>
   );
 }

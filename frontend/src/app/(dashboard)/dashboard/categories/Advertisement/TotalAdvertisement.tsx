@@ -2,37 +2,29 @@
 
 import React, { useEffect, useState } from "react";
 import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+import { getAdStats } from "@/actions/categories/advertisementService";
+
+interface AdStats {
+  totalAds: number;
+}
 
 export default function TotalAdvertisement() {
-  const [total, setTotal] = useState<number>(0);
+  const [stats, setStats] = useState<AdStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTotalAds = async () => {
+    const fetchStats = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:8080/api/advertisements/stats",
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-
-        if (!res.ok) {
-          setTotal(0);
-          return;
-        }
-
-        const data = await res.json();
-        setTotal(data.totalAds ?? 0);
-      } catch {
-        setTotal(0);
+        const data = await getAdStats();
+        setStats(data);
+      } catch (error) {
+        console.error(error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTotalAds();
+    fetchStats();
   }, []);
 
   return (
@@ -44,7 +36,7 @@ export default function TotalAdvertisement() {
           <ManagerLoading />
         ) : (
           <p className="text-3xl font-bold text-green-600">
-            {Number(total).toLocaleString()}
+            {(stats?.totalAds || 0).toLocaleString()}
           </p>
         )}
       </div>

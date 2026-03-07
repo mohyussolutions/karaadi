@@ -2,12 +2,49 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { FEE_ENDPOINTS } from "../constant/constant";
+import { cookies } from "next/headers";
+
+const addCacheBuster = (url: string) => {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}_t=${Date.now()}`;
+};
+
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const headers = await getAuthHeaders();
+  const cacheBustedUrl = addCacheBuster(url);
+
+  return fetch(cacheBustedUrl, {
+    ...options,
+    headers: {
+      ...headers,
+      ...options.headers,
+    },
+    cache: "no-store",
+  });
+};
 
 export const getMarketplaceFees = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MARKETPLACE.GET_ALL, {
-      next: { revalidate: 60, tags: ["fees-marketplace"] },
-    });
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MARKETPLACE.GET_ALL);
     return response.ok ? await response.json() : [];
   } catch (error) {
     return [];
@@ -16,7 +53,9 @@ export const getMarketplaceFees = async () => {
 
 export const getMarketplaceFeeById = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MARKETPLACE.GET_BY_ID(id));
+    const response = await fetchWithAuth(
+      FEE_ENDPOINTS.MARKETPLACE.GET_BY_ID(id),
+    );
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -25,9 +64,8 @@ export const getMarketplaceFeeById = async (id: string) => {
 
 export const createMarketplaceFee = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MARKETPLACE.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MARKETPLACE.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -42,9 +80,8 @@ export const createMarketplaceFee = async (data: any) => {
 
 export const updateMarketplaceFee = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MARKETPLACE.UPDATE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MARKETPLACE.UPDATE(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -59,7 +96,7 @@ export const updateMarketplaceFee = async (id: string, data: any) => {
 
 export const deleteMarketplaceFee = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MARKETPLACE.DELETE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MARKETPLACE.DELETE(id), {
       method: "DELETE",
     });
     if (!response.ok) return { error: "Delete failed" };
@@ -73,9 +110,7 @@ export const deleteMarketplaceFee = async (id: string) => {
 
 export const getRealEstateFees = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.REAL_ESTATE.GET_ALL, {
-      next: { revalidate: 60, tags: ["fees-realestate"] },
-    });
+    const response = await fetchWithAuth(FEE_ENDPOINTS.REAL_ESTATE.GET_ALL);
     return response.ok ? await response.json() : [];
   } catch (error) {
     return [];
@@ -84,7 +119,9 @@ export const getRealEstateFees = async () => {
 
 export const getRealEstateFeeById = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.REAL_ESTATE.GET_BY_ID(id));
+    const response = await fetchWithAuth(
+      FEE_ENDPOINTS.REAL_ESTATE.GET_BY_ID(id),
+    );
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -93,9 +130,8 @@ export const getRealEstateFeeById = async (id: string) => {
 
 export const createRealEstateFee = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.REAL_ESTATE.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.REAL_ESTATE.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -110,9 +146,8 @@ export const createRealEstateFee = async (data: any) => {
 
 export const updateRealEstateFee = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.REAL_ESTATE.UPDATE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.REAL_ESTATE.UPDATE(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -127,7 +162,7 @@ export const updateRealEstateFee = async (id: string, data: any) => {
 
 export const deleteRealEstateFee = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.REAL_ESTATE.DELETE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.REAL_ESTATE.DELETE(id), {
       method: "DELETE",
     });
     if (!response.ok) return { error: "Delete failed" };
@@ -151,9 +186,7 @@ const normalizeBoatFee = (res: any) => {
 
 export const getBoatFees = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.BOATS.GET_ALL, {
-      next: { revalidate: 60, tags: ["fees-boats"] },
-    });
+    const response = await fetchWithAuth(FEE_ENDPOINTS.BOATS.GET_ALL);
     const res = response.ok ? await response.json() : null;
     return normalizeBoatFee(res);
   } catch (error) {
@@ -163,7 +196,7 @@ export const getBoatFees = async () => {
 
 export const getBoatFeeById = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.BOATS.GET_BY_ID(id));
+    const response = await fetchWithAuth(FEE_ENDPOINTS.BOATS.GET_BY_ID(id));
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -172,9 +205,8 @@ export const getBoatFeeById = async (id: string) => {
 
 export const createBoatFee = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.BOATS.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.BOATS.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -189,9 +221,8 @@ export const createBoatFee = async (data: any) => {
 
 export const updateBoatFee = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.BOATS.UPDATE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.BOATS.UPDATE(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -206,7 +237,7 @@ export const updateBoatFee = async (id: string, data: any) => {
 
 export const deleteBoatFee = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.BOATS.DELETE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.BOATS.DELETE(id), {
       method: "DELETE",
     });
     if (!response.ok) return { error: "Delete failed" };
@@ -220,9 +251,7 @@ export const deleteBoatFee = async (id: string) => {
 
 export const getEquipmentFees = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.EQUIPMENT.GET_ALL, {
-      next: { revalidate: 60, tags: ["fees-equipment"] },
-    });
+    const response = await fetchWithAuth(FEE_ENDPOINTS.EQUIPMENT.GET_ALL);
     return response.ok ? await response.json() : [];
   } catch (error) {
     return [];
@@ -231,7 +260,7 @@ export const getEquipmentFees = async () => {
 
 export const getEquipmentFeeById = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.EQUIPMENT.GET_BY_ID(id));
+    const response = await fetchWithAuth(FEE_ENDPOINTS.EQUIPMENT.GET_BY_ID(id));
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -240,9 +269,8 @@ export const getEquipmentFeeById = async (id: string) => {
 
 export const createEquipmentFee = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.EQUIPMENT.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.EQUIPMENT.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -257,9 +285,8 @@ export const createEquipmentFee = async (data: any) => {
 
 export const updateEquipmentFee = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.EQUIPMENT.UPDATE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.EQUIPMENT.UPDATE(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -274,7 +301,7 @@ export const updateEquipmentFee = async (id: string, data: any) => {
 
 export const deleteEquipmentFee = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.EQUIPMENT.DELETE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.EQUIPMENT.DELETE(id), {
       method: "DELETE",
     });
     if (!response.ok) return { error: "Delete failed" };
@@ -288,9 +315,7 @@ export const deleteEquipmentFee = async (id: string) => {
 
 export const getSystemConfig = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SYSTEM_CONFIG.GET, {
-      next: { revalidate: 600, tags: ["system-config"] },
-    });
+    const response = await fetchWithAuth(FEE_ENDPOINTS.SYSTEM_CONFIG.GET);
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -299,9 +324,8 @@ export const getSystemConfig = async () => {
 
 export const createSystemConfig = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SYSTEM_CONFIG.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.SYSTEM_CONFIG.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -316,11 +340,13 @@ export const createSystemConfig = async (data: any) => {
 
 export const updateSystemConfig = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SYSTEM_CONFIG.UPDATE(id), {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    const response = await fetchWithAuth(
+      FEE_ENDPOINTS.SYSTEM_CONFIG.UPDATE(id),
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+    );
     const result = await response.json();
     if (!response.ok) return { error: "Update failed" };
     revalidateTag("system-config");
@@ -333,9 +359,12 @@ export const updateSystemConfig = async (id: string, data: any) => {
 
 export const deleteSystemConfig = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SYSTEM_CONFIG.DELETE(id), {
-      method: "DELETE",
-    });
+    const response = await fetchWithAuth(
+      FEE_ENDPOINTS.SYSTEM_CONFIG.DELETE(id),
+      {
+        method: "DELETE",
+      },
+    );
     if (!response.ok) return { error: "Delete failed" };
     revalidateTag("system-config");
     revalidatePath("/admin/fees");
@@ -347,9 +376,7 @@ export const deleteSystemConfig = async (id: string) => {
 
 export const getSubPlans = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SUB_PLANS.GET_ALL, {
-      next: { revalidate: 60, tags: ["sub-plans"] },
-    });
+    const response = await fetchWithAuth(FEE_ENDPOINTS.SUB_PLANS.GET_ALL);
     return response.ok ? await response.json() : [];
   } catch (error) {
     return [];
@@ -358,7 +385,7 @@ export const getSubPlans = async () => {
 
 export const getSubPlanById = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SUB_PLANS.GET_BY_ID(id));
+    const response = await fetchWithAuth(FEE_ENDPOINTS.SUB_PLANS.GET_BY_ID(id));
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -367,9 +394,8 @@ export const getSubPlanById = async (id: string) => {
 
 export const createSubPlan = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SUB_PLANS.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.SUB_PLANS.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -384,9 +410,8 @@ export const createSubPlan = async (data: any) => {
 
 export const updateSubPlan = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SUB_PLANS.UPDATE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.SUB_PLANS.UPDATE(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -401,7 +426,7 @@ export const updateSubPlan = async (id: string, data: any) => {
 
 export const deleteSubPlan = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.SUB_PLANS.DELETE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.SUB_PLANS.DELETE(id), {
       method: "DELETE",
     });
     if (!response.ok) return { error: "Delete failed" };
@@ -415,10 +440,7 @@ export const deleteSubPlan = async (id: string) => {
 
 export const getCarFees = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.CARS.GET_ALL, {
-      next: { revalidate: 60, tags: ["fees-cars"] },
-    });
-
+    const response = await fetchWithAuth(FEE_ENDPOINTS.CARS.GET_ALL);
     return response.ok ? await response.json() : [];
   } catch (error) {
     return [];
@@ -427,7 +449,7 @@ export const getCarFees = async () => {
 
 export const getCarFeeById = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.CARS.GET_BY_ID(id));
+    const response = await fetchWithAuth(FEE_ENDPOINTS.CARS.GET_BY_ID(id));
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -436,9 +458,8 @@ export const getCarFeeById = async (id: string) => {
 
 export const createCarFee = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.CARS.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.CARS.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -453,9 +474,8 @@ export const createCarFee = async (data: any) => {
 
 export const updateCarFee = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.CARS.UPDATE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.CARS.UPDATE(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -470,7 +490,7 @@ export const updateCarFee = async (id: string, data: any) => {
 
 export const deleteCarFee = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.CARS.DELETE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.CARS.DELETE(id), {
       method: "DELETE",
     });
     if (!response.ok) return { error: "Delete failed" };
@@ -482,13 +502,9 @@ export const deleteCarFee = async (id: string) => {
   }
 };
 
-/* --- MOTORCYCLES --- */
-
 export const getMotorcycleFees = async () => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MOTORCYCLES.GET_ALL, {
-      next: { revalidate: 60, tags: ["fees-motorcycles"] },
-    });
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MOTORCYCLES.GET_ALL);
     return response.ok ? await response.json() : [];
   } catch (error) {
     return [];
@@ -497,7 +513,9 @@ export const getMotorcycleFees = async () => {
 
 export const getMotorcycleFeeById = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MOTORCYCLES.GET_BY_ID(id));
+    const response = await fetchWithAuth(
+      FEE_ENDPOINTS.MOTORCYCLES.GET_BY_ID(id),
+    );
     return response.ok ? await response.json() : null;
   } catch (error) {
     return null;
@@ -506,9 +524,8 @@ export const getMotorcycleFeeById = async (id: string) => {
 
 export const createMotorcycleFee = async (data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MOTORCYCLES.CREATE, {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MOTORCYCLES.CREATE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -523,9 +540,8 @@ export const createMotorcycleFee = async (data: any) => {
 
 export const updateMotorcycleFee = async (id: string, data: any) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MOTORCYCLES.UPDATE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MOTORCYCLES.UPDATE(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
@@ -540,7 +556,7 @@ export const updateMotorcycleFee = async (id: string, data: any) => {
 
 export const deleteMotorcycleFee = async (id: string) => {
   try {
-    const response = await fetch(FEE_ENDPOINTS.MOTORCYCLES.DELETE(id), {
+    const response = await fetchWithAuth(FEE_ENDPOINTS.MOTORCYCLES.DELETE(id), {
       method: "DELETE",
     });
     if (!response.ok) return { error: "Delete failed" };

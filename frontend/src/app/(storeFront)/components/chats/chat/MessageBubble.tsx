@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Edit3, Trash2, X, Check, ShieldCheck } from "lucide-react";
 import { BsThreeDots } from "react-icons/bs";
-import { Message } from "@/types/chat";
+import { Message } from "@/app/utils/types/chat";
 
 interface MessageBubbleProps {
   msg: Message;
@@ -126,7 +126,7 @@ export const MessageBubble = ({
                 <span>
                   {msg.timestamp || msg.createdAt
                     ? new Date(
-                        msg.timestamp ?? msg.createdAt!
+                        msg.timestamp ?? msg.createdAt!,
                       ).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",

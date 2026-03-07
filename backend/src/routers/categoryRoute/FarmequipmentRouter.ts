@@ -8,28 +8,35 @@ import {
   deleteTractor,
   createfarmequipment,
 } from "../../controllers/categoryController/FarmequipmentController.ts";
+import {
+  ProtectRoute,
+  adminAndManager,
+} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const traktorRoutes = Router();
 
 traktorRoutes.get("/", (req, res, next) =>
   getAllTractors(req, res).catch(next),
 );
-traktorRoutes.get("/all-including-unpaid", (req, res, next) =>
-  getAllTractorsIncludingUnpaid(req, res).catch(next),
+traktorRoutes.get(
+  "/all-including-unpaid",
+  ProtectRoute,
+  adminAndManager,
+  (req, res, next) => getAllTractorsIncludingUnpaid(req, res).catch(next),
 );
-traktorRoutes.get("/total", (req, res, next) =>
+traktorRoutes.get("/total", ProtectRoute, adminAndManager, (req, res, next) =>
   getTotalTractors(req, res).catch(next),
 );
 traktorRoutes.get("/:id", (req, res, next) =>
   getTractorById(req, res).catch(next),
 );
-traktorRoutes.post("/", (req, res, next) =>
+traktorRoutes.post("/", ProtectRoute, (req, res, next) =>
   createfarmequipment(req, res).catch(next),
 );
-traktorRoutes.patch("/:id", (req, res, next) =>
+traktorRoutes.patch("/:id", ProtectRoute, (req, res, next) =>
   updateTractor(req, res).catch(next),
 );
-traktorRoutes.delete("/:id", (req, res, next) =>
+traktorRoutes.delete("/:id", ProtectRoute, (req, res, next) =>
   deleteTractor(req, res).catch(next),
 );
 

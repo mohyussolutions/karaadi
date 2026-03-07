@@ -10,6 +10,7 @@ import { subscriptionItems } from "../seeder/subscription.ts";
 import { supportTicketSeedData } from "../seeder/ticketData.ts";
 import { cities, regions } from "../seeder/SomaliaRegionsSeeder.ts";
 import { jobsData } from "../seeder/jobsSeed.ts";
+import { recommendations } from "../seeder/recomendationSeeder.ts";
 import "dotenv/config";
 import prisma from "../core/utils/db.ts";
 
@@ -30,6 +31,8 @@ const importData = async () => {
     await prisma.city.deleteMany();
     await prisma.region.deleteMany();
     await prisma.user.deleteMany();
+    await prisma.recommendation.deleteMany();
+    await prisma.userView.deleteMany();
 
     await prisma.region.createMany({ data: regions, skipDuplicates: true });
     await prisma.city.createMany({
@@ -40,6 +43,12 @@ const importData = async () => {
     await prisma.user.createMany({ data: userItems, skipDuplicates: true });
 
     const usersFromDb = await prisma.user.findMany();
+    const firstUserId = usersFromDb[0]?.id;
+
+    if (!firstUserId) {
+      throw new Error("No users found in database");
+    }
+
     const assignUser = (items: any[]) =>
       items.map((item) => ({
         ...item,
@@ -50,7 +59,6 @@ const importData = async () => {
       data: assignUser(jobsData).map((job) => ({
         ...job,
         isPaid: true,
-        expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       })),
       skipDuplicates: true,
     });
@@ -92,6 +100,37 @@ const importData = async () => {
       skipDuplicates: true,
     });
 
+    await prisma.recommendation.createMany({
+      data: recommendations,
+      skipDuplicates: true,
+    });
+
+    const userViews = [
+      {
+        userId: firstUserId,
+        itemId: "item-1",
+        category: "electronics",
+        viewedAt: new Date(),
+      },
+      {
+        userId: firstUserId,
+        itemId: "item-3",
+        category: "cars",
+        viewedAt: new Date(),
+      },
+      {
+        userId: firstUserId,
+        itemId: "item-5",
+        category: "tech",
+        viewedAt: new Date(),
+      },
+    ];
+
+    await prisma.userView.createMany({
+      data: userViews,
+      skipDuplicates: true,
+    });
+
     console.log("Data Imported!");
     process.exit();
   } catch (error) {
@@ -117,6 +156,8 @@ const deleteData = async () => {
     await prisma.city.deleteMany();
     await prisma.region.deleteMany();
     await prisma.user.deleteMany();
+    await prisma.recommendation.deleteMany();
+    await prisma.userView.deleteMany();
 
     console.log("Data Deleted!");
     process.exit();

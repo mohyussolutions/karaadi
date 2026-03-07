@@ -16,11 +16,6 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/careers" className="hover:text-blue-600">
-                Careers
-              </Link>
-            </li>
-            <li>
               <Link href="/contact" className="hover:text-blue-600">
                 Contact
               </Link>
@@ -37,13 +32,8 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/faq" className="hover:text-blue-600">
-                FAQ
-              </Link>
-            </li>
-            <li>
-              <Link href="/terms" className="hover:text-blue-600">
-                Terms of Service
+              <Link href="/Terms" className="hover:text-blue-600">
+                Terms
               </Link>
             </li>
           </ul>
@@ -81,11 +71,6 @@ export default function Footer() {
             <li>
               <Link href="/cookies" className="hover:text-blue-600">
                 Cookie Policy
-              </Link>
-            </li>
-            <li>
-              <Link href="/disclaimer" className="hover:text-blue-600">
-                Disclaimer
               </Link>
             </li>
           </ul>

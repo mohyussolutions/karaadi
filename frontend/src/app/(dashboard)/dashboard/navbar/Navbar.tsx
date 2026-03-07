@@ -2,7 +2,7 @@
 
 import { logout } from "@/actions/core/authAction";
 import SearchInput from "@/app/(search)/SearchInput";
-import { User } from "@/app/(storeFront)/store/slices/boatsSlice";
+import { User } from "@/app/utils/types/user";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";

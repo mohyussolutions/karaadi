@@ -30,7 +30,6 @@ const CarsForSellOrBuy = () => {
   const [showNewCityInputs, setShowNewCityInputs] = useState(false);
   const [newCity, setNewCity] = useState("");
 
-  // --- Added Fee States ---
   const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
   const [selectedFee, setSelectedFee] = useState<string>("0");
 
@@ -80,14 +79,12 @@ const CarsForSellOrBuy = () => {
     }
   }, [formData.region, allCities]);
 
-  // Handle Dynamic Title and Fee Calculation
   useEffect(() => {
     if (formData.category && formData.subCategory) {
       const nested = carsNestedCategoriesMap[formData.category] || [];
       const selected = nested.find((s) => s.title === formData.subCategory);
       if (selected) setFormData((prev) => ({ ...prev, title: selected.so }));
 
-      // Map Category to Backend Fee Keys (Adjust keys to match your DB exactly)
       let feeKey = "";
       if (formData.category === "Cars for Sale") feeKey = "carSale";
       else if (formData.category === "Cars for Rent") feeKey = "carRent";
@@ -117,14 +114,17 @@ const CarsForSellOrBuy = () => {
     setIsLoading(true);
     try {
       let finalCity = formData.city;
+
       if (showNewCityInputs && newCity.trim()) {
-        const res: any = await addCity({
+        const cityName = newCity.trim();
+        // Matching the 4 required arguments: newCityName, newCitySo, region, data
+        const res: any = await addCity(cityName, cityName, formData.region, {
           id: `city-${Date.now()}`,
-          name: newCity.trim(),
+          name: cityName,
           regionId: formData.region,
           isActive: true,
         });
-        if (res.success) finalCity = res.data.name;
+        if (res.success) finalCity = cityName;
       }
 
       const imagesBase64 = await Promise.all(
@@ -157,7 +157,6 @@ const CarsForSellOrBuy = () => {
         region: formData.region,
         city: finalCity,
         images: imagesBase64 as string[],
-        // --- Added Payment Data ---
         isPaid: false,
         feeAmount: Number(selectedFee),
       };
@@ -166,7 +165,6 @@ const CarsForSellOrBuy = () => {
 
       if (result.success) {
         toast.success("Xayeysiiska waa la gudbiyey!");
-        // Redirect to payment plan
         router.push(`/payment/plan?id=${result.carId}`);
       } else {
         toast.error(result.message || "Cillad ayaa dhacday");
@@ -240,7 +238,6 @@ const CarsForSellOrBuy = () => {
             ))}
           </select>
 
-          {/* Fee Information Box */}
           {formData.category && (
             <div className="mt-2 flex items-center gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
               <MdInfo className="text-blue-500" />
@@ -259,7 +256,6 @@ const CarsForSellOrBuy = () => {
           className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none font-bold focus:border-blue-400"
         />
 
-        {/* Brand, Model, Year, Gear */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <input
             placeholder="Brand"
@@ -297,7 +293,6 @@ const CarsForSellOrBuy = () => {
           </select>
         </div>
 
-        {/* Region & City */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <select
             value={formData.region}
@@ -345,7 +340,6 @@ const CarsForSellOrBuy = () => {
           />
         )}
 
-        {/* Price & Mileage */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <input
             type="number"
@@ -377,7 +371,6 @@ const CarsForSellOrBuy = () => {
           className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
         />
 
-        {/* Image Upload */}
         <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl">
           <div className="flex flex-wrap gap-4">
             <label className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">

@@ -30,10 +30,11 @@ function CarLinks() {
   }, []);
 
   const itemsToDisplay = useMemo(() => {
-    if (!query.trim()) return items;
+    const sourceItems = Array.isArray(items) ? items : [];
+    if (!query.trim()) return sourceItems;
 
     const lowerQuery = query.toLowerCase();
-    return items.filter((item) => {
+    return sourceItems.filter((item) => {
       const titleMatch = item.title?.toLowerCase().includes(lowerQuery);
       const cityMatch = item.city?.toLowerCase().includes(lowerQuery);
       const descText = Array.isArray(item.description)
@@ -54,13 +55,13 @@ function CarLinks() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-4">
+    <div className="container mx-auto px-2 py-2">
       <SearchInput onSearch={setQuery} />
-      <div className="pt-2">
+      <div className="pt-1">
         <PathSegmentsDisplay />
       </div>
 
-      <div className="grid grid-cols-3 gap-3 py-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-3 gap-2 py-4 max-w-4xl mx-auto sm:grid-cols-4 lg:grid-cols-4">
         {carsSubCategories.map((category) => (
           <Link
             key={category.title}
@@ -69,16 +70,16 @@ function CarLinks() {
               (category as any).href ||
               `/cars/${category.title.toLowerCase().replace(/\s/g, "-")}`
             }
-            className="flex flex-col items-center justify-center p-5 rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:bg-blue-50/10 group text-center"
+            className="flex flex-col items-center justify-center p-2 rounded-lg border border-gray-100 bg-white hover:border-blue-200 transition-all active:scale-95 group text-center"
           >
-            <div className="text-3xl text-blue-500 mb-3 transform transition-transform duration-300 group-hover:-translate-y-0.5">
+            <div className="text-2xl text-blue-500 mb-1 transition-transform duration-300 group-hover:-translate-y-0.5 sm:text-3xl">
               {category.icon}
             </div>
-            <div className="flex flex-col items-center w-full">
-              <span className="text-[15px] font-medium text-gray-800 leading-snug group-hover:text-blue-600">
+            <div className="flex flex-col items-center w-full leading-tight">
+              <span className="text-[11px] font-medium text-gray-700 sm:text-sm group-hover:text-blue-600">
                 {category.so}
               </span>
-              <span className="text-[12px] text-gray-400 font-normal uppercase tracking-normal mt-1.5">
+              <span className="text-[9px] text-gray-400 font-normal uppercase tracking-tighter sm:text-[10px]">
                 {category.title}
               </span>
             </div>
@@ -86,20 +87,18 @@ function CarLinks() {
         ))}
       </div>
 
-      <div className="flex items-center justify-center my-6">
+      <div className="flex items-center justify-center my-4">
         <WantSell />
       </div>
 
       <div className="px-4 mb-4 flex justify-between items-center border-b border-gray-100 pb-2">
-        <h2 className="text-lg font-medium text-gray-700 uppercase tracking-tight">
-          {query ? "Natiijada Raadinta" : "Dhammaan Gawaarida"}
-          <span className="ml-2 text-blue-500 text-base">
-            ({itemsToDisplay.length})
-          </span>
+        <h2 className="text-base font-medium text-gray-700 uppercase tracking-tight sm:text-lg">
+          {query ? "Natiijada Raadinta" : "Gawaarida"}
+          <span className="ml-2 text-blue-500">({itemsToDisplay.length})</span>
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
         {itemsToDisplay.length > 0
           ? itemsToDisplay.map((item, index) => (
               <UniversalCard

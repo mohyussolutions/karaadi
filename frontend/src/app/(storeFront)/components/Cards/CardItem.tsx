@@ -1,158 +1,116 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import UniversalCard from "./UniversalCard";
+import React, { useState, useMemo } from "react";
 import SeeEmore from "../shared/buttons/SeeEmore";
+import UniversalCard from "./UniversalCard";
+import { GRID_CONFIG } from "@/actions/constant/constant";
+
+interface ItemData {
+  id: string | number;
+  _id?: string | number;
+  title?: string;
+  description?: string;
+  city?: string;
+  price?: number;
+  images?: string[];
+  maGaday?: boolean;
+  category?: string;
+  categoryKey?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  mileage?: number;
+  area?: string;
+  rooms?: number;
+  company?: string;
+  location?: string;
+}
 
 interface ItemsGridProps {
-  fetchFunctions?: {
-    getBoats: () => Promise<any>;
-    getCars: () => Promise<any>;
-    getJobs: () => Promise<any>;
-    getMarketplaceItems: () => Promise<any>;
-    getMotorcycles: () => Promise<any>;
-    getRealEstateListings: () => Promise<any>;
-    getTraktors: () => Promise<any>;
-  };
-  initialData?: any;
+  items: ItemData[];
 }
 
-const ITEMS_PER_LOAD = 12;
-const INITIAL_LOAD = 24;
-const MAX_ITEMS = 100;
+export default function ItemsGrid({ items }: ItemsGridProps) {
+  const [visibleCount, setVisibleCount] = useState<number>(
+    GRID_CONFIG.INITIAL_LOAD,
+  );
 
-export default function ItemsGrid({
-  fetchFunctions,
-  initialData,
-}: ItemsGridProps) {
-  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
-  const [allItems, setAllItems] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(!initialData);
+  if (!items || items.length === 0) {
+    return (
+      <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 mx-4">
+        <p className="text-gray-400 font-medium italic">
+          Ma jiraan waxyaabo la helay
+        </p>
+      </div>
+    );
+  }
 
-  const processData = useCallback((data: any) => {
-    const toSafe = (res: any) => (Array.isArray(res) ? res : []);
-    const combined = [
-      ...toSafe(data.boats).map((i) => ({ ...i, category: "boats" })),
-      ...toSafe(data.cars).map((i) => ({ ...i, category: "cars" })),
-      ...toSafe(data.jobs).map((i) => ({ ...i, category: "jobs" })),
-      ...toSafe(data.marketplace).map((i) => ({
-        ...i,
-        category: "marketplace",
-      })),
-      ...toSafe(data.motorcycles).map((i) => ({
-        ...i,
-        category: "motorcycles",
-      })),
-      ...toSafe(data.realEstate || data.real_estate).map((i) => ({
-        ...i,
-        category: "real-estate",
-      })),
-      ...toSafe(data.tractors || data.traktors).map((i) => ({
-        ...i,
-        category: "tractors",
-      })),
-    ];
+  const itemsToShow = useMemo(() => {
+    return items.slice(0, Math.min(visibleCount, GRID_CONFIG.MAX_ITEMS));
+  }, [items, visibleCount]);
 
-    return combined.map((item) => ({
-      ...item,
-      id: item.id || item._id,
-      price: Number(item.price) || 0,
-      images: Array.isArray(item.images) ? item.images : [],
-    }));
-  }, []);
-
-  useEffect(() => {
-    if (initialData) {
-      setAllItems(processData(initialData));
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchAll = async () => {
-      if (!fetchFunctions) return;
-      try {
-        const [
-          boats,
-          cars,
-          jobs,
-          marketplace,
-          motorcycles,
-          realEstate,
-          tractors,
-        ] = await Promise.all([
-          fetchFunctions.getBoats(),
-          fetchFunctions.getCars(),
-          fetchFunctions.getJobs(),
-          fetchFunctions.getMarketplaceItems(),
-          fetchFunctions.getMotorcycles(),
-          fetchFunctions.getRealEstateListings(),
-          fetchFunctions.getTraktors(),
-        ]);
-
-        setAllItems(
-          processData({
-            boats,
-            cars,
-            jobs,
-            marketplace,
-            motorcycles,
-            realEstate,
-            tractors,
-          }),
-        );
-      } catch (err) {
-        console.error("Data fetch error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAll();
-  }, [fetchFunctions, initialData, processData]);
-
-  const itemsToShow = allItems.slice(0, Math.min(visibleCount, MAX_ITEMS));
+  const hasMore =
+    items.length > visibleCount && visibleCount < GRID_CONFIG.MAX_ITEMS;
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-8">
-        {isLoading
-          ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-          : itemsToShow.map((item, index) => (
-              <UniversalCard
-                key={item.id ? `${item.category}-${item.id}` : `idx-${index}`}
-                {...item}
-              />
-            ))}
+    <div className="relative transition-opacity pb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
+        {itemsToShow.map((item, index) => {
+          const category = item.category || item.categoryKey || "marketplace";
+          const itemId = item.id || item._id || index;
+
+          return (
+            <UniversalCard
+              key={`${category}-${itemId}`}
+              id={itemId}
+              title={item.title || "Untitled"}
+              description={item.description}
+              city={item.city || ""}
+              price={item.price || 0}
+              images={item.images || []}
+              maGaday={item.maGaday}
+              category={category}
+              make={item.make}
+              model={item.model}
+              year={item.year}
+              mileage={item.mileage}
+              area={item.area}
+              rooms={item.rooms}
+              company={item.company}
+              location={item.location}
+            />
+          );
+        })}
       </div>
 
-      {!isLoading && allItems.length > visibleCount && (
-        <div className="flex justify-center pb-16">
-          <SeeEmore
-            onClick={() =>
-              setVisibleCount((prev) =>
-                Math.min(prev + ITEMS_PER_LOAD, MAX_ITEMS),
-              )
-            }
-          />
+      {hasMore && (
+        <div className="flex flex-col items-center justify-center pt-8 pb-10 space-y-3">
+          <div className="group relative">
+            <SeeEmore
+              onClick={() =>
+                setVisibleCount((prev) =>
+                  Math.min(
+                    prev + GRID_CONFIG.ITEMS_PER_LOAD,
+                    GRID_CONFIG.MAX_ITEMS,
+                  ),
+                )
+              }
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200 transition-all transform hover:scale-105 active:scale-95 px-8 py-3 rounded-full font-bold"
+            />
+          </div>
         </div>
       )}
-    </div>
-  );
-}
 
-function SkeletonCard() {
-  return (
-    <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white h-[400px] flex flex-col">
-      <div className="h-56 w-full bg-gray-200 animate-pulse" />
-      <div className="p-4 space-y-3 flex-grow">
-        <div className="h-6 w-1/3 bg-gray-200 animate-pulse rounded" />
-        <div className="h-4 w-full bg-gray-200 animate-pulse rounded" />
-        <div className="h-4 w-2/3 bg-gray-200 animate-pulse rounded" />
-        <div className="mt-auto pt-4 flex justify-between">
-          <div className="h-3 w-16 bg-gray-100 animate-pulse rounded" />
-          <div className="h-3 w-16 bg-gray-100 animate-pulse rounded" />
-        </div>
-      </div>
+      {visibleCount >= GRID_CONFIG.MAX_ITEMS &&
+        items.length > GRID_CONFIG.MAX_ITEMS && (
+          <div className="flex items-center justify-center space-x-4 py-10">
+            <div className="h-[1px] w-12 bg-gray-200" />
+            <span className="text-gray-400 text-xs font-medium uppercase tracking-tighter">
+              Waxaad aragtay dhammaan {GRID_CONFIG.MAX_ITEMS} shay
+            </span>
+            <div className="h-[1px] w-12 bg-gray-200" />
+          </div>
+        )}
     </div>
   );
 }

@@ -1,51 +1,35 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  getAdvertisements,
-  trackAdClick,
-} from "@/actions/categories/advertisementService";
+import React from "react";
+import { trackAdClick } from "@/actions/categories/advertisementService";
 
-const BackgroundAdWrapper = ({ children }: { children: React.ReactNode }) => {
-  const [ad, setAd] = useState<any>(null);
+interface AdProps {
+  children: React.ReactNode;
+  ad: any;
+}
 
-  useEffect(() => {
-    const fetchBgAd = async () => {
-      try {
-        const data = await getAdvertisements("background", 1);
-        if (data?.[0]) setAd(data[0]);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchBgAd();
-  }, []);
-
+const BackgroundAdWrapper = ({ children, ad }: AdProps) => {
   const handleBgClick = () => {
-    if (ad?.link) {
-      trackAdClick(ad.id);
-      const link = ad.link.startsWith("http") ? ad.link : `https://${ad.link}`;
-      window.open(link, "_blank", "noopener,noreferrer");
-    }
+    if (!ad?.link) return;
+    trackAdClick(ad.id);
+    const link = ad.link.startsWith("http") ? ad.link : `https://${ad.link}`;
+    window.open(link, "_blank", "noopener,noreferrer");
   };
 
-  if (ad?.imageUrl) {
-    return (
-      <div
-        onClick={handleBgClick}
-        className="min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex flex-col"
-        style={{
-          backgroundColor: ad?.imageUrl,
-          backgroundImage: ad?.imageUrl ? `url("${ad.imageUrl}")` : undefined,
-          cursor: ad?.link ? "pointer" : "default",
-        }}
-      >
-        {children}
-      </div>
-    );
-  }
+  if (!ad?.imageUrl) return <>{children}</>;
 
-  return <>{children}</>;
+  return (
+    <div
+      onClick={handleBgClick}
+      className="min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex flex-col transition-opacity duration-500"
+      style={{
+        backgroundImage: `url("${ad.imageUrl}")`,
+        cursor: ad?.link ? "pointer" : "default",
+      }}
+    >
+      {children}
+    </div>
+  );
 };
 
 export default BackgroundAdWrapper;

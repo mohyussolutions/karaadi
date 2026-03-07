@@ -5,518 +5,336 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
 import { User } from "@/app/utils/types/user";
-
-// Ensure 'cities' is imported if it contains city data for filtering
 import {
-  regions,
-  cities,
-} from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegions";
-import { jobsSubCategories as jobsSubCategoriesFlat } from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/subCategories";
+  getAllRegions,
+  getAllCities,
+  addCity,
+} from "@/actions/categories/geoAction";
+import { verifySession } from "@/actions/core/authAction";
+import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 import {
   applicationMethods,
   educationLevels,
   experienceLevels,
-} from "@/app/(storeFront)/components/navbar/mainCreateAdCategories/nestedSubcategoryForJobs";
-import { allCategories } from "@/app/(storeFront)/links/categories";
-import { apiService } from "@/actions/core/authAction";
+} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForJobs";
+import { createJobListing } from "@/actions/categories/jobActions";
 
 const CreateAdForJobs = () => {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  const [mainCategory, setMainCategory] = useState("Jobs");
-  const [title, setTitle] = useState("");
-  const [jobType, setJobType] = useState("");
-  const [jobField, setJobField] = useState("");
-  const [region, setRegion] = useState("");
-  const [city, setCity] = useState("");
-  const [description, setDescription] = useState("");
-  const [salaryRange, setSalaryRange] = useState("");
-  const [companyName, setCompanyName] = useState("");
-
-  const [experienceLevel, setExperienceLevel] = useState("");
-  const [educationLevel, setEducationLevel] = useState("");
-  const [requiredSkills, setRequiredSkills] = useState("");
-  const [applicationMethod, setApplicationMethod] = useState("");
-  const [applicationContact, setApplicationContact] = useState("");
-  const [applicationDeadline, setApplicationDeadline] = useState("");
-  // State for dynamically filtered cities (array of strings: city names)
+  const [token, setToken] = useState("");
+  const [regions, setRegions] = useState<any[]>([]);
+  const [allCities, setAllCities] = useState<any[]>([]);
   const [filteredCities, setFilteredCities] = useState<string[]>([]);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // New states for custom city feature
+  const [formData, setFormData] = useState({
+    title: "",
+    mainCategory: "Jobs",
+    jobType: "",
+    region: "",
+    city: "",
+    description: "",
+    salaryRange: "",
+    companyName: "",
+    experienceLevel: "",
+    educationLevel: "",
+    requiredSkills: "",
+    applicationMethod: "",
+    applicationContact: "",
+    applicationDeadline: "",
+    newCityName: "",
+    newCitySo: "",
+  });
+
   const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const [newCityName, setNewCityName] = useState("");
-  const [newCitySo, setNewCitySo] = useState("");
-
-  const inputStyle =
-    "w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm";
-  const labelStyle =
-    "block mb-2 font-medium text-gray-700 text-sm md:text-base";
-  const sectionHeaderStyle =
-    "text-xl font-semibold text-gray-800 border-b pb-2 mb-4";
-
-  // Unified change handler for city
-  const handleCityChange = (value: string) => {
-    if (value === "custom") {
-      setShowNewCityInputs(true);
-      setCity(""); // Clear city state when custom is selected
-    } else {
-      setShowNewCityInputs(false);
-      setNewCityName("");
-      setNewCitySo("");
-      setCity(value);
-    }
-  };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const sessionUser = await apiService.verifySession();
-        if (!sessionUser) {
-          toast.info("Please log in to post a job advertisement.");
-          router.push("/login");
-        } else {
-          setCurrentUser(sessionUser);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
+    const initPage = async () => {
+      const session = await verifySession();
+      if (!session) {
+        toast.info("Please log in.");
+        router.push("/login");
+        return;
       }
+      setCurrentUser(session);
+      setToken(localStorage.getItem("userToken") || "");
+
+      const [regs, cts] = await Promise.all([getAllRegions(), getAllCities()]);
+      setRegions(regs || []);
+      setAllCities(cts || []);
     };
-    fetchUser();
+    initPage();
   }, [router]);
 
   useEffect(() => {
-    if (jobType) {
-      const selectedJob = jobsSubCategoriesFlat.find(
-        (job) => job.key === jobType,
-      );
-      setJobField(selectedJob?.title || "");
-
-      const jobTitlePart = selectedJob?.so || selectedJob?.title || jobType;
-
-      setTitle(`Job: [${jobTitlePart}] - ${companyName || ""}`);
-    } else {
-      setJobField("");
-      setTitle("");
+    if (formData.region) {
+      const filtered = allCities
+        .filter((c) => c.regionId === formData.region)
+        .map((c) => c.name);
+      setFilteredCities(filtered);
     }
-  }, [jobType, companyName]);
+  }, [formData.region, allCities]);
 
-  // New useEffect to filter cities when region changes
-  useEffect(() => {
-    if (region) {
-      // Assuming 'cities' is an array of objects, each having a 'regionId' property and 'name' property
-      const citiesInRegion = cities
-        .filter((city) => city.regionId === region)
-        .map((city) => city.name); // Map to array of city names (strings)
-      setFilteredCities(citiesInRegion);
-    } else {
-      setFilteredCities([]);
-    }
-    // Reset city selection and custom inputs when region changes
-    setCity("");
-    setShowNewCityInputs(false);
-    setNewCityName("");
-    setNewCitySo("");
-  }, [region]);
-
-  const isFormValid = () => {
-    // Check if basic fields are valid, then check city/custom city validity
-    const baseValid =
-      mainCategory &&
-      title &&
-      jobType &&
-      jobField &&
-      region &&
-      description &&
-      salaryRange &&
-      companyName &&
-      experienceLevel &&
-      educationLevel &&
-      applicationMethod &&
-      applicationContact &&
-      applicationDeadline &&
-      currentUser &&
-      currentUser._id;
-
-    const cityValid = showNewCityInputs
-      ? newCityName.trim().length > 0 // Required if custom input is shown
-      : city.length > 0; // Required if custom input is not shown
-
-    return baseValid && cityValid;
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCityChange = (value: string) => {
+    if (value === "custom") {
+      setShowNewCityInputs(true);
+      setFormData((prev) => ({ ...prev, city: "" }));
+    } else {
+      setShowNewCityInputs(false);
+      setFormData((prev) => ({
+        ...prev,
+        city: value,
+        newCityName: "",
+        newCitySo: "",
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Determine the city value to submit
-    let finalCity = city;
-    if (showNewCityInputs) {
-      if (!newCityName) {
-        toast.error("Please enter the new city name.");
-        return;
-      }
-      // Use the custom city name for submission
-      finalCity = newCityName;
-    }
-
-    if (!isFormValid()) {
-      toast.error("Please fill out all required fields.");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      const jobAdData = {
-        title,
-        description,
-        category: mainCategory,
-        subCategory: jobType,
-        region,
-        city: finalCity, // Use the determined city value
-        // Include newCitySo if you need to pass the Somali name to the backend
-        newCitySo: showNewCityInputs ? newCitySo : undefined,
-        salaryRange,
-        jobType: jobType,
-        companyName,
-        experienceLevel,
-        educationLevel,
-        requiredSkills: requiredSkills
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0),
-        applicationMethod,
-        applicationContact,
-        applicationDeadline,
-        user: currentUser!._id,
-        so: jobField,
+      let finalCity = formData.city;
+      if (showNewCityInputs) {
+        const newCityData = {
+          id: "",
+          name: formData.newCityName,
+          regionId: formData.region,
+          isActive: true,
+        };
+
+        await addCity(
+          formData.newCityName,
+          formData.newCitySo,
+          formData.region,
+          newCityData,
+        );
+        finalCity = formData.newCityName;
+      }
+
+      const jobData = {
+        title: formData.title,
+        description: formData.description,
+        location: `${formData.region}, ${finalCity}`,
+        company: formData.companyName,
+        salary: parseInt(formData.salaryRange.replace(/[^0-9]/g, "")) || 0,
+        type: formData.jobType as any,
+        experienceLevel: formData.experienceLevel,
+        educationLevel: formData.educationLevel,
+        applicationMethod: formData.applicationMethod,
+        applicationContact: formData.applicationContact,
+        deadline: formData.applicationDeadline,
+        requiredSkills: formData.requiredSkills.split(",").map((s) => s.trim()),
       };
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await createJobListing(jobData as any, token);
 
-      console.log("Job Ad Submitted:", jobAdData);
-
-      toast.success("Job advertisement posted successfully!");
+      if (res.success) {
+        toast.success("Job advertisement posted successfully!");
+        router.push("/jobs");
+      } else {
+        toast.error(res.message || "Failed to post job.");
+      }
     } catch (error) {
-      console.error("Failed to create job ad:", error);
-      toast.error("Failed to post job advertisement. Please try again.");
+      toast.error("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!currentUser)
-    return <div className="text-center p-6">Loading user data...</div>;
+  if (!currentUser) return <div className="p-10 text-center">Loading...</div>;
 
   return (
     <div className="max-w-3xl mx-auto my-12 p-8 bg-white rounded-xl shadow-2xl border border-gray-100">
       <ToastContainer />
-      <h1 className="text-4xl font-extrabold mb-8 text-center text-blue-800">
-        📝 Post a Job Advertisement
+      <h1 className="text-3xl font-bold mb-8 text-blue-800 text-center">
+        Post a Job
       </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div>
-          <h2 className={sectionHeaderStyle}>Job & Company Information</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
-              <label className={labelStyle}>Main Category</label>
-              <select
-                value={mainCategory}
-                onChange={(e) => setMainCategory(e.target.value)}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select Main Category</option>
-                {allCategories
-                  .filter((cat) => cat.key === "Jobs")
-                  .map((cat) => (
-                    <option key={cat.key} value={cat.key}>
-                      {cat.so} ({cat.name})
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className={labelStyle}>Job Type (Subcategory)</label>
-              <select
-                value={jobType}
-                onChange={(e) => {
-                  setJobType(e.target.value);
-                }}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select Job Type</option>
-                {jobsSubCategoriesFlat.map((job) => (
-                  <option key={job.key} value={job.key}>
-                    {job.so} ({job.title})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label className={labelStyle}>Company Name</label>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Enter Company Name"
-              required
-              className={inputStyle}
-            />
-          </div>
-
-          <div className="mt-6">
-            <label className={labelStyle}>Cinwaanka Shaqada (Job Title)</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Tusaale: Injineer Sare oo Web-ka ah (e.g., Senior Web Developer)"
-              required
-              className={inputStyle}
-            />
-          </div>
-        </div>
-
-        <div>
-          <h2 className={sectionHeaderStyle}>Candidate Requirements</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>Experience Level</label>
-              <select
-                value={experienceLevel}
-                onChange={(e) => setExperienceLevel(e.target.value)}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select Experience</option>
-                {experienceLevels.map((level) => (
-                  <option key={level.value} value={level.value}>
-                    {level.so} ({level.title})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelStyle}>Education Level</label>
-              <select
-                value={educationLevel}
-                onChange={(e) => setEducationLevel(e.target.value)}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select Education</option>
-                {educationLevels.map((level) => (
-                  <option key={level.value} value={level.value}>
-                    {level.so} ({level.title})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label className={labelStyle}>
-              Required Skills (Comma Separated)
-            </label>
-            <input
-              type="text"
-              value={requiredSkills}
-              onChange={(e) => setRequiredSkills(e.target.value)}
-              placeholder="e.g., HTML, CSS, React, Somali, English"
-              className={inputStyle}
-            />
-          </div>
-        </div>
-
-        <div>
-          <h2 className={sectionHeaderStyle}>Location & Compensation</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>Region</label>
-              <select
-                value={region}
-                // When region changes, it triggers the useEffect to filter cities
-                onChange={(e) => setRegion(e.target.value)}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select region</option>
-                {regions.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={labelStyle}>City</label>
-              {/* Updated City selector */}
-              <select
-                value={city}
-                onChange={(e) => handleCityChange(e.target.value)}
-                required={!showNewCityInputs}
-                className={inputStyle}
-                disabled={!region}
-              >
-                <option value="">
-                  {region ? "Select city" : "First select a region"}
-                </option>
-                {filteredCities.map((c) => (
-                  // Assuming filteredCities contains city names (strings)
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-                {/* Custom city option */}
-                <option value="custom" className="font-bold text-blue-600">
-                  Add new city
-                </option>
-              </select>
-            </div>
-          </div>
-
-          {/* Conditional inputs for new city */}
-          {showNewCityInputs && (
-            <div className="grid md:grid-cols-2 gap-6 mt-6 border-t pt-4 border-dashed border-gray-300">
-              <div className="md:col-span-2">
-                <p className="text-sm text-gray-600 mb-2">
-                  Enter details for the new city:
-                </p>
-              </div>
-              <div>
-                <label className={labelStyle}>New City Name (English)</label>
-                <input
-                  type="text"
-                  value={newCityName}
-                  onChange={(e) => setNewCityName(e.target.value)}
-                  placeholder="e.g., New Burao"
-                  required
-                  className={inputStyle}
-                />
-              </div>
-              <div>
-                <label className={labelStyle}>
-                  New City Name (Somali / So)
-                </label>
-                <input
-                  type="text"
-                  value={newCitySo}
-                  onChange={(e) => setNewCitySo(e.target.value)}
-                  placeholder="e.g., Burco Cusub"
-                  className={inputStyle}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6">
-            <label className={labelStyle}>
-              Salary Range (e.g., Monthly/Annually)
-            </label>
-            <input
-              type="text"
-              value={salaryRange}
-              onChange={(e) => setSalaryRange(e.target.value)}
-              placeholder="e.g., $500 - $700 per month"
-              required
-              className={inputStyle}
-            />
-          </div>
-        </div>
-
-        <div>
-          <h2 className={sectionHeaderStyle}>Job Description</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className={labelStyle}>Description & Responsibilities</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detail job responsibilities, required skills, and benefits..."
+            <label className="block text-sm font-medium mb-1">
+              Company Name
+            </label>
+            <input
+              name="companyName"
+              value={formData.companyName}
+              onChange={handleChange}
               required
-              rows={8}
-              className={inputStyle}
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Job Title</label>
+            <input
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
         </div>
 
-        <div>
-          <h2 className={sectionHeaderStyle}>Application Details</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>Application Method</label>
-              <select
-                value={applicationMethod}
-                onChange={(e) => setApplicationMethod(e.target.value)}
-                required
-                className={inputStyle}
-              >
-                <option value="">Select Method</option>
-                {applicationMethods.map((method) => (
-                  <option key={method.value} value={method.value}>
-                    {method.so} ({method.title})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                {applicationMethod === "email"
-                  ? "Email Address"
-                  : applicationMethod === "url"
-                    ? "Application URL"
-                    : applicationMethod === "phone"
-                      ? "Phone Number"
-                      : "Contact Detail"}
-              </label>
-              <input
-                type={
-                  applicationMethod === "email"
-                    ? "email"
-                    : applicationMethod === "url"
-                      ? "url"
-                      : "text"
-                }
-                value={applicationContact}
-                onChange={(e) => setApplicationContact(e.target.value)}
-                placeholder={`Enter required contact: ${applicationMethod}`}
-                required
-                className={inputStyle}
-              />
-            </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Experience Level
+            </label>
+            <select
+              name="experienceLevel"
+              value={formData.experienceLevel}
+              onChange={handleChange}
+              required
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">Select Experience</option>
+              {experienceLevels.map((lvl) => (
+                <option key={lvl.value} value={lvl.value}>
+                  {lvl.title}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="mt-6">
-            <label className={labelStyle}>Application Deadline</label>
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Education Level
+            </label>
+            <select
+              name="educationLevel"
+              value={formData.educationLevel}
+              onChange={handleChange}
+              required
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">Select Education</option>
+              {educationLevels.map((lvl) => (
+                <option key={lvl.value} value={lvl.value}>
+                  {lvl.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-1">Region</label>
+            <select
+              name="region"
+              value={formData.region}
+              onChange={handleChange}
+              required
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">Select Region</option>
+              {regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">City</label>
+            <select
+              value={formData.city}
+              onChange={(e) => handleCityChange(e.target.value)}
+              required={!showNewCityInputs}
+              disabled={!formData.region}
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
+            >
+              <option value="">Select City</option>
+              {filteredCities.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+              <option value="custom" className="text-blue-600 font-bold">
+                Add New City +
+              </option>
+            </select>
+          </div>
+        </div>
+
+        {showNewCityInputs && (
+          <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-dashed border-blue-300">
+            <input
+              name="newCityName"
+              placeholder="City Name (EN)"
+              value={formData.newCityName}
+              onChange={handleChange}
+              required
+              className="border p-2 rounded outline-none focus:border-blue-500"
+            />
+            <input
+              name="newCitySo"
+              placeholder="City Name (SO)"
+              value={formData.newCitySo}
+              onChange={handleChange}
+              className="border p-2 rounded outline-none focus:border-blue-500"
+            />
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Salary Range
+            </label>
+            <input
+              name="salaryRange"
+              placeholder="e.g. $500 - $1000"
+              value={formData.salaryRange}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Application Deadline
+            </label>
             <input
               type="date"
-              value={applicationDeadline}
-              onChange={(e) => setApplicationDeadline(e.target.value)}
+              name="applicationDeadline"
+              value={formData.applicationDeadline}
+              onChange={handleChange}
               required
-              className={inputStyle}
-              min={new Date().toISOString().split("T")[0]}
+              className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            rows={5}
+            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            required
+          />
         </div>
 
         <button
           type="submit"
-          disabled={!isFormValid() || isSubmitting}
-          className={`w-full py-3 rounded-xl text-white font-bold text-lg tracking-wider transition transform ${
-            isFormValid() && !isSubmitting
-              ? "bg-purple-600 hover:bg-purple-700 shadow-md hover:shadow-lg"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white py-4 rounded-lg font-bold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed uppercase tracking-wide"
         >
-          {isSubmitting ? "Posting Job Ad..." : "Post Job Advertisement"}
+          {isSubmitting ? "Posting..." : "Post Job Advertisement"}
         </button>
       </form>
     </div>

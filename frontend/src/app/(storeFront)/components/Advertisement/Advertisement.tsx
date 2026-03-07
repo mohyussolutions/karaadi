@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  getAdvertisements,
-  trackAdClick,
-} from "@/actions/categories/advertisementService";
+import React from "react";
+import Image from "next/image";
+import { trackAdClick } from "@/actions/categories/advertisementService";
 
-interface SingleAd {
+export interface SingleAd {
   id: string;
   title: string;
   description: string;
@@ -15,45 +13,17 @@ interface SingleAd {
   buttonText: string;
 }
 
-const AdvertisementComponent: React.FC<{
-  position?: string;
-  limit?: number;
-  ads?: SingleAd[];
-}> = ({ position, limit = 1, ads: staticAds }) => {
-  const [ads, setAds] = useState<SingleAd[]>([]);
-  const [loading, setLoading] = useState(!staticAds);
+interface AdvertisementProps {
+  ads: SingleAd[];
+}
 
-  useEffect(() => {
-    if (staticAds) {
-      setAds(staticAds);
-      return;
-    }
-    const fetchAds = async () => {
-      try {
-        const data = await getAdvertisements(position, limit);
-        setAds(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAds();
-  }, [position, limit, staticAds]);
-
-  const handleAdClick = async (adId: string, link: string) => {
-    try {
-      await trackAdClick(adId);
-    } catch (error) {
-      console.error(error);
-    }
-    window.open(link, "_blank");
+const AdvertisementComponent: React.FC<AdvertisementProps> = ({ ads }) => {
+  const handleAdClick = (adId: string, link: string) => {
+    trackAdClick(adId).catch(console.error);
+    const formattedLink = link.startsWith("http") ? link : `https://${link}`;
+    window.open(formattedLink, "_blank", "noopener,noreferrer");
   };
 
-  if (loading)
-    return (
-      <div className="w-full h-[600px] bg-white/10 animate-pulse rounded-lg" />
-    );
   if (!ads.length) return null;
 
   return (
@@ -64,11 +34,14 @@ const AdvertisementComponent: React.FC<{
           onClick={() => handleAdClick(ad.id, ad.link)}
           className="bg-white rounded-lg overflow-hidden border border-gray-200 cursor-pointer transition hover:shadow-md flex flex-col h-full min-h-[500px]"
         >
-          <div className="relative w-full h-1/2 min-h-[250px]">
-            <img
+          <div className="relative w-full aspect-[4/5] min-h-[250px]">
+            <Image
               src={ad.imageUrl}
               alt={ad.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 300px"
+              priority
             />
           </div>
           <div className="p-4 flex flex-col flex-grow justify-between bg-white">
@@ -76,7 +49,7 @@ const AdvertisementComponent: React.FC<{
               <h2 className="text-base font-black text-gray-900 leading-tight mb-2 uppercase">
                 {ad.title}
               </h2>
-              <p className="text-xs text-gray-600 leading-relaxed overflow-hidden">
+              <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
                 {ad.description}
               </p>
             </div>

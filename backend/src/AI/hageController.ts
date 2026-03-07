@@ -1,83 +1,54 @@
 import { Request, Response } from "express";
-import OpenAI from "openai";
-import prisma from "../core/utils/db.js";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-export const getHageStatus = async (req: Request, res: Response) => {
-  try {
-    const [cars, boats, realEstate, marketplace] = await Promise.all([
-      prisma.car.count({ where: { maGaday: false } }),
-      prisma.boat.count({ where: { maGaday: false } }),
-      prisma.realEstate.count({ where: { maGaday: false } }),
-      prisma.marketplace.count({ where: { maGaday: false } }),
-    ]);
-
-    res.json({
-      status: "online",
-      inventory: { cars, boats, realEstate, marketplace },
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch status" });
-  }
-};
+import prisma from "src/core/utils/db.ts";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const handleHageChat = async (req: Request, res: Response) => {
+  const { message, city, maxPrice, category } = req.body;
+
   try {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ error: "Message is required" });
+    const contextData = await (prisma as any)[category || "car"].findMany({
+      where: {
+        region: { contains: city, mode: "insensitive" },
+        price: { lte: Number(maxPrice) || 1000000 },
+        maGaday: false,
+      },
+      select: {
+        title_en: true,
+        title_so: true,
+        price: true,
+        region: true,
+        id: true,
+      },
+      take: 10,
+    });
 
-    const lowerMsg = message.toLowerCase();
-    let item = null;
-    let itemType = "";
+    const systemPrompt = `Context: ${JSON.stringify(contextData)}`;
 
-    if (lowerMsg.includes("car") || lowerMsg.includes("gaari")) {
-      item = await prisma.car.findFirst({
-        where: { maGaday: false },
-        orderBy: { createdAt: "desc" },
-      });
-      itemType = "cars";
-    } else if (lowerMsg.includes("boat") || lowerMsg.includes("doon")) {
-      item = await prisma.boat.findFirst({
-        where: { maGaday: false },
-        orderBy: { createdAt: "desc" },
-      });
-      itemType = "boats";
-    } else if (lowerMsg.includes("guri") || lowerMsg.includes("realestate")) {
-      item = await prisma.realEstate.findFirst({
-        where: { maGaday: false },
-        orderBy: { createdAt: "desc" },
-      });
-      itemType = "real-estate";
+    const endpoint = process.env.AI_AGENCY_API;
+    if (!endpoint) {
+      return res
+        .status(500)
+        .json({ error: "AI_AGENCY_API endpoint not configured." });
     }
 
-    if (item) {
-      const link = `http://localhost:3000/storeFront/${itemType}/${item.id}`;
-      return res.json({
-        reply: `Waxaan kuu helay: ${item.title}\nQiimaha: $${item.price}\nGobolka: ${item.region || item.city}\nLink: ${link}`,
-      });
-    }
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        systemPrompt,
+        userMessage: message,
+      }),
+    });
 
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: message }],
-        temperature: 0.7,
-      });
-      return res.json({ reply: response.choices[0].message.content });
-    } catch (err: any) {
-      const latestAds = await prisma.car.findMany({
-        take: 1,
-        orderBy: { createdAt: "desc" },
-      });
-      const adTitle =
-        latestAds.length > 0 ? latestAds[0].title : "alaab kale oo cusub";
-
-      return res.json({
-        reply: `Waan ka xunnahay, adeegga AI-ga hadda waa nasasho. Laakiin waxaan kuu haynaa: ${adTitle}. Fadlan fiiri menu-ga sare.`,
-      });
+    const data: any = await response.json();
+    if (!data.reply) {
+      return res.status(500).json({ error: "AI response invalid or empty." });
     }
-  } catch (err) {
-    res.status(500).json({ error: "Internal server error" });
+    res.json({ reply: data.reply });
+  } catch (error) {
+    res.status(500).json({ error: "Hage is offline." });
   }
 };

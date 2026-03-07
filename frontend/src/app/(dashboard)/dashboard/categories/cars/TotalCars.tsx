@@ -2,23 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+import { getTotalCars } from "@/actions/categories/carActions";
 
 export default function TotalCars() {
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTotalCars = async () => {
+    const loadTotal = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/cars/total", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setTotal(data.totalCars ?? 0);
-        }
+        const data = await getTotalCars();
+        setTotal(data);
       } catch (err) {
         setTotal(0);
       } finally {
@@ -26,7 +20,7 @@ export default function TotalCars() {
       }
     };
 
-    fetchTotalCars();
+    loadTotal();
   }, []);
 
   return (

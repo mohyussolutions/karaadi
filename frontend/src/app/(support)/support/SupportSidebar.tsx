@@ -3,10 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 import { useRouter, usePathname } from "next/navigation";
-import { FiSearch, FiHeadphones, FiLogOut } from "react-icons/fi";
+import { FiSearch, FiHeadphones, FiLogOut, FiX } from "react-icons/fi";
 import { verifySession, logout } from "@/actions/core/authAction";
 
-export default function SupportSidebar() {
+interface SupportSidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [hasMounted, setHasMounted] = useState(false);
@@ -35,8 +40,21 @@ export default function SupportSidebar() {
   };
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-72 bg-[#09090b] border-r border-zinc-800/50 flex flex-col z-30 shadow-2xl">
-      <div className="p-7 space-y-8">
+    <aside
+      className={`fixed md:static inset-y-0 left-0 z-40 w-72 h-screen bg-[#09090b] border-r border-zinc-800/50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out
+        ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+    >
+      <div className="md:hidden flex justify-end p-4">
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          aria-label="Close sidebar"
+        >
+          <FiX size={20} />
+        </button>
+      </div>
+
+      <div className="p-7 pt-0 md:pt-7 space-y-8">
         <div className="flex items-center gap-4 px-1">
           <div className="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-600/20">
             <FiHeadphones size={22} />

@@ -1,13 +1,21 @@
 import { apiUrlsForAds } from "../constant/constant";
 
 export const getMyAds = async (accessToken?: string) => {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: any = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   const res = await fetch(apiUrlsForAds.MY_ADS, {
     method: "GET",
     headers,
     credentials: "include",
+    cache: "no-store",
+    next: { revalidate: 0 },
   });
 
   if (res.status === 401) throw new Error("Unauthorized. Please login again.");
@@ -27,18 +35,17 @@ export const getMyAds = async (accessToken?: string) => {
 };
 
 export const updateAd = async (id: string, data: Record<string, any>) => {
-  const payload = {
-    title: data.title,
-    description: data.description,
-    price: data.price,
-    maGaday: data.maGaday,
-  };
-
   const res = await fetch(`${apiUrlsForAds.UPDATEAds}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      title: data.title,
+      description: data.description,
+      price: data.price,
+      maGaday: data.maGaday,
+    }),
+    cache: "no-store",
   });
 
   const result = await res.json();
@@ -52,6 +59,7 @@ export const deleteAd = async (id: string) => {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      cache: "no-store",
     });
     return res.ok;
   } catch {
@@ -64,6 +72,7 @@ export async function payToRelist(adId: string) {
     const response = await fetch(`/api/ads/${adId}/pay-to-relist`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      cache: "no-store",
     });
     return response.ok;
   } catch {

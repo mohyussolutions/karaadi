@@ -14,7 +14,7 @@ class CacheManager {
 
   private constructor() {
     this.client = createClient({
-      url: REDIS_CONFIG.URL,
+      url: process.env.REDIS_URL || REDIS_CONFIG.URL,
       socket: {
         reconnectStrategy: (retries) => {
           if (retries > REDIS_CONFIG.MAX_RETRIES)
@@ -26,7 +26,6 @@ class CacheManager {
         },
       },
     }) as RedisClientType;
-
     this.setupEventListeners();
   }
 
@@ -46,8 +45,12 @@ class CacheManager {
     return CacheManager.instance;
   }
 
+  public getClient(): RedisClientType {
+    return this.client;
+  }
+
   public async connect(): Promise<void> {
-    if (!this.isConnected) await this.client.connect();
+    if (!this.isConnected && !this.client.isOpen) await this.client.connect();
   }
 
   public async disconnect(): Promise<void> {
@@ -56,6 +59,29 @@ class CacheManager {
 
   public isReady(): boolean {
     return this.isConnected && this.client.isOpen;
+  }
+
+  public async healthCheck(): Promise<boolean> {
+    try {
+      return (await this.client.ping()) === "PONG";
+    } catch {
+      return false;
+    }
+  }
+
+  public async getMemoryUsage(): Promise<any> {
+    if (!this.isReady()) return { used_memory_human: "0B" };
+    try {
+      const info = await this.client.info("memory");
+      const stats: any = {};
+      info.split("\r\n").forEach((line) => {
+        const [key, value] = line.split(":");
+        if (value) stats[key] = value;
+      });
+      return stats;
+    } catch {
+      return { error: "Error fetching memory" };
+    }
   }
 
   public async get<T>(key: string): Promise<T | null> {
@@ -82,10 +108,18 @@ class CacheManager {
 
   public async deletePattern(pattern: string): Promise<void> {
     if (!this.isReady()) return;
-    for await (const key of this.client.scanIterator({ MATCH: pattern })) {
-      await this.client.del(key);
-    }
-    console.log(chalk.yellow(`[DEL_PATTERN] ${pattern}`));
+    let cursor = "0";
+    do {
+      const reply = await this.client.scan(cursor, {
+        MATCH: pattern,
+        COUNT: 100,
+      });
+      cursor = reply.cursor;
+      if (reply.keys.length > 0) {
+        await this.client.del(reply.keys);
+        console.log(chalk.red(`[DEL PATTERN] ${pattern}`));
+      }
+    } while (cursor !== "0");
   }
 
   public async withCache<T>(
@@ -98,21 +132,6 @@ class CacheManager {
     const freshData = await fetchData();
     await this.set(key, freshData, ttl);
     return freshData;
-  }
-
-  public async healthCheck(): Promise<boolean> {
-    try {
-      return (await this.client.ping()) === "PONG";
-    } catch {
-      return false;
-    }
-  }
-
-  public async getMemoryUsage() {
-    if (!this.isReady()) return "0B";
-    const info = await this.client.info("memory");
-    const match = info.match(/used_memory_human:(.*)/);
-    return match ? match[1].trim() : "0B";
   }
 }
 

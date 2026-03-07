@@ -13,15 +13,6 @@ export const DashboardChartBlock: FC = () => {
     { month: "Jun", revenue: 14500 },
   ];
 
-  const listingsTrend = [
-    { month: "Jan", listings: 1400 },
-    { month: "Feb", listings: 1500 },
-    { month: "Mar", listings: 1700 },
-    { month: "Apr", listings: 1900 },
-    { month: "May", listings: 2100 },
-    { month: "Jun", listings: 2300 },
-  ];
-
   const userSignups = [
     { month: "Jan", users: 800 },
     { month: "Feb", users: 950 },
@@ -30,40 +21,28 @@ export const DashboardChartBlock: FC = () => {
     { month: "May", users: 1350 },
     { month: "Jun", users: 1500 },
   ];
-  const pieColors = [
-    "#6366F1",
-    "#60A5FA",
-    "#10B981",
-    "#FBBF24",
-    "#EF4444",
-    "#F87171",
-  ];
 
   return (
-    <>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LineChartBlock
-          title="Revenue Growth"
-          data={revenueData}
-          dataKey="revenue"
-          stroke="#6366F1"
-        />
-        <LineChartBlock
-          title="Active Listings Trend"
-          data={listingsTrend}
-          dataKey="listings"
-          stroke="#10B981"
-        />
-      </div>
+        <div className="bg-white rounded-xl border p-2 shadow-sm pointer-events-none">
+          <LineChartBlock
+            title="REVENUE SCALING TRAJECTORY"
+            data={revenueData}
+            dataKey="revenue"
+            stroke="#6366F1"
+          />
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LineChartBlock
-          title="User Signups Trend"
-          data={userSignups}
-          dataKey="users"
-          stroke="#3B82F6"
-        />
+        <div className="bg-white rounded-xl border p-2 shadow-sm pointer-events-none">
+          <LineChartBlock
+            title="USER ACQUISITION VELOCITY"
+            data={userSignups}
+            dataKey="users"
+            stroke="#3B82F6"
+          />
+        </div>
       </div>
-    </>
+    </div>
   );
 };

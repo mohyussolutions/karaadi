@@ -1,3 +1,5 @@
+"use client";
+
 import { memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -5,13 +7,14 @@ import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
 
 const CategoryLinks = memo(function CategoryLinks() {
   const iconBaseClasses =
-    "flex items-center justify-center rounded-xl transition-colors duration-300";
-  const iconSizeClasses = "w-16 h-16 sm:w-16 sm:h-16 lg:w-20 lg:h-20";
+    "flex items-center justify-center rounded-xl transition-all duration-300";
+  const iconSizeClasses = "w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14";
 
   return (
-    <div className="grid grid-cols-3 gap-3 px-4 py-6 sm:grid-cols-4 lg:grid-cols-4">
+    <div className="grid grid-cols-4 gap-1.5 px-1 py-2 sm:grid-cols-4 lg:grid-cols-4 max-w-5xl mx-auto">
       {allCategories.map((category) => {
         const isExternal = category.href.startsWith("http");
+        const isSmartsuuq = category.key === "Smartsuuq";
 
         return (
           <Link
@@ -20,28 +23,38 @@ const CategoryLinks = memo(function CategoryLinks() {
             prefetch={false}
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
-            className="flex flex-col items-center text-center group p-2 mt-2 rounded-xl border border-gray-100 bg-white hover:border-blue-200 hover:shadow-sm transition-all active:scale-95"
+            className="flex flex-col items-center text-center group p-1.5 rounded-xl border border-gray-50 bg-white hover:border-blue-200 transition-all active:scale-95"
           >
             <div className={`${iconBaseClasses} ${iconSizeClasses}`}>
               {category.logo ? (
-                <Image
-                  src={category.logo}
-                  alt={category.name ?? "Category"}
-                  width={60}
-                  height={60}
-                  className="object-contain"
-                  loading="lazy"
-                />
+                <div className="relative w-8 h-8 sm:w-10 sm:h-10">
+                  <Image
+                    src={category.logo}
+                    alt={category.name ?? "Category"}
+                    fill
+                    className="object-contain"
+                    loading="lazy"
+                  />
+                </div>
               ) : (
-                <div className="text-3xl text-blue-400 group-hover:text-black transition-colors">
+                <div className="text-2xl text-blue-500 group-hover:text-blue-600 transition-colors">
                   {category.icon}
                 </div>
               )}
             </div>
 
-            <span className="text-sm font-medium text-gray-800 leading-snug pt-2">
-              {category.so}
-            </span>
+            <div className="flex flex-col pt-1">
+              <span
+                className={`text-[12px] sm:text-xs leading-tight
+                  ${isSmartsuuq ? "font-bold text-blue-600" : "font-medium text-gray-700"}
+                `}
+              >
+                {category.so || category.name}
+              </span>
+              <span className="text-[8px] sm:text-[10px] font-normal text-gray-400 leading-tight">
+                {category.name}
+              </span>
+            </div>
           </Link>
         );
       })}

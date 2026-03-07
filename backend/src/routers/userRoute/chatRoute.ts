@@ -10,17 +10,21 @@ import {
   getChatMessages,
   getAllChatsAdmin,
 } from "../../controllers/userController/chatController.ts";
+import {
+  adminAndManager,
+  ProtectRoute,
+} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const chatRoutes = express.Router();
 
-chatRoutes.post("/create", createChat);
-chatRoutes.get("/user/:userId", getUserChats);
-chatRoutes.get("/:chatId", getChatById);
-chatRoutes.delete("/:chatId", deleteChat);
-chatRoutes.get("/conversation/find", getConversation);
-chatRoutes.put("/:chatId", updateChat);
-chatRoutes.get("/user/:userId/archived", getArchivedChats);
-chatRoutes.get("/:chatId/messages", getChatMessages);
-chatRoutes.get("/admin/all", getAllChatsAdmin);
+chatRoutes.post("/create", ProtectRoute, createChat);
+chatRoutes.get("/user/:userId", ProtectRoute, getUserChats);
+chatRoutes.get("/:chatId", ProtectRoute, getChatById);
+chatRoutes.delete("/:chatId", ProtectRoute, deleteChat);
+chatRoutes.get("/conversation/find", ProtectRoute, getConversation);
+chatRoutes.put("/:chatId", ProtectRoute, updateChat);
+chatRoutes.get("/user/:userId/archived", ProtectRoute, getArchivedChats);
+chatRoutes.get("/:chatId/messages", ProtectRoute, getChatMessages);
+chatRoutes.get("/admin/all", ProtectRoute, adminAndManager, getAllChatsAdmin);
 
 export default chatRoutes;

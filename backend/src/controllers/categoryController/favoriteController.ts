@@ -18,13 +18,9 @@ const CACHE_KEYS = {
     `favorite:detail:${favoriteId}:${userId}`,
 };
 
-const selectUserBasic = {
-  select: {
-    id: true,
-    username: true,
-    email: true,
-    profileImage: true,
-  },
+const ensureString = (val: string | string[] | undefined): string => {
+  if (Array.isArray(val)) return val[0];
+  return val || "";
 };
 
 export const createFavorite = async (req: AuthRequest, res: Response) => {
@@ -34,47 +30,41 @@ export const createFavorite = async (req: AuthRequest, res: Response) => {
 
     const { title, description, price, image, itemId, category } = req.body;
 
-    if (!title || !itemId) {
-      return res
-        .status(400)
-        .json({ message: "Title and Item ID are required" });
+    if (!itemId) {
+      return res.status(400).json({ message: "Item ID is required" });
     }
 
-    const exists = await prisma.favorite.findFirst({
+    const existingFavorite = await prisma.favorite.findFirst({
       where: { userId, itemId },
       select: { id: true },
     });
 
-    if (exists) {
-      return res
-        .status(400)
-        .json({ message: "This item is already in favorites" });
+    if (existingFavorite) {
+      return res.status(400).json({
+        message: "You have already saved this item",
+      });
     }
-
-    const sanitizedCategory = Array.isArray(category)
-      ? category[0]
-      : category || "General";
 
     const favorite = await prisma.favorite.create({
       data: {
         userId,
         itemId,
-        title,
+        title: title || "Untitled",
         description: description || "",
         price: price ? String(price) : null,
         image: image || null,
-        category: sanitizedCategory,
+        category: Array.isArray(category) ? category[0] : category || "General",
       },
     });
 
-    await Promise.all([
+    res.status(201).json(favorite);
+
+    Promise.all([
       cacheManager.delete(CACHE_KEYS.FAVORITES_LIST(userId)),
       cacheManager.delete(CACHE_KEYS.FAVORITES_COUNT(userId)),
-    ]);
-
-    res.status(201).json(favorite);
+    ]).catch(() => null);
   } catch (err) {
-    res.status(500).json({ message: "Failed to save favorite!" });
+    res.status(500).json({ message: "Failed to save favorite" });
   }
 };
 
@@ -90,18 +80,7 @@ export const getMyFavorites = async (req: AuthRequest, res: Response) => {
         return await prisma.favorite.findMany({
           where: { userId },
           orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            price: true,
-            image: true,
-            category: true,
-            itemId: true,
-            createdAt: true,
-            user: selectUserBasic,
-          },
-          take: 100,
+          take: 50,
         });
       },
       CACHE_TTL.LIST,
@@ -118,27 +97,26 @@ export const getFavoriteById = async (req: AuthRequest, res: Response) => {
     const userId = getUserId(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const favoriteId = Array.isArray(req.params.id)
-      ? req.params.id[0]
-      : req.params.id;
+    const favoriteId = ensureString(req.params.id);
     const cacheKey = CACHE_KEYS.FAVORITE_DETAIL(favoriteId, userId);
 
     const favorite = await cacheManager.withCache(
       cacheKey,
       async () => {
-        return await prisma.favorite.findFirst({
-          where: { id: favoriteId, userId },
-          include: { user: selectUserBasic },
+        return await prisma.favorite.findUnique({
+          where: { id: favoriteId },
         });
       },
       CACHE_TTL.DETAIL,
     );
 
-    if (!favorite)
+    if (!favorite || favorite.userId !== userId) {
       return res.status(404).json({ message: "Favorite not found" });
+    }
+
     res.status(200).json(favorite);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch favorite details" });
+    res.status(500).json({ message: "Failed to fetch favorite" });
   }
 };
 
@@ -147,17 +125,17 @@ export const updateFavorite = async (req: AuthRequest, res: Response) => {
     const userId = getUserId(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const favoriteId = Array.isArray(req.params.id)
-      ? req.params.id[0]
-      : req.params.id;
+    const favoriteId = ensureString(req.params.id);
     const { title, description, price, image } = req.body;
 
-    const exists = await prisma.favorite.findFirst({
-      where: { id: favoriteId, userId },
-      select: { id: true },
+    const favorite = await prisma.favorite.findUnique({
+      where: { id: favoriteId },
+      select: { userId: true },
     });
 
-    if (!exists) return res.status(404).json({ message: "Favorite not found" });
+    if (!favorite || favorite.userId !== userId) {
+      return res.status(404).json({ message: "Favorite not found" });
+    }
 
     const updated = await prisma.favorite.update({
       where: { id: favoriteId },
@@ -169,12 +147,12 @@ export const updateFavorite = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    await Promise.all([
+    res.status(200).json(updated);
+
+    Promise.all([
       cacheManager.delete(CACHE_KEYS.FAVORITES_LIST(userId)),
       cacheManager.delete(CACHE_KEYS.FAVORITE_DETAIL(favoriteId, userId)),
-    ]);
-
-    res.status(200).json(updated);
+    ]).catch(() => null);
   } catch (err) {
     res.status(500).json({ message: "Failed to update favorite" });
   }
@@ -185,26 +163,26 @@ export const deleteFavorite = async (req: AuthRequest, res: Response) => {
     const userId = getUserId(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const favoriteId = Array.isArray(req.params.id)
-      ? req.params.id[0]
-      : req.params.id;
+    const favoriteId = ensureString(req.params.id);
 
-    const exists = await prisma.favorite.findFirst({
-      where: { id: favoriteId, userId },
-      select: { id: true },
+    const favorite = await prisma.favorite.findUnique({
+      where: { id: favoriteId },
+      select: { userId: true },
     });
 
-    if (!exists) return res.status(404).json({ message: "Favorite not found" });
+    if (!favorite || favorite.userId !== userId) {
+      return res.status(404).json({ message: "Favorite not found" });
+    }
 
     await prisma.favorite.delete({ where: { id: favoriteId } });
 
-    await Promise.all([
+    res.status(200).json({ message: "Removed from favorites" });
+
+    Promise.all([
       cacheManager.delete(CACHE_KEYS.FAVORITES_LIST(userId)),
       cacheManager.delete(CACHE_KEYS.FAVORITES_COUNT(userId)),
       cacheManager.delete(CACHE_KEYS.FAVORITE_DETAIL(favoriteId, userId)),
-    ]);
-
-    res.status(200).json({ message: "Removed from favorites" });
+    ]).catch(() => null);
   } catch (err) {
     res.status(500).json({ message: "Failed to remove favorite" });
   }

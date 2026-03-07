@@ -8,22 +8,31 @@ import {
   getTotalCars,
   getAllCarsIncludingUnpaid,
 } from "src/controllers/categoryController/carsController.ts";
+import {
+  adminAndManager,
+  ProtectRoute,
+} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const carsRoutes = Router();
 
-carsRoutes.get("/total", getTotalCars);
+carsRoutes.get("/total", ProtectRoute, adminAndManager, getTotalCars);
 
-carsRoutes.get("/all-including-unpaid", getAllCarsIncludingUnpaid);
+carsRoutes.get(
+  "/all-including-unpaid",
+  ProtectRoute,
+  adminAndManager,
+  getAllCarsIncludingUnpaid,
+);
 
-carsRoutes.post("/", async (req: Request, res: Response) => {
+carsRoutes.post("/", ProtectRoute, async (req: Request, res: Response) => {
   await createCar(req as any, res);
 });
 
-carsRoutes.put("/:id", async (req: Request, res: Response) => {
+carsRoutes.put("/:id", ProtectRoute, async (req: Request, res: Response) => {
   await updateCar(req as any, res);
 });
 
-carsRoutes.delete("/:id", async (req: Request, res: Response) => {
+carsRoutes.delete("/:id", ProtectRoute, async (req: Request, res: Response) => {
   await deleteCar(req as any, res);
 });
 

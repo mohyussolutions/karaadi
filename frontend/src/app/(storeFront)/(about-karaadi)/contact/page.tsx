@@ -1,8 +1,11 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MdSend, MdHistory } from "react-icons/md";
 import { verifySession } from "@/actions/core/authAction";
+import { createTicket } from "@/actions/categories/contactMeAction";
+import Loading from "../../components/shared/Loading/Loading";
 
 export default function SupportModule() {
   const router = useRouter();
@@ -12,9 +15,6 @@ export default function SupportModule() {
   const [loading, setLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
-
   useEffect(() => {
     async function init() {
       try {
@@ -22,6 +22,8 @@ export default function SupportModule() {
         if (session) {
           setUser(session);
         }
+      } catch (error) {
+        console.error("Session verification failed", error);
       } finally {
         setIsVerifying(false);
       }
@@ -35,41 +37,42 @@ export default function SupportModule() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/apicontactUs/tickets`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderName: user.username || user.name || "User",
-          senderEmail: user.email,
-          subject,
-          body,
-        }),
+      const result = await createTicket({
+        senderName: user.username || user.name || "User",
+        senderEmail: user.email,
+        subject,
+        body,
       });
 
-      if (res.ok) {
+      if (result.success) {
         setSubject("");
         setBody("");
         router.push("/mine/TicketHistory");
+      } else {
+        alert(result.error || "Failed to submit ticket. Please try again.");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Submission error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (isVerifying)
+  if (isVerifying) {
     return (
-      <div className="p-10 text-center font-medium text-gray-500">
-        Loading...
+      <div className="p-10 text-center font-medium text-gray-500 flex flex-col items-center gap-2">
+        <Loading />
       </div>
     );
-  if (!user)
+  }
+
+  if (!user) {
     return (
       <div className="p-10 text-center font-medium text-gray-500">
-        Please log in.
+        Please log in to submit a support ticket.
       </div>
     );
+  }
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-10">
@@ -94,7 +97,7 @@ export default function SupportModule() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1">
             <input
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 font-medium"
+              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 font-medium transition-all"
               placeholder="Subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
@@ -104,7 +107,7 @@ export default function SupportModule() {
 
           <div className="space-y-1">
             <textarea
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl h-48 outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 font-medium resize-none"
+              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl h-48 outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 font-medium resize-none transition-all"
               placeholder="How can we help you?"
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -114,9 +117,15 @@ export default function SupportModule() {
 
           <button
             disabled={loading}
-            className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 disabled:bg-gray-200 transition-all shadow-lg shadow-blue-100"
+            className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-100"
           >
-            <MdSend /> {loading ? "Sending..." : "Submit Ticket"}
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <MdSend /> Submit Ticket
+              </>
+            )}
           </button>
         </form>
       </div>

@@ -8,11 +8,17 @@ import {
   FaSignOutAlt,
   FaCircle,
   FaLifeRing,
+  FaTimes,
 } from "react-icons/fa";
 import { managerTotalLinks } from "@/app/(links)/managmentLinks/managerLinks";
 import { logout, verifySession } from "@/actions/core/authAction";
 
-export default function ManagerSidebar() {
+interface ManagerSidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function ManagerSidebar({ open, onClose }: ManagerSidebarProps) {
   const pathname = usePathname();
   const [hasMounted, setHasMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -33,8 +39,21 @@ export default function ManagerSidebar() {
   if (!hasMounted) return null;
 
   return (
-    <aside className="w-80 h-screen bg-[#0f172a] text-slate-200 flex flex-col border-r border-slate-800 shadow-2xl">
-      <div className="p-8">
+    <aside
+      className={`fixed md:static inset-y-0 left-0 z-40 w-80 h-screen bg-[#0f172a] text-slate-200 flex flex-col border-r border-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out
+        ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+    >
+      <div className="md:hidden flex justify-end p-4">
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          aria-label="Close sidebar"
+        >
+          <FaTimes className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-8 pt-0 md:pt-8">
         <div className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-slate-800/40 border border-white/5 shadow-inner">
           <div className="relative">
             <FaUserCircle className="w-16 h-16 text-blue-500 shadow-lg" />
@@ -48,9 +67,9 @@ export default function ManagerSidebar() {
                   {user.username || user.email?.split("@")[0]}
                 </h2>
                 <span className="inline-block text-[9px] bg-blue-500/20 text-blue-400 px-3 py-0.5 rounded-full font-black tracking-widest uppercase border border-blue-500/30">
-                  {user.isAdmin
+                  {user.isAdmin === true || user.isAdmin === "true"
                     ? "Admin"
-                    : user.isManager
+                    : user.isManager === true || user.isManager === "true"
                       ? "Manager"
                       : "Support"}
                 </span>

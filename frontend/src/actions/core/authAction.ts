@@ -1,19 +1,29 @@
 import { normalizeUser } from "@/app/(storeFront)/components/hooks/useNormalizeUser";
 import { apiUrls } from "../constant/constant";
 
-interface User {
+export interface User {
   _id: string;
   username: string;
-  name?: string;
   email: string;
   profileImage?: string;
   isAdmin: boolean;
   isSupport: boolean;
   isManager: boolean;
   accessToken?: string;
+  refreshToken?: string;
   phone: string;
   phoneVerified?: boolean;
   token: string;
+  expiresIn?: number;
+}
+
+interface LoginResponse {
+  success: boolean;
+  token: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn?: number;
+  user: any;
 }
 
 const toBool = (v: any) => v === true || v === "true" || v === 1 || v === "1";
@@ -29,22 +39,28 @@ export async function login(email: string, password: string): Promise<User> {
     },
     body: JSON.stringify({ email, password }),
   });
+
   if (!response.ok) throw new Error("Login failed");
-  const data = await response.json();
+
+  const data: LoginResponse = await response.json();
   const u = data.user || data;
+
   const user = normalizeUser({
-    _id: u._id || u.id,
+    _id: u.id || u._id,
     username: u.username,
     email: u.email,
     profileImage: u.profileImage,
     isAdmin: toBool(u.isAdmin),
     isManager: toBool(u.isManager),
     isSupport: toBool(u.isSupport),
-    phone: u.phone,
-    accessToken: data.accessToken || data.token,
+    phone: u.phone || "",
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
     token: data.token,
+    expiresIn: data.expiresIn,
   }) as User;
-  return { ...user, name: user.username || user.name || "" };
+
+  return user;
 }
 
 export async function logout(accessToken?: string): Promise<void> {
@@ -70,28 +86,33 @@ export async function verifySession(
       "Cache-Control": "max-age=0, must-revalidate",
     };
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+
     const response = await fetch(apiUrls.VERIFY_SESSION, {
       method: "POST",
       credentials: "include",
       cache: "no-store",
       headers,
     });
+
     if (response.status === 401) return null;
     if (!response.ok) throw new Error("Session verification failed");
+
     const data = await response.json();
-    const u = data.user;
+    const u = data.user || {};
+
     return normalizeUser({
-      _id: u.sub || u.id || u._id,
-      username: u.preferred_username,
-      name: u.name || u.preferred_username || "",
-      email: u.email,
-      profileImage: u.profileImage,
-      phone: u.phone,
-      token: data.token || accessToken,
-      accessToken: data.accessToken || accessToken,
-      isAdmin: toBool(u["custom:isAdmin"]) || toBool(u.isAdmin),
-      isManager: toBool(u["custom:isManager"]) || toBool(u.isManager),
-      isSupport: toBool(u["custom:isSupport"]) || toBool(u.isSupport),
+      _id: u.id || u._id || u.sub || "",
+      username:
+        u.username || u.preferred_username || u.email?.split("@")[0] || "",
+      email: u.email || "",
+      profileImage: u.profileImage || "",
+      phone: u.phone || "",
+      token: data.token || u.token || "",
+      accessToken: data.accessToken || u.accessToken || accessToken || "",
+      refreshToken: data.refreshToken || u.refreshToken || "",
+      isAdmin: toBool(u.isAdmin) || toBool(u["custom:isAdmin"]) || false,
+      isManager: toBool(u.isManager) || toBool(u["custom:isManager"]) || false,
+      isSupport: toBool(u.isSupport) || toBool(u["custom:isSupport"]) || false,
     });
   } catch {
     return null;
@@ -158,45 +179,68 @@ export async function resetPassword(
   if (!response.ok) throw new Error("Password reset failed");
 }
 
-export async function getProfile(accessToken?: string): Promise<User> {
-  const headers: any = { "Content-Type": "application/json" };
-  if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+export async function getProfile(accessToken?: string): Promise<any> {
+  try {
+    const headers: any = { "Content-Type": "application/json" };
+    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
-  const response = await fetch(apiUrls.PROFILE, {
-    method: "POST",
-    credentials: "include",
-    cache: "no-store",
-    headers,
-  });
-  if (!response.ok) throw new Error("Failed to fetch profile");
-  return response.json();
+    const response = await fetch(apiUrls.PROFILE, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers,
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch profile");
+    return await response.json();
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
 }
 
 export async function updateProfile(
-  data: Partial<User> & { profileImageFile?: File | null },
-  accessToken?: string,
-): Promise<User> {
-  const headers: Record<string, string> = {};
-  if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+  formData: FormData,
+  accessToken: string,
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const response = await fetch(apiUrls.PROFILE, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+      cache: "no-store",
+    });
 
-  const formData = new FormData();
-  if (data.username) formData.append("username", data.username);
-  if (data.email) formData.append("email", data.email);
-  if (data.phone) formData.append("phone", data.phone);
-  if (data.profileImageFile)
-    formData.append("profileImage", data.profileImageFile);
+    if (!response.ok) {
+      const errorMsg = await response.text();
+      return { success: false, error: errorMsg || "Update failed" };
+    }
 
-  const response = await fetch(apiUrls.PROFILE, {
-    method: "POST",
-    credentials: "include",
-    cache: "no-store",
-    headers,
-    body: formData,
-  });
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
 
-  if (!response.ok)
-    throw new Error(`Profile update failed: ${response.status}`);
-  return await response.json();
+export async function deleteAccount(
+  accessToken: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(apiUrls.DELETE_ACCOUNT, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) return { success: false, error: "Delete failed" };
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
 }
 
 export async function getUsers(accessToken?: string): Promise<User[]> {

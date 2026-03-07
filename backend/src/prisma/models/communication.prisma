@@ -102,3 +102,29 @@ model TicketMessage {
   @@index([ticketId])
   @@index([createdAt])
 }
+
+
+model Report {
+  id          String       @id @default(cuid())
+  reason      String
+  details     String?
+  description String?
+  status      Status       @default(NEW)
+  itemType    ItemCategory
+  itemId      String
+  reporterId  String
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  resolution  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user        User         @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([itemType])
+  @@index([itemId])
+  @@index([reporterId])
+  @@index([reviewedBy])
+}

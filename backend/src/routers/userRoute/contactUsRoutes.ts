@@ -1,3 +1,4 @@
+import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 import {
   addMessageToTicket,
   createSupportTicket,
@@ -12,14 +13,22 @@ import { Router } from "express";
 
 const contactUsRouter = Router();
 
-contactUsRouter.post("/tickets", createSupportTicket);
-contactUsRouter.get("/tickets", getAllTickets);
-contactUsRouter.get("/stats", getSupportStats);
-contactUsRouter.get("/tickets/:ticketId", getTicketDetails);
-contactUsRouter.put("/tickets/:ticketId/status", updateTicketStatus);
-contactUsRouter.post("/tickets/:ticketId/messages", addMessageToTicket);
+contactUsRouter.post("/tickets", ProtectRoute, createSupportTicket);
+contactUsRouter.get("/tickets", ProtectRoute, getAllTickets);
+contactUsRouter.get("/stats", ProtectRoute, getSupportStats);
+contactUsRouter.get("/tickets/:ticketId", ProtectRoute, getTicketDetails);
+contactUsRouter.put(
+  "/tickets/:ticketId/status",
+  ProtectRoute,
+  updateTicketStatus,
+);
+contactUsRouter.post(
+  "/tickets/:ticketId/messages",
+  ProtectRoute,
+  addMessageToTicket,
+);
 
-contactUsRouter.delete("/tickets/:ticketId", deleteTicket);
-contactUsRouter.delete("/messages/:messageId", deleteMessage);
+contactUsRouter.delete("/tickets/:ticketId", ProtectRoute, deleteTicket);
+contactUsRouter.delete("/messages/:messageId", ProtectRoute, deleteMessage);
 
 export default contactUsRouter;

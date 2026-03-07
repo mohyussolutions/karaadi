@@ -1,6 +1,16 @@
 import {
-  FiHome, FiUser, FiFlag, FiImage, FiBell, FiMessageSquare,
-  FiSettings, FiMonitor, FiAlertTriangle, FiShield, FiEdit, FiPieChart,
+  FiHome,
+  FiUser,
+  FiFlag,
+  FiImage,
+  FiBell,
+  FiMessageSquare,
+  FiSettings,
+  FiMonitor,
+  FiAlertTriangle,
+  FiShield,
+  FiEdit,
+  FiPieChart,
 } from "react-icons/fi";
 import { IoCreate } from "react-icons/io5";
 
@@ -53,22 +63,11 @@ export const SUPPORT_LINKS = [
     href: "/support/content",
     dashboardIcon: <FiShield size={36} />,
   },
-  {
-    label: "Analytics",
-    icon: <FiPieChart />,
-    href: "/support/analytics",
-    dashboardIcon: <FiPieChart size={36} />,
-  },
+
   {
     label: "System",
     icon: <FiSettings />,
     href: "/support/system",
     dashboardIcon: <FiSettings size={36} />,
-  },
-  { 
-    name: "Backoffice", 
-    icon: IoCreate, 
-    href: "/Backoffice", 
-    category: "backoffice" 
   },
 ];

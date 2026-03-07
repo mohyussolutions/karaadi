@@ -9,14 +9,23 @@ import {
   getAllBoatsIncludingUnpaid,
   updateBoatPayment,
 } from "../../controllers/categoryController/boatsController.ts";
+import {
+  adminAndManager,
+  ProtectRoute,
+} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const boatsRoutes = Router();
 
-boatsRoutes.get("/total", getTotalBoats);
-boatsRoutes.get("/all-including-unpaid", getAllBoatsIncludingUnpaid);
+boatsRoutes.get("/total", ProtectRoute, adminAndManager, getTotalBoats);
+boatsRoutes.get(
+  "/all-including-unpaid",
+  ProtectRoute,
+  adminAndManager,
+  getAllBoatsIncludingUnpaid,
+);
 boatsRoutes.get("/", getAllBoats);
 boatsRoutes.get("/:id", getBoatById);
-boatsRoutes.post("/", createBoat);
+boatsRoutes.post("/", ProtectRoute, createBoat);
 boatsRoutes.put("/:id/payment", updateBoatPayment);
 boatsRoutes.put("/:id", updateBoat);
 boatsRoutes.delete("/:id", deleteBoat);

@@ -52,29 +52,32 @@ export default function RealEstateLinks() {
   }, [items, query]);
 
   return (
-    <div className="container mx-auto px-4 py-4">
+    <div className="container mx-auto px-2 py-2">
       <SearchInput onSearch={setQuery} />
 
       <div className="pt-2">
         <PathSegmentsDisplay />
       </div>
 
-      <div className="grid grid-cols-3 gap-3 py-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-3 gap-2 px-2 py-2 sm:grid-cols-4 lg:grid-cols-3">
         {realEstateSubCategories.map((category) => (
           <Link
             key={category.title}
             prefetch={true}
             href={`/real-estate/${category.title.toLowerCase().replace(/\s+/g, "-")}`}
-            className="flex flex-col items-center justify-center p-5 rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:bg-blue-50/10 group text-center"
+            className="flex flex-col items-center text-center group p-2 rounded-lg border border-gray-100 bg-white hover:border-blue-200 hover:shadow-sm transition-all active:scale-80"
           >
-            <div className="text-3xl text-blue-500 mb-3 transform transition-transform duration-300 group-hover:-translate-y-0.5">
-              {iconMap[category.title] || category.icon}
+            <div className="flex items-center justify-center rounded-xl transition-colors duration-300 w-12 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16">
+              <div className="text-3xl text-blue-400 group-hover:text-black transition-colors">
+                {iconMap[category.title] || category.icon}
+              </div>
             </div>
-            <div className="flex flex-col items-center w-full">
-              <span className="text-[15px] font-medium text-gray-800 leading-snug group-hover:text-blue-600">
+
+            <div className="flex flex-col pt-1">
+              <span className="text-[10px] sm:text-sm font-medium text-gray-700 leading-tight">
                 {category.so}
               </span>
-              <span className="text-[12px] text-gray-400 font-normal uppercase tracking-normal mt-1.5">
+              <span className="text-[11px] font-normal text-gray-500 leading-tight">
                 {category.title}
               </span>
             </div>
@@ -88,7 +91,7 @@ export default function RealEstateLinks() {
 
       <div className="px-4 mb-4 flex justify-between items-center border-b border-gray-100 pb-2">
         <h2 className="text-lg font-medium text-gray-700 uppercase tracking-tight">
-          {query ? "Natiijada Raadinta" : "Dhammaan Guryaha & Dhulka"}
+          {query ? "Natiijada Raadinta" : "Hantida Maguurtada"}
           <span className="ml-2 text-blue-500 text-base">
             ({itemsToDisplay.length})
           </span>
@@ -111,7 +114,7 @@ export default function RealEstateLinks() {
             ))
           : !isLoading && (
               <div className="col-span-full text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-sm font-normal">
-                Ma jiro hanti maguurtada ah oo la helin.
+                Ma jiro hanti maguurtada ah oo la helay.
               </div>
             )}
       </div>

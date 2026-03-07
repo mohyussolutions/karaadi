@@ -4,9 +4,9 @@ import prisma from "./db.js";
 export const setAuthCookies = async (
   res: any,
   tokens: { idToken: string; refreshToken: string; accessToken?: string },
-  userInfo?: { username?: string; profileImage?: string; email?: string }
+  userInfo?: { username?: string; profileImage?: string; email?: string },
 ) => {
-  const { idToken, refreshToken } = tokens;
+  const { idToken, refreshToken, accessToken } = tokens;
 
   const decoded = jwt.decode(idToken) as {
     sub?: string;
@@ -16,10 +16,10 @@ export const setAuthCookies = async (
 
   if (!decoded?.sub) throw new Error("Invalid token: missing user ID");
 
-  const userId = decoded.sub;
+  const cognitoId = decoded.sub;
   const email = decoded.email ?? userInfo?.email;
 
-  let user = await prisma.user.findUnique({ where: { id: userId } });
+  let user = await prisma.user.findUnique({ where: { cognitoId } });
 
   if (!user && email) {
     const existingUserByEmail = await prisma.user.findUnique({
@@ -30,7 +30,7 @@ export const setAuthCookies = async (
       user = await prisma.user.update({
         where: { email },
         data: {
-          id: userId,
+          cognitoId: cognitoId,
           username:
             userInfo?.username ??
             decoded.name ??
@@ -41,40 +41,46 @@ export const setAuthCookies = async (
         },
       });
     } else {
-      const existingUserPassword = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { password: true },
-      });
-
-      const passwordToUse = existingUserPassword?.password ?? "";
-
       user = await prisma.user.create({
         data: {
-          id: userId,
+          cognitoId: cognitoId,
           email: email,
           username: userInfo?.username ?? decoded.name ?? "",
           profileImage: userInfo?.profileImage ?? "",
-          password: passwordToUse,
+          password: "",
         },
       });
     }
   }
 
-  let session = await prisma.cookie.findUnique({ where: { userId } });
-  const now = new Date();
-  if (session && session.expiresAt > now) {
-    console.log("User already has a valid stored session.");
-  } else {
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    session = await prisma.cookie.upsert({
-      where: { userId },
-      update: { token: idToken, expiresAt },
-      create: { userId, token: idToken, expiresAt },
-    });
-  }
+  if (!user) throw new Error("User not found");
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  const session = await prisma.cookie.upsert({
+    where: { userId: user.id },
+    update: {
+      token: idToken,
+      accessToken: accessToken || null,
+      expiresAt,
+    },
+    create: {
+      userId: user.id,
+      token: idToken,
+      accessToken: accessToken || null,
+      expiresAt,
+    },
+  });
 
   if (!res.headersSent) {
     res.cookie("idToken", session.token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie("accessToken", accessToken || session.token, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
@@ -89,5 +95,5 @@ export const setAuthCookies = async (
     });
   }
 
-  return { userId, idToken: session.token, refreshToken };
+  return { userId: user.id, idToken: session.token, refreshToken, accessToken };
 };

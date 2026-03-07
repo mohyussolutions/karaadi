@@ -1,8 +1,9 @@
 "use client";
 
-import { apiUrls } from "@/actions/constant/constant";
+import { getTotalUsersAction } from "@/actions/categories/usersAction";
 import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
 import React, { useEffect, useState } from "react";
+
 export default function TotalUsers() {
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -11,18 +12,14 @@ export default function TotalUsers() {
   useEffect(() => {
     const fetchTotalUsers = async () => {
       try {
-        const res = await fetch(`${apiUrls.USERS.BASE}/total-users`, {
-          method: "GET",
-          credentials: "include",
-        });
+        const { data, error } = await getTotalUsersAction();
 
-        if (!res.ok) {
-          setError("Unauthorized or server error");
+        if (error) {
+          setError(error);
           return;
         }
 
-        const data = await res.json();
-        setTotal(data.totalUsers);
+        setTotal(data?.totalUsers ?? 0);
       } catch (err) {
         setError("Failed to fetch total users");
       } finally {
@@ -39,9 +36,11 @@ export default function TotalUsers() {
 
       <div className="h-[48px] flex items-center justify-center mt-3">
         {loading && <ManagerLoading />}
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-500 text-sm">{error}</p>}
         {!loading && !error && (
-          <p className="text-3xl font-bold text-green-600">{total}</p>
+          <p className="text-3xl font-bold text-green-600">
+            {total?.toLocaleString()}
+          </p>
         )}
       </div>
     </div>

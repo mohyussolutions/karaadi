@@ -59,13 +59,13 @@ function MarketplaceLinks() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-4">
+    <div className="container mx-auto px-2 py-2">
       <SearchInput onSearch={setQuery} />
       <div className="pt-2">
         <PathSegmentsDisplay />
       </div>
 
-      <div className="grid grid-cols-3 gap-3 py-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-3 gap-2 px-2 py-2 sm:grid-cols-4 lg:grid-cols-3">
         {marketplaceSubCategories.map((category) => (
           <Link
             key={category.title}
@@ -74,16 +74,19 @@ function MarketplaceLinks() {
               category.href ||
               `/Marketplace/${category.title.replace(/\s/g, "-").toLowerCase()}`
             }
-            className="flex flex-col items-center justify-center p-5 rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:bg-blue-50/10 group text-center"
+            className="flex flex-col items-center text-center group p-2 rounded-lg border border-gray-100 bg-white hover:border-blue-200 hover:shadow-sm transition-all active:scale-95"
           >
-            <div className="text-3xl text-blue-500 mb-3 transform transition-transform duration-300 group-hover:-translate-y-0.5">
-              {category.icon}
+            <div className="flex items-center justify-center rounded-xl transition-colors duration-300 w-12 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16">
+              <div className="text-3xl text-blue-400 group-hover:text-black transition-colors">
+                {category.icon}
+              </div>
             </div>
-            <div className="flex flex-col items-center w-full">
-              <span className="text-[15px] font-medium text-gray-800 leading-snug group-hover:text-blue-600">
+
+            <div className="flex flex-col pt-1">
+              <span className="text-[10px] sm:text-sm font-medium text-gray-700 leading-tight">
                 {category.so}
               </span>
-              <span className="text-[12px] text-gray-400 font-normal uppercase tracking-normal mt-1.5">
+              <span className="text-[11px] font-normal text-gray-500 leading-tight">
                 {category.title}
               </span>
             </div>

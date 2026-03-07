@@ -8,45 +8,48 @@ import CategoryTotals from "./analytics/CategoryTotals";
 import { getAllCities, getAllRegions } from "@/actions/categories/geoAction";
 import { Region, City } from "@/app/utils/types/geoTypes";
 
+interface ChartDataItem {
+  name: string;
+  buyers: number;
+}
+
 export default function DashboardPage() {
-  const [regionData, setRegionData] = useState<any[]>([]);
-  const [cityData, setCityData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [regionData, setRegionData] = useState<ChartDataItem[]>([]);
+  const [cityData, setCityData] = useState<ChartDataItem[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    async function fetchRegions() {
       try {
-        const [regions, cities]: [Region[], City[]] = await Promise.all([
-          getAllRegions(),
-          getAllCities(),
-        ]);
-
-        const generatedRegions = regions.map((r) => ({
+        const regions: Region[] = await getAllRegions();
+        const formatted: ChartDataItem[] = (regions || []).map((r) => ({
           name: r.name,
           buyers: Math.floor(Math.random() * 500) + 50,
         }));
+        setRegionData(formatted);
+      } catch (error) {
+        console.error(error);
+      }
+    }
 
-        const generatedCities = cities
+    async function fetchCities() {
+      try {
+        const cities: City[] = await getAllCities();
+        const formatted: ChartDataItem[] = (cities || [])
           .map((c) => ({
             name: c.name,
             buyers: Math.floor(Math.random() * 500) + 50,
           }))
-          .sort((a, b) => b.buyers - a.buyers)
+          .sort((a: ChartDataItem, b: ChartDataItem) => b.buyers - a.buyers)
           .slice(0, 8);
-
-        setRegionData(generatedRegions);
-        setCityData(generatedCities);
+        setCityData(formatted);
       } catch (error) {
         console.error(error);
-      } finally {
-        setLoading(false);
       }
-    };
+    }
 
-    fetchData();
+    fetchRegions();
+    fetchCities();
   }, []);
-
-  if (loading) return null;
 
   return (
     <div className="flex flex-col gap-6 p-4">

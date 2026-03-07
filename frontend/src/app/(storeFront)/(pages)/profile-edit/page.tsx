@@ -1,6 +1,7 @@
 "use client";
-import { apiService } from "@/actions/core/authAction";
-import React, { useState, ChangeEvent, FormEvent } from "react";
+
+import { updateProfile, verifySession } from "@/actions/core/authAction";
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 
 interface User {
   profileImage?: string;
@@ -9,11 +10,7 @@ interface User {
 
 interface ProfileEditFormProps {
   user?: User;
-  onSave: (updatedUser: {
-    profileImage?: string;
-    phone?: string;
-    profileImageFile?: File | null;
-  }) => void;
+  onSave: (updatedUser: any) => void;
   onCancel: () => void;
 }
 
@@ -25,43 +22,47 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
   const [phone, setPhone] = useState(user.phone || "");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState(user.profileImage || "");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user.phone) setPhone(user.phone);
+    if (user.profileImage) setPreviewImage(user.profileImage);
+  }, [user]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setProfileImageFile(file);
     if (file) {
+      setProfileImageFile(file);
       setPreviewImage(URL.createObjectURL(file));
-    } else {
-      setPreviewImage("");
     }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      const session = await apiService.verifySession();
-      if (!session?.accessToken) {
-        throw new Error("Authentication required");
+      const session = await verifySession();
+
+      const token = session?.accessToken || session?.token;
+
+      if (!token) {
+        throw new Error("Authentication required. Please log in again.");
       }
 
-      const updatedUser = await apiService.updateProfile(
+      const result = await updateProfile(
         {
           phone,
           profileImageFile,
         },
-        session.accessToken
+        token,
       );
 
-      onSave({
-        phone: updatedUser.phone,
-        profileImage: updatedUser.profileImage,
-        profileImageFile: null,
-      });
-    } catch (error) {
-      console.error("Profile update failed", error);
-      alert(
-        error instanceof Error ? error.message : "Failed to update profile"
-      );
+      onSave(result);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,43 +77,29 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             {previewImage ? (
               <img
                 src={previewImage}
-                alt="Profile Preview"
+                alt="Profile"
                 className="object-cover w-full h-full"
               />
             ) : (
-              <div className="flex items-center justify-center w-full h-full text-gray-400 font-semibold select-none">
+              <div className="flex items-center justify-center h-full text-gray-400">
                 No Image
               </div>
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-2">
-            <input
-              id="profileImageInput"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-            <label
-              htmlFor="profileImageInput"
-              className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition select-none"
-            >
-              {previewImage ? "Change Photo" : "Upload Photo"}
-            </label>
-            {previewImage && (
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileImageFile(null);
-                  setPreviewImage("");
-                }}
-                className="text-sm text-red-500 hover:text-red-700"
-              >
-                Remove Photo
-              </button>
-            )}
-          </div>
+          <input
+            id="profileImageInput"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+          <label
+            htmlFor="profileImageInput"
+            className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            {previewImage ? "Change Photo" : "Upload Photo"}
+          </label>
         </div>
 
         <div>
@@ -128,7 +115,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-4 py-2"
-            placeholder="Enter your phone number"
+            placeholder="Enter phone number"
           />
         </div>
 
@@ -136,16 +123,17 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-5 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+            disabled={loading}
+            className="px-5 py-2 bg-gray-200 rounded-md"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-5 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-            disabled={!phone && !profileImageFile}
+            disabled={loading || (!phone && !profileImageFile)}
+            className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-gray-400"
           >
-            Save Changes
+            {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>

@@ -1,7 +1,7 @@
 export default function Page() {
   const title = "settings".charAt(0).toUpperCase() + "settings".slice(1);
   return (
-    <div className="p-10 space-y-6">
+    <div className="w-full h-full min-w-0 min-h-screen p-6 md:p-8 lg:p-10 space-y-6 bg-gray-200">
       <div className="space-y-2">
         <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">
           {title}
@@ -11,7 +11,7 @@ export default function Page() {
         </p>
       </div>
 
-      <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] h-[60vh] flex flex-col items-center justify-center">
+      <div className="w-full h-[70vh] bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center">
         <div className="bg-slate-50 p-6 rounded-3xl mb-4">
           <div className="w-10 h-10 bg-slate-200 rounded-full animate-pulse" />
         </div>

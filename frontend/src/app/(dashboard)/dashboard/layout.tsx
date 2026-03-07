@@ -6,6 +6,7 @@ import { verifySession } from "@/actions/core/authAction";
 import Sidebar from "./sidebar/Sidebar";
 import Navbar from "./navbar/Navbar";
 import { User } from "@/app/utils/types/user";
+import AdminRoute from "@/app/common/Guard/AdminRoute";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -13,37 +14,55 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [open, setOpen] = useState(true);
-  const [allowed, setAllowed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [authorized, setAuthorized] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    (async () => {
-      const currentUser = await verifySession();
-      if (!currentUser?.isAdmin) {
-        router.replace("/");
-      } else {
-        setUser(currentUser);
-        setAllowed(true);
+    async function checkAuth() {
+      try {
+        const currentUser = await verifySession();
+
+        if (!currentUser) {
+          router.replace("/login");
+          return;
+        }
+
+        if (!currentUser.isAdmin) {
+          router.replace("/");
+          return;
+        }
+
+        setUser(currentUser as User);
+        setAuthorized(true);
+      } catch {
+        router.replace("/login");
       }
-    })();
+    }
+    checkAuth();
   }, [router]);
 
-  if (!allowed) return null;
+  if (!authorized) return null;
 
   return (
-    <div className="flex h-screen font-inter">
-      <Sidebar isOpen={open} toggleSidebar={() => setOpen(!open)} />
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/75 z-30 md:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <div className="flex flex-col flex-1 min-h-0">
-        <Navbar toggleSidebar={() => setOpen(!open)} user={user} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+    <AdminRoute>
+      <div className="flex h-screen font-inter">
+        <Sidebar isOpen={open} toggleSidebar={() => setOpen(!open)} />
+
+        {open && (
+          <div
+            className="fixed inset-0 bg-black/75 z-30 md:hidden"
+            onClick={() => setOpen(false)}
+          />
+        )}
+
+        <div className="flex flex-col flex-1 min-h-0">
+          <Navbar toggleSidebar={() => setOpen(!open)} user={user} />
+          <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </AdminRoute>
   );
 }

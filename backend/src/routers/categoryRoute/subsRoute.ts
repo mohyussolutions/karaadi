@@ -12,21 +12,49 @@ import {
   triggerNotification,
   getAllSubscriptionPaid,
 } from "../../controllers/categoryController/subscriptionController.ts";
-import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+import {
+  adminAndManager,
+  ProtectRoute,
+} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const subscriptionRoute = express.Router();
 
-subscriptionRoute.post("/", createSubscription);
-subscriptionRoute.get("/user/:userId", getUserSubscriptions);
+subscriptionRoute.post("/", ProtectRoute, createSubscription);
+subscriptionRoute.get("/user/:userId", ProtectRoute, getUserSubscriptions);
 subscriptionRoute.get("/my", ProtectRoute, getMySubscriptions);
 subscriptionRoute.get("/search", searchSubscriptions);
 
-subscriptionRoute.get("/admin/all", getAllSubscriptionsAdmin);
-subscriptionRoute.delete("/admin/:id", deleteSubscriptionAdmin);
-subscriptionRoute.patch("/admin/:id/status", updateSubscriptionStatus);
-subscriptionRoute.post("/admin/notify", triggerNotification);
-subscriptionRoute.get("/allpaid", getAllSubscriptionPaid);
-subscriptionRoute.get("/stats", getSubscriptionStats);
-subscriptionRoute.get("/total", getTotalSubscriptions);
+subscriptionRoute.get(
+  "/admin/all",
+  ProtectRoute,
+  adminAndManager,
+  getAllSubscriptionsAdmin,
+);
+subscriptionRoute.delete(
+  "/admin/:id",
+  ProtectRoute,
+
+  deleteSubscriptionAdmin,
+);
+subscriptionRoute.patch(
+  "/admin/:id/status",
+  ProtectRoute,
+  adminAndManager,
+  updateSubscriptionStatus,
+);
+subscriptionRoute.post("/admin/notify", ProtectRoute, triggerNotification);
+subscriptionRoute.get("/allpaid", ProtectRoute, getAllSubscriptionPaid);
+subscriptionRoute.get(
+  "/stats",
+  ProtectRoute,
+  adminAndManager,
+  getSubscriptionStats,
+);
+subscriptionRoute.get(
+  "/total",
+  ProtectRoute,
+  adminAndManager,
+  getTotalSubscriptions,
+);
 
 export default subscriptionRoute;

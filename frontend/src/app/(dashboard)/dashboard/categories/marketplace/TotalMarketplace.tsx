@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+import { getTotalMarketplaceItemsCount } from "@/actions/categories/marketplaceActions";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 export default function TotalMarketplace() {
   const [total, setTotal] = useState<number>(0);
@@ -9,14 +10,8 @@ export default function TotalMarketplace() {
 
   const fetchTotalMarketplace = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/marketplace/total", {
-        method: "GET",
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setTotal(data.totalMarketplaceItems ?? 0);
-      }
+      const data = await getTotalMarketplaceItemsCount();
+      setTotal(data ?? 0);
     } catch {
       setTotal(0);
     } finally {
@@ -34,7 +29,7 @@ export default function TotalMarketplace() {
 
       <div className="h-[40px] flex items-center justify-center mt-1">
         {loading ? (
-          <ManagerLoading />
+          <Loading />
         ) : (
           <p className="text-xl font-bold text-gray-800">
             {Number(total).toLocaleString()}

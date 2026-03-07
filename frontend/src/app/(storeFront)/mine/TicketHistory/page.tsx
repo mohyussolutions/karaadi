@@ -13,17 +13,19 @@ import {
 } from "react-icons/md";
 import Loading from "../../components/shared/Loading/Loading";
 import { verifySession } from "@/actions/core/authAction";
+import {
+  getTicketHistory,
+  getTicketDetails,
+  addTicketMessage,
+} from "@/actions/categories/contactMeAction";
 
 export default function TicketHistory() {
   const [tickets, setTickets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [expandedTicket, setExpandedTicket] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
-
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
   useEffect(() => {
     const getSession = async () => {
@@ -32,6 +34,8 @@ export default function TicketHistory() {
         if (session) setUser(session);
       } catch (error) {
         console.error(error);
+      } finally {
+        setIsInitialLoading(false);
       }
     };
     getSession();
@@ -40,20 +44,12 @@ export default function TicketHistory() {
   const fetchHistory = useCallback(async () => {
     if (!user?.email) return;
     try {
-      const res = await fetch(`${BASE_URL}/apicontactUs/tickets`);
-      if (res.ok) {
-        const data = await res.json();
-        const filteredAndSorted = data
-          .filter((t: any) => t.senderEmail === user.email)
-          .sort((a: any, b: any) => b.id - a.id);
-        setTickets(filteredAndSorted);
-      }
+      const data = await getTicketHistory(user.email);
+      setTickets(data);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
-  }, [user?.email, BASE_URL]);
+  }, [user?.email]);
 
   useEffect(() => {
     fetchHistory();
@@ -65,14 +61,13 @@ export default function TicketHistory() {
       return;
     }
 
+    setExpandedTicket(ticketId);
     try {
-      const res = await fetch(`${BASE_URL}/apicontactUs/tickets/${ticketId}`);
-      if (res.ok) {
-        const fullTicket = await res.json();
+      const fullTicket = await getTicketDetails(ticketId);
+      if (fullTicket) {
         setTickets((prev) =>
           prev.map((t) => (t.id === ticketId ? fullTicket : t)),
         );
-        setExpandedTicket(ticketId);
       }
     } catch (error) {
       console.error(error);
@@ -82,33 +77,27 @@ export default function TicketHistory() {
   const handleSendMessage = async (ticketId: number) => {
     if (!replyText.trim() || isSending) return;
 
+    const messageToSend = replyText;
+    setReplyText("");
     setIsSending(true);
-    try {
-      const res = await fetch(
-        `${BASE_URL}/apicontactUs/tickets/${ticketId}/messages`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            body: replyText,
-            senderName: user?.username || user?.name || "User",
-            senderEmail: user?.email,
-            senderRole: "USER",
-          }),
-        },
-      );
 
-      if (res.ok) {
-        setReplyText("");
-        const updatedRes = await fetch(
-          `${BASE_URL}/apicontactUs/tickets/${ticketId}`,
-        );
-        if (updatedRes.ok) {
-          const updatedTicket = await updatedRes.json();
+    try {
+      const res = await addTicketMessage(ticketId, {
+        body: messageToSend,
+        senderName: user?.username || user?.name || "User",
+        senderEmail: user?.email,
+        senderRole: "USER",
+      });
+
+      if (res.success) {
+        const updatedTicket = await getTicketDetails(ticketId);
+        if (updatedTicket) {
           setTickets((prev) =>
             prev.map((t) => (t.id === ticketId ? updatedTicket : t)),
           );
         }
+      } else {
+        setReplyText(messageToSend);
       }
     } catch (error) {
       console.error(error);
@@ -117,7 +106,13 @@ export default function TicketHistory() {
     }
   };
 
-  if (!user && !loading) return null;
+  if (isInitialLoading)
+    return (
+      <div className="p-20 flex justify-center">
+        <Loading />
+      </div>
+    );
+  if (!user) return null;
 
   return (
     <div className="bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-gray-100 h-fit max-w-4xl mx-auto">
@@ -139,11 +134,7 @@ export default function TicketHistory() {
       </h3>
 
       <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 text-sm">
-        {loading ? (
-          <div className="flex justify-center p-5">
-            <Loading />
-          </div>
-        ) : tickets.length === 0 ? (
+        {tickets.length === 0 ? (
           <p className="text-gray-400 italic text-center py-10">
             No tickets found.
           </p>
@@ -171,9 +162,7 @@ export default function TicketHistory() {
                       <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                     )}
                     <span
-                      className={`font-bold ${
-                        t.status === "DONE" ? "text-green-800" : "text-gray-800"
-                      }`}
+                      className={`font-bold ${t.status === "DONE" ? "text-green-800" : "text-gray-800"}`}
                     >
                       {t.subject}
                     </span>
@@ -216,9 +205,7 @@ export default function TicketHistory() {
                   {t.messages?.map((msg: any, index: number) => (
                     <div
                       key={msg.id}
-                      className={`flex flex-col ${
-                        msg.senderRole === "USER" ? "items-start" : "items-end"
-                      }`}
+                      className={`flex flex-col ${msg.senderRole === "USER" ? "items-start" : "items-end"}`}
                     >
                       <div
                         className={`p-3 rounded-xl max-w-[90%] text-xs shadow-sm ${
@@ -261,7 +248,11 @@ export default function TicketHistory() {
                       disabled={isSending || !replyText.trim()}
                       className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 disabled:bg-gray-200 transition-all shadow-md active:scale-95"
                     >
-                      <MdSend size={18} />
+                      {isSending ? (
+                        <MdRotateRight className="animate-spin" size={18} />
+                      ) : (
+                        <MdSend size={18} />
+                      )}
                     </button>
                   </div>
                 </div>

@@ -1,22 +1,12 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import { getPaginationParams } from "src/config/contstanst.ts";
 import { PaymentService } from "../../services/paymentServer/paymentServer.ts";
 import { useErrorHandler } from "../../hooks/useErrorHandler.ts";
 import { ResponseCodes } from "../../config/waafipay.service.responseCodes.ts";
 import { PaymentStatus } from "@prisma/client";
 
 const paymentService = new PaymentService();
-
-const CACHE_KEYS = {
-  PAYMENT_STATS: (region?: string, city?: string) =>
-    `payments:stats:${region || "all"}:${city || "all"}`,
-  MY_PAYMENTS: (userId: string) => `payments:my:${userId}`,
-  PAYMENT_DETAIL: (id: string) => `payment:detail:${id}`,
-  ALL_PAYMENTS: (page: number, limit: number, status?: string) =>
-    `payments:all:${page}:${limit}:${status || "all"}`,
-};
 
 const getQueryString = (param: any): string | undefined => {
   if (Array.isArray(param)) return param[0];
@@ -70,11 +60,6 @@ export const createPayment = async (
       });
     }
 
-    await Promise.all([
-      cacheManager.deletePattern("payments:*"),
-      cacheManager.delete(CACHE_KEYS.MY_PAYMENTS(userId)),
-    ]);
-
     return res.status(201).json({
       key: ResponseCodes.SUCCESS.key,
       message: "Payment processed successfully!",
@@ -91,13 +76,8 @@ export const createPayment = async (
 export const getItemDetail = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const cacheKey = `item:detail:${id}`;
 
-    const item = await cacheManager.withCache(
-      cacheKey,
-      async () => await paymentService.getItemDetail(id),
-      CACHE_TTL.DETAIL,
-    );
+    const item = await paymentService.getItemDetail(id);
 
     if (!item) {
       return res.status(404).json({
@@ -124,12 +104,7 @@ export const getPaymentStats = async (req: Request, res: Response) => {
     const region = getQueryString(req.query.region);
     const city = getQueryString(req.query.city);
 
-    const cacheKey = CACHE_KEYS.PAYMENT_STATS(region, city);
-    const stats = await cacheManager.withCache(
-      cacheKey,
-      async () => await paymentService.getPaymentStats(region, city),
-      CACHE_TTL.STATS,
-    );
+    const stats = await paymentService.getPaymentStats(region, city);
 
     return res.json({ success: true, data: stats });
   } catch (error: any) {
@@ -150,44 +125,46 @@ export const getAllPayments = async (req: Request, res: Response) => {
     const status = getQueryString(req.query.status);
     const paymentMethod = getQueryString(req.query.paymentMethod);
 
-    const cacheKey = CACHE_KEYS.ALL_PAYMENTS(page, limit, status);
-    const result = await cacheManager.withCache(
-      cacheKey,
-      async () => {
-        const where: any = {};
-        if (status) where.status = status as PaymentStatus;
-        if (paymentMethod) where.paymentMethod = paymentMethod;
+    const where: any = {};
+    if (status) where.status = status as PaymentStatus;
+    if (paymentMethod) where.paymentMethod = paymentMethod;
 
-        const [payments, total] = await Promise.all([
-          prisma.payment.findMany({
-            where,
-            select: {
-              id: true,
-              totalAmount: true,
-              planAmount: true,
-              feeAmount: true,
-              taxAmount: true,
-              platformFee: true,
-              currency: true,
-              status: true,
-              paymentMethod: true,
-              transactionId: true,
-              createdAt: true,
-              user: { select: { id: true, username: true, email: true } },
-            },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: limit,
-          }),
-          prisma.payment.count({ where }),
-        ]);
+    const [payments, total] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        select: {
+          id: true,
+          totalAmount: true,
+          planAmount: true,
+          feeAmount: true,
+          taxAmount: true,
+          platformFee: true,
+          currency: true,
+          status: true,
+          paymentMethod: true,
+          transactionId: true,
+          createdAt: true,
+          user: {
+            select: { id: true, username: true, email: true, phone: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.payment.count({ where }),
+    ]);
 
-        return { payments, total };
+    return res.json({
+      success: true,
+      data: {
+        payments,
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
       },
-      CACHE_TTL.LIST,
-    );
-
-    return res.json({ success: true, data: result });
+    });
   } catch (error: any) {
     return res.status(500).json({
       success: false,
@@ -221,12 +198,6 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
       },
     });
 
-    await Promise.all([
-      cacheManager.deletePattern("payments:*"),
-      cacheManager.delete(CACHE_KEYS.MY_PAYMENTS(payment.userId)),
-      cacheManager.delete(CACHE_KEYS.PAYMENT_DETAIL(id)),
-    ]);
-
     return res.json({
       success: true,
       message: "Payment updated successfully.",
@@ -258,12 +229,6 @@ export const deletePayment = async (req: Request, res: Response) => {
 
     await prisma.payment.delete({ where: { id } });
 
-    await Promise.all([
-      cacheManager.deletePattern("payments:*"),
-      cacheManager.delete(CACHE_KEYS.MY_PAYMENTS(payment.userId)),
-      cacheManager.delete(CACHE_KEYS.PAYMENT_DETAIL(id)),
-    ]);
-
     return res.json({
       success: true,
       message: "Payment deleted successfully",
@@ -289,7 +254,11 @@ export const searchPayments = async (req: Request, res: Response) => {
 
     const payments = await prisma.payment.findMany({
       where: {
-        OR: [{ transactionId: { contains: query, mode: "insensitive" } }],
+        OR: [
+          { transactionId: { contains: query, mode: "insensitive" } },
+          { user: { email: { contains: query, mode: "insensitive" } } },
+          { user: { username: { contains: query, mode: "insensitive" } } },
+        ],
       },
       select: {
         id: true,
@@ -331,39 +300,32 @@ export const getMyPayments = async (req: Request, res: Response) => {
       });
     }
 
-    const cacheKey = CACHE_KEYS.MY_PAYMENTS(userId);
-    const payments = await cacheManager.withCache(
-      cacheKey,
-      async () => {
-        return await prisma.payment.findMany({
-          where: { userId },
-          select: {
-            id: true,
-            totalAmount: true,
-            planAmount: true,
-            feeAmount: true,
-            taxAmount: true,
-            platformFee: true,
-            currency: true,
-            status: true,
-            paymentMethod: true,
-            transactionId: true,
-            createdAt: true,
-            boatId: true,
-            carId: true,
-            marketplaceId: true,
-            realEstateId: true,
-            motorcycleId: true,
-            farmequipmentId: true,
-            jobId: true,
-            subscriptionId: true,
-          },
-          orderBy: { createdAt: "desc" },
-          take: 100,
-        });
+    const payments = await prisma.payment.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        totalAmount: true,
+        planAmount: true,
+        feeAmount: true,
+        taxAmount: true,
+        platformFee: true,
+        currency: true,
+        status: true,
+        paymentMethod: true,
+        transactionId: true,
+        createdAt: true,
+        boatId: true,
+        carId: true,
+        marketplaceId: true,
+        realEstateId: true,
+        motorcycleId: true,
+        farmequipmentId: true,
+        jobId: true,
+        subscriptionId: true,
       },
-      CACHE_TTL.LIST,
-    );
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
 
     return res.json({
       success: true,
@@ -380,43 +342,36 @@ export const getMyPayments = async (req: Request, res: Response) => {
 export const getPaymentById = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const cacheKey = CACHE_KEYS.PAYMENT_DETAIL(id);
 
-    const payment = await cacheManager.withCache(
-      cacheKey,
-      async () => {
-        return await prisma.payment.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            totalAmount: true,
-            planAmount: true,
-            feeAmount: true,
-            taxAmount: true,
-            platformFee: true,
-            currency: true,
-            status: true,
-            paymentMethod: true,
-            transactionId: true,
-            createdAt: true,
-            updatedAt: true,
-            paidAt: true,
-            boatId: true,
-            carId: true,
-            marketplaceId: true,
-            realEstateId: true,
-            motorcycleId: true,
-            farmequipmentId: true,
-            jobId: true,
-            subscriptionId: true,
-            user: {
-              select: { id: true, username: true, email: true, phone: true },
-            },
-          },
-        });
+    const payment = await prisma.payment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        totalAmount: true,
+        planAmount: true,
+        feeAmount: true,
+        taxAmount: true,
+        platformFee: true,
+        currency: true,
+        status: true,
+        paymentMethod: true,
+        transactionId: true,
+        createdAt: true,
+        updatedAt: true,
+        paidAt: true,
+        boatId: true,
+        carId: true,
+        marketplaceId: true,
+        realEstateId: true,
+        motorcycleId: true,
+        farmequipmentId: true,
+        jobId: true,
+        subscriptionId: true,
+        user: {
+          select: { id: true, username: true, email: true, phone: true },
+        },
       },
-      CACHE_TTL.DETAIL,
-    );
+    });
 
     if (!payment) {
       return res.status(404).json({
@@ -439,13 +394,13 @@ export const getPaymentById = async (req: Request, res: Response) => {
 
 const paymentController = {
   createPayment,
+  getItemDetail,
   getPaymentStats,
   getAllPayments,
   updatePaymentStatus,
   deletePayment,
   searchPayments,
   getMyPayments,
-  getItemDetail,
   getPaymentById,
 };
 

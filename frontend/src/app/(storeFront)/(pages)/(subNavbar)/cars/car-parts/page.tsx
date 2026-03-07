@@ -4,7 +4,7 @@ import React, { useRef, useState, useMemo, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
-import { CarPartsNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import { carsNestedData } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
@@ -12,7 +12,7 @@ import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import { getCars, Car } from "@/actions/categories/carActions";
 
 export default function CarParts() {
-  const subCategoryLinks = CarPartsNestedSub;
+  const subCategoryLinks = carsNestedData.CarPartsNestedSub;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<Car[]>([]);
@@ -152,7 +152,6 @@ export default function CarParts() {
       <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
-      {/* Subcategory Scroll Bar */}
       <div className="relative py-6">
         <div className="flex justify-center relative items-center">
           <button

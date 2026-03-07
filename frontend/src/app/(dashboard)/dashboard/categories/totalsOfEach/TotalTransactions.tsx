@@ -1,5 +1,6 @@
 "use client";
 
+import { getTotalTransactions } from "@/actions/categories/paymentAction";
 import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
 import React, { useEffect, useState } from "react";
 
@@ -8,28 +9,14 @@ export default function TotalTransactions() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:8080/api/finance/transactions",
-          { credentials: "include" }
-        );
-
-        if (!res.ok) {
-          setTotal(0);
-          return;
-        }
-
-        const data = await res.json();
-        setTotal(data.totalTransactions ?? 0);
-      } catch {
-        setTotal(0);
-      } finally {
-        setLoading(false);
-      }
+    const fetchData = async () => {
+      setLoading(true);
+      const data = await getTotalTransactions();
+      setTotal(data);
+      setLoading(false);
     };
 
-    fetchTransactions();
+    fetchData();
   }, []);
 
   return (
@@ -40,7 +27,6 @@ export default function TotalTransactions() {
 
       <div className="h-[48px] flex items-center justify-center mt-3">
         {loading && <ManagerLoading />}
-
         {!loading && (
           <p className="text-3xl font-bold text-green-600">
             ${Number(total).toLocaleString()}

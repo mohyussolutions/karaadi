@@ -1,416 +1,751 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-
+import React, { JSX, useEffect, useState, useMemo } from "react";
 import {
   FaCheckCircle,
   FaTimesCircle,
   FaTrashAlt,
-  FaEdit,
   FaShip,
+  FaSpinner,
+  FaEdit,
+  FaTools,
+  FaUser,
+  FaPhoneAlt,
+  FaFilter,
+  FaTimes,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
 import {
-  BoatPartsNestedSub,
-  BoatsForRentNestedSub,
   BoatsForSaleNestedSub,
+  BoatsForRentNestedSub,
   BoatEnginesNestedSub,
+  BoatPartsNestedSub,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
 import { boatsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import {
+  getAllBoatsAdminAction,
+  toggleBoatPaymentAction,
+  deleteBoatAction,
+} from "@/actions/categories/boatActions";
+import { verifySession } from "@/actions/core/authAction";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
-const apiService = {
-  verifySession: async () => {
-    return { id: "mock-manager-123" };
-  },
+const PLACEHOLDER_IMAGE =
+  "https://placehold.co/80x80/9ca3af/ffffff?text=No+Image";
+
+const categoryMap: Record<
+  string,
+  { key: string; title: string; so: string; icon: JSX.Element }[]
+> = {
+  "Doomo iib ah": BoatsForSaleNestedSub,
+  "Doomo kireysi ah": BoatsForRentNestedSub,
+  "Matoorada doomo iib ah": BoatEnginesNestedSub,
+  "Qaybaha doomo": BoatPartsNestedSub,
+};
+
+const boatIcons: Record<string, JSX.Element> = {
+  "Doomo iib ah": <FaShip className="mr-2" />,
+  "Doomo kireysi ah": <FaShip className="mr-2" />,
+  "Matoorada doomo iib ah": <FaTools className="mr-2" />,
+  "Qaybaha doomo": <FaTools className="mr-2" />,
+  "All Fleet": <FaShip className="mr-2" />,
 };
 
 export default function BoatPages() {
   const [boats, setBoats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [statusMessage, setStatusMessage] = useState({ text: "", type: "" });
-
+  const [error, setError] = useState<string | null>(null);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userToken, setUserToken] = useState<string | undefined>();
   const [activeMainCategory, setActiveMainCategory] = useState("");
-  const [activeCategory, setActiveCategory] = useState("");
+  const [activeSubCategory, setActiveSubCategory] = useState("");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [expandedMobileSection, setExpandedMobileSection] = useState<
+    string | null
+  >(null);
 
-  const showStatus = (text: string, type = "success") => {
-    setStatusMessage({ text, type });
-    setTimeout(() => setStatusMessage({ text: "", type: "" }), 4000);
-  };
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const session = await verifySession();
 
-  const checkAuthorization = async () => {
-    try {
-      await apiService.verifySession();
-      setIsAuthorized(true);
-    } catch (error) {
-      setIsAuthorized(false);
-    }
-  };
+        if (session?.accessToken) {
+          setAuthenticated(true);
+          setUserToken(session.accessToken);
 
-  const fetchBoats = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        "http://localhost:8080/api/boats/all-including-unpaid",
-        {
-          credentials: "include",
-          cache: "no-store",
-        },
-      );
+          const isUserAdmin = session.isAdmin || false;
+          const isUserManager = session.isManager || false;
 
-      if (!res.ok) {
-        showStatus("Failed to fetch boats. Check API status.", "error");
-        return;
+          if (isUserAdmin || isUserManager) {
+            setIsAdmin(true);
+            await loadData();
+          } else {
+            setError(
+              "You don't have permission to access this page. Admin or Manager role required.",
+            );
+            setLoading(false);
+          }
+        } else {
+          setError("Please log in to access boat management");
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Auth error:", err);
+        setError("Authentication failed");
+        setLoading(false);
       }
+    };
+    init();
+  }, []);
 
-      const data = await res.json();
-      setBoats(Array.isArray(data) ? data : []);
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAllBoatsAdminAction();
+      setBoats(data);
     } catch (err) {
-      console.error("Boat fetch error:", err);
-      showStatus("Could not connect to boat service.", "error");
-      setBoats([]);
+      setError(err instanceof Error ? err.message : "Failed to load boats");
+      console.error("Error loading boats:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    checkAuthorization();
-    fetchBoats();
-  }, []);
+  const handleTogglePaid = async (id: string, currentStatus: boolean) => {
+    if (!authenticated || !isAdmin) return;
 
-  let filtered = boats;
+    const originalBoats = [...boats];
+    setBoats((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, isPaid: !currentStatus } : b)),
+    );
 
-  if (activeMainCategory) {
-    filtered = filtered.filter((b) => b.category === activeMainCategory);
-  }
+    const result = await toggleBoatPaymentAction(id, currentStatus);
 
-  if (activeCategory) {
-    filtered = filtered.filter((b) => b.subCategory === activeCategory);
-  }
+    if (!result.success) {
+      setBoats(originalBoats);
+      alert("Failed to update payment status");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!authenticated || !isAdmin) return;
+    if (!window.confirm("Are you sure you want to delete this boat?")) return;
+
+    const originalBoats = [...boats];
+    setBoats((prev) => prev.filter((b) => b.id !== id));
+
+    const result = await deleteBoatAction(id);
+
+    if (!result.success) {
+      setBoats(originalBoats);
+      alert("Failed to delete boat");
+    }
+  };
+
+  const filteredBoats = useMemo(() => {
+    let filtered = boats;
+
+    if (activeMainCategory) {
+      filtered = filtered.filter(
+        (boat) => boat.category === activeMainCategory,
+      );
+    }
+
+    if (activeSubCategory) {
+      filtered = filtered.filter(
+        (boat) => boat.subCategory === activeSubCategory,
+      );
+    }
+
+    return filtered;
+  }, [boats, activeMainCategory, activeSubCategory]);
+
+  const uniqueMainCategories = Array.from(
+    new Set(boats.map((boat) => boat.category).filter(Boolean)),
+  );
+
+  const getNestedItems = () => {
+    return categoryMap[activeMainCategory] || [];
+  };
+
+  const handleSubCategoryClick = (subcategoryTitle: string) => {
+    setActiveSubCategory(subcategoryTitle);
+    setMobileFiltersOpen(false);
+  };
 
   const handleMainCategoryClick = (mainCategoryTitle: string) => {
     setActiveMainCategory(mainCategoryTitle);
-    setActiveCategory("");
-  };
-
-  const handleSubCategoryClick = (subCategoryTitle: string) => {
-    setActiveCategory(subCategoryTitle);
+    setActiveSubCategory("");
+    setMobileFiltersOpen(false);
   };
 
   const resetFilters = () => {
     setActiveMainCategory("");
-    setActiveCategory("");
+    setActiveSubCategory("");
+    setMobileFiltersOpen(false);
   };
 
   const getCategoryIcon = (title: string) => {
-    const category = boatsSubCategories.find((cat) => cat.so === title);
-    if (category) return category.icon;
-
-    const allNested = [
-      ...BoatsForSaleNestedSub,
-      ...BoatsForRentNestedSub,
-      ...BoatEnginesNestedSub,
-      ...BoatPartsNestedSub,
-    ];
-    const nestedCat = allNested.find((cat) => cat.so === title);
-    if (nestedCat) return nestedCat.icon;
-
-    return <FaShip className="mr-2" />;
+    return boatIcons[title] || <FaShip className="mr-2" />;
   };
 
   const getChipClass = (isActive: boolean) =>
-    `flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium transition duration-200 shadow-sm whitespace-nowrap ${
+    `flex items-center justify-center px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition duration-200 shadow-sm whitespace-nowrap ${
       isActive
         ? "bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 hover:shadow-md"
         : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 hover:border-blue-400"
     }`;
 
-  const getNestedSubCategories = () => {
-    switch (activeMainCategory) {
-      case "Doomo iib ah":
-        return BoatsForSaleNestedSub;
-      case "Doomo kireysi ah":
-        return BoatsForRentNestedSub;
-      case "Matoorada doomo iib ah":
-        return BoatEnginesNestedSub;
-      case "Qaybaha doomo":
-        return BoatPartsNestedSub;
-      default:
-        return [];
-    }
-  };
-
-  const togglePaid = async (boatId: string, isPaid: boolean) => {
-    if (!isAuthorized) {
-      showStatus(
-        "Unauthorized: You must be a manager to change payment status.",
-        "error",
-      );
-      return;
-    }
-
-    try {
-      const res = await fetch(`http://localhost:8080/api/boats/${boatId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPaid: !isPaid }),
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const updatedBoat = await res.json();
-      setBoats((prev) => prev.map((b) => (b.id === boatId ? updatedBoat : b)));
-      showStatus(
-        `Boat marked as ${!isPaid ? "PAID" : "UNPAID"} successfully.`,
-        "success",
-      );
-    } catch (err) {
-      showStatus("Error toggling payment status.", "error");
-      console.error("Toggle error:", err);
-    }
-  };
-
-  const deleteBoat = async (id: string) => {
-    if (!isAuthorized) {
-      showStatus(
-        "Unauthorized: You must be a manager to delete listings.",
-        "error",
-      );
-      return;
-    }
-
-    const proceed = window.confirm(
-      "Are you sure you want to delete this boat?",
+  const toggleMobileSection = (section: string) => {
+    setExpandedMobileSection(
+      expandedMobileSection === section ? null : section,
     );
-    if (!proceed) return;
-
-    try {
-      await fetch(`http://localhost:8080/api/boats/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      setBoats((prev) => prev.filter((boat) => boat.id !== id));
-      showStatus("Boat deleted successfully.", "success");
-    } catch (err) {
-      showStatus("Error deleting boat.", "error");
-      console.error("Delete error:", err);
-    }
   };
 
-  return (
-    <div className="px-4 py-6">
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-6">
-        Boat Management Dashboard
-      </h1>
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = PLACEHOLDER_IMAGE;
+  };
 
-      {statusMessage.text && (
-        <div
-          className={`p-3 mb-4 rounded-lg font-medium text-white shadow-md ${
-            statusMessage.type === "error"
-              ? "bg-red-500"
-              : statusMessage.type === "info"
-                ? "bg-blue-500"
-                : "bg-green-500"
-          }`}
-        >
-          {statusMessage.text}
-        </div>
-      )}
-
-      <h2 className="text-xl font-bold mb-3 text-gray-700 border-b pb-2">
-        Main Categories
-      </h2>
-      <div className="flex flex-wrap gap-3 pb-6 border-b border-gray-200">
-        <button
-          onClick={resetFilters}
-          className={getChipClass(!activeMainCategory && !activeCategory)}
-        >
-          <FaShip className="mr-2" /> All Boats
-        </button>
-
-        {boatsSubCategories.map((cat) => (
-          <button
-            key={cat.title}
-            onClick={() => handleMainCategoryClick(cat.so || "")}
-            className={getChipClass(activeMainCategory === cat.so)}
-          >
-            {getCategoryIcon(cat.so || "")} {cat.so}
-          </button>
-        ))}
-      </div>
-
-      {activeMainCategory && (
-        <div className="mt-6">
-          <h2 className="text-xl font-bold mb-3 text-gray-700 border-b pb-2">
-            Subcategories in <strong>{activeMainCategory}</strong>
-          </h2>
-          <div className="flex flex-wrap gap-3 pb-6 border-b border-gray-200">
-            <button
-              onClick={() => handleSubCategoryClick("")}
-              className={getChipClass(activeCategory === "")}
-            >
-              All {activeMainCategory}
-            </button>
-            {getNestedSubCategories().map((subCat) => (
+  if (!authenticated && !loading) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
+        <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
+          <div className="w-full max-w-full">
+            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 sm:px-6 py-4 rounded-xl">
+              <p className="font-bold text-base sm:text-lg">
+                Authentication Required
+              </p>
+              <p className="text-sm sm:text-base mt-1">
+                Please log in to access boat management.
+              </p>
               <button
-                key={subCat.title}
-                onClick={() => handleSubCategoryClick(subCat.so || "")}
-                className={getChipClass(activeCategory === subCat.so)}
+                onClick={() => (window.location.href = "/login")}
+                className="mt-3 sm:mt-4 bg-yellow-500 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base hover:bg-yellow-600 transition w-full sm:w-auto"
               >
-                {getCategoryIcon(subCat.so || "")} {subCat.so}
+                Go to Login
               </button>
-            ))}
+            </div>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {loading && (
-        <div className="text-center py-10 text-gray-500">
-          <div className="border-t-2 border-blue-500 border-solid rounded-full w-8 h-8 animate-spin mx-auto mb-3"></div>
-          Loading boats...
+  if (authenticated && !isAdmin && !loading) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
+        <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
+          <div className="w-full max-w-full">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 sm:px-6 py-4 rounded-xl">
+              <p className="font-bold text-base sm:text-lg">Access Denied</p>
+              <p className="text-sm sm:text-base mt-1">
+                You need admin or manager privileges to access this page.
+              </p>
+              <button
+                onClick={() => (window.location.href = "/")}
+                className="mt-3 sm:mt-4 bg-red-600 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base hover:bg-red-700 transition w-full sm:w-auto"
+              >
+                Go to Home
+              </button>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {!loading && (
-        <div className="overflow-x-auto mt-6">
-          <table className="w-full border-collapse border border-gray-300">
-            <thead className="bg-gray-100 text-left">
-              <tr>
-                <th className="border p-2">Image</th>
-                <th className="border p-2">Title</th>
-                <th className="border p-2">Main Category</th>
-                <th className="border p-2">Subcategory</th>
-                <th className="border p-2">Price</th>
-                <th className="border p-2">City</th>
-                <th className="border p-2">Type</th>
-                <th className="border p-2">Seller</th>
-                <th className="border p-2">Paid</th>
-                <th className="border p-2">Actions</th>
-              </tr>
-            </thead>
+  if (error && boats.length === 0) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
+        <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
+          <div className="w-full max-w-full">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 sm:px-6 py-4 rounded-xl">
+              <p className="font-bold text-base sm:text-lg">Error</p>
+              <p className="text-sm sm:text-base mt-1">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-3 sm:mt-4 bg-red-600 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base hover:bg-red-700 transition w-full sm:w-auto"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            <tbody>
-              {filtered.length > 0 ? (
-                filtered.map((boat) => (
-                  <tr key={boat.id} className="hover:bg-gray-50">
-                    <td className="border p-2">
-                      <img
-                        src={
-                          boat.images?.[0] ||
-                          "https://placehold.co/80x80/9ca3af/ffffff?text=No+Image"
-                        }
-                        alt={boat.title}
-                        className="w-20 h-20 object-cover rounded"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://placehold.co/80x80/9ca3af/ffffff?text=No+Image";
-                        }}
-                      />
-                    </td>
+  return (
+    <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="w-full max-w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 break-words">
+              Boat Management
+            </h1>
 
-                    <td className="border p-2 font-medium">{boat.title}</td>
-                    <td className="border p-2">{boat.category}</td>
-                    <td className="border p-2">{boat.subCategory}</td>
-                    <td className="border p-2 font-semibold text-blue-700">
-                      ${Number(boat.price).toLocaleString()}
-                    </td>
-                    <td className="border p-2">{boat.city}</td>
-                    <td className="border p-2">{boat.type}</td>
+            <button
+              onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+              className="sm:hidden flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg w-full"
+            >
+              <FaFilter />
+              {mobileFiltersOpen ? "Hide Filters" : "Show Filters"}
+            </button>
+          </div>
 
-                    <td className="border p-2">
-                      {boat.user ? (
-                        <div className="flex flex-col">
-                          <span className="font-semibold">
-                            {boat.user.username}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {boat.user.email}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {boat.user.phone}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 italic">N/A</span>
+          <div className="hidden sm:block">
+            <h2 className="text-lg sm:text-xl font-bold mb-3 text-gray-700 border-b pb-2">
+              Main Categories
+            </h2>
+            <div className="flex flex-wrap gap-2 sm:gap-3 pb-6 border-b border-gray-200">
+              <button
+                onClick={resetFilters}
+                className={getChipClass(
+                  !activeMainCategory && !activeSubCategory,
+                )}
+              >
+                {getCategoryIcon("All Fleet")} All Fleet
+              </button>
+
+              {uniqueMainCategories.map((cat, index) => (
+                <button
+                  key={`main-cat-${cat}-${index}`}
+                  onClick={() => handleMainCategoryClick(cat)}
+                  className={getChipClass(activeMainCategory === cat)}
+                >
+                  {getCategoryIcon(cat)} {cat}
+                </button>
+              ))}
+            </div>
+
+            {activeMainCategory && getNestedItems().length > 0 && (
+              <div className="mt-6">
+                <h2 className="text-lg sm:text-xl font-bold mb-3 text-gray-700 border-b pb-2">
+                  Subcategories in {activeMainCategory}
+                </h2>
+                <div className="flex flex-wrap gap-2 sm:gap-3 pb-6 border-b border-gray-200">
+                  <button
+                    onClick={() => handleSubCategoryClick("")}
+                    className={getChipClass(!activeSubCategory)}
+                  >
+                    All {activeMainCategory}
+                  </button>
+                  {getNestedItems().map((subCat) => (
+                    <button
+                      key={`sub-cat-${activeMainCategory}-${subCat.key || subCat.title}`}
+                      onClick={() =>
+                        handleSubCategoryClick(subCat.so || subCat.title)
+                      }
+                      className={getChipClass(
+                        activeSubCategory === (subCat.so || subCat.title),
                       )}
-                    </td>
+                    >
+                      <span className="mr-2">{subCat.icon}</span>
+                      <span className="hidden sm:inline">{subCat.title}</span>
+                      <span className="sm:hidden">
+                        {subCat.so || subCat.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
-                    <td className="border p-2">
-                      {boat.isPaid ? (
-                        <span className="text-green-600 font-semibold flex items-center">
-                          <FaCheckCircle className="mr-1" /> PAID
-                        </span>
-                      ) : (
-                        <span className="text-red-600 font-semibold flex items-center">
-                          <FaTimesCircle className="mr-1" /> NOT PAID
-                        </span>
-                      )}
-                    </td>
+          {mobileFiltersOpen && (
+            <div className="sm:hidden mb-6 bg-white rounded-xl border border-gray-200 p-4 w-full">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-gray-700">Filters</h3>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <FaTimes size={18} />
+                </button>
+              </div>
 
-                    <td className="border p-2 flex flex-col sm:flex-row gap-2">
+              <div className="mb-4">
+                <button
+                  onClick={() => toggleMobileSection("main")}
+                  className="flex items-center justify-between w-full py-2 font-semibold text-gray-700"
+                >
+                  <span>Main Categories</span>
+                  {expandedMobileSection === "main" ? (
+                    <FaChevronUp />
+                  ) : (
+                    <FaChevronDown />
+                  )}
+                </button>
+                {expandedMobileSection === "main" && (
+                  <div className="mt-2 space-y-2">
+                    <button
+                      onClick={resetFilters}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                        !activeMainCategory && !activeSubCategory
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      All Fleet
+                    </button>
+                    {uniqueMainCategories.map((cat, index) => (
                       <button
-                        onClick={() => togglePaid(boat.id, boat.isPaid)}
-                        disabled={!isAuthorized}
-                        className={`
-                          px-3 py-1 rounded text-white text-sm transition flex items-center justify-center gap-1
-                          ${
-                            isAuthorized
-                              ? boat.isPaid
-                                ? "bg-yellow-500 hover:bg-yellow-600"
-                                : "bg-green-600 hover:bg-green-700"
-                              : "bg-gray-400 cursor-not-allowed"
-                          }
-                        `}
-                      >
-                        {boat.isPaid ? (
-                          <>
-                            <FaTimesCircle /> Unmark Paid
-                          </>
-                        ) : (
-                          <>
-                            <FaCheckCircle /> Mark Paid
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => console.log(`Edit boat: ${boat.id}`)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded flex items-center justify-center gap-1 text-sm hover:bg-blue-600 transition"
-                      >
-                        <FaEdit /> Edit
-                      </button>
-
-                      <button
-                        onClick={() => deleteBoat(boat.id)}
-                        disabled={!isAuthorized}
-                        className={`px-3 py-1 text-white rounded flex items-center justify-center gap-1 text-sm transition ${
-                          isAuthorized
-                            ? "bg-red-500 hover:bg-red-600"
-                            : "bg-gray-400 cursor-not-allowed"
+                        key={`mobile-main-cat-${cat}-${index}`}
+                        onClick={() => handleMainCategoryClick(cat)}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                          activeMainCategory === cat
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        <FaTrashAlt /> Delete
+                        {cat}
                       </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={10}
-                    className="text-center py-10 text-gray-500 border"
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {activeMainCategory && getNestedItems().length > 0 && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => toggleMobileSection("subcategory")}
+                    className="flex items-center justify-between w-full py-2 font-semibold text-gray-700"
                   >
-                    No boats found in this category
-                  </td>
-                </tr>
+                    <span>Subcategories in {activeMainCategory}</span>
+                    {expandedMobileSection === "subcategory" ? (
+                      <FaChevronUp />
+                    ) : (
+                      <FaChevronDown />
+                    )}
+                  </button>
+                  {expandedMobileSection === "subcategory" && (
+                    <div className="mt-2 space-y-2">
+                      <button
+                        onClick={() => handleSubCategoryClick("")}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                          !activeSubCategory
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        All {activeMainCategory}
+                      </button>
+                      {getNestedItems().map((subCat) => (
+                        <button
+                          key={`mobile-sub-cat-${activeMainCategory}-${subCat.key || subCat.title}`}
+                          onClick={() =>
+                            handleSubCategoryClick(subCat.so || subCat.title)
+                          }
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                            activeSubCategory === (subCat.so || subCat.title)
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {subCat.so || subCat.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          )}
+
+          {loading && (
+            <div className="text-center py-10 text-gray-500">
+              <Loading />
+            </div>
+          )}
+
+          {!loading && (
+            <div className="mt-6 w-full">
+              <div className="block md:hidden">
+                <div className="space-y-4 w-full">
+                  {filteredBoats.length > 0 ? (
+                    filteredBoats.map((boat, index) => (
+                      <div
+                        key={`boat-mobile-${boat.id || index}`}
+                        className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm w-full"
+                      >
+                        <div className="flex gap-3">
+                          <img
+                            src={boat.images?.[0] || PLACEHOLDER_IMAGE}
+                            alt={boat.title}
+                            className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                            onError={handleImageError}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 mb-1 truncate">
+                              {boat.title}
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-1 truncate">
+                              {boat.category} • {boat.subCategory}
+                            </p>
+                            <p className="text-lg font-bold text-blue-600">
+                              ${boat.price?.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-gray-500">City</span>
+                            <p className="font-medium truncate">{boat.city}</p>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-gray-500">Status</span>
+                            <p
+                              className={`font-medium truncate ${boat.isPaid ? "text-green-600" : "text-red-600"}`}
+                            >
+                              {boat.isPaid ? "Paid" : "Unpaid"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 bg-gray-50 p-3 rounded-lg">
+                          <p className="text-xs text-gray-500 mb-1">Seller</p>
+                          <p className="font-medium text-sm truncate">
+                            {boat.user?.username || "N/A"}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate">
+                            {boat.user?.email}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate">
+                            {boat.user?.phone}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() =>
+                              handleTogglePaid(boat.id, boat.isPaid)
+                            }
+                            className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1 ${
+                              boat.isPaid
+                                ? "bg-yellow-500 text-white hover:bg-yellow-600"
+                                : "bg-green-600 text-white hover:bg-green-700"
+                            }`}
+                          >
+                            {boat.isPaid ? (
+                              <FaTimesCircle size={12} />
+                            ) : (
+                              <FaCheckCircle size={12} />
+                            )}
+                            <span className="truncate">
+                              {boat.isPaid ? "Unpaid" : "Paid"}
+                            </span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(boat.id)}
+                            className="flex-1 py-2 px-2 bg-red-500 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-red-600 transition"
+                          >
+                            <FaTrashAlt size={12} />{" "}
+                            <span className="truncate">Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-gray-500 border border-dashed rounded-lg">
+                      No boats found in the database
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="hidden md:block w-full">
+                <div className="border border-gray-300 rounded-xl bg-white overflow-hidden">
+                  <table className="w-full table-fixed">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">
+                          Image
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">
+                          Title
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
+                          Category
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
+                          Subcategory
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
+                          Price
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
+                          City
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">
+                          Seller
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
+                          Paid
+                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredBoats.length > 0 ? (
+                        filteredBoats.map((boat, index) => (
+                          <tr
+                            key={`boat-desktop-${boat.id || index}`}
+                            className="hover:bg-gray-50"
+                          >
+                            <td className="border-b p-3">
+                              <img
+                                src={boat.images?.[0] || PLACEHOLDER_IMAGE}
+                                alt={boat.title}
+                                className="w-12 h-12 object-cover rounded"
+                                onError={handleImageError}
+                              />
+                            </td>
+                            <td className="border-b p-3">
+                              <span
+                                className="text-sm font-medium block truncate"
+                                title={boat.title}
+                              >
+                                {boat.title}
+                              </span>
+                            </td>
+                            <td className="border-b p-3">
+                              <span
+                                className="text-sm block truncate"
+                                title={boat.category}
+                              >
+                                {boat.category}
+                              </span>
+                            </td>
+                            <td className="border-b p-3">
+                              <span
+                                className="text-sm block truncate"
+                                title={boat.subCategory}
+                              >
+                                {boat.subCategory}
+                              </span>
+                            </td>
+                            <td className="border-b p-3">
+                              <span className="text-sm font-semibold">
+                                ${boat.price?.toLocaleString()}
+                              </span>
+                            </td>
+                            <td className="border-b p-3">
+                              <span
+                                className="text-sm block truncate"
+                                title={boat.city}
+                              >
+                                {boat.city}
+                              </span>
+                            </td>
+                            <td className="border-b p-3">
+                              <div className="flex flex-col text-xs">
+                                <span
+                                  className="font-semibold truncate"
+                                  title={boat.user?.username}
+                                >
+                                  <FaUser
+                                    className="inline mr-1 text-gray-400"
+                                    size={10}
+                                  />
+                                  {boat.user?.username || "N/A"}
+                                </span>
+                                <span
+                                  className="text-gray-600 truncate"
+                                  title={boat.user?.email}
+                                >
+                                  {boat.user?.email}
+                                </span>
+                                <span
+                                  className="text-gray-600 truncate"
+                                  title={boat.user?.phone}
+                                >
+                                  <FaPhoneAlt
+                                    className="inline mr-1 text-gray-400"
+                                    size={8}
+                                  />
+                                  {boat.user?.phone || "N/A"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="border-b p-3">
+                              {boat.isPaid ? (
+                                <span className="text-green-600 font-semibold flex items-center text-xs">
+                                  <FaCheckCircle
+                                    className="mr-1 flex-shrink-0"
+                                    size={10}
+                                  />{" "}
+                                  PAID
+                                </span>
+                              ) : (
+                                <span className="text-red-600 font-semibold flex items-center text-xs">
+                                  <FaTimesCircle
+                                    className="mr-1 flex-shrink-0"
+                                    size={10}
+                                  />{" "}
+                                  UNPAID
+                                </span>
+                              )}
+                            </td>
+                            <td className="border-b p-3">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() =>
+                                    handleTogglePaid(boat.id, boat.isPaid)
+                                  }
+                                  className={`p-1.5 rounded text-white text-xs transition flex items-center justify-center ${
+                                    boat.isPaid
+                                      ? "bg-yellow-500 hover:bg-yellow-600"
+                                      : "bg-green-600 hover:bg-green-700"
+                                  }`}
+                                  title={
+                                    boat.isPaid
+                                      ? "Mark as Unpaid"
+                                      : "Mark as Paid"
+                                  }
+                                >
+                                  {boat.isPaid ? (
+                                    <FaTimesCircle size={12} />
+                                  ) : (
+                                    <FaCheckCircle size={12} />
+                                  )}
+                                </button>
+
+                                <button
+                                  onClick={() => handleDelete(boat.id)}
+                                  className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                                  title="Delete"
+                                >
+                                  <FaTrashAlt size={12} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={9}
+                            className="text-center py-10 text-gray-500"
+                          >
+                            No boats found in the database
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

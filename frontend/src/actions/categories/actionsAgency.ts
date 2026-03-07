@@ -2,15 +2,41 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { AGENCY_ENDPOINTS } from "../constant/constant";
+import { cookies } from "next/headers";
+
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+const addCacheBuster = (url: string) => {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}_t=${Date.now()}`;
+};
 
 export const getAgencyStats = async () => {
   try {
-    const response = await fetch(AGENCY_ENDPOINTS.STATS, {
+    const headers = await getAuthHeaders();
+    const url = addCacheBuster(AGENCY_ENDPOINTS.STATS);
+
+    const response = await fetch(url, {
+      headers,
       credentials: "include",
-      next: {
-        revalidate: 300,
-        tags: ["agency-stats"],
-      },
+      cache: "no-store",
     });
     if (!response.ok) return { success: false, total: 0, verified: 0 };
     return await response.json();
@@ -21,12 +47,13 @@ export const getAgencyStats = async () => {
 
 export const fetchAgencies = async () => {
   try {
-    const response = await fetch(AGENCY_ENDPOINTS.BASE, {
+    const headers = await getAuthHeaders();
+    const url = addCacheBuster(AGENCY_ENDPOINTS.BASE);
+
+    const response = await fetch(url, {
+      headers,
       credentials: "include",
-      next: {
-        revalidate: 60,
-        tags: ["agencies"],
-      },
+      cache: "no-store",
     });
     if (!response.ok) return [];
     const data = await response.json();
@@ -38,11 +65,15 @@ export const fetchAgencies = async () => {
 
 export const createAgency = async (agencyData: any) => {
   try {
-    const response = await fetch(AGENCY_ENDPOINTS.BASE, {
+    const headers = await getAuthHeaders();
+    const url = addCacheBuster(AGENCY_ENDPOINTS.BASE);
+
+    const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       credentials: "include",
       body: JSON.stringify(agencyData),
+      cache: "no-store",
     });
     const result = await response.json();
     revalidateTag("agencies");
@@ -56,11 +87,15 @@ export const createAgency = async (agencyData: any) => {
 
 export const updateAgency = async (id: string, agencyData: any) => {
   try {
-    const response = await fetch(AGENCY_ENDPOINTS.BY_ID(id), {
+    const headers = await getAuthHeaders();
+    const url = addCacheBuster(AGENCY_ENDPOINTS.BY_ID(id));
+
+    const response = await fetch(url, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers,
       credentials: "include",
       body: JSON.stringify(agencyData),
+      cache: "no-store",
     });
     const result = await response.json();
     revalidateTag("agencies");
@@ -73,9 +108,14 @@ export const updateAgency = async (id: string, agencyData: any) => {
 
 export const deleteAgency = async (id: string) => {
   try {
-    const response = await fetch(AGENCY_ENDPOINTS.BY_ID(id), {
+    const headers = await getAuthHeaders();
+    const url = addCacheBuster(AGENCY_ENDPOINTS.BY_ID(id));
+
+    const response = await fetch(url, {
       method: "DELETE",
+      headers,
       credentials: "include",
+      cache: "no-store",
     });
     const result = await response.json();
     revalidateTag("agencies");

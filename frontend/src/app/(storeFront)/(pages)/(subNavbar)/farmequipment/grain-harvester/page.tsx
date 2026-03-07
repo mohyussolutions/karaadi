@@ -8,7 +8,10 @@ import {
   FertilizerSpreaderNestedSub,
   TraktorSubCategoryItem,
 } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
-import { getTraktors, Traktor } from "@/actions/categories/FarmequipmentAction";
+import {
+  getFarmequipment,
+  FarmEquipment,
+} from "@/actions/categories/FarmequipmentAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
@@ -19,13 +22,12 @@ export default function FertilizerSpreader() {
   const subCategoryLinks =
     FertilizerSpreaderNestedSub as TraktorSubCategoryItem[];
 
-  const [items, setItems] = useState<Traktor[]>([]);
+  const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
-
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<FarmEquipment[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
     {},
@@ -34,9 +36,10 @@ export default function FertilizerSpreader() {
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await getTraktors();
+        setIsLoading(true);
+        const data = await getFarmequipment();
         setItems(data || []);
-      } catch (err) {
+      } catch {
         setError(true);
       } finally {
         setIsLoading(false);
@@ -47,13 +50,19 @@ export default function FertilizerSpreader() {
 
   const allFertilizerItems = useMemo(() => {
     if (!Array.isArray(items)) return [];
-    return items.filter((item: Traktor) => {
-      const cat = String(item.category || "").toLowerCase();
-      const sub = String(item.subCategories || "").toLowerCase();
+    return items.filter((item: FarmEquipment) => {
+      const catStr = Array.isArray(item.category)
+        ? item.category.join(" ")
+        : String(item.category || "");
+      const subStr = Array.isArray(item.subcategory)
+        ? item.subcategory.join(" ")
+        : String(item.subcategory || "");
+      const searchTarget = `${catStr} ${subStr} ${item.title}`.toLowerCase();
+
       return (
-        cat.includes("fertilizer") ||
-        sub.includes("fertilizer") ||
-        cat.includes("bacriminta")
+        searchTarget.includes("fertilizer") ||
+        searchTarget.includes("spreader") ||
+        searchTarget.includes("bacriminta")
       );
     });
   }, [items]);
@@ -67,7 +76,12 @@ export default function FertilizerSpreader() {
       const results = await getGlobalSearchResults(query);
       const filtered = results.filter((item: any) => {
         const cat = String(item.category || "").toLowerCase();
-        return cat.includes("fertilizer") || cat.includes("bacriminta");
+        const sub = String(item.subcategory || "").toLowerCase();
+        return (
+          cat.includes("fertilizer") ||
+          sub.includes("fertilizer") ||
+          cat.includes("bacriminta")
+        );
       });
       setSearchResults(filtered);
     }, 400);
@@ -100,17 +114,21 @@ export default function FertilizerSpreader() {
 
     if (selectedCategory) {
       const normalized = selectedCategory.toLowerCase();
-      list = list.filter((item: any) => {
-        const sub = String(item.subCategories || "").toLowerCase();
+      list = list.filter((item: FarmEquipment) => {
+        const sub = Array.isArray(item.subcategory)
+          ? item.subcategory.join(" ")
+          : String(item.subcategory || "");
         const title = String(item.title || "").toLowerCase();
-        return sub.includes(normalized) || title.includes(normalized);
+        return (
+          sub.toLowerCase().includes(normalized) || title.includes(normalized)
+        );
       });
     }
 
     if (selectedRegion) {
       const activeRegs = selectedRegion.split(",");
       list = list.filter(
-        (item: any) =>
+        (item) =>
           item.region &&
           activeRegs.some((r) => r.toLowerCase() === item.region.toLowerCase()),
       );
@@ -121,15 +139,13 @@ export default function FertilizerSpreader() {
     );
     if (activeCities.length > 0) {
       list = list.filter(
-        (item: any) =>
+        (item) =>
           item.city &&
           activeCities.some((c) => c.toLowerCase() === item.city.toLowerCase()),
       );
     }
 
-    return Array.from(
-      new Map(list.map((item: any) => [item._id || item.id, item])).values(),
-    );
+    return Array.from(new Map(list.map((item) => [item._id, item])).values());
   }, [
     query,
     searchResults,
@@ -151,7 +167,7 @@ export default function FertilizerSpreader() {
 
   return (
     <div className="container mx-auto px-4 pb-10">
-      <SearchInput onSearch={setQuery} />
+      <SearchInput defaultValue={query} />
       <PathSegmentsDisplay />
 
       <div className="relative py-6">
@@ -245,16 +261,16 @@ export default function FertilizerSpreader() {
                   />
                 ))
               ) : itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item: any) => (
+                itemsToDisplay.map((item) => (
                   <UniversalCard
-                    key={item._id || item.id}
-                    id={item._id || item.id}
+                    key={item._id}
+                    id={item._id}
                     title={item.title}
                     description={item.description}
                     city={item.city}
                     images={item.images}
                     price={item.price}
-                    category="Traktor"
+                    category="Farmequipment"
                   />
                 ))
               ) : (

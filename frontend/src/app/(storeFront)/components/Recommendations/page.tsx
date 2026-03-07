@@ -1,74 +1,87 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaHome, FaCar, FaShoppingBag } from "react-icons/fa";
-
-interface RecommendationItem {
-  id: number;
-  externalId: string;
-  source: string;
-  category: string;
-  title: string;
-  description?: string;
-  price: string;
-}
+import { FaHome, FaCar, FaShoppingBag, FaEye } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import {
+  fetchRecommendations,
+  trackItemView,
+} from "@/actions/categories/RecommendationActions";
+import { RecommendationItem } from "@/app/utils/types/recommendation";
 
 const iconMap: Record<string, React.ElementType> = {
   guryo: FaHome,
+  "real-estate": FaHome,
   baabuur: FaCar,
   cars: FaCar,
+  vehicles: FaCar,
   alaabooyin: FaShoppingBag,
+  marketplace: FaShoppingBag,
   default: FaShoppingBag,
 };
 
 const colorMap: Record<string, string> = {
   guryo: "bg-green-500",
+  "real-estate": "bg-green-500",
   baabuur: "bg-blue-500",
   cars: "bg-blue-500",
+  vehicles: "bg-blue-500",
   alaabooyin: "bg-purple-500",
+  marketplace: "bg-purple-500",
   default: "bg-indigo-500",
 };
 
-function Recommendations() {
+interface RecommendationsProps {
+  userId?: string;
+  limit?: number;
+}
+
+function Recommendations({ userId, limit = 6 }: RecommendationsProps) {
   const [items, setItems] = useState<RecommendationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchRecommendations();
-  }, []);
+    loadRecommendations();
+  }, [userId, limit]);
 
-  const fetchRecommendations = async () => {
+  const loadRecommendations = async () => {
     try {
-      const response = await fetch("/api/recommendations");
-
-      if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      setLoading(true);
+      const data = await fetchRecommendations(userId, limit);
       setItems(data);
       setError(null);
-    } catch (error) {
-      console.error("Failed to fetch recommendations:", error);
+    } catch {
       setError("Wax qalad ayaa dhacay markii la raadinayay talooyinka");
-
-      // Optionally, you could implement a fallback system here
-      // For now, just leave items empty or show error message
     } finally {
       setLoading(false);
     }
   };
 
-  const trackView = async (externalId: string) => {
+  const getRouteForCategory = (category: string): string => {
+    const cat = category.toLowerCase();
+    if (cat.includes("guryo") || cat.includes("real-estate"))
+      return "/real-estate";
+    if (
+      cat.includes("baabuur") ||
+      cat.includes("cars") ||
+      cat.includes("vehicles")
+    )
+      return "/vehicles";
+    return "/item-details";
+  };
+
+  const handleItemClick = async (item: RecommendationItem) => {
     try {
-      await fetch("/api/recommendations/track-view", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ externalId }),
-      });
-    } catch (error) {
-      console.error("Failed to track view:", error);
+      if (userId) {
+        await trackItemView(item.externalId, item.category, userId);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      const baseRoute = getRouteForCategory(item.category);
+      router.push(`${baseRoute}/${item.externalId}`);
     }
   };
 
@@ -79,10 +92,10 @@ function Recommendations() {
           Talooyin Ku Saabsan Adiga
         </h2>
         <p className="text-sm text-gray-600 mb-6 border-b pb-2">
-          Waa Maxay Sababta Aan Kuu Talo-siinnay Xayeysiisyadan?
+          Waxaan kuu talinaynaa iyadoo lagu salaynayo waxaad booqatay
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, index) => (
+          {[...Array(limit)].map((_, index) => (
             <div
               key={index}
               className="bg-white rounded-xl shadow-lg animate-pulse"
@@ -114,7 +127,7 @@ function Recommendations() {
         </h2>
         <p className="text-sm text-red-600 mb-4">{error}</p>
         <button
-          onClick={fetchRecommendations}
+          onClick={loadRecommendations}
           className="text-sm font-medium text-white px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 transition"
         >
           Isku Day Mar Kale
@@ -123,28 +136,25 @@ function Recommendations() {
     );
   }
 
-  if (items.length === 0) {
-    return (
-      <div className="p-4 md:p-8 bg-gray-50">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Talooyin Ku Saabsan Adiga
-        </h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Ma jiraan talooyin hadda. Ku soo noqo mar kale.
-        </p>
-      </div>
-    );
-  }
+  if (items.length === 0) return null;
 
   return (
     <div className="p-4 md:p-8 bg-gray-50">
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        Talooyin Ku Saabsan Adiga
-      </h2>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-2xl font-bold text-gray-800">
+          Talooyin Ku Saabsan Adiga
+        </h2>
+        {userId && (
+          <span className="text-xs text-gray-400 flex items-center gap-1">
+            <FaEye size={12} /> Ku salaysan waxaad booqatay
+          </span>
+        )}
+      </div>
       <p className="text-sm text-gray-600 mb-6 border-b pb-2">
-        Waa Maxay Sababta Aan Kuu Talo-siinnay Xayeysiisyadan?
+        {userId
+          ? "Waxaan kuu talinaynaa iyadoo lagu salaynayo waxaad danaynayso"
+          : "Ku soo gal si aad u hesho talooyin shaqsiyeed"}
       </p>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {items.map((item) => {
           const IconComponent =
@@ -155,7 +165,8 @@ function Recommendations() {
           return (
             <div
               key={item.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 overflow-hidden border border-gray-200"
+              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 overflow-hidden border border-gray-200 cursor-pointer"
+              onClick={() => handleItemClick(item)}
             >
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -166,28 +177,32 @@ function Recommendations() {
                   </span>
                   <IconComponent size={20} className="text-gray-400" />
                 </div>
-
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-1">
                   {item.title}
                 </h3>
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                   {item.description || "Faahfaahin lama helin"}
                 </p>
-
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="text-2xl font-extrabold text-indigo-600">
                     {item.price}
                   </span>
-                  <button
-                    onClick={() => {
-                      trackView(item.externalId);
-                      // Navigate to item page or show details
-                      window.location.href = `/item/${item.externalId}`;
-                    }}
-                    className="text-sm font-medium text-white px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 transition"
-                  >
-                    Eeg Faahfaahinta
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {item.views && item.views > 0 && (
+                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <FaEye size={10} /> {item.views}
+                      </span>
+                    )}
+                    <button
+                      className="text-sm font-medium text-white px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 transition"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleItemClick(item);
+                      }}
+                    >
+                      Eeg
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

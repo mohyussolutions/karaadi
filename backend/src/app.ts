@@ -7,12 +7,10 @@ import cookieParser from "cookie-parser";
 import type { Request, Response, NextFunction } from "express";
 import compression from "compression";
 import { monitorEventLoopDelay } from "node:perf_hooks";
-
 import marketplaceRoutes from "./routers/categoryRoute/marketplaceRouter.js";
 import realEstateRouter from "./routers/categoryRoute/realEstateRouter.js";
 import boatsRoutes from "./routers/categoryRoute/boatsRouter.js";
 import carsRoutes from "./routers/categoryRoute/carsRouter.js";
-
 import motorcyclesRoutes from "./routers/categoryRoute/motorcyclesRouter.js";
 import myAdsRouter from "./routers/categoryRoute/myAdRoutes.js";
 import favoriteRoutes from "./routers/categoryRoute/favoriteRoutes.js";
@@ -32,13 +30,14 @@ import searchRouter from "./routers/userRoute/searchRouter.js";
 import filterRouter from "./routers/userRoute/filterRouter.js";
 import visitorRoute from "./routers/userRoute/vissedRoute.js";
 import uploadRouterSelector from "./routers/paymentRoute/uploadRouterSelector.js";
-import hageRouter from "./AIrRoute/hageRouter.js";
 import locRoutes from "./routers/categoryRoute/locRoutes.js";
 import redisStatsRouter from "./routers/redisStatsRouter.js";
 import historySearchRoutes from "./routers/userRoute/historySearchRoutes.js";
 import { setupSecurity } from "./core/middelware/securityMiddleware.ts";
 import traktorRoutes from "./routers/categoryRoute/FarmequipmentRouter.ts";
 import jobsRouter from "./routers/categoryRoute/jobsRouter.ts";
+import hageRouter from "./AI/hageRouter.ts";
+import reportRoutes from "./routers/categoryRoute/reportRoute.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -91,17 +90,18 @@ app.use(
 );
 
 app.use("/api/marketplace", marketplaceRoutes);
-app.use("/api/real-estate", realEstateRouter);
 app.use("/api/cars", carsRoutes);
 app.use("/api/boats", boatsRoutes);
-app.use("/api/traktor", traktorRoutes);
 app.use("/api/motorcycles", motorcyclesRoutes);
+app.use("/api/real-estate", realEstateRouter);
+app.use("/api/traktor", traktorRoutes);
 app.use("/api/ads", myAdsRouter);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/advertisements", advertisementRouter);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/subscription", subscriptionRoute);
+
 app.use("/api/chats", chatRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/contactUs", contactUsRouter);
@@ -114,12 +114,14 @@ app.use("/api/visitors", visitorRoute);
 app.use("/api/search", searchRouter);
 app.use("/api/filtering", filterRouter);
 app.use("/api/upload", uploadRouterSelector);
-app.use("/api/hage", hageRouter);
 app.use("/api/jobs", jobsRouter);
 app.use("/api/locations", locRoutes);
 app.use("/api/redis", redisStatsRouter);
 app.use("/api/history-search", historySearchRoutes);
+app.use("/api/reports", reportRoutes);
 app.use("/assets", express.static(path.join(__dirname, "../assets")));
+// AI Agency Route
+app.use("/api/hage", hageRouter);
 
 app.get("/health", (req, res) => {
   res.status(200).json({

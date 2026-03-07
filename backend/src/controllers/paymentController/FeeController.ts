@@ -643,12 +643,21 @@ export const deleteSystemConfig = async (req: Request, res: Response) => {
     res.status(500).json({ error: e.message });
   }
 };
-
 export const createSubPlan = async (req: Request, res: Response) => {
   try {
+    console.log("Create SubPlan request body:", req.body);
+    const keys = ["basic30", "standard60", "premium90", "isActive"];
+
+    if (!req.body || !keys.some((k) => k in req.body)) {
+      return res
+        .status(400)
+        .json({ error: "Missing subscription plan fields" });
+    }
+
     const result = await prisma.subPlan.create({ data: req.body });
     res.status(201).json(result);
   } catch (e: any) {
+    console.error("Create SubPlan error:", e);
     res.status(500).json({ error: e.message });
   }
 };
@@ -660,6 +669,7 @@ export const getAllSubPlans = async (req: Request, res: Response) => {
     });
     res.json(results);
   } catch (e: any) {
+    console.error("Get SubPlans error:", e);
     res.status(500).json({ error: e.message });
   }
 };
@@ -676,22 +686,34 @@ export const getSubPlanById = async (req: Request, res: Response) => {
     res.status(500).json({ error: e.message });
   }
 };
-
 export const updateSubPlan = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...rawData } = req.body;
-    const keys = ["subStandard", "subStandard60", "subPremium", "isActive"];
+
+    console.log("Update SubPlan request body:", req.body);
+
+    const keys = ["basic30", "standard60", "premium90", "isActive"];
     const data: any = {};
+
     keys.forEach((k) => {
-      if (k in rawData && rawData[k] !== undefined && rawData[k] !== null)
+      if (k in rawData && rawData[k] !== undefined && rawData[k] !== null) {
         data[k] = rawData[k];
+      }
     });
+
+    if (!Object.keys(data).length) {
+      return res
+        .status(400)
+        .json({ error: "Missing subscription plan fields" });
+    }
+
     const existing = await prisma.subPlan.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Not found" });
 
     const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.subPlan.update({ where: { id }, data });
+
       if (adminId) {
         await tx.feeChangeLog.create({
           data: {
@@ -706,18 +728,20 @@ export const updateSubPlan = async (req: Request, res: Response) => {
       }
       return updated;
     });
+
     res.json(result);
   } catch (e: any) {
+    console.error("Update SubPlan error:", e);
     res.status(500).json({ error: e.message });
   }
 };
-
 export const deleteSubPlan = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     await prisma.subPlan.delete({ where: { id } });
     res.json({ success: true });
   } catch (e: any) {
+    console.error("Delete SubPlan error:", e);
     res.status(500).json({ error: e.message });
   }
 };

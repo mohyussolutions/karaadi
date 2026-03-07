@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useGetRoute } from "../../hooks/useGetRoute";
+import Loading from "../../shared/Loading/Loading";
 
 interface ChatHeaderProps {
   selectedChat: any;
@@ -25,7 +26,6 @@ export const ChatHeader = ({
   const profileImage = otherUser?.profileImage;
   const userInitial = username.charAt(0).toUpperCase();
 
-  // Handle null/undefined selectedChat
   if (!selectedChat) {
     return (
       <div className="bg-white border-b p-4 md:p-5 sticky top-0 z-20">
@@ -38,7 +38,9 @@ export const ChatHeader = ({
               <ChevronLeft className="w-6 h-6 text-gray-600" />
             </button>
           )}
-          <div className="text-gray-500">Loading chat...</div>
+          <div className="text-gray-500">
+            <Loading />
+          </div>
         </div>
       </div>
     );

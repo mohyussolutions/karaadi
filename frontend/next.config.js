@@ -65,6 +65,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplo-1568680870491-590cd4e224ab",
       },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+      },
     ],
   },
 };

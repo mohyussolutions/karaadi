@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { SUBS_ENDPOINTS } from "../constant/constant";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 interface Subscription {
   id: string;
@@ -17,46 +18,66 @@ interface Subscription {
   expiryDate?: string;
 }
 
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+    Cookie: cookieHeader,
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+const addCacheBuster = (url: string) => {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}_t=${Date.now()}`;
+};
+
 async function fetchApi<T>(
   url: string,
   options?: RequestInit,
   retries = 2,
 ): Promise<T> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
-  const cacheBuster = `_t=${Date.now()}`;
-  const separator = url.includes("?") ? "&" : "?";
-  const absoluteUrl = url.startsWith("http")
-    ? `${url}${separator}${cacheBuster}`
-    : `${apiUrl}${url}${separator}${cacheBuster}`;
-
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(absoluteUrl, {
+      const headers = await getAuthHeaders();
+      const cacheBustedUrl = addCacheBuster(url);
+
+      const res = await fetch(cacheBustedUrl, {
         ...options,
         headers: {
+          ...headers,
           ...options?.headers,
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-          Cookie: cookieHeader,
         },
-        credentials: "include",
         cache: "no-store",
       });
 
       if (!res.ok) {
         const errorText = await res.text();
-        if (res.status === 404) {
-          throw new Error(
-            `API error 404: Not found.\nURL: ${absoluteUrl}\nPossible causes: endpoint does not exist, wrong URL, or backend route is missing. Details: ${errorText}`,
+        if (res.status === 401 || res.status === 403) {
+          const err: any = new Error(
+            "You do not have permission to access this resource.",
           );
+          err.status = res.status;
+          throw err;
         }
-        throw new Error(`API error ${res.status}: ${errorText}`);
+        throw new Error(
+          `API error ${res.status}: ${errorText || res.statusText}`,
+        );
       }
 
       return await res.json();
@@ -69,10 +90,17 @@ async function fetchApi<T>(
 }
 
 export async function createSubscription(data: any) {
-  return fetchApi(SUBS_ENDPOINTS.CREATE, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  try {
+    const result = await fetchApi(SUBS_ENDPOINTS.CREATE, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    revalidateTag("subscriptions");
+    revalidatePath("/subscriptions");
+    return result;
+  } catch (error) {
+    return { success: false, error: "Creation failed" };
+  }
 }
 
 export async function getUserSubscriptions(userId: string, options?: any) {
@@ -80,7 +108,14 @@ export async function getUserSubscriptions(userId: string, options?: any) {
   if (options?.activeOnly) params.set("activeOnly", "true");
   if (options?.page) params.set("page", String(options.page));
   if (options?.limit) params.set("limit", String(options.limit));
-  return fetchApi(`${SUBS_ENDPOINTS.GET_USER_SUBSCRIPTIONS(userId)}?${params}`);
+
+  try {
+    return await fetchApi(
+      `${SUBS_ENDPOINTS.GET_USER_SUBSCRIPTIONS(userId)}?${params}`,
+    );
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function searchSubscriptions(filters: Record<string, unknown>) {
@@ -88,49 +123,88 @@ export async function searchSubscriptions(filters: Record<string, unknown>) {
   Object.entries(filters).forEach(([key, value]) => {
     if (value != null) params.set(key, String(value));
   });
-  return fetchApi(`${SUBS_ENDPOINTS.SEARCH}?${params}`);
+
+  try {
+    return await fetchApi(`${SUBS_ENDPOINTS.SEARCH}?${params}`);
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function getAllSubscriptionsAdmin(
   filters: Record<string, unknown>,
+  p0: string | undefined,
 ) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
     if (value) params.set(key, String(value));
   });
-  const data = await fetchApi<{ subscriptions: Subscription[] }>(
-    `${SUBS_ENDPOINTS.ADMIN_ALL}?${params}`,
-  );
-  return data.subscriptions || [];
+
+  try {
+    const data = await fetchApi<{ subscriptions: Subscription[] }>(
+      `${SUBS_ENDPOINTS.ADMIN_ALL}?${params}`,
+    );
+    return data.subscriptions || [];
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function updateSubscriptionStatus(id: string, data: any) {
-  return fetchApi(SUBS_ENDPOINTS.ADMIN_UPDATE_STATUS(id), {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
+  try {
+    const result = await fetchApi(SUBS_ENDPOINTS.ADMIN_UPDATE_STATUS(id), {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    revalidateTag("subscriptions");
+    revalidatePath("/admin/subscriptions");
+    return result;
+  } catch (error) {
+    return { success: false };
+  }
 }
 
 export async function deleteSubscriptionAdmin(id: string) {
-  return fetchApi(SUBS_ENDPOINTS.ADMIN_DELETE(id), { method: "DELETE" });
+  try {
+    const result = await fetchApi(SUBS_ENDPOINTS.ADMIN_DELETE(id), {
+      method: "DELETE",
+    });
+    revalidateTag("subscriptions");
+    revalidatePath("/admin/subscriptions");
+    return result;
+  } catch (error) {
+    return { success: false };
+  }
 }
 
 export async function getSubscriptionStats(period = "all") {
-  const data = await fetchApi<{ stats: unknown }>(
-    `${SUBS_ENDPOINTS.STATS}?period=${period}`,
-  );
-  return data.stats;
+  try {
+    const data = await fetchApi<{ stats: unknown }>(
+      `${SUBS_ENDPOINTS.STATS}?period=${period}`,
+    );
+    return data.stats;
+  } catch (error) {
+    return { total: 0, active: 0, expired: 0 };
+  }
 }
 
 export async function getTotalSubscriptions() {
-  return fetchApi(SUBS_ENDPOINTS.TOTAL);
+  try {
+    return await fetchApi(SUBS_ENDPOINTS.TOTAL);
+  } catch (error) {
+    return { total: 0 };
+  }
 }
 
 export async function triggerManualNotification(data: Record<string, unknown>) {
-  return fetchApi(SUBS_ENDPOINTS.ADMIN_NOTIFY, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  try {
+    return await fetchApi(SUBS_ENDPOINTS.ADMIN_NOTIFY, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    return { success: false };
+  }
 }
 
 export async function getMySubscriptions(): Promise<Subscription[]> {

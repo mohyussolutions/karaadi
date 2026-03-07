@@ -335,3 +335,4 @@ model Agency {
   createdAt DateTime @default(now())
   users     User[]   @relation("UserAgencies")
 }
+

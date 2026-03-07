@@ -79,7 +79,7 @@ const FavoriteDetailPage = () => {
       cat.includes("traktor") ||
       cat.includes("tractor")
     ) {
-      return `/farmequipment/${itemId}`;
+      return `/vehicles/${itemId}`;
     }
 
     const segment = ROUTE_MAP[cat] || "item-details";

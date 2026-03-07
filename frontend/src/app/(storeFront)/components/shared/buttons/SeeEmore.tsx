@@ -1,28 +1,27 @@
+"use client";
+
 import React from "react";
+import { ChevronDown } from "lucide-react";
 
 interface SeeEmoreProps {
   onClick: () => void;
+  className?: string;
 }
 
-function SeeEmore({ onClick }: SeeEmoreProps) {
+export default function SeeEmore({ onClick, className }: SeeEmoreProps) {
   return (
-    <div className="flex justify-center my-8">
-      <button
-        onClick={onClick}
-        className="
-          px-12 py-3 
-          bg-gradient-to-r from-blue-500 to-indigo-600 
-          text-white text-lg font-semibold 
-          rounded-full shadow-lg 
-          hover:from-indigo-600 hover:to-blue-500 
-          transform hover:scale-[1.03] transition-all duration-300
-          focus:outline-none focus:ring-4 focus:ring-blue-300
-        "
-      >
-        See More
-      </button>
-    </div>
+    <button
+      onClick={onClick}
+      className={`group flex items-center gap-2 transition-all duration-300 ${
+        className ||
+        "px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 shadow-md hover:shadow-blue-200"
+      }`}
+    >
+      <span className="text-sm font-semibold">See More</span>
+      <ChevronDown
+        size={18}
+        className="group-hover:translate-y-0.5 transition-transform duration-300"
+      />
+    </button>
   );
 }
-
-export default SeeEmore;

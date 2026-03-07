@@ -16,35 +16,14 @@ import {
   SOCKET_EVENTS,
   SOCKET_URL,
 } from "@/actions/constant/communicationEndpoints";
-import { CHATS, MESSAGES } from "@/actions/constant/sockets";
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  profileImage?: string;
-}
-
-interface Message {
-  id: number;
-  chatId: number;
-  senderId: string;
-  content: string;
-  createdAt: string;
-  timestamp: string;
-  sender?: User;
-}
-
-interface Chat {
-  id: number;
-  senderId: string;
-  receiverId: string;
-  sender: User;
-  receiver: User;
-  messages: Message[];
-  lastMessageAt?: string;
-  updatedAt?: string;
-}
+import {
+  getAllChats,
+  getChatMessages,
+  deleteChat,
+  deleteMessage,
+  Chat,
+  Message,
+} from "@/actions/core/chatActions";
 
 export default function AdminMonitor() {
   const [socket, setSocket] = useState<any>(null);
@@ -102,11 +81,8 @@ export default function AdminMonitor() {
   const fetchAllChats = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(CHATS.ADMIN_ALL);
-      if (res.ok) {
-        const data: Chat[] = await res.json();
-        setChats(data);
-      }
+      const data = await getAllChats();
+      setChats(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -169,16 +145,13 @@ export default function AdminMonitor() {
       setIsMobileMenuOpen(false);
     }
     try {
-      const res = await fetch(CHATS.CHAT_MESSAGES(chat.id, chat.senderId));
-      if (res.ok) {
-        const data: Message[] = await res.json();
-        const sortedMessages = data.sort((a, b) => {
-          const dateA = safeParseDate(a.createdAt) || new Date(0);
-          const dateB = safeParseDate(b.createdAt) || new Date(0);
-          return dateA.getTime() - dateB.getTime();
-        });
-        setMessages(sortedMessages);
-      }
+      const data = await getChatMessages(chat.id, chat.senderId);
+      const sortedMessages = data.sort((a, b) => {
+        const dateA = safeParseDate(a.createdAt) || new Date(0);
+        const dateB = safeParseDate(b.createdAt) || new Date(0);
+        return dateA.getTime() - dateB.getTime();
+      });
+      setMessages(sortedMessages);
       if (socket) {
         socket.emit(SOCKET_EVENTS.EMIT.JOIN_CHAT, chat.id);
       }
@@ -190,32 +163,24 @@ export default function AdminMonitor() {
   const handleDeleteChat = async (chatId: number) => {
     if (!confirm("Are you sure?")) return;
 
-    try {
-      const res = await fetch(CHATS.DELETE(chatId, ""), {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setChats((prev) => prev.filter((chat) => chat.id !== chatId));
-        if (selectedChat?.id === chatId) {
-          setSelectedChat(null);
-          setMessages([]);
-        }
+    const result = await deleteChat(chatId, "");
+    if (result.success) {
+      setChats((prev) => prev.filter((chat) => chat.id !== chatId));
+      if (selectedChat?.id === chatId) {
+        setSelectedChat(null);
+        setMessages([]);
       }
-    } catch (error) {
-      console.error(error);
+    } else {
+      alert(result.error || "Failed to delete chat");
     }
   };
 
   const handleDeleteMessage = async (messageId: number) => {
-    try {
-      const res = await fetch(MESSAGES.DELETE_MESSAGE(messageId), {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
-      }
-    } catch (error) {
-      console.error(error);
+    const result = await deleteMessage(messageId);
+    if (result.success) {
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    } else {
+      alert(result.error || "Failed to delete message");
     }
   };
 
@@ -277,7 +242,7 @@ export default function AdminMonitor() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4 md:p-8">
         <div className="relative w-full max-w-md">
-          <div className="absolute -ins-4 md:-inset-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full blur-xl opacity-30 animate-pulse"></div>
+          <div className="absolute -inset-4 md:-inset-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full blur-xl opacity-30 animate-pulse"></div>
           <div className="relative bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl">
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -307,7 +272,6 @@ export default function AdminMonitor() {
 
   return (
     <div className="flex w-full h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
-      {/* Mobile Menu Button */}
       {isMobile && (
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -317,7 +281,6 @@ export default function AdminMonitor() {
         </button>
       )}
 
-      {/* Sidebar */}
       <div
         className={`${
           isMobile
@@ -458,7 +421,6 @@ export default function AdminMonitor() {
         </div>
       </div>
 
-      {/* Overlay for mobile menu */}
       {isMobile && isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
@@ -466,7 +428,6 @@ export default function AdminMonitor() {
         />
       )}
 
-      {/* Main Content */}
       <div
         className={`flex-1 h-full flex flex-col bg-white ${
           isMobile && selectedChat ? "" : ""
@@ -564,9 +525,7 @@ export default function AdminMonitor() {
                   return (
                     <div
                       key={message.id}
-                      className={`flex ${
-                        isSender ? "justify-start" : "justify-end"
-                      }`}
+                      className={`flex ${isSender ? "justify-start" : "justify-end"}`}
                     >
                       <div
                         className={`p-3 md:p-4 rounded-2xl max-w-[90%] md:max-w-[80%] min-w-0 ${

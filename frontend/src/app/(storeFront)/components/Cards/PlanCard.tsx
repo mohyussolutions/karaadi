@@ -14,7 +14,7 @@ export const PlanCard = ({
   currency,
   onSelect,
 }: PlanCardProps) => {
-  const Icon = PLAN_ICONS[plan.iconName] || PLAN_ICONS.zap;
+  const Icon = PLAN_ICONS.zap;
 
   return (
     <div

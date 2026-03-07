@@ -10,9 +10,17 @@ import {
   MdAssessment,
   MdToday,
   MdDelete,
-  MdNotificationsActive,
 } from "react-icons/md";
 import { verifySession } from "@/actions/core/authAction";
+import {
+  getAllTickets,
+  getTicketDetails,
+  getTicketStats,
+  updateTicketStatus,
+  deleteTicket,
+  deleteMessage,
+  addTicketMessage,
+} from "@/actions/categories/contactMeAction";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -20,25 +28,23 @@ export default function AdminDashboard() {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [replyBody, setReplyBody] = useState("");
   const [admin, setAdmin] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, today: 0 });
-
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
   const loadData = async () => {
     try {
       const session = await verifySession();
-      if (!session) return router.push("/login");
+      if (!session) {
+        router.push("/login");
+        return;
+      }
       setAdmin(session);
 
-      const [tRes, sRes] = await Promise.all([
-        fetch(`${BASE_URL}/api/contactUs/tickets`),
-        fetch(`${BASE_URL}/api/contactUs/stats`),
+      const [allTickets, statsData] = await Promise.all([
+        getAllTickets(),
+        getTicketStats(),
       ]);
 
-      if (tRes.ok) {
-        const allTickets = await tRes.json();
+      if (allTickets.length > 0) {
         const sorted = allTickets.sort((a: any, b: any) => b.id - a.id);
         const uniqueUsersMap = new Map();
 
@@ -49,21 +55,21 @@ export default function AdminDashboard() {
         });
         setTickets(Array.from(uniqueUsersMap.values()));
       }
-      if (sRes.ok) setStats(await sRes.json());
+
+      setStats(statsData);
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
   const loadDetails = async (id: number) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/contactUs/tickets/${id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await getTicketDetails(id);
+      if (data) {
         setSelectedTicket(data);
-        if (data.status === "NEW") handleStatusUpdate("IN_PROGRESS", id);
+        if (data.status === "NEW") {
+          await handleStatusUpdate("IN_PROGRESS", id);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -73,19 +79,13 @@ export default function AdminDashboard() {
   const handleStatusUpdate = async (newStatus: string, ticketId?: number) => {
     const id = ticketId || selectedTicket?.id;
     if (!id) return;
+
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/contactUs/tickets/${id}/status`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
-      if (res.ok) {
+      const result = await updateTicketStatus(id, newStatus);
+      if (result.success) {
         await loadData();
         if (selectedTicket?.id === id) {
-          const updated = await res.json();
+          const updated = await getTicketDetails(id);
           setSelectedTicket(updated);
         }
       }
@@ -97,10 +97,8 @@ export default function AdminDashboard() {
   const handleDeleteTicket = async (id: number) => {
     if (!confirm("Delete entire conversation?")) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/contactUs/tickets/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
+      const result = await deleteTicket(id);
+      if (result.success) {
         setSelectedTicket(null);
         await loadData();
       }
@@ -112,10 +110,11 @@ export default function AdminDashboard() {
   const handleDeleteMessage = async (msgId: number) => {
     if (!confirm("Delete this message?")) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/contactUs/messages/${msgId}`, {
-        method: "DELETE",
-      });
-      if (res.ok) await loadDetails(selectedTicket.id);
+      const result = await deleteMessage(msgId);
+      if (result.success && selectedTicket) {
+        const updated = await getTicketDetails(selectedTicket.id);
+        setSelectedTicket(updated);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -123,23 +122,19 @@ export default function AdminDashboard() {
 
   const handleReply = async () => {
     if (!replyBody.trim() || !selectedTicket || !admin) return;
+
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/contactUs/tickets/${selectedTicket.id}/messages`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            body: replyBody,
-            senderName: admin.username || admin.name || "Admin",
-            senderEmail: admin.email,
-            senderRole: "SUPPORT_MANAGER",
-          }),
-        },
-      );
-      if (res.ok) {
+      const result = await addTicketMessage(selectedTicket.id, {
+        body: replyBody,
+        senderName: admin.username || admin.name || "Admin",
+        senderEmail: admin.email,
+        senderRole: admin.isAdmin ? "ADMIN" : "SUPPORT_MANAGER",
+      });
+
+      if (result.success) {
         setReplyBody("");
-        await loadDetails(selectedTicket.id);
+        const updated = await getTicketDetails(selectedTicket.id);
+        setSelectedTicket(updated);
         await loadData();
       }
     } catch (err) {
@@ -152,13 +147,6 @@ export default function AdminDashboard() {
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  if (loading)
-    return (
-      <div className="p-10 text-center font-bold text-gray-400">
-        LOADING DASHBOARD...
-      </div>
-    );
 
   return (
     <div className="flex h-screen max-h-screen bg-gray-50 flex-col overflow-hidden">
@@ -195,38 +183,44 @@ export default function AdminDashboard() {
             </span>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {tickets.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => loadDetails(t.id)}
-                className={`p-4 border-b cursor-pointer transition-all border-l-4 ${
-                  t.status === "NEW"
-                    ? "bg-blue-50/50 border-l-red-500"
-                    : selectedTicket?.id === t.id
-                      ? "bg-gray-100 border-l-blue-600"
-                      : "hover:bg-gray-50 border-l-transparent"
-                }`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <span
-                    className={`text-sm truncate font-bold ${t.status === "NEW" ? "text-blue-900" : "text-gray-800"}`}
-                  >
-                    {t.senderName}
-                  </span>
-                  {t.status === "DONE" ? (
-                    <MdCheckCircle className="text-green-500" />
-                  ) : (
-                    <MdRotateRight className="text-blue-500" />
-                  )}
-                </div>
-                <div className="text-[10px] font-black uppercase text-blue-500">
-                  {t.status.replace("_", " ")}
-                </div>
-                <div className="text-xs text-gray-400 truncate italic mt-1">
-                  "{t.subject}"
-                </div>
+            {tickets.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 font-medium">
+                No tickets found
               </div>
-            ))}
+            ) : (
+              tickets.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => loadDetails(t.id)}
+                  className={`p-4 border-b cursor-pointer transition-all border-l-4 ${
+                    t.status === "NEW"
+                      ? "bg-blue-50/50 border-l-red-500"
+                      : selectedTicket?.id === t.id
+                        ? "bg-gray-100 border-l-blue-600"
+                        : "hover:bg-gray-50 border-l-transparent"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <span
+                      className={`text-sm truncate font-bold ${t.status === "NEW" ? "text-blue-900" : "text-gray-800"}`}
+                    >
+                      {t.senderName}
+                    </span>
+                    {t.status === "DONE" ? (
+                      <MdCheckCircle className="text-green-500" />
+                    ) : (
+                      <MdRotateRight className="text-blue-500" />
+                    )}
+                  </div>
+                  <div className="text-[10px] font-black uppercase text-blue-500">
+                    {t.status.replace("_", " ")}
+                  </div>
+                  <div className="text-xs text-gray-400 truncate italic mt-1">
+                    "{t.subject}"
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -277,9 +271,21 @@ export default function AdminDashboard() {
                     className={`flex flex-col ${msg.senderRole === "USER" ? "items-start" : "items-end"}`}
                   >
                     <div
-                      className={`p-4 rounded-2xl text-sm max-w-[80%] shadow-sm ${msg.senderRole === "USER" ? "bg-white border text-gray-800" : "bg-blue-600 text-white"}`}
+                      className={`p-4 rounded-2xl text-sm max-w-[80%] shadow-sm relative group ${
+                        msg.senderRole === "USER"
+                          ? "bg-white border text-gray-800"
+                          : "bg-blue-600 text-white"
+                      }`}
                     >
                       {msg.body}
+                      {(admin?.isAdmin || admin?.isManager) && (
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MdDelete size={12} />
+                        </button>
+                      )}
                     </div>
                     <span className="text-[9px] text-gray-400 mt-1 uppercase font-bold tracking-tighter">
                       {msg.senderName} •{" "}

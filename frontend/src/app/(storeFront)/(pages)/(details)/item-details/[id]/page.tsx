@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,176 +16,130 @@ import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { verifySession } from "@/actions/core/authAction";
 
-type MarketplaceUser =
-  | {
-      id: string;
-      username?: string | null;
-      profileImage?: string | null;
-      phone?: string | null;
-    }
-  | string
-  | null;
-
-export type MarketplaceItem = {
-  id: string;
-  title: string;
-  description: string[] | string;
-  price: string | number;
-  images: string[];
-  region: string;
-  city: string;
-  purpose?: string;
-  category?: string;
-  subCategory?: string;
-  user: MarketplaceUser;
-  userId?: string;
-  maGaday?: boolean;
-};
-
-const isValidImageUrl = (url: string | null | undefined): url is string => {
-  return (
-    typeof url === "string" &&
-    url.length > 0 &&
-    (url.startsWith("http") ||
-      url.startsWith("/") ||
-      url.startsWith("data:image"))
-  );
-};
-
 export default function ProductDetails() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
-  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const [data, setData] = useState<{ item: any; user: any }>({
+    item: null,
+    user: null,
+  });
+  const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
-  const [showFullImage, setShowFullImage] = useState(false);
-  const [item, setItem] = useState<MarketplaceItem | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    const loadPageData = async () => {
       try {
-        const fetchedItem = await getMarketplaceItemById(id);
-        if (mounted && fetchedItem) {
-          setItem({
-            ...fetchedItem,
-            id: (fetchedItem as any)._id || fetchedItem._id,
+        const [fetchedItem, sessionUser] = await Promise.all([
+          getMarketplaceItemById(id),
+          verifySession(),
+        ]);
+
+        if (mounted) {
+          setData({
+            item: fetchedItem
+              ? { ...fetchedItem, id: fetchedItem._id || fetchedItem._id }
+              : null,
+            user: sessionUser,
           });
+          setLoading(false);
         }
       } catch (error) {
-        console.error("Fetch failed", error);
+        console.error("Load failed", error);
+        if (mounted) setLoading(false);
       }
-    })();
+    };
+
+    loadPageData();
     return () => {
       mounted = false;
     };
   }, [id]);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const user = await verifySession();
-        if (mounted) setCurrentUser(user);
-      } catch (error) {
-        console.error("Session check failed", error);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const images = useMemo(() => {
+    const rawImages = data.item?.images;
+    return Array.isArray(rawImages)
+      ? rawImages.filter(
+          (url) =>
+            typeof url === "string" &&
+            (url.startsWith("http") ||
+              url.startsWith("/") ||
+              url.startsWith("data:image")),
+        )
+      : [];
+  }, [data.item?.images]);
 
-  const getItemUser = () => {
-    if (!item) return null;
-    const rawUser = item.user;
-    const userId =
-      item.userId ||
-      (typeof rawUser === "object" && rawUser !== null
-        ? rawUser.id
-        : typeof rawUser === "string"
-          ? rawUser
-          : null);
-    if (!userId) return null;
-    const userObject =
-      typeof rawUser === "object" && rawUser !== null ? rawUser : null;
-    if (!userObject) return null;
-    return {
-      id: userId,
-      username: userObject.username ?? null,
-      profileImage: userObject.profileImage ?? null,
-      phone: userObject.phone ?? null,
-    };
-  };
+  const itemUser = useMemo(() => {
+    if (!data.item) return null;
+    const rawUser = data.item.user;
+    if (typeof rawUser === "object" && rawUser !== null) {
+      return {
+        id: rawUser.id || rawUser._id || data.item.userId,
+        username: rawUser.username || null,
+        profileImage: rawUser.profileImage || null,
+        phone: rawUser.phone || null,
+      };
+    }
+    return { id: rawUser || data.item.userId };
+  }, [data.item]);
 
   const handleSendMessage = async () => {
-    if (!currentUser) return router.push("/login");
-    const itemUser = getItemUser();
-    if (!itemUser?.id || !item?.id || item?.maGaday === true) return;
+    if (!data.user) return router.push("/login");
+    const receiverId = itemUser?.id || data.item?.userId;
+    if (!receiverId || !data.item?.id || data.item?.maGaday) return;
 
     try {
       const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          senderId: currentUser._id,
-          receiverId: itemUser.id,
-          itemId: item.id,
+          senderId: data.user._id,
+          receiverId,
+          itemId: data.item.id,
           itemModel: "Marketplace",
         }),
       });
+
       if (response.ok) {
         const result = await response.json();
-        if (result.chat?.id) router.push(`/messages/${result.chat.id}`);
-      } else {
-        router.push(`/messages?itemId=${item.id}&sellerId=${itemUser.id}`);
+        const chatId = result.chat?.id || result.id;
+        if (chatId) return router.push(`/messages/${chatId}`);
       }
+      router.push(`/messages?itemId=${data.item.id}&sellerId=${receiverId}`);
     } catch {
-      router.push(`/messages?itemId=${item.id}&sellerId=${itemUser.id}`);
+      router.push(`/messages?itemId=${data.item?.id}&sellerId=${receiverId}`);
     }
-  };
-
-  const images = Array.isArray(item?.images)
-    ? item.images.filter(isValidImageUrl)
-    : [];
-  const selectedImage = images[selectedImageIndex] || "";
-  const itemUser = getItemUser();
-
-  const handleHeartClick = () => {
-    if (!currentUser) return router.push("/login");
-    if (item?.maGaday === true) return toast.warning("Item sold");
-    setShowModal(true);
   };
 
   const handleModalConfirm = async () => {
     try {
-      const userData: any = await verifySession();
-      if (!userData) {
-        router.push("/login");
-        return;
-      }
-      const descriptionText = Array.isArray(item?.description)
-        ? item?.description.join(" ")
-        : item?.description || "";
-      const categoryString = Array.isArray(item?.category)
-        ? item?.category[0]
-        : item?.category || "Marketplace";
+      if (!data.user) return router.push("/login");
+
+      const descriptionText = Array.isArray(data.item?.description)
+        ? data.item.description.join(" ")
+        : data.item?.description || "";
+
+      const categoryString = Array.isArray(data.item?.category)
+        ? data.item.category[0]
+        : data.item?.category || "Marketplace";
 
       const response: any = await addToFavorite({
-        title: item?.title || "",
+        title: data.item?.title || "",
         description: descriptionText,
-        price: String(item?.price),
-        image: item?.images?.[0] || "",
-        itemId: item?.id || "",
+        price: String(data.item?.price),
+        image: images[0] || "",
+        itemId: data.item?.id || "",
         category: categoryString,
       });
 
       if (response?.message === "You have already saved this item") {
         toast.info("Alaabtan mar horre ayaad kaydisay!");
       } else {
-        toast.success(`"${item?.title}" waa la kaydiyay!`);
+        toast.success(`"${data.item?.title}" waa la kaydiyay!`);
         setTimeout(() => router.push("/mine/favorites"), 1200);
       }
       setShowModal(false);
@@ -194,52 +148,65 @@ export default function ProductDetails() {
     }
   };
 
-  const showPreviousImage = () =>
-    setSelectedImageIndex((prev) =>
-      prev === 0 ? images.length - 1 : prev - 1,
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
     );
-  const showNextImage = () =>
-    setSelectedImageIndex((prev) =>
-      prev === images.length - 1 ? 0 : prev + 1,
-    );
+  }
+
+  if (!data.item)
+    return <div className="text-center py-20">Alaabta lama helin.</div>;
 
   return (
-    <div className="my-12 px-6 min-h-screen">
-      <div className="max-w-7xl mx-auto mb-6 font-mono text-blue-600 text-sm h-5">
-        <p>{item ? `${item.region ?? ""}, ${item.city}` : ""}</p>
+    <div className="my-12 px-6 min-h-screen max-w-7xl mx-auto">
+      <div className="mb-6 font-mono text-blue-600 text-sm h-5">
+        <p>
+          {data.item.region}, {data.item.city}
+        </p>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start transition-opacity duration-300">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
         <div className="space-y-6">
-          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[700px]">
-            {selectedImage && (
-              <>
-                <Image
-                  src={selectedImage}
-                  alt={item?.title || ""}
-                  fill
-                  className={`object-cover cursor-pointer ${item?.maGaday ? "opacity-70" : ""}`}
-                  priority
-                  onClick={() => setShowFullImage(true)}
-                />
-                <ImageControls
-                  onHeartClick={handleHeartClick}
-                  onZoomClick={() => setShowFullImage(true)}
-                />
-              </>
+          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[600px] md:h-[700px]">
+            {images[selectedImageIndex] && (
+              <Image
+                src={images[selectedImageIndex]}
+                alt={data.item.title}
+                fill
+                className={`object-cover transition-opacity duration-300 ${data.item.maGaday ? "opacity-70" : "opacity-100"}`}
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
             )}
+
+            <ImageControls
+              onHeartClick={() =>
+                data.user ? setShowModal(true) : router.push("/login")
+              }
+              onZoomClick={() => {}}
+            />
 
             {images.length > 1 && (
               <>
                 <button
-                  onClick={showPreviousImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
+                  onClick={() =>
+                    setSelectedImageIndex((p) =>
+                      p === 0 ? images.length - 1 : p - 1,
+                    )
+                  }
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
                 >
                   <IoIosArrowBack className="w-6 h-6 text-white" />
                 </button>
                 <button
-                  onClick={showNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
+                  onClick={() =>
+                    setSelectedImageIndex((p) =>
+                      p === images.length - 1 ? 0 : p + 1,
+                    )
+                  }
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
                 >
                   <IoIosArrowForward className="w-6 h-6 text-white" />
                 </button>
@@ -252,7 +219,11 @@ export default function ProductDetails() {
               <button
                 key={i}
                 onClick={() => setSelectedImageIndex(i)}
-                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}
+                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all flex-shrink-0 ${
+                  selectedImageIndex === i
+                    ? "border-blue-500 scale-105"
+                    : "border-transparent opacity-70"
+                }`}
               >
                 <Image src={thumb} alt="" fill className="object-cover" />
               </button>
@@ -260,22 +231,20 @@ export default function ProductDetails() {
           </div>
         </div>
 
-        <div className="space-y-8 pr-4">
+        <div className="space-y-8">
           <div className="space-y-4">
             <GoBackBtn />
             <h1 className="text-4xl font-extrabold text-gray-900 leading-tight">
-              {item?.title}
+              {data.item.title}
             </h1>
             <p className="text-3xl font-bold text-blue-700">
-              {item ? `$${Number(item.price).toLocaleString()}` : ""}
+              ${Number(data.item.price).toLocaleString()}
             </p>
           </div>
 
-          {item?.maGaday && (
-            <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm">
-              <span className="text-xl uppercase tracking-widest">
-                waa la gatay
-              </span>
+          {data.item.maGaday && (
+            <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm uppercase tracking-widest">
+              waa la gatay
             </div>
           )}
 
@@ -283,11 +252,11 @@ export default function ProductDetails() {
             {itemUser && (
               <UserCard
                 user={itemUser}
-                isLoggedIn={!!currentUser}
-                itemId={item?.id || ""}
-                itemTitle={item?.title || ""}
+                isLoggedIn={!!data.user}
+                itemId={data.item.id}
+                itemTitle={data.item.title}
                 itemName="Marketplace"
-                maGaday={item?.maGaday || false}
+                maGaday={data.item.maGaday}
                 onSendMessage={handleSendMessage}
               />
             )}
@@ -298,31 +267,39 @@ export default function ProductDetails() {
               Description
             </h2>
             <div className="text-gray-700 leading-relaxed text-base">
-              {item && typeof item.description === "string" ? (
-                <div>
-                  <p className="whitespace-pre-line">
-                    {isExpanded
-                      ? item.description
-                      : `${item.description.slice(0, 250)}${item.description.length > 250 ? "..." : ""}`}
-                  </p>
-                  {item.description.length > 250 && (
-                    <button
-                      onClick={() => setIsExpanded(!isExpanded)}
-                      className="text-blue-600 font-bold mt-2 hover:underline focus:outline-none"
-                    >
-                      {isExpanded ? "Show Less" : "Read More"}
-                    </button>
-                  )}
-                </div>
-              ) : null}
+              <p className="whitespace-pre-line">
+                {isExpanded
+                  ? data.item.description
+                  : `${data.item.description?.slice(0, 250)}${data.item.description?.length > 250 ? "..." : ""}`}
+              </p>
+              {data.item.description?.length > 250 && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-blue-600 font-bold mt-2 hover:underline"
+                >
+                  {isExpanded ? "Show Less" : "Read More"}
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="pt-8 mt-8 border-t border-gray-100">
+          <div className="mt-8 p-6 border-2 border-gray-200 shadow-sm bg-white hover:border-red-200 transition-all duration-300">
             <Link
-              href={`/components/Report/${item?.id}`}
-              className="text-red-500 text-xs font-bold uppercase tracking-widest hover:text-red-700 transition-colors"
+              href={`/components/Report/${data.item.id}`}
+              className="flex items-center justify-center gap-2 text-red-600 text-xs font-black uppercase tracking-[0.15em] hover:text-red-800"
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a2.25 2.25 0 0 1 2.725 1.89l.062.526a4.5 4.5 0 0 0 5.45 3.78l.114-.029a2.25 2.25 0 0 1 2.726 1.89l.199 1.684a1.5 1.5 0 0 1-1.49 1.673l-1.13.03a4.5 4.5 0 0 1-4.85-3.592l-.314-1.664a2.25 2.25 0 0 0-2.425-1.796l-3.336.326A.75.75 0 0 1 3 11.25V3a.75.75 0 0 1 .75-.75Zm.75 15.5a.75.75 0 0 1 .75-.75H5.25a.75.75 0 0 1 0 1.5H4.5a.75.75 0 0 1-.75-.75Z"
+                  clipRule="evenodd"
+                />
+              </svg>
               Report this item
             </Link>
           </div>

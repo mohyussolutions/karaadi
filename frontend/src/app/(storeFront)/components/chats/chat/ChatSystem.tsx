@@ -48,20 +48,34 @@ export default function ChatSystem({
         );
         if (response.ok) {
           const existingChats = await response.json();
-          setChats(existingChats);
+
+          const mappedChats = existingChats.map((chat: any) => {
+            const otherUser =
+              chat.participants?.find((p: any) => p.id !== currentUserId) ||
+              chat.otherUser;
+
+            return {
+              ...chat,
+              otherUser: otherUser,
+              receiverId: otherUser?.id,
+              senderId: currentUserId,
+            };
+          });
+
+          setChats(mappedChats);
           let chatToSelect = null;
 
           if (initialChatId) {
-            const urlChat = existingChats.find(
+            const urlChat = mappedChats.find(
               (chat: any) => chat.id === initialChatId,
             );
             if (urlChat) chatToSelect = urlChat;
           }
 
           if (!chatToSelect && sellerId && itemId) {
-            const existingChat = existingChats.find(
+            const existingChat = mappedChats.find(
               (chat: any) =>
-                chat.otherUser?.id === sellerId && chat.item?.id === itemId,
+                chat.receiverId === sellerId && chat.item?.id === itemId,
             );
             if (existingChat) {
               chatToSelect = existingChat;
@@ -78,12 +92,24 @@ export default function ChatSystem({
                 if (findResponse.ok) {
                   const foundChat = await findResponse.json();
                   if (foundChat) {
-                    chatToSelect = foundChat;
+                    const otherUser =
+                      foundChat.participants?.find(
+                        (p: any) => p.id !== currentUserId,
+                      ) || foundChat.otherUser;
+
+                    const mappedFoundChat = {
+                      ...foundChat,
+                      otherUser: otherUser,
+                      receiverId: otherUser?.id,
+                      senderId: currentUserId,
+                    };
+
+                    chatToSelect = mappedFoundChat;
                     setChats((prev) => {
                       const exists = prev.some(
                         (chat) => chat.id === foundChat.id,
                       );
-                      if (!exists) return [...prev, foundChat];
+                      if (!exists) return [...prev, mappedFoundChat];
                       return prev;
                     });
                   } else {
@@ -94,15 +120,15 @@ export default function ChatSystem({
                   createNewChat();
                   return;
                 }
-              } catch (error) {
+              } catch {
                 createNewChat();
                 return;
               }
             }
           }
 
-          if (!chatToSelect && existingChats.length > 0) {
-            chatToSelect = existingChats[0];
+          if (!chatToSelect && mappedChats.length > 0) {
+            chatToSelect = mappedChats[0];
           }
 
           if (chatToSelect) {
@@ -115,7 +141,7 @@ export default function ChatSystem({
             setLoading(false);
           }
         }
-      } catch (error) {
+      } catch {
         setLoading(false);
       }
     };
@@ -139,18 +165,16 @@ export default function ChatSystem({
 
       if (response.ok) {
         const chatMessages = await response.json();
-
         chatMessages.forEach((msg: any) => {
           if (msg.id) messageIdsRef.current.add(msg.id);
         });
-
         setMessages(chatMessages);
 
         if (socket && isConnected) {
           socket.emit(SOCKET_EVENTS.EMIT.JOIN_CHAT, chatId);
         }
       }
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -173,11 +197,21 @@ export default function ChatSystem({
         const result = await response.json();
         const newChat = {
           id: result.chat.id,
+          participants: [
+            { id: currentUserId },
+            {
+              id: sellerId,
+              username: result.chat.receiver?.username || "Seller",
+              profileImage: result.chat.receiver?.profileImage || "/user.jpg",
+            },
+          ],
           otherUser: {
             id: sellerId!,
             username: result.chat.receiver?.username || "Seller",
             profileImage: result.chat.receiver?.profileImage || "/user.jpg",
           },
+          receiverId: sellerId,
+          senderId: currentUserId,
           item: {
             id: itemId!,
             title: itemTitle || "New Item",
@@ -191,14 +225,13 @@ export default function ChatSystem({
 
         setChats((prev) => [...prev, newChat]);
         setSelectedChat(newChat);
-
         if (onChatChange) onChatChange(newChat.id);
 
         if (initialMessage) {
           setTimeout(() => sendMessage(initialMessage, newChat.id), 500);
         }
       }
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -213,10 +246,24 @@ export default function ChatSystem({
     setSending(true);
     const tempId = `temp-${Date.now()}-${Math.random()}`;
 
+    let receiverId = selectedChat?.receiverId || selectedChat?.otherUser?.id;
+
+    if (!receiverId && selectedChat?.participants) {
+      const otherParticipant = selectedChat.participants.find(
+        (p: any) => p.id !== currentUserId,
+      );
+      receiverId = otherParticipant?.id;
+    }
+
+    if (!receiverId && sellerId) {
+      receiverId = sellerId;
+    }
+
     const tempMessage = {
       tempId,
       content: messageContent,
       senderId: currentUserId,
+      receiverId,
       chatId: targetChatId,
       timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -242,15 +289,12 @@ export default function ChatSystem({
           chatId: targetChatId,
           content: messageContent,
           senderId: currentUserId,
-          receiverId: selectedChat?.otherUser?.id,
+          receiverId,
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`,
-        );
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const savedMessage = await response.json();
@@ -258,7 +302,6 @@ export default function ChatSystem({
       if (savedMessage.id) {
         messageIdsRef.current.add(savedMessage.id);
         recentlySentRef.current.add(savedMessage.id);
-
         setTimeout(() => {
           recentlySentRef.current.delete(savedMessage.id);
         }, 3000);
@@ -266,12 +309,7 @@ export default function ChatSystem({
 
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.tempId === tempId
-            ? {
-                ...savedMessage,
-                status: "sent",
-              }
-            : msg,
+          msg.tempId === tempId ? { ...savedMessage, status: "sent" } : msg,
         ),
       );
 
@@ -302,12 +340,7 @@ export default function ChatSystem({
       setMessages((prev) =>
         prev.map((msg) =>
           msg.tempId === tempId
-            ? {
-                ...msg,
-                status: "failed",
-                error:
-                  error instanceof Error ? error.message : "Failed to send",
-              }
+            ? { ...msg, status: "failed", error: "Failed to send" }
             : msg,
         ),
       );
@@ -332,7 +365,7 @@ export default function ChatSystem({
           if (onChatChange) onChatChange(0);
         }
       }
-    } catch (error) {}
+    } catch {}
   };
 
   const handleDeleteMessage = async (messageId: number | string) => {
@@ -350,7 +383,7 @@ export default function ChatSystem({
         setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
         messageIdsRef.current.delete(Number(messageId));
       }
-    } catch (error) {}
+    } catch {}
   };
 
   const handleUpdateMessage = async (
@@ -368,7 +401,6 @@ export default function ChatSystem({
       );
 
       if (response.ok) {
-        const updatedMsg = await response.json();
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === messageId
@@ -377,7 +409,7 @@ export default function ChatSystem({
           ),
         );
       }
-    } catch (error) {}
+    } catch {}
   };
 
   const retryFailedMessage = async (tempMessage: any) => {
@@ -391,7 +423,6 @@ export default function ChatSystem({
   const handleSocketReady = (newSocket: Socket, connected: boolean) => {
     setSocket(newSocket);
     setIsConnected(connected);
-
     if (connected && selectedChat) {
       newSocket.emit(SOCKET_EVENTS.EMIT.JOIN_CHAT, selectedChat.id);
     }
@@ -402,9 +433,7 @@ export default function ChatSystem({
       return;
 
     const messageId = message.id;
-
     if (messageId && recentlySentRef.current.has(messageId)) return;
-
     if (messageId && messageIdsRef.current.has(messageId)) return;
 
     if (messageId) {
@@ -431,10 +460,7 @@ export default function ChatSystem({
       setMessages((prev) =>
         prev.map((msg) =>
           msg.tempId === data.tempId
-            ? {
-                ...data.message,
-                status: "sent",
-              }
+            ? { ...data.message, status: "sent" }
             : msg,
         ),
       );
@@ -444,13 +470,9 @@ export default function ChatSystem({
   const handleSelectChat = (chat: any) => {
     setSelectedChat(chat);
     loadChatMessages(chat.id);
-
     if (onChatChange) onChatChange(chat.id);
-
     if (socket && isConnected) {
-      socket.emit(SOCKET_EVENTS.EMIT.MARK_AS_READ, {
-        chatId: chat.id,
-      });
+      socket.emit(SOCKET_EVENTS.EMIT.MARK_AS_READ, { chatId: chat.id });
     }
   };
 
@@ -472,20 +494,18 @@ export default function ChatSystem({
               isMobile ? "absolute inset-0 z-10 bg-white" : "w-full md:w-80"
             } border-r bg-gray-50 flex flex-col`}
           >
-            <div className="p-3 md:p-4 border-b bg-white flex items-center justify-between">
-              <div>
-                <h2 className="text-lg md:text-xl font-bold">Your Chats</h2>
-                <p className="text-xs md:text-sm text-gray-500">
-                  {chats.length} conversation{chats.length !== 1 ? "s" : ""}
-                </p>
-              </div>
+            <div className="p-3 md:p-4 border-b bg-white">
+              <h2 className="text-lg md:text-xl font-bold">Your Chats</h2>
+              <p className="text-xs md:text-sm text-gray-500">
+                {chats.length} conversation{chats.length !== 1 ? "s" : ""}
+              </p>
             </div>
             <div className="flex-1 overflow-y-auto">
               {chats.map((chat) => (
                 <div
                   key={chat.id}
                   onClick={() => handleSelectChat(chat)}
-                  className={`w-full p-3 md:p-4 text-left border-b hover:bg-gray-100 transition-colors flex items-center group relative cursor-pointer ${
+                  className={`w-full p-3 md:p-4 text-left border-b hover:bg-gray-100 transition-colors flex items-start group relative cursor-pointer ${
                     selectedChat?.id === chat.id
                       ? "bg-blue-50 border-blue-200"
                       : "bg-white"
@@ -495,7 +515,7 @@ export default function ChatSystem({
                     <div className="w-8 h-8 md:w-12 md:h-12 rounded-full overflow-hidden bg-blue-100">
                       {chat.otherUser?.profileImage ? (
                         <Image
-                          src={chat.otherUser.profileImage || "/user.jpg"}
+                          src={chat.otherUser.profileImage}
                           alt={chat.otherUser.username}
                           width={48}
                           height={48}
@@ -509,13 +529,33 @@ export default function ChatSystem({
                       )}
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <div className="font-semibold text-sm md:text-base truncate">
-                      {chat.otherUser?.username || "User"}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-sm md:text-base truncate">
+                        {chat.otherUser?.username || "User"}
+                      </div>
+                      {chat.item?.title && (
+                        <span className="text-[10px] md:text-xs bg-gray-200 px-2 py-0.5 rounded-full truncate max-w-[100px] ml-2">
+                          {chat.item.title}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-xs md:text-sm text-gray-600 truncate">
-                      {chat.item?.title || "Product conversation"}
+                    <div className="text-xs md:text-sm text-gray-600 mt-0.5">
+                      {chat.lastMessage?.content ? (
+                        <span className="truncate block">
+                          {chat.lastMessage.content}
+                        </span>
+                      ) : (
+                        <span className="italic text-gray-400 truncate block">
+                          No messages yet
+                        </span>
+                      )}
                     </div>
+                    {chat.item?.title && (
+                      <div className="text-[10px] md:text-xs text-blue-600 mt-1 truncate">
+                        About: {chat.item.title}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={(e) => deleteChat(chat.id, e)}

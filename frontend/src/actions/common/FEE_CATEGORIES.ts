@@ -131,17 +131,17 @@ export const FEE_CATEGORIES = [
     title: "Subscriptions (Is-diiwaangelin)",
     fees: [
       {
-        key: "subStandard",
+        key: "basic30",
         label: "30-Day Basic",
         type: LISTING_TYPES.FEE,
       },
       {
-        key: "subStandard60",
+        key: "standard60",
         label: "60-Day Standard",
         type: LISTING_TYPES.FEE,
       },
       {
-        key: "subPremium",
+        key: "premium90",
         label: "90-Day Premium",
         type: LISTING_TYPES.FEE,
       },

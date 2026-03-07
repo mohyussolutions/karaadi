@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import FeeLoading from "./FeeLoading";
+
 import {
   getMarketplaceFees,
   createMarketplaceFee,
@@ -31,6 +31,7 @@ import {
 } from "@/actions/categories/feeAction";
 import { FEE_CATEGORIES } from "@/actions/common/FEE_CATEGORIES";
 import FeeModal from "@/app/(storeFront)/components/shared/modals/feeModel";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 interface FeeIds {
   m: string;
@@ -75,7 +76,7 @@ const fieldMappings: FieldMappings = {
     "partTime",
     "freelance",
   ],
-  subPlans: ["subStandard", "subStandard60", "subPremium"],
+  subPlans: ["basic30", "standard60", "premium90"],
   system: ["taxRate", "platformFee", "waafiFee", "currency"],
 };
 
@@ -299,7 +300,7 @@ const FeeManagement = () => {
   if (loading.fetch) {
     return (
       <div className="flex justify-center py-32">
-        <FeeLoading />
+        <Loading />
       </div>
     );
   }

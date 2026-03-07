@@ -5,22 +5,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { login, verifySession } from "@/actions/core/authAction";
+import LoginLoading from "@/app/(storeFront)/components/shared/Loading/LoginLoading";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
     verifySession()
       .then((userData) => {
-        setUser(userData);
-        if (userData) router.push("/");
+        if (userData) {
+          router.replace("/");
+        } else {
+          setIsCheckingSession(false);
+        }
       })
-      .catch(() => setUser(null));
+      .catch(() => setIsCheckingSession(false));
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +40,7 @@ export default function LoginForm() {
       else if (user.isSupport) window.location.href = "/support";
       else window.location.href = "/";
     } catch (err: any) {
+      setIsLoading(false);
       if (err.message?.includes("429")) {
         setError("Too many attempts. Please wait 15 minutes.");
       } else if (
@@ -46,12 +51,16 @@ export default function LoginForm() {
       } else {
         setError("Login failed. Check your credentials.");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  if (user) return null;
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoginLoading />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -93,7 +102,7 @@ export default function LoginForm() {
           disabled={isLoading}
           className="w-full bg-blue-600 text-white font-bold py-4 rounded-3xl"
         >
-          {isLoading ? "Loading..." : "Login"}
+          {isLoading ? <LoginLoading /> : "Login"}
         </button>
 
         {error && <p className="mt-4 text-center text-red-600">{error}</p>}

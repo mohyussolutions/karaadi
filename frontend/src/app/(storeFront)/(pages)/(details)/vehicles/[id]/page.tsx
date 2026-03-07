@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import Image from "next/image";
@@ -16,7 +16,7 @@ import { verifySession } from "@/actions/core/authAction";
 import { getCarById } from "@/actions/categories/carActions";
 import { getBoatById } from "@/actions/categories/boatActions";
 import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
-import { getTraktorById } from "@/actions/categories/FarmequipmentAction";
+import { getFarmEquipmentById } from "@/actions/categories/FarmequipmentAction";
 import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 interface VehicleItem {
@@ -36,10 +36,52 @@ interface VehicleItem {
   vehicleModel?: string;
   modelName?: string;
   boatModel?: string;
-  traktortModel?: string;
+  farmequipmentModel?: string;
   maGaday?: boolean;
   user?: any;
+  userId?: string;
 }
+
+const isValidImageUrl = (url: string | null | undefined): url is string => {
+  return (
+    typeof url === "string" &&
+    url.length > 0 &&
+    (url.startsWith("http") ||
+      url.startsWith("/") ||
+      url.startsWith("data:image"))
+  );
+};
+
+const DetailsSkeleton = () => (
+  <div className="my-12 px-6 min-h-screen">
+    <div className="max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+        <div className="space-y-6">
+          <div className="w-full bg-gray-200 rounded-2xl h-[700px] animate-pulse" />
+          <div className="flex gap-3 overflow-x-auto py-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="min-w-[100px] h-24 bg-gray-200 rounded-xl animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-8 pr-4">
+          <div className="space-y-4">
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-12 w-3/4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="h-32 bg-gray-200 rounded-2xl animate-pulse" />
+          <div className="h-48 bg-gray-200 rounded-2xl animate-pulse" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const itemCache = new Map();
 
 export default function VehicleDetails() {
   const router = useRouter();
@@ -50,54 +92,123 @@ export default function VehicleDetails() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [showFullImage, setShowFullImage] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (!id) return;
       try {
-        let vehicle = null;
-        let vehicleCategory = "";
-        vehicle = await getCarById(id);
-        if (vehicle) vehicleCategory = "Car";
-        if (!vehicle) {
-          vehicle = await getBoatById(id);
-          if (vehicle) vehicleCategory = "Boat";
-        }
-        if (!vehicle) {
-          vehicle = await getTraktorById(id);
-          if (vehicle) vehicleCategory = "Tractor";
-        }
-        if (!vehicle) {
-          vehicle = await getMotorcycleById(id);
-          if (vehicle) vehicleCategory = "Motorcycle";
-        }
         const user = await verifySession();
-        if (mounted) {
-          setCurrentUser(user ?? null);
-          if (vehicle) {
-            setItem(vehicle);
-            setCategory(vehicleCategory);
-          }
-        }
+        if (mounted) setCurrentUser(user ?? null);
       } catch (error) {
-        console.error(error);
-      } finally {
-        if (mounted) setIsLoading(false);
+        console.error("Session check failed", error);
       }
     })();
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchItem = async () => {
+      if (!id) return;
+
+      if (itemCache.has(id)) {
+        const cached = itemCache.get(id);
+        if (mounted) {
+          setItem(cached.item);
+          setCategory(cached.category);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        const [car, boat, farm, motorcycle] = await Promise.allSettled([
+          getCarById(id).catch(() => null),
+          getBoatById(id).catch(() => null),
+          getFarmEquipmentById(id).catch(() => null),
+          getMotorcycleById(id).catch(() => null),
+        ]);
+
+        let foundItem = null;
+        let foundCategory = "";
+
+        if (car.status === "fulfilled" && car.value) {
+          foundItem = car.value;
+          foundCategory = "Car";
+        } else if (boat.status === "fulfilled" && boat.value) {
+          foundItem = boat.value;
+          foundCategory = "Boat";
+        } else if (farm.status === "fulfilled" && farm.value) {
+          foundItem = farm.value;
+          foundCategory = "Farm Equipment";
+        } else if (motorcycle.status === "fulfilled" && motorcycle.value) {
+          foundItem = motorcycle.value;
+          foundCategory = "Motorcycle";
+        }
+
+        if (mounted && foundItem) {
+          setItem(foundItem);
+          setCategory(foundCategory);
+          itemCache.set(id, { item: foundItem, category: foundCategory });
+        }
+      } catch (error) {
+        console.error("Error fetching item:", error);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    fetchItem();
+
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
+  const getItemUser = () => {
+    if (!item) return null;
+
+    if (typeof item.user === "object" && item.user !== null) {
+      return {
+        id: item.user._id || item.user.id || "",
+        username: item.user.username || "Seller",
+        profileImage: item.user.profileImage || null,
+        phone: item.user.phone || null,
+      };
+    }
+
+    return {
+      id: item.userId || item.user || "",
+      username: "Seller",
+      profileImage: null,
+      phone: null,
+    };
+  };
+
   const handleSendMessage = async () => {
-    if (!currentUser) return router.push("/login");
-    const sellerId =
-      typeof item?.user === "object" ? item.user?._id : item?.user;
-    if (!sellerId || !item?._id || item?.maGaday) return;
+    if (!currentUser) {
+      router.push("/login");
+      return;
+    }
+
+    const itemUser = getItemUser();
+    const finalReceiverId = itemUser?.id;
+    const finalItemId = item?._id;
+
+    if (!finalReceiverId || !finalItemId || item?.maGaday) {
+      if (item?.maGaday) {
+        toast.warning("This item has been sold");
+      }
+      return;
+    }
 
     try {
       const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
@@ -105,19 +216,27 @@ export default function VehicleDetails() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           senderId: currentUser._id,
-          receiverId: sellerId,
-          itemId: item._id,
+          receiverId: finalReceiverId,
+          itemId: finalItemId,
           itemModel: category,
         }),
       });
+
       if (response.ok) {
         const result = await response.json();
-        if (result.chat?.id) router.push(`/messages/${result.chat.id}`);
-      } else {
-        router.push(`/messages?itemId=${item._id}&sellerId=${sellerId}`);
+        const chatId = result.chat?.id || result.id;
+        if (chatId) {
+          router.push(`/messages/${chatId}`);
+          return;
+        }
       }
+      router.push(
+        `/messages?itemId=${finalItemId}&sellerId=${finalReceiverId}`,
+      );
     } catch {
-      router.push(`/messages?itemId=${item._id}&sellerId=${sellerId}`);
+      router.push(
+        `/messages?itemId=${finalItemId}&sellerId=${finalReceiverId}`,
+      );
     }
   };
 
@@ -133,6 +252,7 @@ export default function VehicleDetails() {
       const descriptionText = Array.isArray(item.description)
         ? item.description.join(" ")
         : item.description || "";
+
       const response: any = await addToFavorite({
         title: item.title,
         description: descriptionText,
@@ -154,16 +274,38 @@ export default function VehicleDetails() {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen bg-white" />;
-  if (!item)
+  const images = useMemo(
+    () =>
+      Array.isArray(item?.images) ? item.images.filter(isValidImageUrl) : [],
+    [item],
+  );
+
+  const selectedImage = images[selectedImageIndex] || "";
+  const itemUser = getItemUser();
+
+  const showPreviousImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === 0 ? images.length - 1 : prev - 1,
+    );
+  };
+
+  const showNextImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === images.length - 1 ? 0 : prev + 1,
+    );
+  };
+
+  if (isLoading) {
+    return <DetailsSkeleton />;
+  }
+
+  if (!item) {
     return (
       <div className="p-8 text-center text-red-600 font-bold">
         Product Not Found
       </div>
     );
-
-  const images = Array.isArray(item.images) ? item.images.filter(Boolean) : [];
-  const selectedImage = images[selectedImageIndex] || "";
+  }
 
   return (
     <div className="my-12 px-6 min-h-screen">
@@ -184,31 +326,24 @@ export default function VehicleDetails() {
                   fill
                   className={`object-cover cursor-pointer ${item.maGaday ? "opacity-70" : ""}`}
                   priority
+                  onClick={() => setShowFullImage(true)}
                 />
                 <ImageControls
                   onHeartClick={handleHeartClick}
-                  onZoomClick={() => {}}
+                  onZoomClick={() => setShowFullImage(true)}
                 />
               </>
             )}
             {images.length > 1 && (
               <>
                 <button
-                  onClick={() =>
-                    setSelectedImageIndex((p) =>
-                      p === 0 ? images.length - 1 : p - 1,
-                    )
-                  }
+                  onClick={showPreviousImage}
                   className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
                 >
                   <IoIosArrowBack className="w-6 h-6 text-white" />
                 </button>
                 <button
-                  onClick={() =>
-                    setSelectedImageIndex((p) =>
-                      p === images.length - 1 ? 0 : p + 1,
-                    )
-                  }
+                  onClick={showNextImage}
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
                 >
                   <IoIosArrowForward className="w-6 h-6 text-white" />
@@ -221,7 +356,11 @@ export default function VehicleDetails() {
               <button
                 key={i}
                 onClick={() => setSelectedImageIndex(i)}
-                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}
+                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${
+                  selectedImageIndex === i
+                    ? "border-blue-500 scale-105"
+                    : "border-transparent opacity-70 hover:opacity-100"
+                }`}
               >
                 <Image
                   src={thumb}
@@ -270,7 +409,7 @@ export default function VehicleDetails() {
               {(item.vehicleModel ||
                 item.modelName ||
                 item.boatModel ||
-                item.traktortModel) && (
+                item.farmequipmentModel) && (
                 <div>
                   <span className="text-gray-400 font-bold uppercase text-xs block">
                     Model
@@ -279,7 +418,7 @@ export default function VehicleDetails() {
                     {item.vehicleModel ||
                       item.modelName ||
                       item.boatModel ||
-                      item.traktortModel}
+                      item.farmequipmentModel}
                   </span>
                 </div>
               )}
@@ -309,32 +448,31 @@ export default function VehicleDetails() {
                   <span className="font-bold uppercase">{item.fuelType}</span>
                 </div>
               )}
+              {item.hours !== undefined && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Hours
+                  </span>
+                  <span className="font-bold">
+                    {item.hours.toLocaleString()} Hrs
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <UserCard
-              user={{
-                id:
-                  typeof item.user === "object"
-                    ? item.user?._id
-                    : item.user || "",
-                username:
-                  typeof item.user === "object"
-                    ? item.user?.username
-                    : "Seller",
-                profileImage:
-                  typeof item.user === "object"
-                    ? item.user?.profileImage
-                    : null,
-                phone: typeof item.user === "object" ? item.user?.phone : null,
-              }}
-              isLoggedIn={Boolean(currentUser)}
-              itemId={item._id}
-              itemTitle={item.title}
-              itemName={category}
-              onSendMessage={handleSendMessage}
-            />
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[100px]">
+            {itemUser && (
+              <UserCard
+                user={itemUser}
+                isLoggedIn={!!currentUser}
+                itemId={item._id}
+                itemTitle={item.title}
+                itemName={category}
+                maGaday={item.maGaday || false}
+                onSendMessage={handleSendMessage}
+              />
+            )}
           </div>
 
           <div className="space-y-4">
@@ -346,7 +484,7 @@ export default function VehicleDetails() {
                 {typeof item.description === "string"
                   ? isExpanded
                     ? item.description
-                    : `${item.description.slice(0, 250)}...`
+                    : `${item.description.slice(0, 250)}${item.description.length > 250 ? "..." : ""}`
                   : item.description.join(" ")}
               </p>
               {typeof item.description === "string" &&
@@ -361,7 +499,7 @@ export default function VehicleDetails() {
             </div>
           </div>
 
-          <div className="pt-8 mt-8 border-t border-gray-100">
+          <div className="mt-8 p-6 border-2 border-gray-200 shadow-sm bg-white hover:border-red-200 transition-all duration-300">
             <Link
               href={`/components/Report/${item._id}`}
               className="text-red-500 text-xs font-bold uppercase tracking-widest hover:text-red-700 transition-colors"

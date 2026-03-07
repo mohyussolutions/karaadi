@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import Image from "next/image";
 import { toast } from "react-toastify";
@@ -19,6 +19,7 @@ import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 interface RealEstateItem {
   id: string;
+  _id?: string;
   title: string;
   description: string;
   price: number | string;
@@ -28,6 +29,7 @@ interface RealEstateItem {
   user?:
     | {
         id: string;
+        _id?: string;
         username: string;
         profileImage?: string;
         phone?: string;
@@ -37,7 +39,19 @@ interface RealEstateItem {
   bathrooms?: number;
   squareFeet?: number;
   subCategory?: string;
+  maGadayn?: boolean;
+  userId?: string;
 }
+
+const isValidImageUrl = (url: string | null | undefined): url is string => {
+  return (
+    typeof url === "string" &&
+    url.length > 0 &&
+    (url.startsWith("http") ||
+      url.startsWith("/") ||
+      url.startsWith("data:image"))
+  );
+};
 
 function RealEstateDetails() {
   const router = useRouter();
@@ -62,7 +76,10 @@ function RealEstateDetails() {
 
         if (mounted) {
           if (data) {
-            setRealEstate({ ...data, id: data._id || data.id });
+            setRealEstate({
+              ...data,
+              id: data._id || data.id,
+            });
           }
           setCurrentUser(user);
         }
@@ -77,8 +94,78 @@ function RealEstateDetails() {
     };
   }, [id]);
 
+  const getItemUser = () => {
+    if (!realEstate) return null;
+
+    if (typeof realEstate.user === "object" && realEstate.user !== null) {
+      return {
+        id: realEstate.user._id || realEstate.user.id || "",
+        username: realEstate.user.username || "Seller",
+        profileImage: realEstate.user.profileImage || null,
+        phone: realEstate.user.phone || null,
+      };
+    }
+
+    return {
+      id: realEstate.userId || realEstate.user || "",
+      username: "Seller",
+      profileImage: null,
+      phone: null,
+    };
+  };
+
+  const handleSendMessage = async () => {
+    if (!currentUser) {
+      router.push("/login");
+      return;
+    }
+
+    const itemUser = getItemUser();
+    const finalReceiverId = itemUser?.id || realEstate?.userId;
+    const finalItemId = realEstate?.id;
+
+    if (!finalReceiverId || !finalItemId || realEstate?.maGadayn) {
+      if (realEstate?.maGadayn) {
+        toast.warning("This property has been sold");
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderId: currentUser._id,
+          receiverId: finalReceiverId,
+          itemId: finalItemId,
+          itemModel: "RealEstate",
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const chatId = result.chat?.id || result.id;
+        if (chatId) {
+          router.push(`/messages/${chatId}`);
+          return;
+        }
+      }
+      router.push(
+        `/messages?itemId=${finalItemId}&sellerId=${finalReceiverId}`,
+      );
+    } catch {
+      router.push(
+        `/messages?itemId=${finalItemId}&sellerId=${finalReceiverId}`,
+      );
+    }
+  };
+
   const getThumbSrc = (thumb: string | File): string => {
-    if (typeof thumb === "string") return thumb;
+    if (typeof thumb === "string") {
+      if (isValidImageUrl(thumb)) return thumb;
+      return "/placeholder.png";
+    }
     try {
       return URL.createObjectURL(thumb);
     } catch {
@@ -88,6 +175,7 @@ function RealEstateDetails() {
 
   const handleHeartClick = () => {
     if (!currentUser) return router.push("/login");
+    if (realEstate?.maGadayn) return toast.warning("Alaabtan waa la gatay");
     setShowModal(true);
   };
 
@@ -99,7 +187,10 @@ function RealEstateDetails() {
         description: realEstate.description,
         price: String(realEstate.price),
         image:
-          typeof realEstate.images[0] === "string" ? realEstate.images[0] : "",
+          typeof realEstate.images[0] === "string" &&
+          isValidImageUrl(realEstate.images[0] as string)
+            ? (realEstate.images[0] as string)
+            : "",
         itemId: realEstate.id,
         category: "RealEstate",
       });
@@ -116,48 +207,40 @@ function RealEstateDetails() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!currentUser || !realEstate) return router.push("/login");
-    const sellerId =
-      typeof realEstate.user === "object"
-        ? realEstate.user?.id
-        : realEstate.user;
-    if (!sellerId) return;
+  const images = useMemo(() => {
+    if (!realEstate?.images) return [];
+    return realEstate.images.filter((img) => {
+      if (typeof img === "string") return isValidImageUrl(img);
+      return true;
+    });
+  }, [realEstate]);
 
-    try {
-      const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderId: currentUser._id,
-          receiverId: sellerId,
-          itemId: realEstate.id,
-          itemModel: "RealEstate",
-        }),
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.chat?.id) router.push(`/messages/${result.chat.id}`);
-      } else {
-        router.push(`/messages?itemId=${realEstate.id}&sellerId=${sellerId}`);
-      }
-    } catch {
-      router.push(`/messages?itemId=${realEstate.id}&sellerId=${sellerId}`);
-    }
+  const selectedImage = images[selectedImageIndex]
+    ? getThumbSrc(images[selectedImageIndex])
+    : "";
+  const itemUser = getItemUser();
+
+  const showPreviousImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === 0 ? images.length - 1 : prev - 1,
+    );
+  };
+
+  const showNextImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === images.length - 1 ? 0 : prev + 1,
+    );
   };
 
   if (isLoading) return <div className="min-h-screen bg-white" />;
-  if (!realEstate)
+
+  if (!realEstate) {
     return (
       <div className="p-8 text-center text-red-600 font-bold">
         Listing not found
       </div>
     );
-
-  const images = realEstate.images || [];
-  const selectedImage = images[selectedImageIndex]
-    ? getThumbSrc(images[selectedImageIndex])
-    : "";
+  }
 
   return (
     <div className="my-12 px-6 min-h-screen">
@@ -176,7 +259,7 @@ function RealEstateDetails() {
                   src={selectedImage}
                   alt={realEstate.title}
                   fill
-                  className="object-cover cursor-pointer"
+                  className={`object-cover cursor-pointer ${realEstate.maGadayn ? "opacity-70" : ""}`}
                   priority
                   onClick={() => setShowFullImage(true)}
                 />
@@ -190,21 +273,13 @@ function RealEstateDetails() {
             {images.length > 1 && (
               <>
                 <button
-                  onClick={() =>
-                    setSelectedImageIndex((p) =>
-                      p === 0 ? images.length - 1 : p - 1,
-                    )
-                  }
+                  onClick={showPreviousImage}
                   className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
                 >
                   <IoIosArrowBack className="w-6 h-6 text-white" />
                 </button>
                 <button
-                  onClick={() =>
-                    setSelectedImageIndex((p) =>
-                      p === images.length - 1 ? 0 : p + 1,
-                    )
-                  }
+                  onClick={showNextImage}
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
                 >
                   <IoIosArrowForward className="w-6 h-6 text-white" />
@@ -219,7 +294,11 @@ function RealEstateDetails() {
                 key={i}
                 type="button"
                 onClick={() => setSelectedImageIndex(i)}
-                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}
+                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${
+                  selectedImageIndex === i
+                    ? "border-blue-500 scale-105"
+                    : "border-transparent opacity-70 hover:opacity-100"
+                }`}
               >
                 <Image
                   src={getThumbSrc(thumb)}
@@ -244,32 +323,70 @@ function RealEstateDetails() {
             </p>
           </div>
 
+          {realEstate.maGadayn && (
+            <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm">
+              <span className="text-xl uppercase tracking-widest">
+                waa la gatay
+              </span>
+            </div>
+          )}
+
+          <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <h3 className="text-xl font-bold uppercase mb-4 border-b pb-2">
+              Property Details
+            </h3>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-lg">
+              {realEstate.bedrooms && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Bedrooms
+                  </span>
+                  <span className="font-bold">{realEstate.bedrooms}</span>
+                </div>
+              )}
+              {realEstate.bathrooms && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Bathrooms
+                  </span>
+                  <span className="font-bold">{realEstate.bathrooms}</span>
+                </div>
+              )}
+              {realEstate.squareFeet && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Square Feet
+                  </span>
+                  <span className="font-bold">
+                    {realEstate.squareFeet.toLocaleString()} sq ft
+                  </span>
+                </div>
+              )}
+              {realEstate.subCategory && (
+                <div>
+                  <span className="text-gray-400 font-bold uppercase text-xs block">
+                    Property Type
+                  </span>
+                  <span className="font-bold uppercase">
+                    {realEstate.subCategory}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[100px]">
-            <UserCard
-              user={{
-                id:
-                  typeof realEstate.user === "object"
-                    ? realEstate.user?.id
-                    : realEstate.user || "unknown",
-                username:
-                  typeof realEstate.user === "object"
-                    ? realEstate.user?.username
-                    : "Unknown Seller",
-                profileImage:
-                  typeof realEstate.user === "object"
-                    ? realEstate.user?.profileImage
-                    : "/user.jpg",
-                phone:
-                  typeof realEstate.user === "object"
-                    ? realEstate.user?.phone
-                    : null,
-              }}
-              isLoggedIn={!!currentUser}
-              itemId={realEstate.id}
-              itemTitle={realEstate.title}
-              itemName="RealEstate"
-              onSendMessage={handleSendMessage}
-            />
+            {itemUser && (
+              <UserCard
+                user={itemUser}
+                isLoggedIn={!!currentUser}
+                itemId={realEstate.id}
+                itemTitle={realEstate.title}
+                itemName="RealEstate"
+                maGaday={realEstate.maGadayn || false}
+                onSendMessage={handleSendMessage}
+              />
+            )}
           </div>
 
           <div className="space-y-4">
@@ -280,7 +397,7 @@ function RealEstateDetails() {
               <p className="whitespace-pre-line">
                 {isExpanded
                   ? realEstate.description
-                  : `${realEstate.description?.slice(0, 300)}...`}
+                  : `${realEstate.description?.slice(0, 300)}${realEstate.description?.length > 300 ? "..." : ""}`}
               </p>
               {realEstate.description?.length > 300 && (
                 <button
@@ -293,7 +410,7 @@ function RealEstateDetails() {
             </div>
           </div>
 
-          <div className="pt-8 mt-8 border-t border-gray-100">
+          <div className="mt-8 p-6 border-2 border-gray-200 shadow-sm bg-white hover:border-red-200 transition-all duration-300">
             <Link
               href={`/components/Report/${realEstate.id}`}
               className="text-red-500 text-xs font-bold uppercase tracking-widest hover:text-red-700 transition-colors"
@@ -308,6 +425,7 @@ function RealEstateDetails() {
         <SaveFavoriteModel
           onConfirm={handleModalConfirm}
           onCancel={() => setShowModal(false)}
+          backgroundImage={typeof images[0] === "string" ? images[0] : ""}
         />
       )}
     </div>

@@ -11,20 +11,21 @@ import {
   createCity,
   deleteCity,
 } from "../../controllers/categoryController/IocController.ts";
+import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const locRoutes = Router();
 
 locRoutes.get("/stats", getLocationStats);
-locRoutes.post("/sync", syncAllLocations);
+locRoutes.post("/sync", ProtectRoute, syncAllLocations);
 
 locRoutes.get("/regions", getAllRegions);
 locRoutes.get("/regions/:id", getRegionById);
-locRoutes.post("/regions", createRegion);
-locRoutes.put("/regions/:id", updateRegion);
-locRoutes.delete("/regions/:id", deleteRegion);
+locRoutes.post("/regions", ProtectRoute, createRegion);
+locRoutes.put("/regions/:id", ProtectRoute, updateRegion);
+locRoutes.delete("/regions/:id", ProtectRoute, deleteRegion);
 
 locRoutes.get("/cities", getAllCities);
-locRoutes.post("/cities", createCity);
-locRoutes.delete("/cities/:id", deleteCity);
+locRoutes.post("/cities", ProtectRoute, createCity);
+locRoutes.delete("/cities/:id", ProtectRoute, deleteCity);
 
 export default locRoutes;

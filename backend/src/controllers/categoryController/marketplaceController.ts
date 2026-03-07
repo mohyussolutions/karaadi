@@ -212,12 +212,13 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
       include: { user: selectUserBasic },
     });
 
-    await Promise.all([
+    // Fire-and-forget cache invalidation for speed
+    Promise.all([
       cacheManager.deletePattern("marketplace:*"),
       cacheManager.delete(CACHE_KEYS.TOTAL),
       cacheManager.delete(CACHE_KEYS.PAID_TOTAL),
       cacheManager.delete(CACHE_KEYS.UNPAID_TOTAL),
-    ]);
+    ]).catch(() => {});
 
     return res.status(201).json(newItem);
   } catch (error) {

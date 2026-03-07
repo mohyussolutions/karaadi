@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { PAYMENT_ENDPOINTS } from "@/actions/constant/constant";
 import { verifySession } from "@/actions/core/authAction";
@@ -12,14 +12,16 @@ import {
   CreditCard,
   ShieldCheck,
   CheckCircle2,
-  Lock,
-  Smartphone,
   Loader2,
-  ChevronDown,
+  ArrowLeft,
+  Wallet,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { PaymentMethods } from "../paymentMethod";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import CheckoutSteps from "@/app/(storeFront)/components/checkout/page";
+import CardPayment from "../paymentTypes/CardPayment";
+import MobilePayment from "../paymentTypes/MobilePayment";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -30,18 +32,25 @@ export default function PaymentPage() {
   const planId = searchParams.get("planId");
   const totalFromUrl = searchParams.get("total");
 
+  const [paymentType, setPaymentType] = useState<"mobile" | "card">("mobile");
   const [selectedMethod, setSelectedMethod] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isAuthorizing, setIsAuthorizing] = useState(true);
-  const [showSummary, setShowSummary] = useState(false);
 
   const [boat, setBoat] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
 
-  const totalAmount = useMemo(() => Number(totalFromUrl) || 0, [totalFromUrl]);
+  const totalAmount = Number(totalFromUrl) || 0;
   const currency = "USD";
+
+  const [mobilePaymentEnabled] = useState(true);
+  const [cardPaymentEnabled] = useState(true);
 
   useEffect(() => {
     const validateAccess = async () => {
@@ -52,7 +61,7 @@ export default function PaymentPage() {
 
         if (boatId) {
           const boatData = await getBoatById(boatId);
-          if (!boatData) return router.replace("/Backoffice/boats");
+          if (!boatData) return router.replace("/boats");
           setBoat(boatData);
         }
       } catch (error) {
@@ -64,11 +73,30 @@ export default function PaymentPage() {
     validateAccess();
   }, [boatId, router]);
 
+  useEffect(() => {
+    if (!mobilePaymentEnabled && cardPaymentEnabled) {
+      setPaymentType("card");
+    } else if (!cardPaymentEnabled && mobilePaymentEnabled) {
+      setPaymentType("mobile");
+    }
+  }, [mobilePaymentEnabled, cardPaymentEnabled]);
+
   const handlePayment = async () => {
     if (!boat || !boatId) return toast.error("Xogta markabka waa la la'yahay");
-    if (!selectedMethod) return toast.error("Fadlan dooro habka lacag bixinta");
-    if (!accountNumber || accountNumber.length < 7)
-      return toast.error("Fadlan geli nambar akoon oo sax ah");
+
+    if (paymentType === "mobile") {
+      if (!selectedMethod)
+        return toast.error("Fadlan dooro habka lacag bixinta");
+      if (!accountNumber || accountNumber.length < 7)
+        return toast.error("Fadlan geli nambar akoon oo sax ah");
+    } else {
+      if (!cardNumber || cardNumber.length < 16)
+        return toast.error("Fadlan geli lambarka kaarka");
+      if (!cardName) return toast.error("Fadlan geli magaca kaarka");
+      if (!cardExpiry || cardExpiry.length < 5)
+        return toast.error("Fadlan geli taariikhda");
+      if (!cardCvv || cardCvv.length < 3) return toast.error("Fadlan geli CVV");
+    }
 
     setLoading(true);
     try {
@@ -77,8 +105,17 @@ export default function PaymentPage() {
         itemCategory: "BOAT",
         itemId: boatId,
         planId: planId,
-        paymentMethod: selectedMethod,
-        accountNo: accountNumber,
+        paymentType: paymentType,
+        paymentMethod: paymentType === "mobile" ? selectedMethod : "Card",
+        accountNo: paymentType === "mobile" ? accountNumber : cardNumber,
+        cardDetails:
+          paymentType === "card"
+            ? {
+                name: cardName,
+                expiry: cardExpiry,
+                cvv: cardCvv,
+              }
+            : undefined,
         description: `Lacag bixinta: ${boat.title}`,
         currency,
         totalAmount,
@@ -101,7 +138,7 @@ export default function PaymentPage() {
         if (!paymentId) {
           toast.error("Payment completed but couldn't get payment ID");
           setSuccess(true);
-          setTimeout(() => router.push(`/boats/${boatId}`), 3000);
+          setTimeout(() => router.push(`/boats/${boatId}`), 1500);
           return;
         }
 
@@ -113,11 +150,11 @@ export default function PaymentPage() {
 
         if (updateResult.success) {
           setSuccess(true);
-          setTimeout(() => router.push(`/boats/${boatId}`), 3000);
+          setTimeout(() => router.push(`/boats/${boatId}`), 1500);
         } else {
           toast.warning("Payment recorded but boat update pending");
           setSuccess(true);
-          setTimeout(() => router.push(`/boats/${boatId}`), 3000);
+          setTimeout(() => router.push(`/boats/${boatId}`), 1500);
         }
       } else {
         toast.error(result.message || "Lacag bixintu waa fashilantay");
@@ -131,14 +168,14 @@ export default function PaymentPage() {
 
   if (isAuthorizing)
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-slate-50">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
         >
-          <Loader2 className="w-10 h-10 text-indigo-600" />
+          <Loader2 className="w-16 h-16 text-indigo-600" />
         </motion.div>
-        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+        <p className="mt-8 text-sm font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">
           Hubinta amniga...
         </p>
       </div>
@@ -149,162 +186,179 @@ export default function PaymentPage() {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center"
+        className="w-full h-screen bg-green-50 flex flex-col items-center justify-center"
       >
-        <CheckCircle2
-          size={100}
-          className="text-green-500 mb-6 animate-bounce"
-        />
-        <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+        >
+          <CheckCircle2 size={140} className="text-green-500 mb-8" />
+        </motion.div>
+        <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-6 text-center px-4">
           Lacag bixintu waa guul!
         </h1>
-        <p className="text-slate-400 font-bold text-sm mt-4 uppercase tracking-widest italic">
+        <p className="text-slate-500 font-bold text-base uppercase tracking-widest">
           Waxaan kuu celinaynaa boggaaga...
         </p>
       </motion.div>
     );
 
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col lg:flex-row font-sans">
-      <div className="lg:hidden sticky top-0 z-30 bg-slate-950 text-white p-5 border-b border-white/10 shadow-2xl">
-        <div
-          className="flex justify-between items-center cursor-pointer"
-          onClick={() => setShowSummary(!showSummary)}
-        >
-          <div>
-            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">
-              Total
-            </p>
-            <p className="text-2xl font-black text-green-400 tabular-nums">
-              {currency} {totalAmount.toFixed(2)}
-            </p>
-          </div>
-          <button className="flex items-center gap-2 text-[10px] font-black uppercase bg-indigo-600 px-5 py-2.5 rounded-full">
-            Details
-            <motion.div animate={{ rotate: showSummary ? 180 : 0 }}>
-              <ChevronDown size={14} />
-            </motion.div>
-          </button>
-        </div>
-        <AnimatePresence>
-          {showSummary && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden mt-5 pt-5 border-t border-white/10"
-            >
-              <div className="flex justify-between text-xs font-bold uppercase">
-                <span className="text-slate-400">Total Due</span>
-                <span>
-                  {currency} {totalAmount.toFixed(2)}
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+    <div className="w-full min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      <div className="flex-1 w-full bg-white p-4 sm:p-5 md:p-6 overflow-y-auto">
+        <div className="w-full max-w-7xl mx-auto">
+          <CheckoutSteps step1={true} step2={true} step3={true} step4={true} />
 
-      <div className="flex-grow w-full p-6 sm:p-12 lg:p-24 flex flex-col justify-center bg-white">
-        <div className="max-w-xl mx-auto w-full">
-          <header className="mb-12">
-            <h1 className="text-5xl sm:text-7xl font-black text-slate-900 tracking-tighter uppercase mb-4">
-              Checkout
+          <header className="mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter uppercase mb-1 leading-none">
+              Payment
             </h1>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em]">
-              Habka Lacag Bixinta
+            <p className="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em]">
+              Complete Your Payment
             </p>
           </header>
-
-          <div className="space-y-12">
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <Smartphone size={20} className="text-slate-400" />
-                <span className="font-black uppercase tracking-widest text-xs text-slate-500">
-                  01. Select Operator
-                </span>
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+            <div className="flex-1 space-y-5 md:space-y-6">
+              <div className="border-2 border-slate-100 rounded-xl p-4 md:p-5">
+                <section>
+                  <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                    <div className="p-1.5 md:p-2 bg-indigo-50 rounded-lg">
+                      <Wallet size={18} className="text-indigo-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-black uppercase tracking-wider text-xs md:text-sm text-slate-700">
+                        Select Payment Type
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <motion.button
+                      whileHover={{ scale: mobilePaymentEnabled ? 1.02 : 1 }}
+                      whileTap={{ scale: mobilePaymentEnabled ? 0.98 : 1 }}
+                      onClick={() =>
+                        mobilePaymentEnabled && setPaymentType("mobile")
+                      }
+                      className={`w-full py-3 md:py-4 px-2 rounded-lg md:rounded-xl border-2 transition-all font-black uppercase tracking-widest text-[10px] md:text-xs flex items-center justify-center gap-2 ${
+                        !mobilePaymentEnabled
+                          ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                          : paymentType === "mobile"
+                            ? "border-indigo-600 bg-indigo-600 text-white shadow-md"
+                            : "border-slate-200 text-slate-500 bg-white hover:border-indigo-200 hover:bg-indigo-50/50"
+                      }`}
+                      disabled={!mobilePaymentEnabled}
+                    >
+                      <Smartphone size={16} />
+                      <span>Mobile Money</span>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: cardPaymentEnabled ? 1.02 : 1 }}
+                      whileTap={{ scale: cardPaymentEnabled ? 0.98 : 1 }}
+                      onClick={() =>
+                        cardPaymentEnabled && setPaymentType("card")
+                      }
+                      className={`w-full py-3 md:py-4 px-2 rounded-lg md:rounded-xl border-2 transition-all font-black uppercase tracking-widest text-[10px] md:text-xs flex items-center justify-center gap-2 ${
+                        !cardPaymentEnabled
+                          ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                          : paymentType === "card"
+                            ? "border-indigo-600 bg-indigo-600 text-white shadow-md"
+                            : "border-slate-200 text-slate-500 bg-white hover:border-indigo-200 hover:bg-indigo-50/50"
+                      }`}
+                      disabled={!cardPaymentEnabled}
+                    >
+                      <CreditCard size={16} />
+                      <span>Card Payment</span>
+                    </motion.button>
+                  </div>
+                </section>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {PaymentMethods.map((method) => (
-                  <button
-                    key={method}
-                    onClick={() => setSelectedMethod(method)}
-                    className={`py-8 px-4 rounded-3xl border-2 transition-all font-black uppercase tracking-widest text-sm ${
-                      selectedMethod === method
-                        ? "border-indigo-600 bg-indigo-600 text-white shadow-xl"
-                        : "border-slate-100 text-slate-400 bg-slate-50 hover:border-slate-300"
-                    }`}
-                  >
-                    {method}
-                  </button>
-                ))}
-              </div>
-            </section>
 
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <Lock size={20} className="text-slate-400" />
-                <span className="font-black uppercase tracking-widest text-xs text-slate-500">
-                  02. Account Details
-                </span>
-              </div>
-              <input
-                type="tel"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-                placeholder="61XXXXXXX"
-                className="w-full px-8 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-indigo-600 outline-none transition-all font-black text-3xl text-green-600"
-              />
-            </section>
-
-            <button
-              onClick={handlePayment}
-              disabled={loading || !selectedMethod || !accountNumber}
-              className="w-full py-6 bg-slate-900 text-white rounded-3xl font-black text-xl shadow-2xl transition-all disabled:bg-slate-100 disabled:text-slate-300 flex items-center justify-center gap-3"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" />
+              {paymentType === "mobile" ? (
+                <MobilePayment
+                  selectedMethod={selectedMethod}
+                  setSelectedMethod={setSelectedMethod}
+                  accountNumber={accountNumber}
+                  setAccountNumber={setAccountNumber}
+                  disabled={!mobilePaymentEnabled}
+                />
               ) : (
-                "Confirm Payment"
+                <CardPayment
+                  cardNumber={cardNumber}
+                  setCardNumber={setCardNumber}
+                  cardName={cardName}
+                  setCardName={setCardName}
+                  cardExpiry={cardExpiry}
+                  setCardExpiry={setCardExpiry}
+                  cardCvv={cardCvv}
+                  setCardCvv={setCardCvv}
+                  disabled={!cardPaymentEnabled}
+                />
               )}
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <div className="hidden lg:flex w-[40%] bg-slate-950 text-white p-16 flex-col justify-between shrink-0">
-        <div>
-          <CreditCard className="text-indigo-400 mb-10" size={40} />
-          <h2 className="text-6xl font-black tracking-tighter uppercase mb-12 leading-none">
-            Order <br /> <span className="text-indigo-500">Summary</span>
-          </h2>
-          <div className="space-y-6">
-            <div className="flex justify-between">
-              <span className="text-slate-500 font-bold uppercase text-xs">
-                Product
-              </span>
-              <span className="font-black uppercase">
-                {boat?.title || "Loading..."}
-              </span>
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={handlePayment}
+                disabled={
+                  loading ||
+                  (paymentType === "mobile"
+                    ? !mobilePaymentEnabled
+                    : !cardPaymentEnabled)
+                }
+                className="w-full py-3 md:py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg md:rounded-xl font-black text-sm md:text-base shadow-md transition-all disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-indigo-800"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  "Confirm Payment"
+                )}
+              </motion.button>
             </div>
-            <div className="h-px bg-white/10" />
-            <div className="flex justify-between text-2xl">
-              <span className="text-slate-500 font-bold uppercase text-xs self-center">
-                Total
-              </span>
-              <span className="font-black text-green-400">
-                {currency} {totalAmount.toFixed(2)}
-              </span>
+
+            <div className="lg:w-[280px] xl:w-[320px] bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-xl shadow-2xl h-fit lg:self-stretch border-2 border-indigo-500/20 flex flex-col">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <CreditCard className="text-indigo-400" size={20} />
+                  <h3 className="font-black uppercase tracking-widest text-sm text-slate-300">
+                    ORDER SUMMARY
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start gap-3 border-b border-white/10 pb-3">
+                    <span className="text-slate-400 font-black uppercase text-xs tracking-wider">
+                      PRODUCT
+                    </span>
+                    <span className="font-black text-xs text-right text-white max-w-[160px]">
+                      {boat?.title || "Loading..."}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-black uppercase text-xs tracking-wider">
+                      TOTAL
+                    </span>
+                    <span className="font-black text-green-400 text-xl">
+                      {currency} {totalAmount.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-white/10 flex items-start gap-2">
+                <ShieldCheck
+                  className="text-green-400 shrink-0 mt-0.5"
+                  size={14}
+                />
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-relaxed">
+                  Secure Encrypted Transaction
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="p-6 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-4">
-          <ShieldCheck className="text-green-400 shrink-0" size={24} />
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Secure Encrypted Transaction. Lacag bixintu waxay u dhacaysaa si
-            ammaan ah.
-          </p>
         </div>
       </div>
     </div>

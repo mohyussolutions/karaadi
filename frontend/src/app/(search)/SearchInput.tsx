@@ -1,47 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FaSearch } from "react-icons/fa";
-import { saveSearchToDb } from "../(storeFront)/components/home/SearchTracker";
+import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect, ChangeEvent } from "react";
+import { FiSearch } from "react-icons/fi";
 
 interface SearchInputProps {
-  onSearch?: (val: string) => void;
+  defaultValue?: string;
 }
 
-export default function SearchInput({ onSearch }: SearchInputProps) {
-  const [query, setQuery] = useState("");
+export default function SearchInput({ defaultValue = "" }: SearchInputProps) {
+  const [text, setText] = useState<string>(defaultValue);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (onSearch) {
-      onSearch(query);
-    }
-  }, [query, onSearch]);
+    const delayDebounce = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (text) {
+        params.set("q", text);
+      } else {
+        params.delete("q");
+      }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    }, 400);
 
-    if (!query.trim()) return;
+    return () => clearTimeout(delayDebounce);
+  }, [text, pathname, router]);
 
-    await saveSearchToDb(query);
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full">
+    <div className="relative w-full">
       <input
         type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search gawaari, homes, or jobs..."
-        className="w-full pl-4 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none transition-all focus:border-indigo-500"
+        value={text}
+        onChange={handleChange}
+        placeholder="karaadi baabuur, guri, qalab, doomo, beer iwm..."
+        className="w-full p-4 pl-12 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
       />
-
-      <button
-        type="submit"
-        className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-400 hover:text-indigo-600 transition-colors"
-        aria-label="Search"
-      >
-        <FaSearch className="w-5 h-5" />
-      </button>
-    </form>
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+        <FiSearch size={20} />
+      </div>
+    </div>
   );
 }

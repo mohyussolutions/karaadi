@@ -96,7 +96,7 @@ export const signIn = async (
     const isSupport = decodedToken["custom:isSupport"] === "true";
 
     const userRecord = await prisma.user.findUnique({
-      where: { id: decodedToken.sub },
+      where: { cognitoId: decodedToken.sub },
       select: { username: true, phone: true, profileImage: true },
     });
 
@@ -146,27 +146,31 @@ export const verifySession = async (
   res: Response,
 ) => {
   const token = req.headers.authorization?.split(" ")[1] || req.cookies.idToken;
+  const accessToken = req.headers["x-access-token"] || req.cookies.accessToken;
+
   if (!token) return res.status(401).json({ message: "Not authenticated" });
 
   try {
     const decoded: any = jwt.decode(token);
     if (!decoded?.sub) throw new Error();
 
+    const userRecord = await prisma.user.findUnique({
+      where: { cognitoId: decoded.sub },
+    });
+
+    if (!userRecord) return res.status(404).json({ message: "User not found" });
+
     const session = await prisma.cookie.findUnique({
-      where: { userId: decoded.sub },
+      where: { userId: userRecord.id },
     });
 
     if (!session || session.expiresAt < new Date()) {
       if (session) await prisma.cookie.delete({ where: { id: session.id } });
       res.clearCookie("idToken");
       res.clearCookie("refreshToken");
+      res.clearCookie("accessToken");
       return res.status(401).json({ message: "Session expired" });
     }
-
-    const userRecord = await prisma.user.findUnique({
-      where: { id: decoded.sub },
-    });
-    if (!userRecord) return res.status(404).json({ message: "User not found" });
 
     const responseUser = {
       id: userRecord.id,
@@ -174,17 +178,23 @@ export const verifySession = async (
       username: userRecord.username,
       phone: userRecord.phone,
       profileImage: userRecord.profileImage,
-      isAdmin: decoded["custom:isAdmin"],
-      isManager: decoded["custom:isManager"],
-      isSupport: decoded["custom:isSupport"],
+      isAdmin: userRecord.isAdmin || decoded["custom:isAdmin"] === "true",
+      isManager: userRecord.isManager || decoded["custom:isManager"] === "true",
+      isSupport: userRecord.isSupport || decoded["custom:isSupport"] === "true",
+      token: token,
+      accessToken: accessToken,
     };
 
-    return res
-      .status(200)
-      .json({ message: "Session valid", user: responseUser });
+    return res.status(200).json({
+      message: "Session valid",
+      user: responseUser,
+      token,
+      accessToken,
+    });
   } catch (err) {
     res.clearCookie("idToken");
     res.clearCookie("refreshToken");
+    res.clearCookie("accessToken");
     return res.status(401).json({ message: "Authentication failed" });
   }
 };
@@ -398,7 +408,15 @@ export const signOut = async (accessToken: string) => {
     if (!decoded?.sub) throw new Error("Invalid token: missing user ID");
 
     await cognitoClient.globalSignOut({ AccessToken: accessToken }).promise();
-    await prisma.cookie.delete({ where: { userId: decoded.sub } });
+
+    const user = await prisma.user.findUnique({
+      where: { cognitoId: decoded.sub },
+    });
+    if (user) {
+      await prisma.cookie
+        .delete({ where: { userId: user.id } })
+        .catch(() => {});
+    }
 
     return { message: "User logged out successfully" };
   } catch (error: any) {

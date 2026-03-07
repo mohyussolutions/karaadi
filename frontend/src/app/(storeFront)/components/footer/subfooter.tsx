@@ -1,4 +1,4 @@
-import { FaFacebookF, FaTwitter, FaInstagram } from "react-icons/fa";
+import { FaFacebookF, FaTiktok, FaLinkedinIn } from "react-icons/fa";
 
 export default function SubFooter() {
   return (
@@ -17,35 +17,33 @@ export default function SubFooter() {
               <FaFacebookF />
             </a>
             <a
-              href="https://twitter.com"
+              href="https://tiktok.com"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Twitter"
-              className="hover:text-blue-600"
+              aria-label="TikTok"
+              className="hover:text-black"
             >
-              <FaTwitter />
+              <FaTiktok />
             </a>
             <a
-              href="https://instagram.com"
+              href="https://linkedin.com"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="hover:text-pink-500"
+              aria-label="LinkedIn"
+              className="hover:text-blue-700"
             >
-              <FaInstagram />
+              <FaLinkedinIn />
             </a>
           </div>
         </div>
 
         <div>
-          <p>
-            The content is protected under copyright law. Regular, systematic,
-            or continuous collection, storage, indexing, distribution, or any
-            other form of data compilation is not allowed without explicit
-            written permission from <strong>Karaadi</strong>.
+          <p className="text-xs text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Waxaa idinka codsanaa ilaalinaya xuquuqda daabacaadda. Lama qaybin
+            karo ogolaansho la'aan <strong>Karaadi</strong>.
           </p>
           <p className="mt-2 text-xs text-gray-500">
-            Developed by{" "}
+            Waxaa horumariyay{" "}
             <a
               href="https://www.mohyus.com/"
               target="_blank"

@@ -7,7 +7,11 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import SearchInput from "@/app/(search)/SearchInput";
-import { getTraktors, Traktor } from "@/actions/categories/FarmequipmentAction";
+// Updated import to use the correct functions and types
+import {
+  getFarmequipment,
+  FarmEquipment,
+} from "@/actions/categories/FarmequipmentAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { TraktorTopCategories } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
 
@@ -15,7 +19,8 @@ export default function TractorForSale() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const subCategoryLinks = TraktorTopCategories;
 
-  const [items, setItems] = useState<Traktor[]>([]);
+  // Use the correct FarmEquipment type
+  const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
@@ -23,7 +28,7 @@ export default function TractorForSale() {
     null,
   );
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Traktor[]>([]);
+  const [searchResults, setSearchResults] = useState<FarmEquipment[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
     {},
@@ -32,9 +37,12 @@ export default function TractorForSale() {
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await getTraktors();
+        setIsLoading(true);
+        // Using the updated fetch function
+        const data = await getFarmequipment();
         setItems(data || []);
       } catch (err) {
+        console.error("Failed to load farm equipment:", err);
         setIsError(true);
       } finally {
         setIsLoading(false);
@@ -50,9 +58,11 @@ export default function TractorForSale() {
         return;
       }
       const results = await getGlobalSearchResults(query);
+      // Filter results to ensure they belong to the Tractor/Farm category
       const filtered = results.filter(
         (item: any) =>
           item.mainCategory === "Traktor" ||
+          item.mainCategory === "Farm Equipment" ||
           item.type?.toLowerCase().includes("tractor"),
       );
       setSearchResults(filtered);
@@ -66,15 +76,15 @@ export default function TractorForSale() {
 
     items.forEach((item) => {
       const capitalize = (s: string) =>
-        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+        s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 
       if (item.region) {
         const reg = capitalize(item.region.trim());
-        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
+        if (reg) regionCounts[reg] = (regionCounts[reg] || 0) + 1;
       }
       if (item.city) {
         const cit = capitalize(item.city.trim());
-        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
+        if (cit) cityCounts[cit] = (cityCounts[cit] || 0) + 1;
       }
     });
 
@@ -86,10 +96,10 @@ export default function TractorForSale() {
 
     if (selectedSubcategory) {
       const normalized = selectedSubcategory.toLowerCase();
-      list = list.filter((item: any) => {
+      list = list.filter((item) => {
         const subCats = Array.isArray(item.subcategory)
           ? item.subcategory
-          : [item.subcategory || item.subCategories || ""];
+          : [item.subcategory || ""];
         return (
           subCats.some((s: string) => s.toLowerCase() === normalized) ||
           item.title?.toLowerCase().includes(normalized)
@@ -117,9 +127,7 @@ export default function TractorForSale() {
       );
     }
 
-    return Array.from(
-      new Map(list.map((item: any) => [item._id || item.id, item])).values(),
-    );
+    return Array.from(new Map(list.map((item) => [item._id, item])).values());
   }, [
     items,
     searchResults,
@@ -144,6 +152,7 @@ export default function TractorForSale() {
       <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
+      {/* Subcategory Scroll UI */}
       <div className="relative py-6">
         <div className="flex justify-center relative items-center">
           <button
@@ -194,6 +203,7 @@ export default function TractorForSale() {
       </div>
 
       <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
+        {/* Sidebar */}
         <aside className="md:w-1/3 sticky top-4 self-start">
           <LocationSelector
             onFilterChange={(reg, cities) => {
@@ -214,11 +224,12 @@ export default function TractorForSale() {
           </div>
         </aside>
 
+        {/* Main Content */}
         <main className="md:w-2/3 w-full">
           <div className="mb-6 text-sm font-medium text-gray-600 bg-blue-50 py-2 px-4 rounded-lg inline-block border border-blue-100">
             {isLoading
               ? "Waa la soo dejinayaa..."
-              : `Waxaa la soo bandhigayaa ${itemsToDisplay.length} cagafyada iibka ah.`}
+              : `Waxaa la soo bandhigayaa ${itemsToDisplay.length} qalabka beeraha ee iibka ah.`}
           </div>
 
           {isError ? (
@@ -235,10 +246,10 @@ export default function TractorForSale() {
                   />
                 ))
               ) : itemsToDisplay.length > 0 ? (
-                itemsToDisplay.map((item: any) => (
+                itemsToDisplay.map((item) => (
                   <UniversalCard
-                    key={item._id || item.id}
-                    id={item._id || item.id}
+                    key={item._id}
+                    id={item._id}
                     title={item.title}
                     description={item.description}
                     city={item.city}
@@ -249,7 +260,7 @@ export default function TractorForSale() {
                 ))
               ) : (
                 <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-medium">
-                  Ma jiraan wax cagafyo ah oo la helay deegaankan.
+                  Ma jiraan wax qalab ah oo la helay deegaankan.
                 </div>
               )}
             </div>

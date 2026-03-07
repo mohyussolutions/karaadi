@@ -1,44 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import ManagerSidebar from "@/app/(managers)/managers/ManagerSidebar";
-// FIX: ManagerRoute import missing. Please create '@/app/common/Guard/ManagerRoute' or update import path.
-// import { ManagerRoute } from "@/app/Guard/ProtectedRoute";
-import ManagerNavbar from "@/app/(backoffice)/Backoffice/ManagerNavbar";
+import ManagerNavbar from "@/app/(managers)/managers/ManagerNavbar";
+import ManagerRoute from "@/app/common/Guard/ManagerRoute";
+import { verifySession } from "@/actions/core/authAction";
 
 export default function ManagerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
-  const handleCreateItem = () => {
-    console.log("Opening creation modal...");
-  };
+  useEffect(() => {
+    const getSession = async () => {
+      const session = await verifySession();
+      setUser(session);
+    };
+    getSession();
+  }, []);
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const closeSidebar = () => setSidebarOpen(false);
 
   return (
     <ManagerRoute>
-      <div className="flex min-h-screen w-full bg-gray-50 flex-nowrap">
-        {open && (
+      <div className="flex min-h-screen w-full bg-slate-100 flex-nowrap">
+        {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 md:hidden transition-opacity"
-            onClick={() => setOpen(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden transition-opacity"
+            onClick={closeSidebar}
           />
         )}
 
-        <ManagerSidebar />
+        <ManagerSidebar open={sidebarOpen} onClose={closeSidebar} />
 
         <div className="flex flex-col flex-1 min-w-0 h-screen overflow-hidden">
-          <ManagerNavbar
-            userRole="manager"
-            onCreateItem={handleCreateItem}
-            onMenuClick={() => setOpen(true)}
-          />
+          <ManagerNavbar toggleSidebar={toggleSidebar} user={user} />
 
-          <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
-            <div className="max-w-7xl mx-auto">{children}</div>
+          <main className="flex-1 overflow-y-auto bg-slate-100">
+            {children}
           </main>
         </div>
       </div>

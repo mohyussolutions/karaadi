@@ -2,16 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+import { getTotalBoatsAction } from "@/actions/categories/boatActions";
 
 export default function TotalBoats() {
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/boats/total", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => setTotal(data.totalBoats ?? 0))
-      .finally(() => setLoading(false));
+    getTotalBoatsAction().then((count) => {
+      setTotal(count);
+      setLoading(false);
+    });
   }, []);
 
   return (

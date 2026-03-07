@@ -6,7 +6,6 @@ import { MdOutlinePlaylistRemove, MdCloudUpload, MdInfo } from "react-icons/md";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { verifySession } from "@/actions/core/authAction";
-
 import {
   getAllRegions,
   getAllCities,
@@ -119,6 +118,13 @@ const BoatForSellAndBuy = () => {
       return toast.error("Fadlan buuxi banaanada muhiimka ah");
     }
 
+    const authToken = user.token || user.accessToken;
+    if (!authToken) {
+      toast.error("Session error. Please log in again.");
+      router.push("/login");
+      return;
+    }
+
     setLoading(true);
     try {
       let finalCity = formData.city;
@@ -163,7 +169,7 @@ const BoatForSellAndBuy = () => {
         feeAmount: Number(selectedFee),
       };
 
-      const result = await createBoat(payload, user.token);
+      const result = await createBoat(payload, authToken);
 
       if (result.success) {
         toast.success("Waa la xayeysiiyey!");
@@ -263,17 +269,20 @@ const BoatForSellAndBuy = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <input
             placeholder="Type"
+            value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
             className="border-2 border-gray-100 p-3 rounded-xl outline-none"
           />
           <input
             placeholder="Model"
+            value={formData.boatModel}
             onChange={(e) =>
               setFormData({ ...formData, boatModel: e.target.value })
             }
             className="border-2 border-gray-100 p-3 rounded-xl outline-none"
           />
           <select
+            value={formData.transmission}
             onChange={(e) =>
               setFormData({ ...formData, transmission: e.target.value })
             }
@@ -285,6 +294,7 @@ const BoatForSellAndBuy = () => {
           </select>
           <input
             placeholder="Color"
+            value={formData.color}
             onChange={(e) =>
               setFormData({ ...formData, color: e.target.value })
             }
@@ -334,6 +344,7 @@ const BoatForSellAndBuy = () => {
         {showNewCityInputs && (
           <input
             placeholder="Qor magaca magaalada cusub"
+            value={newCity}
             onChange={(e) => setNewCity(e.target.value)}
             className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl animate-pulse outline-none"
           />

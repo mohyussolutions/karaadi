@@ -15,7 +15,6 @@ import {
   FaUserCheck,
 } from "react-icons/fa";
 import { RiAdvertisementFill } from "react-icons/ri";
-import { AdminLink } from "@/app/(dashboard)/dashboard/analytics/AdminNavigation";
 import { MdOutlineSubscriptions, MdWork } from "react-icons/md";
 import { CiMoneyBill } from "react-icons/ci";
 import {
@@ -27,7 +26,6 @@ import {
 import { MohyusLogoIcon } from "@/app/utils/icons/customerIcons";
 import { LuSofa } from "react-icons/lu";
 import { IoIosBoat } from "react-icons/io";
-import { IoCreate } from "react-icons/io5";
 import {
   boatsSubCategories,
   jobsSubCategories,
@@ -38,6 +36,7 @@ import {
 } from "./subCategories";
 import { FiBarChart2 } from "react-icons/fi";
 import { carsSubCategories } from "./nestedSubcategoryForCars";
+import { HiSearchCircle } from "react-icons/hi";
 
 export const allCategories: MainCategory[] = [
   {
@@ -119,7 +118,6 @@ export const allCategories: MainCategory[] = [
   },
   {
     key: "Smartsuuq",
-    name: "Smartsuuq",
     logo: "/Smartsuq.jpg",
     href: "http://smrtsuuq.com/",
     icon: <MohyusLogoIcon />,
@@ -128,12 +126,6 @@ export const allCategories: MainCategory[] = [
     subCategories: [],
     title: undefined,
   },
-];
-
-export const adminLinks: AdminLink[] = [
-  { title: "Manager Panel", href: "/managers" },
-  { title: "Support Panel", href: "/support" },
-  { title: "devices", href: "/devices" },
 ];
 
 export const sidebarLinks: SidebarLink[] = [
@@ -155,7 +147,11 @@ export const sidebarLinks: SidebarLink[] = [
     icon: FaWarehouse,
     link: "/dashboard/categories/real-estate",
   },
-  { name: "Traktors", icon: FaTractor, link: "/dashboard/categories/traktors" },
+  {
+    name: "Farmequipment",
+    icon: FaTractor,
+    link: "/dashboard/categories/farmequipment",
+  },
   {
     name: "Advertisement",
     icon: RiAdvertisementFill,
@@ -171,15 +167,21 @@ export const sidebarLinks: SidebarLink[] = [
     icon: CiMoneyBill,
     link: "/dashboard/FeeManagement",
   },
+  { name: "Jobs", icon: MdWork, link: "/dashboard/categories/jobs" },
+
   {
     name: "Agencies",
     icon: CiMoneyBill,
     link: "/dashboard/categories/Agencies",
   },
-
+  {
+    name: "Reports",
+    icon: FiBarChart2,
+    link: "/dashboard/categories/Reports",
+  },
   {
     name: "Most Search",
-    icon: FiBarChart2,
+    icon: HiSearchCircle,
     link: "/dashboard/categories/mostSavedSearch",
   },
   { name: "Users", icon: FaUsers, link: "/dashboard/users" },
@@ -189,8 +191,6 @@ export const sidebarLinks: SidebarLink[] = [
   { name: "Visitor List", icon: FaUserCheck, link: "/dashboard/VisitorList" },
   { name: "Payments", icon: FaMoneyBillWave, link: "/dashboard/payments" },
   { name: "Settings", icon: FaCog, link: "/dashboard/settings" },
-
-  { name: "Backoffice", icon: IoCreate, link: "/Backoffice" },
 ];
 
 export const settingLinks: SettingLink[] = [

@@ -5,19 +5,12 @@ import { FeeConfig, CalculatedFee, AppCategories } from "./types/fee.types";
 export const calculateLocalFee = (
   feeConfig: FeeConfig,
   keyOrCategory: keyof FeeConfig | keyof AppCategories = "subscription",
-  subType?: keyof Pick<
-    FeeConfig,
-    | "subStandard"
-    | "subStandard60"
-    | "subPremium"
-    | "subSixMonth"
-    | "subPremiumYear"
-  >,
+  subType?: keyof Pick<FeeConfig, "basic30" | "standard60" | "premium90">,
 ): CalculatedFee => {
   let baseFee = 0;
 
   if (keyOrCategory === "subscription") {
-    baseFee = Number(feeConfig[subType || "subStandard"]) || 0;
+    baseFee = Number(feeConfig[subType || "basic30"]) || 0;
   } else if (keyOrCategory === "marketplace") {
     baseFee = Number(feeConfig.electronics) || 0;
   } else {

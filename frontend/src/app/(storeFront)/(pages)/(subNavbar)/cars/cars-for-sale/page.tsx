@@ -6,21 +6,19 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import {
-  CarsForSaleNestedSub,
-  TruckNestedSub,
-} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 import SearchInput from "@/app/(search)/SearchInput";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { getCars, Car } from "@/actions/categories/carActions";
+import { carsNestedData } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 
 export default function CarsForSale() {
-  const subCategoryLinks = useMemo(
-    () => [...CarsForSaleNestedSub, ...TruckNestedSub],
-    [],
-  );
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const subCategoryLinks = useMemo(() => {
+    const cars = carsNestedData?.CarsForSaleNestedSub || [];
+    const trucks = carsNestedData?.TruckNestedSub || [];
+    return [...cars, ...trucks];
+  }, []);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -110,9 +108,7 @@ export default function CarsForSale() {
       source = source.filter((item) => activeCities.includes(item.city));
     }
 
-    return Array.from(
-      new Map(source.map((item) => [item._id || item._id, item])).values(),
-    );
+    return Array.from(new Map(source.map((item) => [item._id, item])).values());
   }, [
     query,
     searchResults,
@@ -135,12 +131,12 @@ export default function CarsForSale() {
 
   const currentDisplayTitle = useMemo(() => {
     if (query.trim()) return `Natiijada: "${query}"`;
-    if (!selectedSubcategory) return "Gawaarida iibka ah (Cars for Sale)";
+    if (!selectedSubcategory) return "Gawaarida iibka ah";
     const found = subCategoryLinks.find(
       (cat) =>
         cat.so === selectedSubcategory || cat.title === selectedSubcategory,
     );
-    return found ? `${found.so} (${found.title})` : selectedSubcategory;
+    return found ? `${found.so}` : selectedSubcategory;
   }, [query, selectedSubcategory, subCategoryLinks]);
 
   const scroll = (direction: "left" | "right") => {
@@ -154,77 +150,74 @@ export default function CarsForSale() {
   };
 
   return (
-    <div className="container mx-auto px-4 pb-10">
+    <div className="container mx-auto px-2 py-2">
       <SearchInput onSearch={setQuery} />
-      <PathSegmentsDisplay />
+      <div className="pt-1">
+        <PathSegmentsDisplay />
+      </div>
 
-      <div className="relative py-6">
-        <div className="flex justify-center relative items-center">
+      <div className="relative py-4">
+        <div className="flex items-center group">
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 z-10 bg-white shadow-md p-3 rounded-full border border-gray-100"
+            className="absolute left-0 z-10 bg-white shadow-sm p-2 rounded-full border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <FaChevronLeft />
+            <FaChevronLeft size={12} />
           </button>
+
           <div
             ref={scrollRef}
-            className="flex overflow-x-auto space-x-6 scrollbar-hide px-10 max-w-[calc(100%-100px)] py-4"
+            className="flex overflow-x-auto space-x-2 scrollbar-hide px-2 w-full py-2"
           >
             {subCategoryLinks.map((category: any) => (
               <button
-                key={category.so}
+                key={category.title}
                 onClick={() =>
                   setSelectedSubcategory((prev) =>
                     prev === category.so ? null : category.so,
                   )
                 }
-                className={`flex-shrink-0 w-44 flex flex-col items-center justify-center text-center rounded-xl p-5 border transition-all ${
+                className={`flex-shrink-0 w-24 sm:w-28 flex flex-col items-center justify-center text-center rounded-lg p-2 border transition-all active:scale-95 ${
                   selectedSubcategory === category.so
-                    ? "bg-blue-600 border-blue-600 shadow-lg scale-105 text-white"
-                    : "bg-white border-gray-200 text-gray-900"
+                    ? "bg-blue-600 border-blue-600 shadow-md text-white"
+                    : "bg-white border-gray-100 text-gray-700 hover:border-blue-200"
                 }`}
               >
                 <div
-                  className={`text-2xl mb-2 ${
-                    selectedSubcategory === category.so
-                      ? "text-white"
-                      : "text-blue-600"
-                  }`}
+                  className={`text-xl mb-1 ${selectedSubcategory === category.so ? "text-white" : "text-blue-500"}`}
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-[10px] sm:text-[11px] font-medium leading-tight truncate w-full px-1">
+                  {category.so}
+                </span>
                 <span
-                  className={`text-[10px] uppercase ${
-                    selectedSubcategory === category.so
-                      ? "text-blue-100"
-                      : "text-gray-500"
-                  }`}
+                  className={`text-[8px] uppercase tracking-tighter ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-400"}`}
                 >
-                  ({category.title})
+                  {category.title}
                 </span>
               </button>
             ))}
           </div>
+
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 z-10 bg-white shadow-md p-3 rounded-full border border-gray-100"
+            className="absolute right-0 z-10 bg-white shadow-sm p-2 rounded-full border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <FaChevronRight />
+            <FaChevronRight size={12} />
           </button>
         </div>
       </div>
 
-      <div className="px-4 text-sm text-gray-700 mb-6 italic">
-        Waxaa la helay{" "}
-        <span className="text-blue-600 font-bold">
-          {isLoading ? "..." : itemsToDisplay.length}
-        </span>{" "}
-        baabuur: <strong>{currentDisplayTitle}</strong>
+      <div className="px-4 mb-4 border-b border-gray-100 pb-2 flex items-center justify-between">
+        <h2 className="text-sm font-medium text-gray-700 uppercase tracking-tight">
+          {currentDisplayTitle}
+          <span className="ml-2 text-blue-500">({itemsToDisplay.length})</span>
+        </h2>
       </div>
 
-      <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
-        <aside className="md:w-1/3 sticky top-4 self-start">
+      <div className="flex flex-col md:flex-row gap-6">
+        <aside className="md:w-1/4">
           <LocationSelector
             onFilterChange={(reg, cities) => {
               setSelectedRegion(reg);
@@ -235,7 +228,7 @@ export default function CarsForSale() {
             regionCounts={regionCityCounts.regionCounts}
             cityCounts={regionCityCounts.cityCounts}
           />
-          <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100">
+          <div className="mt-4 bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
             <SomaliMap
               selectedRegion={selectedRegion}
               onRegionClick={setSelectedRegion}
@@ -244,25 +237,25 @@ export default function CarsForSale() {
           </div>
         </aside>
 
-        <main className="md:w-2/3 w-full">
+        <main className="md:w-3/4 w-full">
           {isError ? (
-            <div className="text-center py-10 text-red-500 font-bold bg-red-50 rounded-xl">
-              Cilad baa ku timid soo dejinta gawaarida. Fadlan dib u tijaabi.
+            <div className="text-center py-10 text-red-500 text-sm font-medium">
+              Cilad baa ku timid soo dejinta gawaarida.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="h-72 w-full bg-gray-100 animate-pulse rounded-2xl border border-gray-200"
+                    className="h-64 w-full bg-gray-50 animate-pulse rounded-xl border border-gray-100"
                   />
                 ))
               ) : itemsToDisplay.length > 0 ? (
                 itemsToDisplay.map((item: any) => (
                   <UniversalCard
-                    key={item._id || item.id}
-                    id={item._id || item.id}
+                    key={item._id}
+                    id={item._id}
                     title={item.title}
                     description={item.description}
                     city={item.city}
@@ -272,9 +265,8 @@ export default function CarsForSale() {
                   />
                 ))
               ) : (
-                <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-medium">
-                  Ma jiraan gawaari iib ah oo la helay oo ku haboon xogta aad
-                  raadineyso.
+                <div className="col-span-full text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400 text-sm">
+                  Lama helin gawaari waafaqsan raadintaada.
                 </div>
               )}
             </div>

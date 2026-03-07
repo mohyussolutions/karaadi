@@ -1,91 +1,66 @@
 "use client";
 
-import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ItemsGrid from "../Cards/mainCard";
-import SearchInput from "../../../(search)/SearchInput";
+import { FeedItem, useRandomFeed } from "../hooks/useRandomFeed";
+import { trackItemView } from "@/actions/categories/RecommendationActions";
+import { InitialData } from "../home/DataFeed";
 
 interface HomeContentProps {
-  initialData: Record<string, any[] | null>;
+  initialData: InitialData;
   children: React.ReactNode;
+  userId: string | null;
+  serverSearchResults: FeedItem[] | null;
+  isSearching: boolean;
 }
 
 export default function HomeContent({
   initialData,
   children,
+  userId,
+  serverSearchResults,
+  isSearching,
 }: HomeContentProps) {
-  const [searchResults, setSearchResults] = useState<any[] | null>(null);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [trackedItems, setTrackedItems] = useState<Set<string>>(new Set());
+
+  const displayItems = useRandomFeed(initialData, serverSearchResults);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!query.trim()) {
-      setSearchResults(null);
-      setLoading(false);
-      return;
-    }
+  const handleTrackItemView = useCallback(
+    async (item: FeedItem) => {
+      const itemId = item.id || item._id;
+      if (!userId || !itemId || trackedItems.has(itemId)) return;
 
-    const delayDebounce = setTimeout(async () => {
-      setLoading(true);
       try {
-        const results = await getGlobalSearchResults(query);
-        setSearchResults(results);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setLoading(false);
+        await trackItemView(itemId, item.category, userId);
+        setTrackedItems((prev) => new Set(prev).add(itemId));
+      } catch (error) {
+        console.error(error);
       }
-    }, 300);
+    },
+    [userId, trackedItems],
+  );
 
-    return () => clearTimeout(delayDebounce);
-  }, [query]);
-
-  const displayItems = useMemo(() => {
-    if (searchResults !== null) {
-      return searchResults.map((item) => ({
-        ...item,
-        price: Number(item?.price) || 0,
-        images: Array.isArray(item?.images) ? item.images : [],
-      }));
+  useEffect(() => {
+    if (mounted && userId && displayItems.length > 0) {
+      displayItems.slice(0, 10).forEach((item) => {
+        handleTrackItemView(item);
+      });
     }
+  }, [mounted, userId, displayItems, handleTrackItemView]);
 
-    return Object.entries(initialData).flatMap(([categoryKey, items]) => {
-      if (!Array.isArray(items)) return [];
-      return items.map((item) => ({
-        ...item,
-        category: categoryKey,
-        price: Number(item?.price) || 0,
-        images: Array.isArray(item?.images) ? item.images : [],
-      }));
-    });
-  }, [searchResults, initialData]);
-
-  if (!mounted) {
-    return (
-      <div className="space-y-8 animate-pulse">
-        <div className="h-12 bg-gray-200 rounded-xl w-full" />
-        <div className="h-96 bg-gray-100 rounded-xl w-full" />
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
-    <div className="space-y-8">
-      <SearchInput onSearch={setQuery} />
+    <div className="space-y-6">
+      {!isSearching && <div className="flex flex-col gap-6">{children}</div>}
 
-      <div className={query.trim() ? "hidden" : "block"}>
-        <div className="flex flex-col gap-8">{children}</div>
-      </div>
-
-      <div
-        className={`transition-opacity duration-300 ${loading ? "opacity-40" : "opacity-100"}`}
-      >
-        <ItemsGrid items={displayItems} />
+      <div className="px-2">
+        <ItemsGrid items={displayItems} onItemView={handleTrackItemView} />
       </div>
     </div>
   );

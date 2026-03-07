@@ -73,9 +73,20 @@ export const deleteVisitor = async (req: Request, res: Response) => {
   if (!userIdValue) return res.status(400).json({ error: "userId required" });
 
   try {
-    await prisma.visitor.delete({ where: { userId: userIdValue } });
+    const visitor = await prisma.visitor.findFirst({
+      where: {
+        OR: [{ id: userIdValue }, { userId: userIdValue }],
+      },
+    });
+
+    if (!visitor) {
+      return res.status(404).json({ error: "Visitor not found" });
+    }
+
+    await prisma.visitor.delete({ where: { id: visitor.id } });
     return res.json({ message: "Deleted" });
   } catch (err: any) {
+    console.error("Delete visitor error:", err);
     return res.status(500).json({ error: err.message });
   }
 };

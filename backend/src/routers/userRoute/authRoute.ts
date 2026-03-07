@@ -14,7 +14,10 @@ import {
   getUserProfile,
   getAllUsers,
 } from "../../controllers/userController/authController.ts";
-import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
+import {
+  adminAndManager,
+  ProtectRoute,
+} from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 import { signIn, verifySession } from "../../core/utils/cognitoauth.ts";
 import { setAuthCookies } from "../../core/utils/cookiesDB.ts";
 import { validate } from "src/core/middelware/validator.ts";
@@ -41,13 +44,18 @@ authRouters.post(
     }
   },
 );
-authRouters.get("/all-users", async (req: Request, res: Response) => {
-  try {
-    await getAllUsers(req, res);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to fetch users" });
-  }
-});
+authRouters.get(
+  "/all-users",
+  ProtectRoute,
+  adminAndManager,
+  async (req: Request, res: Response) => {
+    try {
+      await getAllUsers(req, res);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch users" });
+    }
+  },
+);
 
 authRouters.post(
   "/register",
@@ -78,6 +86,7 @@ authRouters.post("/resend-code", async (req: Request, res: Response) => {
 
 authRouters.put(
   "/profile",
+  ProtectRoute,
   upload.single("profileImage"),
   async (req, res, next) => {
     try {
@@ -98,15 +107,20 @@ authRouters.delete(
   async (req, res) => await deleteAccount(req as any, res),
 );
 
-authRouters.get("/total-users", async (req: Request, res: Response) => {
-  try {
-    await getUsersCount(req, res);
-  } catch (error: any) {
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to get total users" });
-  }
-});
+authRouters.get(
+  "/total-users",
+  ProtectRoute,
+  adminAndManager,
+  async (req: Request, res: Response) => {
+    try {
+      await getUsersCount(req, res);
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ error: error.message || "Failed to get total users" });
+    }
+  },
+);
 
 authRouters.get("/me", ProtectRoute, getUserProfile);
 

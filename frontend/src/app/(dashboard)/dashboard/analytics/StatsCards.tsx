@@ -1,5 +1,3 @@
-"use client";
-
 import TotalAdvertisement from "../categories/Advertisement/TotalAdvertisement";
 import TotalAgencies from "../categories/Agencies/totoalAgencies";
 import TotalCities from "../categories/geo/totalCities";
@@ -17,7 +15,7 @@ import SupportSummaryCard from "../Massages/totalSupportSummaryCard";
 
 export const StatsCards: React.FC = () => {
   return (
-    <div className="grid gap-7 sm:gap-8 md:gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 transition-all duration-300">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 md:gap-8 transition-all duration-300">
       <TotalUsers />
       <TotalTransactions />
       <TotalRevenue />

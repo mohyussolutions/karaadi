@@ -134,7 +134,7 @@ function Ads() {
             )
             .map((category) => (
               <div
-                key={category.name}
+                key={category.key}
                 onClick={() => handleCategoryClick(category.name || "")}
                 className={`flex items-center justify-between p-2 bg-white hover:bg-gray-10 rounded-lg cursor-pointer text-left ${
                   selectedCategory === category.name
@@ -162,7 +162,7 @@ function Ads() {
             <div className="space-y-6">
               {currentOptions.map((item, idx) => (
                 <div
-                  key={idx}
+                  key={item.title ? `${item.title}-${idx}` : idx}
                   className="flex flex-col space-y-2 border rounded-md bg-gray-90 p-4"
                 >
                   <button

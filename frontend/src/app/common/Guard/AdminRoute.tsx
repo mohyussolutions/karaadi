@@ -3,34 +3,40 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, ReactNode } from "react";
 import { verifySession } from "@/actions/core/authAction";
-import { ALL_PROTECTED_PATHS } from "@/app/(links)/roleConfig/roleConfig";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 export default function AdminRoute({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     async function checkAuth() {
-      const session = await verifySession();
-      const isProtected = ALL_PROTECTED_PATHS.some((r) =>
-        pathname.startsWith(r.path),
-      );
+      try {
+        const session = await verifySession();
 
-      if (session?.isAdmin && !isProtected) {
-        router.replace("/dashboard");
-        return;
-      }
+        const isDashboardPath = pathname?.startsWith("/dashboard") || false;
 
-      if (!isProtected) {
-        setLoading(false);
-        return;
-      }
+        if (session?.isAdmin) {
+          setIsAdmin(true);
+          if (!isDashboardPath) {
+            router.replace("/dashboard");
+            return;
+          }
+          setLoading(false);
+          return;
+        }
 
-      if (!session || !session.isAdmin) {
-        router.replace(session ? "/" : "/login");
-      } else {
+        if (isDashboardPath) {
+          router.replace("/login");
+          return;
+        }
+
+        router.replace("/");
+      } catch {
+        router.replace("/login");
+      } finally {
         setLoading(false);
       }
     }
@@ -38,5 +44,6 @@ export default function AdminRoute({ children }: { children: ReactNode }) {
   }, [pathname, router]);
 
   if (loading) return <Loading />;
+  if (!isAdmin) return null;
   return <>{children}</>;
 }

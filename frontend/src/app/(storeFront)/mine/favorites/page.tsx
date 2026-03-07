@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   getMyFavorites,
   removeFavorite,
+  addToFavorite,
 } from "@/actions/categories/favoriteAction";
 import { verifySession } from "@/actions/core/authAction";
 
@@ -19,35 +22,52 @@ const SaveFavorite = () => {
         const user = await verifySession();
         if (!user) return;
         const data = await getMyFavorites();
-        setFavorites(data || []);
+        setFavorites(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Error fetching favorites:", error);
+        toast.error("Failed to load favorites");
       }
     })();
   }, []);
 
+  const handleSave = async (item: any) => {
+    const res = await addToFavorite(item);
+
+    if (res?.error) {
+      if (res.status === 400) {
+        toast.warning(res.error);
+      } else {
+        toast.error(res.error);
+      }
+      return;
+    }
+
+    toast.success("Item saved to favorites!");
+    setFavorites((prev) => [res, ...prev]);
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm("Remove this item from favorites?")) return;
+    if (!confirm("Remove this item?")) return;
+
+    const previous = [...favorites];
+    setFavorites((prev) => prev.filter((f) => f.id !== id));
+
     try {
-      await removeFavorite(id);
-      setFavorites((prev) => prev.filter((f) => f.id !== id));
-    } catch {
-      alert("Error deleting item.");
+      const res = await removeFavorite(id);
+      if (res?.error) throw new Error(res.error);
+      toast.info("Removed from favorites");
+    } catch (error: any) {
+      toast.error(error.message || "Error deleting item");
+      setFavorites(previous);
     }
   };
 
   const isValidImageUrl = (url: string | null | undefined): boolean => {
     if (!url || typeof url !== "string") return false;
-    try {
-      new URL(url);
-      return (
-        url.startsWith("http") ||
-        url.startsWith("/") ||
-        url.startsWith("data:image")
-      );
-    } catch {
-      return false;
-    }
+    return (
+      url.startsWith("http") ||
+      url.startsWith("/") ||
+      url.startsWith("data:image")
+    );
   };
 
   return (
@@ -72,7 +92,7 @@ const SaveFavorite = () => {
                     alt={fav.title || "Product"}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                    sizes="(max-width: 768px) 100vw, 25vw"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">
@@ -93,8 +113,8 @@ const SaveFavorite = () => {
 
                 <div className="mt-auto">
                   {fav.price && (
-                    <p className="text-gray-900 font-extrabold text-xl mb-4">
-                      ${parseFloat(fav.price).toLocaleString()}
+                    <p className="text-blue-700 font-extrabold text-xl mb-4">
+                      {Number(fav.price).toLocaleString()} kr
                     </p>
                   )}
 

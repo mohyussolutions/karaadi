@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAd, getMyAds, payToRelist } from "@/actions/core/my-adsAction";
 import { useGetRoute } from "../../components/hooks/useGetRoute";
+
+import dynamic from "next/dynamic";
+const Spinner = dynamic(
+  () => import("../../components/shared/Loading/LoginLoading"),
+  { ssr: false },
+);
 
 export const itemLinks = ["vehicle", "item-details", "real-estate"];
 
@@ -23,69 +29,79 @@ function MyAds() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchAds = async () => {
-      setLoading(true);
-      try {
-        const userAds = await getMyAds();
-        setAds(userAds);
-      } catch (err: any) {
-        if (err.message.includes("Unauthorized")) router.push("/login");
-      } finally {
-        setLoading(false);
-      }
+    let isMounted = true;
+    setLoading(true);
+    getMyAds()
+      .then((userAds) => {
+        if (isMounted) setAds(userAds);
+      })
+      .catch((err) => {
+        if (err.message?.includes("Unauthorized")) router.push("/login");
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => {
+      isMounted = false;
     };
-    fetchAds();
   }, [router]);
 
-  const handleDeleteAd = (adId: string) => async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this ad?")) return;
-
-    try {
-      const success = await deleteAd(adId);
-      if (success) {
-        setAds((prev) => prev.filter((ad) => ad.id !== adId));
+  const handleDeleteAd = useCallback(
+    (adId: string) => async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!window.confirm("Are you sure you want to delete this ad?")) return;
+      try {
+        const success = await deleteAd(adId);
+        if (success) setAds((prev) => prev.filter((ad) => ad.id !== adId));
+      } catch {
+        alert("Delete ad failed.");
       }
-    } catch {
-      alert("Delete ad failed.");
-    }
-  };
+    },
+    [],
+  );
 
-  const handleUpdateAd = (adId: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    router.push(`/mine/edit/${adId}`);
-  };
+  const handleUpdateAd = useCallback(
+    (adId: string) => (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      router.push(`/mine/edit/${adId}`);
+    },
+    [router],
+  );
 
-  const handlePayToRelist = async (adId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!window.confirm("Pay $5 to relist this item?")) return;
-
-    try {
-      const success = await payToRelist(adId);
-      if (success) {
-        alert("Payment successful! Your ad is now active.");
-        const userAds = await getMyAds();
-        setAds(userAds);
+  const handlePayToRelist = useCallback(
+    async (adId: string, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!window.confirm("Pay $5 to relist this item?")) return;
+      try {
+        const success = await payToRelist(adId);
+        if (success) {
+          alert("Payment successful! Your ad is now active.");
+          const userAds = await getMyAds();
+          setAds(userAds);
+        }
+      } catch {
+        alert("Payment failed. Please try again.");
       }
-    } catch {
-      alert("Payment failed. Please try again.");
-    }
-  };
+    },
+    [],
+  );
 
-  const handleViewAd = (ad: any) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const route = useGetRoute({ category: getCategoryType(ad) });
-    router.push(`/${route}/${ad.id}`);
-  };
+  const handleViewAd = useCallback(
+    (ad: any) => (e: React.MouseEvent) => {
+      e.preventDefault();
+      const route = useGetRoute({ category: getCategoryType(ad) });
+      router.push(`/${route}/${ad.id}`);
+    },
+    [router],
+  );
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <Spinner />
       </div>
     );
   }

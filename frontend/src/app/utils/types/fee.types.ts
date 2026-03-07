@@ -53,11 +53,9 @@ export interface FeeConfig {
   fullTime?: string;
   partTime?: string;
   freelance?: string;
-  subStandard?: string;
-  subStandard60?: string;
-  subPremium?: string;
-  subSixMonth?: string;
-  subPremiumYear?: string;
+  basic30?: string;
+  standard60?: string;
+  premium90?: string;
   taxRate?: string;
   platformFee?: string;
   waafi?: string;

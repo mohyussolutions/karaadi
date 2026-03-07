@@ -142,23 +142,24 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className="flex flex-col items-center p-3 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all group"
-            >
-              <span
-                className={`text-xl mb-1 ${link.color || "text-gray-500"} group-hover:scale-110 transition-transform`}
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="flex flex-col items-center p-3 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all group"
               >
-                {link.icon}
-              </span>
-              <span className="text-[10px] font-black uppercase text-gray-600 text-center">
-                {link.name}
-              </span>
-            </Link>
-          ))}
+                <span className="text-xl mb-1 text-gray-500 group-hover:scale-110 transition-transform">
+                  <Icon />
+                </span>
+                <span className="text-[10px] font-black uppercase text-gray-600 text-center">
+                  {link.name}
+                </span>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

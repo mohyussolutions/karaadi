@@ -4,28 +4,31 @@ import React, { useState } from "react";
 import Link from "next/link";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { useRouter } from "next/navigation";
-import { useRegisterMutation } from "@/app/(storeFront)/store/slices/userSlice";
+import { register } from "@/actions/core/authAction";
 
 function RegisterUser() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
-  const [register, { isLoading, isError, error }] = useRegisterMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage("");
 
     try {
-      await register({ username, email, password }).unwrap();
+      await register(username, email, password);
       router.push("/confirm");
     } catch (err: any) {
-      const message =
-        err?.data?.message ||
-        err?.error ||
-        "We couldn't complete your registration. Please try again.";
-
-      console.log("Registration failed:", message);
+      setErrorMessage(
+        err?.message ||
+          "We couldn't complete your registration. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -81,7 +84,9 @@ function RegisterUser() {
         <label
           htmlFor="password"
           className="block text-sm font-medium mb-1 text-gray-700"
-        ></label>
+        >
+          Password
+        </label>
         <PasswordToggle
           id="password"
           name="password"
@@ -104,11 +109,8 @@ function RegisterUser() {
           {isLoading ? "Registering..." : "Register"}
         </button>
 
-        {isError && (
-          <p className="mt-4 text-red-600 text-center">
-            {/* @ts-ignore */}
-            {error?.data?.error || "Registration failed."}
-          </p>
+        {errorMessage && (
+          <p className="mt-4 text-red-600 text-center">{errorMessage}</p>
         )}
 
         <p className="mt-8 text-center text-gray-700 w-full">

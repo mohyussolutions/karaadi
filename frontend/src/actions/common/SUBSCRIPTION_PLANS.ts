@@ -1,6 +1,6 @@
 export const SUBSCRIPTION_PLANS = [
   {
-    key: "subStandard",
+    key: "basic30",
     label: "Basic",
     days: 30,
     iconName: "zap",
@@ -13,7 +13,7 @@ export const SUBSCRIPTION_PLANS = [
     ],
   },
   {
-    key: "subStandard60",
+    key: "standard60",
     label: "Standard",
     days: 60,
     iconName: "rocket",
@@ -27,7 +27,7 @@ export const SUBSCRIPTION_PLANS = [
     ],
   },
   {
-    key: "subPremium",
+    key: "premium90",
     label: "Premium",
     days: 90,
     iconName: "crown",

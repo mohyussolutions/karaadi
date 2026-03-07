@@ -1,3 +1,4 @@
+import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 import {
   createTicket,
   deleteTicket,
@@ -8,19 +9,19 @@ import { Router } from "express";
 
 const customerSupportRoutes = Router();
 
-customerSupportRoutes.get("/", (req, res, next) => {
+customerSupportRoutes.get("/", ProtectRoute, (req, res, next) => {
   getTicketsAndMetrics(req, res).catch(next);
 });
 
-customerSupportRoutes.post("/", (req, res, next) => {
+customerSupportRoutes.post("/", ProtectRoute, (req, res, next) => {
   createTicket(req, res).catch(next);
 });
 
-customerSupportRoutes.put("/:id", (req, res, next) => {
+customerSupportRoutes.put("/:id", ProtectRoute, (req, res, next) => {
   updateTicket(req, res).catch(next);
 });
 
-customerSupportRoutes.delete("/:id", (req, res, next) => {
+customerSupportRoutes.delete("/:id", ProtectRoute, (req, res, next) => {
   deleteTicket(req, res).catch(next);
 });
 

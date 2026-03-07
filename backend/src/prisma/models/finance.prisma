@@ -170,13 +170,12 @@ model SystemConfig {
 
 model SubPlan {
   id             String   @id @default(cuid())
-  subStandard    Float    @default(0.0)
-  subStandard60  Float    @default(0.0)
-  subPremium     Float    @default(0.0)
+  basic30        Float    @default(0.0)
+  standard60     Float    @default(0.0)
+  premium90      Float    @default(0.0)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
   marketplaces   Marketplace[]
   realEstates    RealEstate[]
   boats          Boat[]
@@ -187,7 +186,6 @@ model SubPlan {
   payments       Payment[] @relation("PaymentSubPlan")
   changeLogs     FeeChangeLog[]
 }
-
 model FeeChangeLog {
   id             String    @id @default(cuid())
   feeConfigId    String

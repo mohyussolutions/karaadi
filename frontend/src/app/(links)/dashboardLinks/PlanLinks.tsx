@@ -1,6 +1,6 @@
 export const B2B_PLAN_CONFIG = [
   {
-    id: "subStandard",
+    id: "basic30",
     name: "1 bil",
     duration: "1 Bil",
     badge: "Heerka 1-aad",
@@ -11,7 +11,7 @@ export const B2B_PLAN_CONFIG = [
     ],
   },
   {
-    id: "subStandard60",
+    id: "standard60",
     name: "2 bilood",
     duration: "2 Bilood",
     badge: "Heerka 2-aad",
@@ -22,7 +22,7 @@ export const B2B_PLAN_CONFIG = [
     ],
   },
   {
-    id: "subPremium",
+    id: "premium90",
     name: "3 bilood",
     duration: "3 Bilood",
     badge: "Heerka 3-aad",
@@ -33,7 +33,6 @@ export const B2B_PLAN_CONFIG = [
     ],
   },
   {
-    id: "subSixMonth",
     name: "6 bilood",
     duration: "6 Bilood",
     badge: "Heerka 4-aad",
@@ -44,7 +43,6 @@ export const B2B_PLAN_CONFIG = [
     ],
   },
   {
-    id: "subPremiumYear",
     name: "sanad",
     duration: "1 Sano",
     badge: "Heerka 5-aad",

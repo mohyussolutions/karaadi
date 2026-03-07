@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import BusinessCourseFormView from "@/app/(storeFront)/components/forms/businnes/BusinessCourseFormView";
 import {
-  addCity,
-  getAllCities,
   getAllRegions,
+  getAllCities,
+  addCity,
 } from "@/actions/categories/geoAction";
 import allowedData from "./allowedCompanies.json";
 
@@ -14,6 +14,15 @@ const BusinessCourseForm = () => {
   const [courseTitle, setCourseTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [streetName, setStreetName] = useState("");
+
+  const categories = [
+    { id: "cars", name: "Gawaarida (Cars)" },
+    { id: "jobs", name: "Shaqooyinka (Jobs)" },
+    { id: "realstate", name: "Guryaha & Dhulka (Real Estate)" },
+    { id: "services", name: "Adeegyada (Services)" },
+  ];
+  const [selectedCategory, setSelectedCategory] = useState("");
+
   const [businessType, setBusinessType] = useState("");
   const [newBusinessType, setNewBusinessType] = useState("");
   const [businessTypes, setBusinessTypes] = useState<any[]>([]);
@@ -54,7 +63,8 @@ const BusinessCourseForm = () => {
 
   useEffect(() => {
     if (region) {
-      setFilteredCities(allCities.filter((c) => c.regionId === region));
+      const filtered = allCities.filter((c) => c.regionId === region);
+      setFilteredCities(filtered);
     } else {
       setFilteredCities([]);
     }
@@ -79,11 +89,11 @@ const BusinessCourseForm = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const selectedFiles = Array.from(e.target.files);
-    if (selectedFiles.length > 10) {
+    if (selectedFiles.length + images.length > 10) {
       setImageError("Ugu badnaan 10 sawir ayaa la ogol yahay.");
       return;
     }
-    setImages(selectedFiles);
+    setImages((prev) => [...prev, ...selectedFiles]);
     setImageError(null);
   };
 
@@ -99,10 +109,10 @@ const BusinessCourseForm = () => {
 
     return (
       courseTitle.trim() &&
+      selectedCategory &&
       companyName.trim() &&
       isAllowed &&
       streetName.trim() &&
-      businessType.trim() &&
       region.trim() &&
       selectedCity &&
       description.trim() &&
@@ -114,14 +124,6 @@ const BusinessCourseForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isCompanyAllowed = allowedData.companies.some(
-      (name) => name.toLowerCase() === companyName.trim().toLowerCase(),
-    );
-
-    if (!isCompanyAllowed) {
-      alert("Shirkaddan looma ogola inay abuurto koorsooyin.");
-      return;
-    }
 
     if (!isFormValid()) {
       alert("Fadlan buuxi bannaannada loo baahan yahay.");
@@ -129,16 +131,15 @@ const BusinessCourseForm = () => {
     }
 
     try {
-      let finalCityName = city;
       if (showNewCityInputs && newCity.trim()) {
-        const cityResult = await addCity({
+        await addCity(newCity.trim(), newCity.trim(), region, {
           id: `city-${Date.now()}`,
           name: newCity.trim(),
           regionId: region,
           isActive: true,
         });
-        if (cityResult.success) finalCityName = cityResult.data.name;
       }
+
       router.push("/sumary/businessSummary");
     } catch (error) {
       console.error(error);
@@ -149,6 +150,9 @@ const BusinessCourseForm = () => {
     <BusinessCourseFormView
       courseTitle={courseTitle}
       setCourseTitle={setCourseTitle}
+      categories={categories}
+      selectedCategory={selectedCategory}
+      setSelectedCategory={setSelectedCategory}
       companyName={companyName}
       setCompanyName={setCompanyName}
       streetName={streetName}
@@ -160,6 +164,7 @@ const BusinessCourseForm = () => {
       newBusinessType={newBusinessType}
       setNewBusinessType={setNewBusinessType}
       businessTypes={businessTypes}
+      regions={regions}
       region={region}
       setRegion={setRegion}
       city={city}

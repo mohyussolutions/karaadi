@@ -2,23 +2,29 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+// 1. Import useSearchParams to read the URL state
+import { useSearchParams } from "next/navigation";
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import WantSell from "@/app/(storeFront)/components/shared/wantSellInk/page";
 import SearchInput from "@/app/(search)/SearchInput";
-import { getTraktors, Traktor } from "@/actions/categories/FarmequipmentAction";
+import {
+  getFarmequipment,
+  FarmEquipment,
+} from "@/actions/categories/FarmequipmentAction";
 import { TraktorTopCategories } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
 
 function TractorLinks() {
-  const [items, setItems] = useState<Traktor[]>([]);
+  const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
 
   useEffect(() => {
     async function fetchInitialItems() {
       try {
-        const data = await getTraktors();
+        const data = await getFarmequipment();
         if (data) setItems(data);
       } catch (error) {
         setIsError(true);
@@ -36,11 +42,11 @@ function TractorLinks() {
     return items.filter((item) => {
       const descText = Array.isArray(item.description)
         ? item.description.join(" ")
-        : item.description;
+        : item.description || "";
 
       return (
         item.title?.toLowerCase().includes(lowerQuery) ||
-        descText?.toLowerCase().includes(lowerQuery) ||
+        descText.toLowerCase().includes(lowerQuery) ||
         item.city?.toLowerCase().includes(lowerQuery) ||
         item.region?.toLowerCase().includes(lowerQuery)
       );
@@ -57,7 +63,8 @@ function TractorLinks() {
 
   return (
     <div className="container mx-auto px-4 py-4">
-      <SearchInput onSearch={setQuery} />
+      <SearchInput defaultValue={query} />
+
       <div className="pt-2">
         <PathSegmentsDisplay />
       </div>
