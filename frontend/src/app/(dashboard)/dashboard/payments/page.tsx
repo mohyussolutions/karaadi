@@ -17,12 +17,13 @@ import {
   FaFilter,
   FaTimes,
 } from "react-icons/fa";
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+
 import {
   deletePayment,
   getAllPayments,
   Payment,
 } from "@/actions/categories/paymentAction";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 export default function Payments() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -136,7 +137,7 @@ export default function Payments() {
   if (loading)
     return (
       <div className="flex justify-center p-20">
-        <ManagerLoading />
+        <Loading />
       </div>
     );
 

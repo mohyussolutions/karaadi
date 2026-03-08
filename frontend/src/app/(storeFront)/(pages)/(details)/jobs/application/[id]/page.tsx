@@ -17,7 +17,7 @@ function Appy({ jobTitle, companyName, jobId }: AppyProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log(
-      `Submitting application for: ${jobTitle} at ${companyName} (Job ID: ${jobId})`
+      `Submitting application for: ${jobTitle} at ${companyName} (Job ID: ${jobId})`,
     );
     setSubmissionStatus("submitted");
   };
@@ -177,24 +177,6 @@ function Appy({ jobTitle, companyName, jobId }: AppyProps) {
                 <option value="">Dooro</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="veteranStatus"
-                className="block text-lg font-medium text-gray-700 mb-1"
-              >
-                Veteran Status
-              </label>
-              <select
-                id="veteranStatus"
-                className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Dooro...</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-                <option value="prefer_not_say">Prefer not to say</option>
               </select>
             </div>
           </div>

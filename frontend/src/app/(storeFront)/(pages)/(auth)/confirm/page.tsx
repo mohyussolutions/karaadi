@@ -4,31 +4,39 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// FIX: userSlice import missing. Please create '@/app/(storeFront)/store/slices/userSlice.ts' or update import path to an existing slice (e.g., authSlice.tsx).
-// import {
-//   useConfirmUserMutation,
-//   useResendCodeMutation,
-// } from "@/app/(storeFront)/store/slices/userSlice";
+import { apiUrls } from "@/actions/constant/constant";
 
 const ConfirmEmail = () => {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const router = useRouter();
 
-  const [confirmUser, { isLoading: isConfirmLoading }] =
-    useConfirmUserMutation();
-  const [resendCode, { isLoading: isResendLoading }] = useResendCodeMutation();
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
+  const [isResendLoading, setIsResendLoading] = useState(false);
 
   const handleConfirm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsConfirmLoading(true);
     try {
-      const result = await confirmUser({ email, code: code.trim() }).unwrap();
-      toast.success(result.message || "Email confirmed successfully!");
+      const res = await fetch(apiUrls.CONFIRM, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, code: code.trim() }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(
+          err?.error || err?.message || "Failed to confirm email.",
+        );
+      }
+      const data = await res.json();
+      toast.success(data.message || "Email confirmed successfully!");
       router.push("/login");
     } catch (err: any) {
-      toast.error(
-        err?.data?.message || err.error || "Failed to confirm email.",
-      );
+      toast.error(err?.message || "Failed to confirm email.");
+    } finally {
+      setIsConfirmLoading(false);
     }
   };
 
@@ -37,11 +45,24 @@ const ConfirmEmail = () => {
       toast.error("Please enter your email first.");
       return;
     }
+    setIsResendLoading(true);
     try {
-      const result = await resendCode({ email: email.trim() }).unwrap();
-      toast.success(result.message || "New code sent!");
+      const res = await fetch(apiUrls.RESEND_CODE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || err?.message || "Failed to resend code.");
+      }
+      const data = await res.json();
+      toast.success(data.message || "New code sent!");
     } catch (err: any) {
-      toast.error(err?.data?.message || err.error || "Failed to resend code.");
+      toast.error(err?.message || "Failed to resend code.");
+    } finally {
+      setIsResendLoading(false);
     }
   };
 

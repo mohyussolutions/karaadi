@@ -3,7 +3,10 @@ import prisma from "../../core/utils/db.ts";
 import { User } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  CACHE_TTL,
+  getPaginationParams,
+} from "src/constants/config.constants.ts";
 import {
   calculateExpiryDate,
   getDaysUntilExpiry,
@@ -56,11 +59,17 @@ interface CreateFarmequipmentBody {
   userId?: string;
 }
 
-const prepareTractorData = (body: CreateFarmequipmentBody, userId: string) => {
-  const expiryDate =
-    body.planId && body.planAmount
-      ? calculateExpiryDate(body.planId, body.planAmount)
-      : null;
+const prepareTractorData = async (
+  body: CreateFarmequipmentBody,
+  userId: string,
+) => {
+  let expiryDate = null;
+  if (body.planId && body.planAmount) {
+    const plan = await prisma.subPlan.findUnique({
+      where: { id: body.planId },
+    });
+    expiryDate = plan ? calculateExpiryDate(plan, body.planAmount) : null;
+  }
 
   return {
     userId,
@@ -102,7 +111,7 @@ export const createfarmequipment = async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "User authentication required" });
     }
 
-    const data = prepareTractorData(req.body, userId);
+    const data = await prepareTractorData(req.body, userId);
     const newTractor = await prisma.farmequipment.create({
       data,
       include: { user: selectUserBasic },
@@ -154,7 +163,21 @@ export const updateTractor = async (req: AuthRequest, res: Response) => {
       });
     } else {
       const userId = req.body.userId || req.user?.id || req.user?._id;
-      const data = prepareTractorData(req.body, userId);
+      const data = await prepareTractorData(req.body, userId);
+
+      // Check expiry and set isPaid to false if expired
+      let expiryDateToCheck: Date | null = data.expiryDate ?? null;
+      if (expiryDateToCheck === null) {
+        const current = await prisma.farmequipment.findUnique({
+          where: { id },
+          select: { expiryDate: true },
+        });
+        expiryDateToCheck = current?.expiryDate ?? null;
+      }
+      if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
+        data.isPaid = false;
+      }
+
       updatedTractor = await prisma.farmequipment.update({
         where: { id },
         data,

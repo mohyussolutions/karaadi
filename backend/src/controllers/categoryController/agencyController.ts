@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  CACHE_TTL,
+  getPaginationParams,
+} from "src/constants/config.constants.ts";
 
 const parseId = (id: any) => (Array.isArray(id) ? id[0] : id);
 

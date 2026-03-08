@@ -7,14 +7,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-toastify";
 
-import { ImageControls } from "@/app/(storeFront)/components/hooks/useRenderImageControls";
+import dynamic from "next/dynamic";
+import { ImageControls as ImageControlsBase } from "@/app/(storeFront)/components/hooks/useRenderImageControls";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import { getMarketplaceItemById } from "@/actions/categories/marketplaceActions";
-import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
-import UserCard from "@/app/(storeFront)/components/Cards/UserProfileCard";
+const SaveFavoriteModel = dynamic(
+  () => import("@/app/(storeFront)/components/shared/modals/Modal"),
+  { ssr: false },
+);
+import UserCardBase from "@/app/(storeFront)/components/Cards/UserProfileCard";
 import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { verifySession } from "@/actions/core/authAction";
+import React from "react";
+
+const UserCard = React.memo(UserCardBase);
+const ImageControls = React.memo(ImageControlsBase);
 
 export default function ProductDetails() {
   const router = useRouter();
@@ -151,7 +159,34 @@ export default function ProductDetails() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="w-full max-w-7xl px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start animate-pulse">
+            <div className="space-y-6">
+              <div className="w-full bg-gray-200 rounded-2xl h-[600px] md:h-[700px]" />
+              <div className="flex gap-3 py-2">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="min-w-[100px] h-24 bg-gray-200 rounded-xl"
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <div className="w-24 h-8 bg-gray-200 rounded" />
+                <div className="w-2/3 h-10 bg-gray-200 rounded" />
+                <div className="w-1/3 h-8 bg-gray-200 rounded" />
+              </div>
+              <div className="bg-gray-100 rounded-2xl h-24" />
+              <div className="space-y-4">
+                <div className="w-32 h-6 bg-gray-200 rounded" />
+                <div className="h-20 bg-gray-100 rounded" />
+              </div>
+              <div className="mt-8 h-12 bg-gray-100 rounded" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -178,6 +213,8 @@ export default function ProductDetails() {
                 className={`object-cover transition-opacity duration-300 ${data.item.maGaday ? "opacity-70" : "opacity-100"}`}
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"
+                placeholder="blur"
+                blurDataURL="/placeholder.png"
               />
             )}
 
@@ -225,7 +262,13 @@ export default function ProductDetails() {
                     : "border-transparent opacity-70"
                 }`}
               >
-                <Image src={thumb} alt="" fill className="object-cover" />
+                <Image
+                  src={thumb}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  loading="lazy"
+                />
               </button>
             ))}
           </div>
@@ -288,18 +331,6 @@ export default function ProductDetails() {
               href={`/components/Report/${data.item.id}`}
               className="flex items-center justify-center gap-2 text-red-600 text-xs font-black uppercase tracking-[0.15em] hover:text-red-800"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a2.25 2.25 0 0 1 2.725 1.89l.062.526a4.5 4.5 0 0 0 5.45 3.78l.114-.029a2.25 2.25 0 0 1 2.726 1.89l.199 1.684a1.5 1.5 0 0 1-1.49 1.673l-1.13.03a4.5 4.5 0 0 1-4.85-3.592l-.314-1.664a2.25 2.25 0 0 0-2.425-1.796l-3.336.326A.75.75 0 0 1 3 11.25V3a.75.75 0 0 1 .75-.75Zm.75 15.5a.75.75 0 0 1 .75-.75H5.25a.75.75 0 0 1 0 1.5H4.5a.75.75 0 0 1-.75-.75Z"
-                  clipRule="evenodd"
-                />
-              </svg>
               Report this item
             </Link>
           </div>

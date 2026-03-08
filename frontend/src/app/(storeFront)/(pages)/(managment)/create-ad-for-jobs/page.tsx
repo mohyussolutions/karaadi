@@ -17,7 +17,7 @@ import {
   educationLevels,
   experienceLevels,
 } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForJobs";
-import { createJobListing } from "@/actions/categories/jobActions";
+import { createJob } from "@/actions/categories/jobActions";
 
 const CreateAdForJobs = () => {
   const router = useRouter();
@@ -138,7 +138,7 @@ const CreateAdForJobs = () => {
         requiredSkills: formData.requiredSkills.split(",").map((s) => s.trim()),
       };
 
-      const res = await createJobListing(jobData as any, token);
+      const res = await createJob(jobData as any, token);
 
       if (res.success) {
         toast.success("Job advertisement posted successfully!");

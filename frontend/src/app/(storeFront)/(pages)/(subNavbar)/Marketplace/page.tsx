@@ -12,11 +12,15 @@ import {
   MarketplaceItem,
 } from "@/actions/categories/marketplaceActions";
 
+import { usePathname, useSearchParams } from "next/navigation";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+
 function MarketplaceLinks() {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
 
   useEffect(() => {
     async function fetchInitialItems() {
@@ -53,14 +57,14 @@ function MarketplaceLinks() {
   if (isError) {
     return (
       <div className="text-center py-6 text-red-500 font-medium">
-        Cilad baa ku timid soo dejinta xogta marketplace-ka.
+        <Loading />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-2 py-2">
-      <SearchInput onSearch={setQuery} />
+      <SearchInput defaultValue={query} />
       <div className="pt-2">
         <PathSegmentsDisplay />
       </div>

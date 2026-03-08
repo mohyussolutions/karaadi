@@ -2,7 +2,7 @@ import prisma from "../../core/utils/db.ts";
 import {
   CATEGORY_FIELD_MAP,
   MODEL_MAP,
-} from "../../constanst/payment.constants.ts";
+} from "../../constants/payment.constants.ts";
 import {
   generateTransactionId,
   parseWaafiResponse,

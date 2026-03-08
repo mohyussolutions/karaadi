@@ -1,6 +1,6 @@
 "use client";
 
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import React, { useEffect, useState } from "react";
 
 export default function ChatsActive() {
@@ -40,7 +40,7 @@ export default function ChatsActive() {
 
       <div className="h-[48px] flex items-center justify-center mt-3">
         {loading ? (
-          <ManagerLoading />
+          <Loading />
         ) : (
           <p className="text-3xl font-bold text-green-600">
             {total.toLocaleString()}

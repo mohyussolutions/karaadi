@@ -3,7 +3,10 @@ import { prisma } from "../../core/utils/db.ts";
 import { Prisma } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  CACHE_TTL,
+  getPaginationParams,
+} from "src/constants/config.constants.ts";
 import {
   calculateExpiryDate,
   getDefaultExpiryDate,
@@ -75,6 +78,16 @@ const ensureSingleString = (id: any): string => {
 const mapBoatResponse = (boat: any) => {
   if (!boat) return null;
   const expired = isExpired(boat.expiryDate);
+  if (expired && boat.isPaid) {
+    prisma.boat
+      .update({
+        where: { id: boat.id },
+        data: { isPaid: false, maGaday: true },
+      })
+      .catch(() => {});
+    boat.isPaid = false;
+    boat.maGaday = true;
+  }
 
   let planName = "Basic 30 Days";
   if (boat.plan) {
@@ -85,6 +98,7 @@ const mapBoatResponse = (boat: any) => {
 
   return {
     ...boat,
+    maGaday: expired ? false : boat.maGaday,
     isExpired: expired,
     status: expired ? "expired" : boat.isPaid ? "active" : "pending",
     selectedPlan: boat.plan
@@ -274,6 +288,7 @@ export const updateBoatPayment = catchAsync(
         .status(404)
         .json({ success: false, message: "Boat not found" });
 
+    const expired = isExpired(boat.expiryDate);
     const expiryDate = planId
       ? calculateExpiryDate(planId, boat.planAmount)
       : getDefaultExpiryDate();
@@ -281,7 +296,7 @@ export const updateBoatPayment = catchAsync(
     const updatedBoat = await prisma.boat.update({
       where: { id },
       data: {
-        isPaid: true,
+        isPaid: expired ? false : true,
         maGaday: false,
         expiryDate,
         planId: planId || boat.planId,

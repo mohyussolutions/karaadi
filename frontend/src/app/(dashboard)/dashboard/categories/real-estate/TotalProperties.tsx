@@ -1,7 +1,8 @@
 "use client";
 
 import { getTotalRealEstateCount } from "@/actions/categories/realEstateActions";
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+
 import React, { useEffect, useState } from "react";
 
 export default function TotalProperties() {
@@ -24,7 +25,7 @@ export default function TotalProperties() {
       </h4>
       <div className="h-[40px] flex items-center justify-center mt-1">
         {loading ? (
-          <ManagerLoading />
+          <Loading />
         ) : (
           <p className="text-2xl font-black text-slate-900">
             {total.toLocaleString()}

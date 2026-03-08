@@ -1,77 +1,30 @@
-Next Steps:
+$ 1. Backend Development
 
-Caching & Backend
+- User Management: Enable users to delete their own accounts and grant admins the authority to remove unnecessary user records.
+- Media Integration: Configure S3 image uploads served via CloudFront, secured with Cognito authentication.
+- Refactoring: Standardize backend TypeScript types and remove all obsolete comments to clean the codebase.
+- Payment Systems: Fix and optimize the integration for both Waafi mobile payments and Card gateways. Add user plans (90, 60, 30 days) and ensure plan logic is enforced in backend.
+- Data Integrity: Implement strict Zod/validation components to ensure only sanitized, safe data is persisted to the server.
+- User Plans: Implement 90-day, 60-day, and 30-day plans for users. Enforce plan selection and logic in backend.
 
-Implement caching for frequently requested data (e.g., category listings, ads).
+$ 2. Frontend Development
 
-Use Redis for caching user sessions, search results, and notifications.
+N.B: Users with the 90-day plan will always be prioritized and shown at the top of item lists in the frontend. All payment-protected routes must enforce authentication and valid plan status.
 
-Optimize Socket.IO and compression on the frontend for smoother communication and faster loads.
+- Chat UI: Repair and finalize the specialized chat message component logic.
+- Architecture: Refactor frontend actions into three distinct, organized components for better maintainability.
+- Validation: Implement comprehensive form validation to improve user experience and data quality.
+- Type Safety: Audit and fix all TypeScript type definitions across the frontend.
+- Production Prep: Complete the final build process and optimize assets.
+- Payment UI: Integrate payment workflow in the frontend and protect all routes that require authentication or payment.
+- User Plan Display: Show users who chose the 90-day plan at the top of item lists.
 
-UI & UX Improvements
+$ 3. Deployment
 
-Add price filtering logic below the regions and cities filters.
+- AWS Infrastructure: Execute the deployment to the AWS production environment.
+- Payment Configuration: Finalize the live update for payment card processing settings.
+- Observability: Set up system monitoring and alerts to track performance and errors.
 
-Improve the styling for the "See More" component.
+$ 4. Future Roadmap
 
-Add a SaveFavorite component.
-
-Ensure fresh and improved styling for the footer to fit the overall design.
-
-Implement a function to render random items on the frontend to show a mix of categories (cars, boats, etc.) simultaneously.
-
-Features & API
-
-Add a notification system: when a user subscribes to an item, send them a notification.
-
-Add API integration for HAGE agency.
-
-Dashboard & Security
-
-Secure all dashboard routes with proper authentication and authorization checks.
-
-Improve dashboard UX: add a "report" component for performance and user stats.
-
-Code Cleanup & Fixes
-
-Fix the saved-searches path: /src/app/(storeFront)/mine/saved-searches.
-
-Fix the payment system integration.
-
-Separate search actions from components.
-
-Fix all links, ensure each has a value, and optimize for speed.
-
-Remove all comments across the user-side codebase.
-
-Testing
-
-Test performance after these updates and monitor for bottlenecks.
-NB: FIX THE MAIN PAGE RSERACH FILTEr for it has to go each page details like cars has to it vehicles page
-NB: update the city when user chooses new city
-BN: user can not send message to him/she self
-
-n.b
-Profile slow endpoints and optimize database queries.
-Add missing images to your public/assets folders.
-Use caching for frequent data.
-Minimize frontend bundle size.
-Monitor server CPU/memory usage.
-
-✅ Trim down middleware.
-
-✅ Optimize DB queries.
-
-✅ Utilize parallel async execution.
-
-✅ Implement caching.
-
-✅ Use clustering.
-Your project is slow because of:
-
-issues:
-
-Missing images and repeated 404 errors block rendering.
-Large initial page loads and heavy components slow down the UI.
-Runtime errors and missing modules trigger full reloads.
-Your backend API response times are fast (most under 100ms), so backend is not the main bottleneck. Fixing frontend image handling, lazy loading, and errors will improve speed.
+- Scalability: Transition the monolithic architecture to Spring Boot Microservices as the user base scales.

@@ -1,6 +1,6 @@
 "use client";
 
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import React, { useEffect, useState } from "react";
 
 export default function TotalTax() {
@@ -36,7 +36,7 @@ export default function TotalTax() {
       <h2 className="text-lg font-semibold text-gray-700">Total Tax</h2>
 
       <div className="h-[48px] flex items-center justify-center mt-3">
-        {loading && <ManagerLoading />}
+        {loading && <Loading />}
 
         {!loading && (
           <p className="text-3xl font-bold text-green-600">

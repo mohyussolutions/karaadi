@@ -13,16 +13,16 @@ const CategoryLinks = memo(function CategoryLinks() {
   return (
     <div className="grid grid-cols-4 gap-1.5 px-1 py-2 sm:grid-cols-4 lg:grid-cols-4 max-w-5xl mx-auto">
       {allCategories.map((category) => {
-        const isExternal = category.href.startsWith("http");
         const isSmartsuuq = category.key === "Smartsuuq";
-
+        const isExternal = /^https?:\/\//.test(category.href);
         return (
           <Link
             key={category.key}
             href={category.href}
             prefetch={false}
-            target={isExternal ? "_blank" : undefined}
-            rel={isExternal ? "noopener noreferrer" : undefined}
+            {...(isExternal
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
             className="flex flex-col items-center text-center group p-1.5 rounded-xl border border-gray-50 bg-white hover:border-blue-200 transition-all active:scale-95"
           >
             <div className={`${iconBaseClasses} ${iconSizeClasses}`}>
@@ -42,16 +42,13 @@ const CategoryLinks = memo(function CategoryLinks() {
                 </div>
               )}
             </div>
-
             <div className="flex flex-col pt-1">
               <span
-                className={`text-[12px] sm:text-xs leading-tight
-                  ${isSmartsuuq ? "font-bold text-blue-600" : "font-medium text-gray-700"}
-                `}
+                className={`text-[11px] sm:text-[13px] font-normal leading-tight ${isSmartsuuq ? "text-blue-600" : "text-gray-800"}`}
               >
                 {category.so || category.name}
               </span>
-              <span className="text-[8px] sm:text-[10px] font-normal text-gray-400 leading-tight">
+              <span className="text-[9px] sm:text-[11px] font-light text-gray-500 leading-tight mt-0.5">
                 {category.name}
               </span>
             </div>

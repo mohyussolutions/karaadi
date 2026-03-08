@@ -14,7 +14,6 @@ export interface Job {
   location: string;
   company: string;
   type: "Full-time" | "Part-time" | "Contract" | "Remote";
-  // Additional fields from the other interface
   city?: string;
   region?: string;
   employmentType?: string;
@@ -31,7 +30,6 @@ export interface CreateJobData {
   type: "Full-time" | "Part-time" | "Contract" | "Remote";
   city?: string;
   region?: string;
-  employmentType?: string;
   isPaid?: boolean;
 }
 
@@ -47,13 +45,34 @@ async function getAuthHeaders(token?: string) {
   };
 
   if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   return headers;
 }
 
-// Get all jobs (public endpoint - no auth required)
+function transformJobItem(item: any): Job {
+  const location = item.location || "";
+  const [city = "", region = ""] = location
+    .split(",")
+    .map((s: string) => s.trim());
+
+  return {
+    ...item,
+    _id: item._id || item.id,
+    id: item.id || item._id,
+    type: item.type || item.employmentType || "Full-time",
+    employmentType: item.employmentType || item.type || "Full-time",
+    city: item.city || city,
+    region: item.region || region,
+    company: item.company || "",
+    description: item.description || "",
+    salary: item.salary || 0,
+    location:
+      item.location || `${item.city || city}, ${item.region || region}`.trim(),
+  } as Job;
+}
+
 export async function getJobs(): Promise<Job[]> {
   try {
     const response = await fetch(jobsEndpoint.GET_ALL, {
@@ -71,27 +90,13 @@ export async function getJobs(): Promise<Job[]> {
       ? result
       : result?.data || result?.items || [];
 
-    return list.map((item: any) => ({
-      ...item,
-      _id: item._id || item.id,
-      id: item.id || item._id,
-      type: item.type || item.employmentType || "Full-time",
-      employmentType: item.employmentType || item.type || "Full-time",
-      city: item.city || item.location?.split(",")[0] || "",
-      region: item.region || item.location?.split(",")[1]?.trim() || "",
-      company: item.company || "",
-      description: item.description || "",
-      salary: item.salary || 0,
-      location:
-        item.location || `${item.city || ""}, ${item.region || ""}`.trim(),
-    })) as Job[];
+    return list.map(transformJobItem);
   } catch (error) {
     console.error("Error fetching jobs:", error);
     return [];
   }
 }
 
-// Get all jobs for admin (with auth)
 export async function fetchJobs(token?: string): Promise<Job[]> {
   try {
     const headers = await getAuthHeaders(token);
@@ -111,20 +116,7 @@ export async function fetchJobs(token?: string): Promise<Job[]> {
       ? result
       : result?.data || result?.items || [];
 
-    return list.map((item: any) => ({
-      ...item,
-      _id: item._id || item.id,
-      id: item.id || item._id,
-      type: item.type || item.employmentType || "Full-time",
-      employmentType: item.employmentType || item.type || "Full-time",
-      city: item.city || item.location?.split(",")[0] || "",
-      region: item.region || item.location?.split(",")[1]?.trim() || "",
-      company: item.company || "",
-      description: item.description || "",
-      salary: item.salary || 0,
-      location:
-        item.location || `${item.city || ""}, ${item.region || ""}`.trim(),
-    })) as Job[];
+    return list.map(transformJobItem);
   } catch (error) {
     console.error("Error fetching admin jobs:", error);
     return [];
@@ -172,14 +164,8 @@ export async function getJobById(
       return null;
     }
 
-    const item: any = await response.json();
-    return {
-      ...item,
-      _id: item._id || item.id,
-      id: item.id || item._id,
-      type: item.type || item.employmentType || "Full-time",
-      employmentType: item.employmentType || item.type || "Full-time",
-    } as Job;
+    const item = await response.json();
+    return transformJobItem(item);
   } catch (error) {
     console.error("Error fetching job by id:", error);
     return null;
@@ -193,7 +179,6 @@ export async function createJob(
   try {
     const headers = await getAuthHeaders(token);
 
-    // Format the data to match what the backend expects
     const jobData = {
       title: data.title,
       description: data.description,
@@ -201,7 +186,7 @@ export async function createJob(
       location:
         data.location || `${data.city || ""}, ${data.region || ""}`.trim(),
       salary: data.salary,
-      type: data.type || data.employmentType || "Full-time",
+      type: data.type,
       isPaid: data.isPaid ?? true,
     };
 
@@ -222,11 +207,7 @@ export async function createJob(
       };
     }
 
-    const job = {
-      ...result,
-      _id: result._id || result.id,
-      id: result.id || result._id,
-    };
+    const job = transformJobItem(result);
 
     revalidateTag("jobs");
     revalidateTag("jobs-total");
@@ -252,13 +233,12 @@ export async function updateJob(
   try {
     const headers = await getAuthHeaders(token);
 
-    // Format the data to match what the backend expects
-    const jobData: any = { ...data };
+    const jobData: Record<string, any> = { ...data };
+
     if (data.city || data.region) {
       jobData.location = `${data.city || ""}, ${data.region || ""}`.trim();
-    }
-    if (data.employmentType) {
-      jobData.type = data.employmentType;
+      delete jobData.city;
+      delete jobData.region;
     }
 
     const response = await fetch(jobsEndpoint.UPDATE(id), {
@@ -329,4 +309,15 @@ export async function deleteJob(
     console.error("Error deleting job:", error);
     return { success: false, error: "Network error", message: "Network error" };
   }
+}
+
+export async function formatSalary(salary?: number): Promise<string> {
+  if (!salary) return "Not specified";
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(salary);
 }

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+
 import prisma from "src/core/utils/db.ts";
 import {
   calculateExpiryDate,
@@ -10,6 +10,10 @@ import {
   getDefaultExpiryDate,
   isExpired,
 } from "src/hooks/useExpire.ts";
+import {
+  CACHE_TTL,
+  getPaginationParams,
+} from "src/constants/config.constants.ts";
 
 interface CarQuery {
   type?: string;
@@ -244,8 +248,12 @@ export const createCar = async (
       return res.status(400).json({ message: "Missing userId in request." });
     }
 
-    const expiryDate =
-      planId && planAmount ? calculateExpiryDate(planId, planAmount) : null;
+    let expiryDate = null;
+    if (planId && planAmount) {
+      // Fetch the plan object (SubPlan) for expiry calculation
+      const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
+      expiryDate = plan ? calculateExpiryDate(plan, planAmount) : null;
+    }
 
     const newCar = await prisma.car.create({
       data: {
@@ -309,14 +317,23 @@ export const updateCarPayment = async (
       return res.status(404).json({ success: false, message: "Car not found" });
     }
 
-    const expiryDate = planId
-      ? calculateExpiryDate(planId, car.planAmount || 0)
-      : getDefaultExpiryDate();
+    const expired = isExpired(car.expiryDate);
+    let expiryDate = null;
+    if (car.planId && car.planAmount) {
+      const plan = await prisma.subPlan.findUnique({
+        where: { id: car.planId },
+      });
+      expiryDate = plan
+        ? calculateExpiryDate(plan, car.planAmount)
+        : getDefaultExpiryDate();
+    } else {
+      expiryDate = getDefaultExpiryDate();
+    }
 
     const updatedCar = await prisma.car.update({
       where: { id },
       data: {
-        isPaid: true,
+        isPaid: expired ? false : true,
         expiryDate,
         planId: planId || car.planId,
       },
@@ -351,6 +368,19 @@ export const updateCar = async (
     }
 
     const updateData = { ...req.body } as Prisma.CarUpdateInput;
+
+    // Check expiry and set isPaid to false if expired
+    let expiryDateToCheck: Date | null = (updateData as any).expiryDate ?? null;
+    if (expiryDateToCheck === null) {
+      const current = await prisma.car.findUnique({
+        where: { id },
+        select: { expiryDate: true },
+      });
+      expiryDateToCheck = current?.expiryDate ?? null;
+    }
+    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
+      (updateData as any).isPaid = false;
+    }
 
     const updatedCar = await prisma.car.update({
       where: { id },

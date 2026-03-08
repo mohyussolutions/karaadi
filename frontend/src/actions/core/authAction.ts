@@ -203,7 +203,7 @@ export async function updateProfile(
   accessToken: string,
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    const response = await fetch(apiUrls.PROFILE, {
+    const response = await fetch(apiUrls.UPDATE_PROFILE, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -327,4 +327,50 @@ export async function deleteUser(
     headers,
   });
   if (!response.ok) throw new Error("User deletion failed");
+}
+
+export async function updatePhone(
+  phone: string,
+  accessToken: string,
+): Promise<{
+  success: boolean;
+  phone?: string;
+  error?: string;
+  expired?: boolean;
+}> {
+  try {
+    console.log(
+      "Updating phone with token:",
+      accessToken.substring(0, 20) + "...",
+    );
+
+    const response = await fetch(apiUrls.UPDATE_PHONE, {
+      method: "PUT",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ phone }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Update phone error:", data);
+      if (response.status === 401 && data.code === "TOKEN_EXPIRED") {
+        return { success: false, error: "Session expired", expired: true };
+      }
+      return { success: false, error: data.error || "Failed to update phone" };
+    }
+
+    return {
+      success: true,
+      phone: data.phone,
+    };
+  } catch (error) {
+    console.error("Update phone exception:", error);
+    return { success: false, error: (error as Error).message };
+  }
 }

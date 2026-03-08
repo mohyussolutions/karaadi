@@ -2,7 +2,7 @@ import {
   truncateAmount,
   validateAccountNumber,
 } from "../core/utils/payment.utils.ts";
-import { WaaFiConfig } from "../constanst/payment.constants.ts";
+import { WaaFiConfig } from "../constants/payment.constants.ts";
 import { ResponseCodes } from "./waafipay.service.responseCodes.ts";
 import chalk from "chalk";
 

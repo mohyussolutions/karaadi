@@ -31,8 +31,19 @@ export const validate = {
   ],
   handleErrors(req: Request, res: Response, next: NextFunction) {
     const errors = validationResult(req);
-    if (!errors.isEmpty())
+    if (!errors.isEmpty()) {
+      const sanitizedBody = { ...req.body } as any;
+      if (sanitizedBody.password) sanitizedBody.password = "***";
+      console.error(
+        "Validation failed:",
+        (errors.array() as any[]).map((e) => ({ param: e.param, msg: e.msg })),
+        "bodyKeys:",
+        Object.keys(req.body),
+        "sanitizedBody:",
+        sanitizedBody,
+      );
       return res.status(400).json({ errors: errors.array() });
+    }
     next();
   },
 };

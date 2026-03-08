@@ -2,6 +2,11 @@ import AWS from "aws-sdk";
 import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
 import prisma from "./db.ts";
+import bcrypt from "bcrypt";
+import {
+  CognitoIdentityProviderClient,
+  AdminDeleteUserCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
 
 interface VerifiedTokenData {
   _id?: string;
@@ -26,35 +31,40 @@ interface UserAttributes {
   preferred_username?: string;
   phone_number?: string;
   profile?: string;
+  phone_number_verified?: string;
   "custom:isAdmin"?: string;
   "custom:isManager"?: string;
   "custom:isSupport"?: string;
 }
 
 export const cognitoClient = new AWS.CognitoIdentityServiceProvider({
-  region: "eu-west-1",
+  region: process.env.AWS_REGION,
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
-
 export const signUp = async (
   email: string,
   password: string,
   username: string,
+  phoneNumber?: string,
 ) => {
   try {
+    const userAttributes = [
+      { Name: "email", Value: email },
+      { Name: "preferred_username", Value: username },
+      { Name: "custom:phone_number", Value: phoneNumber || "" },
+      { Name: "custom:profile", Value: "" },
+      { Name: "custom:isAdmin", Value: "false" },
+      { Name: "custom:isManager", Value: "false" },
+      { Name: "custom:isSupport", Value: "false" },
+    ];
+
     const response = await cognitoClient
       .signUp({
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
         Password: password,
-        UserAttributes: [
-          { Name: "email", Value: email },
-          { Name: "preferred_username", Value: username },
-          { Name: "custom:isAdmin", Value: "false" },
-          { Name: "custom:isManager", Value: "false" },
-          { Name: "custom:isSupport", Value: "false" },
-        ],
+        UserAttributes: userAttributes,
       })
       .promise();
     return response;
@@ -95,14 +105,31 @@ export const signIn = async (
     const isManager = decodedToken["custom:isManager"] === "true";
     const isSupport = decodedToken["custom:isSupport"] === "true";
 
-    const userRecord = await prisma.user.findUnique({
-      where: { cognitoId: decodedToken.sub },
-      select: { username: true, phone: true, profileImage: true },
-    });
+    const phone = decodedToken["custom:phone_number"] || "";
+    const profileImage = decodedToken["custom:profile"] || "";
+    const preferredUsername =
+      decodedToken.preferred_username || email.split("@")[0];
 
-    const username = userRecord?.username || "";
-    const phone = userRecord?.phone || "";
-    const profileImage = userRecord?.profileImage || "";
+    const userRecord = await prisma.user.upsert({
+      where: { cognitoId: decodedToken.sub },
+      update: {
+        email: decodedToken.email,
+        username: preferredUsername,
+        phone: phone,
+        profileImage: profileImage,
+      },
+      create: {
+        cognitoId: decodedToken.sub,
+        email: decodedToken.email,
+        username: preferredUsername,
+        phone: phone,
+        profileImage: profileImage,
+        password: await bcrypt.hash(password, 10),
+        isAdmin: false,
+        isManager: false,
+        isSupport: false,
+      },
+    });
 
     if (req && req.session) {
       req.session.idToken = idToken;
@@ -110,9 +137,9 @@ export const signIn = async (
       req.session.accessToken = accessToken;
       req.session.user = {
         sub: decodedToken.sub,
-        username,
-        phone,
-        profileImage,
+        username: userRecord.username,
+        phone: phone,
+        profileImage: profileImage,
         isAdmin,
         isManager,
         isSupport,
@@ -126,7 +153,7 @@ export const signIn = async (
       userData: {
         accessToken,
         email,
-        username,
+        username: userRecord.username,
         phone,
         profileImage,
         isAdmin,
@@ -232,12 +259,12 @@ export const updateUserAttributes = async (
   }
   if (attributes.phone_number) {
     userAttributes.push({
-      Name: "phone_number",
+      Name: "custom:phone_number",
       Value: attributes.phone_number,
     });
   }
   if (attributes.profile) {
-    userAttributes.push({ Name: "profile", Value: attributes.profile });
+    userAttributes.push({ Name: "custom:profile", Value: attributes.profile });
   }
   if (attributes["custom:isAdmin"]) {
     userAttributes.push({
@@ -500,17 +527,21 @@ export const refreshTokenLogicV2 = async (
   }
 };
 
-export const deleteFromCognito = async (username: string) => {
+export const deleteFromCognito = async (email: string) => {
   try {
-    await cognitoClient
-      .adminDeleteUser({
-        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
-        Username: username,
-      })
-      .promise();
+    const params = {
+      UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+      Username: email,
+    };
+    const result = await cognitoClient.adminDeleteUser(params).promise();
+    console.log(`Cognito user with email "${email}" deleted successfully.`);
+    return result;
   } catch (error: any) {
     const errorMsg = error?.message || error?.code || "Unknown Cognito error";
-    console.error(`Failed to delete Cognito user "${username}":`, errorMsg);
+    console.error(
+      `Failed to delete Cognito user with email "${email}":`,
+      errorMsg,
+    );
     throw new Error(`Cognito deletion error: ${errorMsg}`);
   }
 };

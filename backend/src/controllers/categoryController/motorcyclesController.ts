@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { Prisma } from "@prisma/client";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  CACHE_TTL,
+  getPaginationParams,
+} from "src/constants/config.constants.ts";
 import {
   calculateExpiryDate,
   getDaysUntilExpiry,
@@ -250,6 +253,19 @@ export const updateMotorcycle = async (req: Request, res: Response) => {
       if (extra.fuelType) updateData.fuelType = extra.fuelType;
       if (extra.color) updateData.color = extra.color;
       if (extra.transmission) updateData.transmission = extra.transmission;
+    }
+
+    let expiryDateToCheck = updateData.expiryDate;
+    if (!expiryDateToCheck) {
+      const current = await prisma.motorcycle.findUnique({
+        where: { id },
+        select: { expiryDate: true },
+      });
+      expiryDateToCheck = current?.expiryDate;
+    }
+
+    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
+      updateData.isPaid = false;
     }
 
     const updated = await prisma.motorcycle.update({

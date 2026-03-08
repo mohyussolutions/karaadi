@@ -4,7 +4,7 @@ import chalk from "chalk";
 import prisma from "../../core/utils/db.ts";
 import { getIO } from "../../services/sockets/socketServer.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { CACHE_TTL } from "src/config/contstanst.ts";
+import { CACHE_TTL } from "src/constants/config.constants.ts";
 import {
   getDaysUntilExpiry,
   formatExpiryDate,

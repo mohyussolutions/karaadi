@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { User } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { CACHE_TTL } from "src/config/contstanst.ts";
+import { CACHE_TTL } from "src/constants/config.constants.ts";
 
 interface AuthRequest extends Request {
   user?: User & { _id?: string; sub?: string };

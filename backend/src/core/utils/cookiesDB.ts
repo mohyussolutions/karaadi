@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import prisma from "./db.js";
+import { SESSION_TIME_MS } from "src/constants/session-time.ts";
 
 export const setAuthCookies = async (
   res: any,
@@ -55,7 +56,7 @@ export const setAuthCookies = async (
 
   if (!user) throw new Error("User not found");
 
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + SESSION_TIME_MS);
 
   const session = await prisma.cookie.upsert({
     where: { userId: user.id },
@@ -77,14 +78,14 @@ export const setAuthCookies = async (
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: SESSION_TIME_MS,
     });
 
     res.cookie("accessToken", accessToken || session.token, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: SESSION_TIME_MS,
     });
 
     res.cookie("refreshToken", refreshToken, {

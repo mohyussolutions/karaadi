@@ -119,7 +119,7 @@ export const allCategories: MainCategory[] = [
   {
     key: "Smartsuuq",
     logo: "/Smartsuq.jpg",
-    href: "http://smrtsuuq.com/",
+    href: "https://www.smartsuuq.com/",
     icon: <MohyusLogoIcon />,
     dashboardIcon: MohyusLogoIcon,
     dashboardLink: "/dashboard/categories/smartsuuq",

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+
 import { getTotalSubscriptions } from "@/actions/categories/subscriptionsActions";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 interface SubscriptionResponse {
   total?: number;
@@ -33,7 +34,7 @@ export default function TotalSubscriptions() {
       <h2 className="text-lg font-semibold text-gray-700">Subscriptions</h2>
       <div className="h-[48px] flex items-center justify-center mt-3">
         {loading ? (
-          <ManagerLoading />
+          <Loading />
         ) : (
           <p className="text-3xl font-bold text-green-600">
             {total.toLocaleString()}

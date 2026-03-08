@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
 import { getAgencyStats } from "@/actions/categories/actionsAgency";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 export default function TotalAgencies() {
   const [total, setTotal] = useState<number>(0);
@@ -32,7 +32,7 @@ export default function TotalAgencies() {
 
       <div className="h-[48px] flex items-center justify-center mt-3">
         {loading ? (
-          <ManagerLoading />
+          <Loading />
         ) : (
           <p className="text-3xl font-bold text-green-600">
             {total.toLocaleString()}

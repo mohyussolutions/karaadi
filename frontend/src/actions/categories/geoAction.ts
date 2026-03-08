@@ -93,12 +93,17 @@ export const getAllCities = async (regionId?: string) => {
   }
 };
 
-export const addCity = async (data: {
-  id: string;
-  name: string;
-  regionId: string;
-  isActive: boolean;
-}) => {
+export const addCity = async (
+  newCityName: string,
+  newCitySo: string,
+  region: string,
+  data: {
+    id: string;
+    name: string;
+    regionId: string;
+    isActive: boolean;
+  },
+) => {
   try {
     const res = await fetch(geoEndpoints.ADD_CITY, {
       method: "POST",

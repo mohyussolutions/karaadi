@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import { getPaginationParams } from "src/config/contstanst.ts";
+import { getPaginationParams } from "src/constants/config.constants.ts";
 import { PaymentService } from "../../services/paymentServer/paymentServer.ts";
 import { useErrorHandler } from "../../hooks/useErrorHandler.ts";
 import { ResponseCodes } from "../../config/waafipay.service.responseCodes.ts";

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+
 import { getTotalOfRegions } from "@/actions/categories/geoAction";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 export default function TotalRegions() {
   const [total, setTotal] = useState<number>(0);
@@ -30,7 +31,7 @@ export default function TotalRegions() {
 
       <div className="h-[48px] flex items-center justify-center mt-3">
         {loading ? (
-          <ManagerLoading />
+          <Loading />
         ) : (
           <p className="text-3xl font-bold text-green-600">
             {total.toLocaleString()}

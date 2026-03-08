@@ -30,9 +30,9 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
   }, [user]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setProfileImageFile(file);
     if (file) {
-      setProfileImageFile(file);
       setPreviewImage(URL.createObjectURL(file));
     }
   };
@@ -50,13 +50,12 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
         throw new Error("Authentication required. Please log in again.");
       }
 
-      const result = await updateProfile(
-        {
-          phone,
-          profileImageFile,
-        },
-        token,
-      );
+      const formData = new FormData();
+      formData.append("phone", phone);
+      if (profileImageFile) {
+        formData.append("profileImage", profileImageFile);
+      }
+      const result = await updateProfile(formData, token);
 
       onSave(result);
     } catch (error: any) {
@@ -141,4 +140,8 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
   );
 };
 
-export default ProfileEditForm;
+const ProfileEditPage = () => (
+  <ProfileEditForm user={{}} onSave={() => {}} onCancel={() => {}} />
+);
+
+export default ProfileEditPage;

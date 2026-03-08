@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CACHE_KEYS, CACHE_TTL } from "src/config/contstanst.ts";
+import { CACHE_KEYS, CACHE_TTL } from "src/constants/config.constants.ts";
 
 import prisma from "src/core/utils/db.ts";
 import { calculateExpiryDate, isExpired } from "src/hooks/useExpire.ts";

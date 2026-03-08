@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { Prisma } from "@prisma/client";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  CACHE_TTL,
+  getPaginationParams,
+} from "src/constants/config.constants.ts";
 import {
   calculateExpiryDate,
   getDaysUntilExpiry,
@@ -198,8 +201,11 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
   try {
     const { planId, planAmount, ...marketplaceData } = req.body;
 
-    const expiryDate =
-      planId && planAmount ? calculateExpiryDate(planId, planAmount) : null;
+    let expiryDate = null;
+    if (planId && planAmount) {
+      const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
+      expiryDate = plan ? calculateExpiryDate(plan, planAmount) : null;
+    }
 
     const newItem = await prisma.marketplace.create({
       data: {
@@ -212,7 +218,6 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
       include: { user: selectUserBasic },
     });
 
-    // Fire-and-forget cache invalidation for speed
     Promise.all([
       cacheManager.deletePattern("marketplace:*"),
       cacheManager.delete(CACHE_KEYS.TOTAL),
@@ -241,7 +246,25 @@ export const updateMarketplaceItem = async (req: Request, res: Response) => {
     const { planId, planAmount, ...updateData } = req.body;
 
     if (planId && planAmount) {
-      updateData.expiryDate = calculateExpiryDate(planId, planAmount);
+      const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
+      updateData.expiryDate = plan
+        ? calculateExpiryDate(plan, planAmount)
+        : null;
+    }
+
+    // Fetch the current expiryDate if not being updated
+    let expiryDateToCheck = updateData.expiryDate;
+    if (!expiryDateToCheck) {
+      const current = await prisma.marketplace.findUnique({
+        where: { id },
+        select: { expiryDate: true },
+      });
+      expiryDateToCheck = current?.expiryDate;
+    }
+
+    // If expired, set isPaid to false
+    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
+      updateData.isPaid = false;
     }
 
     const updatedItem = await prisma.marketplace.update({

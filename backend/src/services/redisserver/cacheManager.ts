@@ -4,7 +4,7 @@ import {
   ERROR_MESSAGES,
   LOG_MESSAGES,
   CACHE_TTL,
-} from "src/config/contstanst.ts";
+} from "src/constants/config.constants.ts";
 import chalk from "chalk";
 
 class CacheManager {

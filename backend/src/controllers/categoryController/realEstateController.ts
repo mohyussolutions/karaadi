@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { Prisma } from "@prisma/client";
-import { CACHE_TTL, getPaginationParams } from "src/config/contstanst.ts";
+import {
+  CACHE_TTL,
+  getPaginationParams,
+} from "src/constants/config.constants.ts";
 import {
   calculateExpiryDate,
   getDaysUntilExpiry,
@@ -253,6 +256,19 @@ export const updateRealEstate = async (req: Request, res: Response) => {
 
     if (planId && planAmount) {
       updateData.expiryDate = calculateExpiryDate(planId, planAmount);
+    }
+
+    let expiryDateToCheck = updateData.expiryDate;
+    if (!expiryDateToCheck) {
+      const current = await prisma.realEstate.findUnique({
+        where: { id },
+        select: { expiryDate: true },
+      });
+      expiryDateToCheck = current?.expiryDate;
+    }
+
+    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
+      updateData.isPaid = false;
     }
 
     const updatedProperty = await prisma.realEstate.update({

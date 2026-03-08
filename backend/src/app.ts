@@ -38,6 +38,7 @@ import traktorRoutes from "./routers/categoryRoute/FarmequipmentRouter.ts";
 import jobsRouter from "./routers/categoryRoute/jobsRouter.ts";
 import hageRouter from "./AI/hageRouter.ts";
 import reportRoutes from "./routers/categoryRoute/reportRoute.ts";
+import { SESSION_TIME_MS } from "./constants/session-time.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -71,6 +72,9 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(compression());
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const isProd = process.env.NODE_ENV === "production";
 
 app.use(
@@ -83,7 +87,7 @@ app.use(
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? "none" : "lax",
-      maxAge: 86400000,
+      maxAge: SESSION_TIME_MS,
       domain: process.env.COOKIE_DOMAIN,
     },
   }),
@@ -113,16 +117,17 @@ app.use("/api/customers", customerSupportRoutes);
 app.use("/api/visitors", visitorRoute);
 app.use("/api/search", searchRouter);
 app.use("/api/filtering", filterRouter);
-app.use("/api/upload", uploadRouterSelector);
 app.use("/api/jobs", jobsRouter);
 app.use("/api/locations", locRoutes);
 app.use("/api/redis", redisStatsRouter);
 app.use("/api/history-search", historySearchRoutes);
 app.use("/api/reports", reportRoutes);
-app.use("/assets", express.static(path.join(__dirname, "../assets")));
 // AI Agency Route
 app.use("/api/hage", hageRouter);
+// Add more routes as needed
+app.use("/assets", express.static(path.join(__dirname, "../assets")));
 
+//app.use("/api/upload", uploadRouterSelector);
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",

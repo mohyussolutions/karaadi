@@ -7,30 +7,36 @@ export const EXPIRY_CONFIG = {
 export const calculateExpiryDate = (
   subPlan: { basic30: number; standard60: number; premium90: number } | null,
   planAmount: number,
+  fromDate?: Date,
 ): Date | null => {
   if (!subPlan || planAmount <= 0) return null;
-
-  const now = new Date();
-
+  const baseDate = fromDate ? new Date(fromDate) : new Date();
   if (planAmount === subPlan.premium90) {
-    return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.PREMIUM_DAYS));
+    return new Date(
+      baseDate.getTime() + EXPIRY_CONFIG.PREMIUM_DAYS * 24 * 60 * 60 * 1000,
+    );
   }
-
   if (planAmount === subPlan.standard60) {
-    return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.STANDARD_DAYS));
+    return new Date(
+      baseDate.getTime() + EXPIRY_CONFIG.STANDARD_DAYS * 24 * 60 * 60 * 1000,
+    );
   }
-
   if (planAmount === subPlan.basic30) {
-    return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.BASIC_DAYS));
+    return new Date(
+      baseDate.getTime() + EXPIRY_CONFIG.BASIC_DAYS * 24 * 60 * 60 * 1000,
+    );
   }
-
-  return new Date(now.setDate(now.getDate() + EXPIRY_CONFIG.BASIC_DAYS));
+  return new Date(
+    baseDate.getTime() + EXPIRY_CONFIG.BASIC_DAYS * 24 * 60 * 60 * 1000,
+  );
 };
 
 export const getDefaultExpiryDate = (
   days: number = EXPIRY_CONFIG.BASIC_DAYS,
+  fromDate?: Date,
 ): Date => {
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const baseDate = fromDate ? new Date(fromDate) : new Date();
+  return new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
 };
 
 export const isExpired = (expiryDate: Date | null | undefined): boolean => {

@@ -8,11 +8,13 @@ import {
   resetPasswordIncontroller,
   logout,
   refreshTokenController,
-  updateUserProfile,
   deleteAccount,
   getUsersCount,
   getUserProfile,
   getAllUsers,
+  updateProfileImage,
+  updatePhone,
+  deleteUserById,
 } from "../../controllers/userController/authController.ts";
 import {
   adminAndManager,
@@ -23,8 +25,8 @@ import { setAuthCookies } from "../../core/utils/cookiesDB.ts";
 import { validate } from "src/core/middelware/validator.ts";
 import { Request, Response, NextFunction } from "express";
 import { loginLimiter } from "src/core/middelware/securityMiddleware.ts";
+
 const authRouters = express.Router();
-const upload = multer();
 
 authRouters.post(
   "/auth",
@@ -44,6 +46,9 @@ authRouters.post(
     }
   },
 );
+
+authRouters.put("/profile/phone", ProtectRoute, updatePhone);
+
 authRouters.get(
   "/all-users",
   ProtectRoute,
@@ -63,10 +68,22 @@ authRouters.post(
   validate.handleErrors,
   async (req: Request, res: Response) => {
     try {
-      const { email, password, username } = req.body;
-      const cognitoResult = await registerUser(email, password, username);
+      const { email, password, username, phone } = req.body;
+      const sanitizedBody: any = { ...req.body };
+      if (sanitizedBody.password) sanitizedBody.password = "***";
+      console.log("Register request:", {
+        bodyKeys: Object.keys(req.body),
+        sanitizedBody,
+      });
+      const cognitoResult = await registerUser(
+        email,
+        password,
+        username,
+        phone,
+      );
       res.json({ message: "User registered successfully", cognitoResult });
     } catch (error: any) {
+      console.error("Register failed:", error?.message || error);
       res.status(400).json({ error: error.message || "Register failed" });
     }
   },
@@ -84,18 +101,13 @@ authRouters.post("/resend-code", async (req: Request, res: Response) => {
   }
 });
 
-authRouters.put(
-  "/profile",
-  ProtectRoute,
-  upload.single("profileImage"),
-  async (req, res, next) => {
-    try {
-      await updateUserProfile(req as any, res);
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+authRouters.put("/profile/image ", ProtectRoute, async (req, res, next) => {
+  try {
+    await updateProfileImage(req as any, res);
+  } catch (error) {
+    next(error);
+  }
+});
 
 authRouters.post("/forgot-password", forgotPasswordIncontroller);
 authRouters.post("/reset-password", resetPasswordIncontroller);
@@ -105,6 +117,13 @@ authRouters.delete(
   "/delete-account",
   ProtectRoute,
   async (req, res) => await deleteAccount(req as any, res),
+);
+
+authRouters.delete(
+  "/:id",
+  ProtectRoute,
+  adminAndManager,
+  async (req: Request, res: Response) => await deleteUserById(req as any, res),
 );
 
 authRouters.get(

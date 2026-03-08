@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ManagerLoading from "@/app/(managers)/managers/ManagerLoading";
+
 import { getTotalBoatsAction } from "@/actions/categories/boatActions";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 export default function TotalBoats() {
   const [total, setTotal] = useState<number>(0);
@@ -20,7 +21,7 @@ export default function TotalBoats() {
       <h4 className="text-gray-500 text-sm">Boats</h4>
       <div className="h-[40px] flex items-center justify-center mt-1">
         {loading ? (
-          <ManagerLoading />
+          <Loading />
         ) : (
           <p className="text-xl font-bold text-gray-800">
             {total.toLocaleString()}
