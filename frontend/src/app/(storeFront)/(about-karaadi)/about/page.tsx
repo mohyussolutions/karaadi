@@ -56,7 +56,7 @@ function About() {
         </ul>
       </div>
 
-      {/* --- Contact Section --- */}
+      
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4">
           Nala Soo Xiriir (Contact Us)

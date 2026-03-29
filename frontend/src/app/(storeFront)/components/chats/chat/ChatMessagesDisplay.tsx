@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ChatEmptyState } from "./ChatEmptyState";
 import { ChatHeader } from "./ChatHeader";
 import { MessageBubble } from "./MessageBubble";
@@ -17,6 +18,7 @@ export default function ChatMessagesDisplay({
   onEditMessage,
   messagesEndRef,
 }: ChatMessagesDisplayProps) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -46,6 +48,7 @@ export default function ChatMessagesDisplay({
           : (messageId as number);
       const response = await fetch(API_ENDPOINTS.MESSAGES.UPDATE_MESSAGE(id), {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, userId: currentUserId }),
       });
@@ -69,6 +72,7 @@ export default function ChatMessagesDisplay({
           : (messageId as number);
       const response = await fetch(API_ENDPOINTS.MESSAGES.DELETE_MESSAGE(id), {
         method: "DELETE",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: currentUserId }),
       });
@@ -100,9 +104,13 @@ export default function ChatMessagesDisplay({
       <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F8FAFC] space-y-6">
         {uniqueMessages.length === 0 ? (
           <div className="text-center text-gray-400 py-20 italic text-sm">
-            <p>No messages yet.</p>
+            <p>
+              {t("chats.noMessagesYet", { defaultValue: "No messages yet." })}
+            </p>
             <p className="text-xs mt-2">
-              Start a conversation by sending a message!
+              {t("chats.startConversation", {
+                defaultValue: "Start a conversation by sending a message!",
+              })}
             </p>
           </div>
         ) : (

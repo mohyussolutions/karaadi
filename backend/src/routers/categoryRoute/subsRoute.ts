@@ -16,10 +16,18 @@ import {
   adminAndManager,
   ProtectRoute,
 } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { createSubscriptionSchema } from "../../validation/subscription.validation.ts";
+import { updateSubscriptionStatusSchema } from "../../validation/updateSubscriptionStatus.validation.ts";
 
 const subscriptionRoute = express.Router();
 
-subscriptionRoute.post("/", ProtectRoute, createSubscription);
+subscriptionRoute.post(
+  "/",
+  ProtectRoute,
+  validateRequest(createSubscriptionSchema),
+  createSubscription,
+);
 subscriptionRoute.get("/user/:userId", ProtectRoute, getUserSubscriptions);
 subscriptionRoute.get("/my", ProtectRoute, getMySubscriptions);
 subscriptionRoute.get("/search", searchSubscriptions);
@@ -40,6 +48,7 @@ subscriptionRoute.patch(
   "/admin/:id/status",
   ProtectRoute,
   adminAndManager,
+  validateRequest(updateSubscriptionStatusSchema),
   updateSubscriptionStatus,
 );
 subscriptionRoute.post("/admin/notify", ProtectRoute, triggerNotification);

@@ -4,7 +4,15 @@ import React from "react";
 import { FaBuilding, FaMapMarkerAlt } from "react-icons/fa";
 import UniversalCard from "./UniversalCard";
 
-export default function JobCard({ job }: { job: any }) {
+export default function JobCard({
+  job,
+  jobTypeLabel,
+  jobTypeColor,
+}: {
+  job: any;
+  jobTypeLabel?: string;
+  jobTypeColor?: string;
+}) {
   const renderMeta = () => (
     <div className="mt-2 space-y-1">
       <p className="text-indigo-600 font-bold text-xs uppercase tracking-tight">
@@ -26,8 +34,12 @@ export default function JobCard({ job }: { job: any }) {
       city={job.location}
       imageHeight="h-40"
       renderBadges={() => (
-        <span className="absolute top-3 left-3 bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded uppercase">
-          Full Time
+        <span
+          className={`absolute top-3 left-3 text-white text-[9px] font-black px-2 py-1 rounded uppercase ${
+            jobTypeColor || "bg-indigo-600"
+          }`}
+        >
+          {jobTypeLabel || "Full Time"}
         </span>
       )}
       renderMeta={renderMeta}

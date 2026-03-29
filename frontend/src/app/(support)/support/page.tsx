@@ -36,7 +36,7 @@ export default function StreamlinedDashboard() {
   const [sections, setSections] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
-    // Replace with your actual API fetch logic later
+
     setSections({});
   }, []);
 
@@ -44,7 +44,7 @@ export default function StreamlinedDashboard() {
 
   return (
     <div className="flex flex-col gap-10 p-10 w-full">
-      {/* Header Section */}
+      
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-slate-900">
@@ -72,7 +72,7 @@ export default function StreamlinedDashboard() {
         </div>
       </div>
 
-      {/* Grid Links */}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {SUPPORT_LINKS.filter((link) => {
           const title = link.label || link.name || "";
@@ -104,7 +104,7 @@ export default function StreamlinedDashboard() {
         })}
       </div>
 
-      {/* Activity Section */}
+      
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
         <div className="xl:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">

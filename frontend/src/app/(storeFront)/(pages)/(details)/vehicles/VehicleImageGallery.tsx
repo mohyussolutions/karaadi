@@ -16,7 +16,7 @@ import { verifySession } from "@/actions/core/authAction";
 import { getCarById } from "@/actions/categories/carActions";
 import { getBoatById } from "@/actions/categories/boatActions";
 import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
-import { getTraktorById } from "@/actions/categories/FarmequipmentAction";
+import { getFarmEquipmentById } from "@/actions/categories/FarmequipmentAction";
 import { API_ENDPOINTS } from "@/actions/constant/sockets";
 
 interface VehicleItem {
@@ -61,7 +61,7 @@ export default function VehicleDetails() {
         const [car, boat, tractor, motorcycle, user] = await Promise.all([
           getCarById(id),
           getBoatById(id),
-          getTraktorById(id),
+          getFarmEquipmentById(id),
           getMotorcycleById(id),
           verifySession(),
         ]);

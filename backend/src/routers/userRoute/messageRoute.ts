@@ -1,4 +1,6 @@
 import express from "express";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { sendMessageSchema } from "../../validation/message.validation.ts";
 import {
   getChatMessages,
   sendMessage,
@@ -14,7 +16,12 @@ import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito
 const messageRoutes = express.Router();
 
 messageRoutes.get("/:chatId/messages", ProtectRoute, getChatMessages);
-messageRoutes.post("/send", ProtectRoute, sendMessage);
+messageRoutes.post(
+  "/send",
+  ProtectRoute,
+  validateRequest(sendMessageSchema),
+  sendMessage,
+);
 messageRoutes.get("/unread/:userId", ProtectRoute, getUnreadCount);
 messageRoutes.post("/:chatId/read-all", ProtectRoute, markAllAsRead);
 messageRoutes.delete("/:messageId", ProtectRoute, deleteMessage);

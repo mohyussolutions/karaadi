@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { trackAdClick } from "@/actions/categories/advertisementService";
 
@@ -18,6 +18,8 @@ interface AdvertisementProps {
 }
 
 const AdvertisementComponent: React.FC<AdvertisementProps> = ({ ads }) => {
+  const [imgLoading, setImgLoading] = useState(true);
+
   const handleAdClick = (adId: string, link: string) => {
     trackAdClick(adId).catch(console.error);
     const formattedLink = link.startsWith("http") ? link : `https://${link}`;
@@ -27,33 +29,35 @@ const AdvertisementComponent: React.FC<AdvertisementProps> = ({ ads }) => {
   if (!ads.length) return null;
 
   return (
-    <div className="flex flex-col gap-4 w-full px-1 py-4 h-full">
+    <div className="flex flex-col gap-4 w-full h-full max-w-[300px]">
       {ads.map((ad) => (
         <div
           key={ad.id}
           onClick={() => handleAdClick(ad.id, ad.link)}
-          className="bg-white rounded-lg overflow-hidden border border-gray-200 cursor-pointer transition hover:shadow-md flex flex-col h-full min-h-[500px]"
+          className="bg-white rounded-lg overflow-hidden border border-gray-200 cursor-pointer transition-all hover:shadow-lg flex flex-col h-[600px]"
         >
-          <div className="relative w-full aspect-[4/5] min-h-[250px]">
+          <div className="relative w-full h-[350px] bg-gray-100">
             <Image
               src={ad.imageUrl}
               alt={ad.title}
               fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 300px"
+              className={`object-cover transition-opacity duration-500 ${
+                imgLoading ? "opacity-0" : "opacity-100"
+              }`}
+              onLoadingComplete={() => setImgLoading(false)}
               priority
             />
           </div>
-          <div className="p-4 flex flex-col flex-grow justify-between bg-white">
+          <div className="p-4 flex flex-col flex-grow justify-between">
             <div>
-              <h2 className="text-base font-black text-gray-900 leading-tight mb-2 uppercase">
+              <h2 className="text-sm font-bold text-gray-900 uppercase truncate">
                 {ad.title}
               </h2>
-              <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+              <p className="text-xs text-gray-500 mt-2 line-clamp-4">
                 {ad.description}
               </p>
             </div>
-            <div className="mt-4 text-[10px] bg-blue-600 text-white px-4 py-3 rounded-md text-center font-black uppercase tracking-widest">
+            <div className="mt-4 text-[10px] bg-blue-600 text-white py-3 rounded font-bold text-center uppercase">
               {ad.buttonText || "Learn More"}
             </div>
           </div>

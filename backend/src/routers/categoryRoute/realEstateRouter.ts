@@ -1,7 +1,7 @@
 import {
   adminAndManager,
   ProtectRoute,
-} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+} from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 import {
   createRealEstate,
   deleteRealEstate,
@@ -12,45 +12,46 @@ import {
   updateRealEstate,
 } from "../../controllers/categoryController/realEstateController.ts";
 import { Router } from "express";
+import {
+  createRealEstateSchema,
+  updateRealEstateSchema,
+} from "../../validation/updateRealEstate.validation.ts";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
 
 const realEstateRouter = Router();
 
-realEstateRouter.get("/", (req, res, next) => {
-  getAllRealEstates(req, res).catch(next);
-});
+realEstateRouter.get("/", getAllRealEstates);
 
 realEstateRouter.get(
   "/all-including-unpaid",
   ProtectRoute,
   adminAndManager,
-  (req, res, next) => {
-    getAllRealEstatesIncludingUnpaid(req, res).catch(next);
-  },
+  getAllRealEstatesIncludingUnpaid,
 );
 
 realEstateRouter.get(
   "/total",
   ProtectRoute,
   adminAndManager,
-  (req, res, next) => {
-    getTotalRealEstates(req, res).catch(next);
-  },
+  getTotalRealEstates,
 );
 
-realEstateRouter.get("/:id", (req, res, next) => {
-  getRealEstateById(req, res).catch(next);
-});
+realEstateRouter.get("/:id", getRealEstateById);
 
-realEstateRouter.post("/", ProtectRoute, (req, res, next) => {
-  createRealEstate(req, res).catch(next);
-});
+realEstateRouter.post(
+  "/",
+  ProtectRoute,
+  validateRequest(createRealEstateSchema),
+  createRealEstate,
+);
 
-realEstateRouter.patch("/:id", ProtectRoute, (req, res, next) => {
-  updateRealEstate(req, res).catch(next);
-});
+realEstateRouter.patch(
+  "/:id",
+  ProtectRoute,
+  validateRequest(updateRealEstateSchema),
+  updateRealEstate,
+);
 
-realEstateRouter.delete("/:id", ProtectRoute, (req, res, next) => {
-  deleteRealEstate(req, res).catch(next);
-});
+realEstateRouter.delete("/:id", ProtectRoute, deleteRealEstate);
 
 export default realEstateRouter;

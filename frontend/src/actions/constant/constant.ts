@@ -2,12 +2,15 @@ import { GridConfiguration } from "@/app/utils/types/GridConfiguration";
 import { BASE_API_URL } from "./BASE_API_URL";
 export const AUTH_TOKEN_KEY = "auth_token";
 export const SEARCH_ENDPOINT = `${BASE_API_URL}/api/search`;
-
 export const GRID_CONFIG: GridConfiguration = {
-  ITEMS_PER_LOAD: 20,
-  INITIAL_LOAD: 40,
-  MAX_ITEMS: 130,
+  PAGE_SIZE: 20,
+  INITIAL_PAGE: 1,
+  INITIAL_LOAD: 60,
+  ITEMS_PER_LOAD: 10,
+  MAX_ITEMS: 100,
+  MAX_LOADS: 2,
 };
+
 export const RECOMMENDATION_ENDPOINTS = {
   RECOMMENDATIONS: `${BASE_API_URL}/api/recommendations`,
   TRACK_VIEW: `${BASE_API_URL}/api/recommendations/track-view`,

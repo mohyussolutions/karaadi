@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
-import { User } from "@/app/utils/types/user";
+import type { NormalizedUser } from "@/app/utils/types/user.types";
 import {
   getAllRegions,
   getAllCities,
@@ -21,7 +21,7 @@ import { createJob } from "@/actions/categories/jobActions";
 
 const CreateAdForJobs = () => {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<NormalizedUser | null>(null);
   const [token, setToken] = useState("");
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);

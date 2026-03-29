@@ -2,39 +2,60 @@
 
 import { updateProfile, verifySession } from "@/actions/core/authAction";
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import Image from "next/image";
 
 interface User {
   profileImage?: string;
-  phone?: string;
+  email?: string;
 }
 
-interface ProfileEditFormProps {
-  user?: User;
-  onSave: (updatedUser: any) => void;
-  onCancel: () => void;
-}
-
-const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
-  user = {},
-  onSave,
-  onCancel,
-}) => {
-  const [phone, setPhone] = useState(user.phone || "");
+const ProfileEditPage = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-  const [previewImage, setPreviewImage] = useState(user.profileImage || "");
+  const [previewImage, setPreviewImage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [originalImage, setOriginalImage] = useState("");
 
   useEffect(() => {
-    if (user.phone) setPhone(user.phone);
-    if (user.profileImage) setPreviewImage(user.profileImage);
-  }, [user]);
+    const loadUserData = async () => {
+      const session = await verifySession();
+      if (session) {
+        setEmail(session.email || "");
+
+        if (session.profileImage) {
+          if (
+            session.profileImage.startsWith("/9j/") ||
+            session.profileImage.startsWith("iVB")
+          ) {
+            setPreviewImage(`data:image/jpeg;base64,${session.profileImage}`);
+          } else {
+            setPreviewImage(session.profileImage);
+          }
+          setOriginalImage(session.profileImage);
+        }
+      }
+    };
+    loadUserData();
+  }, []);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
-    setProfileImageFile(file);
+    const file = e.target.files?.[0];
     if (file) {
+      setProfileImageFile(file);
       setPreviewImage(URL.createObjectURL(file));
+      setImageError(false);
     }
+  };
+
+  const getValidImageSrc = () => {
+    if (imageError || !previewImage) {
+      return "/default-profile.png";
+    }
+    return previewImage;
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -43,105 +64,114 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
 
     try {
       const session = await verifySession();
-
       const token = session?.accessToken || session?.token;
 
       if (!token) {
-        throw new Error("Authentication required. Please log in again.");
+        toast.error("Authentication required");
+        return;
       }
 
       const formData = new FormData();
-      formData.append("phone", phone);
       if (profileImageFile) {
         formData.append("profileImage", profileImageFile);
       }
+
       const result = await updateProfile(formData, token);
 
-      onSave(result);
+      if (result.success) {
+        toast.success("Profile image updated successfully");
+        router.push("/mine");
+      } else {
+        toast.error(result.error || "Update failed");
+      }
     } catch (error: any) {
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center py-12 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md bg-white rounded-md p-8 space-y-6"
-      >
-        <div className="flex flex-col items-center gap-6">
-          <div className="w-[120px] h-[120px] rounded-full overflow-hidden bg-gray-100 border-2 border-gray-300 relative">
-            {previewImage ? (
-              <img
-                src={previewImage}
-                alt="Profile"
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                No Image
+    <div className="min-h-screen py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">
+            Edit Profile Image
+          </h2>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="flex flex-col md:flex-row items-start gap-8">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-blue-100">
+                  {previewImage ? (
+                    <Image
+                      src={getValidImageSrc()}
+                      alt="Profile"
+                      fill
+                      className="object-cover"
+                      sizes="112px"
+                      onError={() => setImageError(true)}
+                      unoptimized={previewImage.startsWith("data:")}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-400">No image</span>
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  id="profileImageInput"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="profileImageInput"
+                  className="cursor-pointer px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm"
+                >
+                  {previewImage ? "Change Photo" : "Upload Photo"}
+                </label>
               </div>
-            )}
-          </div>
 
-          <input
-            id="profileImageInput"
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
-          <label
-            htmlFor="profileImageInput"
-            className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-          >
-            {previewImage ? "Change Photo" : "Upload Photo"}
-          </label>
-        </div>
+              <div className="flex-1 space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    disabled
+                    className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-gray-50 text-gray-500"
+                  />
+                </div>
+              </div>
+            </div>
 
-        <div>
-          <label
-            htmlFor="phone"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            Phone Number
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-4 py-2"
-            placeholder="Enter phone number"
-          />
+            <div className="flex justify-end gap-4 pt-6 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                disabled={loading}
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !profileImageFile}
+                className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition shadow-sm"
+              >
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
         </div>
-
-        <div className="flex justify-end gap-4 pt-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="px-5 py-2 bg-gray-200 rounded-md"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading || (!phone && !profileImageFile)}
-            className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 };
-
-const ProfileEditPage = () => (
-  <ProfileEditForm user={{}} onSave={() => {}} onCancel={() => {}} />
-);
 
 export default ProfileEditPage;

@@ -126,7 +126,10 @@ export const getAllMarketplaceItems = async (req: Request, res: Response) => {
       cacheKey,
       async () => {
         return await prisma.marketplace.findMany({
-          where: { isPaid: true },
+          where: {
+            isPaid: true,
+            OR: [{ expiryDate: null }, { expiryDate: { gt: new Date() } }],
+          },
           orderBy: { createdAt: "desc" },
           skip,
           take: limit,
@@ -199,7 +202,8 @@ export const getMarketplaceItemById = async (req: Request, res: Response) => {
 
 export const createMarketplaceItem = async (req: Request, res: Response) => {
   try {
-    const { planId, planAmount, ...marketplaceData } = req.body;
+    const { planId, planAmount, category, subcategory, ...marketplaceData } =
+      req.body;
 
     let expiryDate = null;
     if (planId && planAmount) {
@@ -207,10 +211,17 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
       expiryDate = plan ? calculateExpiryDate(plan, planAmount) : null;
     }
 
+    const processedData = {
+      ...marketplaceData,
+      category: Array.isArray(category) ? category[0] : category,
+      subcategory: Array.isArray(subcategory) ? subcategory[0] : subcategory,
+    };
+
     const newItem = await prisma.marketplace.create({
       data: {
-        ...marketplaceData,
+        ...processedData,
         isPaid: false,
+        maGaday: false,
         planId,
         planAmount: planAmount || 0,
         expiryDate,
@@ -240,37 +251,80 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
   }
 };
 
+export const updateMarketplacePayment = async (req: Request, res: Response) => {
+  try {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { paymentId, planId } = req.body;
+
+    const item = await prisma.marketplace.findUnique({ where: { id } });
+    if (!item) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Item not found" });
+    }
+
+    const subPlan = await prisma.subPlan.findFirst({
+      where: { isActive: true },
+    });
+    const expiryDate =
+      planId && subPlan && item.planAmount
+        ? calculateExpiryDate(subPlan, item.planAmount)
+        : null;
+
+    const updatedItem = await prisma.marketplace.update({
+      where: { id },
+      data: {
+        isPaid: true,
+        expiryDate,
+        planId: planId || item.planId,
+      },
+    });
+
+    if (paymentId) {
+      await prisma.payment.updateMany({
+        where: { id: paymentId },
+        data: { marketplaceId: id, status: "COMPLETED", paidAt: new Date() },
+      });
+    }
+
+    await Promise.all([
+      cacheManager.deletePattern("marketplace:*"),
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
+    ]);
+
+    return res.json({ success: true, data: updatedItem });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const updateMarketplaceItem = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { planId, planAmount, ...updateData } = req.body;
+    const { planId, planAmount, category, subcategory, ...updateData } =
+      req.body;
+
+    const processedData = {
+      ...updateData,
+      ...(category && {
+        category: Array.isArray(category) ? category[0] : category,
+      }),
+      ...(subcategory && {
+        subcategory: Array.isArray(subcategory) ? subcategory[0] : subcategory,
+      }),
+    };
 
     if (planId && planAmount) {
       const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
-      updateData.expiryDate = plan
+      processedData.expiryDate = plan
         ? calculateExpiryDate(plan, planAmount)
         : null;
-    }
-
-    // Fetch the current expiryDate if not being updated
-    let expiryDateToCheck = updateData.expiryDate;
-    if (!expiryDateToCheck) {
-      const current = await prisma.marketplace.findUnique({
-        where: { id },
-        select: { expiryDate: true },
-      });
-      expiryDateToCheck = current?.expiryDate;
-    }
-
-    // If expired, set isPaid to false
-    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
-      updateData.isPaid = false;
     }
 
     const updatedItem = await prisma.marketplace.update({
       where: { id },
       data: {
-        ...updateData,
+        ...processedData,
         planId,
         planAmount: planAmount || 0,
       },

@@ -4,16 +4,19 @@ import React, { useRef, useState, useMemo, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
-import { ElectricCarsNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
+
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import { getCars, Car } from "@/actions/categories/carActions";
+import { carsNestedCategoriesMap } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import { useTranslation } from "react-i18next";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function ElectricCars() {
-  const subCategoryLinks = ElectricCarsNestedSub;
+  const subCategoryLinks = carsNestedCategoriesMap.ElectricCarsNestedSub;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   const [items, setItems] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,7 +140,7 @@ export default function ElectricCars() {
       (cat) =>
         cat.so === selectedSubcategory || cat.title === selectedSubcategory,
     );
-    return found ? `${found.so} (${found.title})` : selectedSubcategory;
+    return found ? t(found.labelKey ?? "") : selectedSubcategory;
   }, [query, selectedSubcategory, subCategoryLinks]);
 
   const scroll = (direction: "left" | "right") => {
@@ -190,7 +193,12 @@ export default function ElectricCars() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${
                     selectedSubcategory === category.so

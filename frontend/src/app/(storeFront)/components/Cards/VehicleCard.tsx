@@ -3,14 +3,30 @@
 import React from "react";
 import UniversalCard from "./UniversalCard";
 
+interface VehicleCardProps {
+  id: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  mileage?: number;
+  title?: string;
+  description?: string | string[];
+  city?: string;
+  price?: number;
+  images?: string[];
+  category?: string;
+  [key: string]: any;
+}
+
 export default function VehicleCard({
   id,
   make,
   model,
   year,
   mileage,
+  title,
   ...rest
-}: any) {
+}: VehicleCardProps) {
   const renderMeta = () => (
     <div className="flex flex-wrap gap-1.5 pt-1">
       {[make, model, year, mileage ? `${mileage.toLocaleString()} km` : null]
@@ -31,7 +47,7 @@ export default function VehicleCard({
       {...rest}
       id={id}
       category="vehicles"
-      title={make && model ? `${make} ${model}` : rest.title}
+      title={make && model ? `${make} ${model}` : title}
       renderMeta={renderMeta}
     />
   );

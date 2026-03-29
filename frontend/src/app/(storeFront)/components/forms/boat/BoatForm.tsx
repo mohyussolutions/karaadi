@@ -28,6 +28,16 @@ interface BoatFormFieldsProps {
   onSaveNewCityDistrict: () => void;
 }
 
+interface SubCategoryOption {
+  title: string;
+  label: string;
+}
+
+interface RegionItem {
+  id: string;
+  name: string;
+}
+
 const BoatFormFields: React.FC<BoatFormFieldsProps> = ({
   category,
   subCategory,
@@ -80,7 +90,7 @@ const BoatFormFields: React.FC<BoatFormFieldsProps> = ({
             className="w-full border px-3 py-2"
           >
             <option value="">Select subcategory</option>
-            {subCategoriesBoats[category].map((sub) => (
+            {subCategoriesBoats[category].map((sub: SubCategoryOption) => (
               <option key={sub.title} value={sub.title}>
                 {sub.label}
               </option>
@@ -150,7 +160,7 @@ const BoatFormFields: React.FC<BoatFormFieldsProps> = ({
           className="w-full border px-3 py-2"
         >
           <option value="">Select region</option>
-          {regions.map((reg) => (
+          {regions.map((reg: RegionItem) => (
             <option key={reg.id} value={reg.id}>
               {reg.name}
             </option>

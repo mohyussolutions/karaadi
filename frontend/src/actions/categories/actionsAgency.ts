@@ -2,26 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { AGENCY_ENDPOINTS } from "../constant/constant";
-import { cookies } from "next/headers";
-
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 const addCacheBuster = (url: string) => {
   const separator = url.includes("?") ? "&" : "?";
@@ -34,7 +15,7 @@ export const getAgencyStats = async () => {
     const url = addCacheBuster(AGENCY_ENDPOINTS.STATS);
 
     const response = await fetch(url, {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -51,7 +32,7 @@ export const fetchAgencies = async () => {
     const url = addCacheBuster(AGENCY_ENDPOINTS.BASE);
 
     const response = await fetch(url, {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -70,7 +51,7 @@ export const createAgency = async (agencyData: any) => {
 
     const response = await fetch(url, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       body: JSON.stringify(agencyData),
       cache: "no-store",
@@ -92,7 +73,7 @@ export const updateAgency = async (id: string, agencyData: any) => {
 
     const response = await fetch(url, {
       method: "PUT",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       body: JSON.stringify(agencyData),
       cache: "no-store",
@@ -113,7 +94,7 @@ export const deleteAgency = async (id: string) => {
 
     const response = await fetch(url, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });

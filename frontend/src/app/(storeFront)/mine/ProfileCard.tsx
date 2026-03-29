@@ -4,30 +4,21 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import LoginLoading from "../components/shared/Loading/LoginLoading";
-import { logout, updatePhone } from "@/actions/core/authAction";
-import { toast } from "react-toastify";
-
-interface IUser {
-  _id: string;
-  username: string;
-  email: string;
-  profileImage?: string;
-  phone?: string;
-  phoneVerified?: boolean;
-}
+import { logout } from "@/actions/core/authAction";
+import { FiEdit2, FiLogOut, FiPhone } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
+import { NormalizedUser } from "@/app/utils/types/user.types";
 
 interface ProfileCardProps {
-  user: IUser | null;
+  user: NormalizedUser | null;
   accessToken?: string;
 }
 
-const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
+const ProfileCard = ({ user }: ProfileCardProps) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [isEditingPhone, setIsEditingPhone] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(user?.phone || "");
-  const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -42,7 +33,6 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
           .find((row) => row.startsWith("idToken="))
           ?.split("=")[1] ||
         "";
-
       await logout(token);
       window.location.href = "/";
     } catch (err) {
@@ -54,76 +44,33 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
     router.push("/profile-edit");
   };
 
-  const handleUpdatePhone = async () => {
-    if (!accessToken) {
-      toast.error("Not authenticated - no access token");
-      return;
-    }
-
-    if (!phoneNumber) {
-      toast.error("Phone number is required");
-      return;
-    }
-
-    let formattedPhone = phoneNumber.trim();
-    formattedPhone = formattedPhone.replace(/[\s\-\(\)]/g, "");
-
-    if (formattedPhone.startsWith("0")) {
-      formattedPhone = "+2526" + formattedPhone.substring(1);
-    } else if (formattedPhone.startsWith("6")) {
-      formattedPhone = "+252" + formattedPhone;
-    } else if (!formattedPhone.startsWith("+")) {
-      formattedPhone = "+252" + formattedPhone;
-    }
-
-    setIsUpdatingPhone(true);
-    try {
-      const result = await updatePhone(formattedPhone, accessToken);
-      if (result.success) {
-        toast.success("Phone number updated successfully!");
-        setIsEditingPhone(false);
-        if (user) {
-          user.phone = formattedPhone;
-          user.phoneVerified = true;
-        }
-      } else {
-        if (result.expired) {
-          toast.error("Session expired - please login again");
-          setTimeout(() => {
-            window.location.href = "/login";
-          }, 2000);
-        } else {
-          toast.error(result.error || "Failed to update phone");
-        }
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-    } finally {
-      setIsUpdatingPhone(false);
-    }
-  };
-
   if (!user) {
     return (
       <div className="w-full mx-auto bg-white shadow-sm rounded-2xl p-6 mt-10 text-center border border-gray-100">
         <p className="text-gray-500 font-medium">
-          Ma jiro xog laga helay isticmaalaha.
+          {t("mine.profile.noUser", "No user data found.")}
         </p>
       </div>
     );
   }
 
-  const displayName = user.username || "Isticmaale";
+  const displayName =
+    user.username || t("mine.profile.defaultDisplayName", "User");
 
   const getValidImageSrc = () => {
-    if (!user.profileImage || user.profileImage.trim() === "" || imageError) {
+    if (!user.profileImage || imageError) {
       return "/default-profile.png";
     }
-
     try {
       new URL(user.profileImage);
       return user.profileImage;
     } catch {
+      if (
+        /^[A-Za-z0-9+/=]+$/.test(user.profileImage) &&
+        user.profileImage.length > 100
+      ) {
+        return `data:image/png;base64,${user.profileImage}`;
+      }
       return "/default-profile.png";
     }
   };
@@ -131,114 +78,81 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
   const profileImageSrc = getValidImageSrc();
 
   return (
-    <div className="relative w-full mx-auto bg-white shadow-none md:shadow-sm rounded-2xl p-6 space-y-6 mt-10 border border-gray-100">
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-        <div className="w-[100px] h-[100px] relative rounded-full overflow-hidden bg-blue-50 border-2 border-blue-100 shrink-0">
-          <Image
-            src={profileImageSrc}
-            alt={displayName}
-            fill
-            className="object-cover"
-            sizes="100px"
-            priority
-            onError={() => setImageError(true)}
-          />
+    <div className="relative w-full mx-auto bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 md:p-8 mt-10 border border-gray-100 shadow-sm hover:shadow transition-all duration-300">
+      <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 w-full">
+          <div className="relative group shrink-0">
+            <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300">
+              <Image
+                src={profileImageSrc}
+                alt={displayName}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                sizes="(max-width: 768px) 96px, 112px"
+                priority
+                onError={() => setImageError(true)}
+              />
+            </div>
+            <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+          </div>
+
+          <div className="text-center md:text-left space-y-3 w-full">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+                {displayName}
+              </h2>
+              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3">
+                <p className="text-gray-500 break-all bg-gray-100/50 px-3 py-1 rounded-full text-xs md:text-sm font-medium">
+                  {user.email}
+                </p>
+              </div>
+
+              {user.phone && (
+                <div className="flex items-center justify-center md:justify-start gap-2 text-gray-600 mt-3">
+                  <FiPhone size={14} className="text-gray-400" />
+                  <span className="text-sm">{user.phone}</span>
+                  {user.phoneVerified && (
+                    <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
+                      {t("mine.profile.verified", "Verified")}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-center md:justify-start pt-2">
+              <button
+                onClick={handleEditProfile}
+                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
+              >
+                <FiEdit2 size={15} /> {t("mine.profile.edit", "Edit")}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col items-center md:items-start space-y-2 text-center md:text-left w-full">
-          <h2 className="text-2xl font-bold text-gray-900">{displayName}</h2>
-          <p className="text-gray-500 font-medium break-all">{user.email}</p>
-
-          <div className="mt-2 w-full">
-            {isEditingPhone ? (
-              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+2526XXXXXXXX"
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-64"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleUpdatePhone}
-                    disabled={isUpdatingPhone}
-                    className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
-                  >
-                    {isUpdatingPhone ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditingPhone(false);
-                      setPhoneNumber(user.phone || "");
-                    }}
-                    className="px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                </div>
+        <div className="w-full md:w-auto border-t md:border-t-0 border-gray-100 mt-6 md:mt-0 pt-6 md:pt-0">
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className={`w-full md:w-auto min-w-[140px] px-6 py-3.5 md:py-3 text-sm font-bold rounded-2xl md:rounded-xl transition-all duration-300 shadow-sm active:scale-95 flex items-center justify-center gap-2 border ${
+              isLoggingOut
+                ? "bg-green-600 text-white border-transparent cursor-not-allowed"
+                : "bg-gradient-to-r from-red-600 to-red-500 text-white border-transparent hover:from-red-700 hover:to-red-600 hover:shadow-lg hover:shadow-red-100"
+            }`}
+          >
+            {isLoggingOut ? (
+              <div className="flex items-center gap-2">
+                <LoginLoading />
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Phone:
-                  </span>
-                  {user.phone ? (
-                    <span className="text-sm text-gray-600">{user.phone}</span>
-                  ) : (
-                    <span className="text-sm text-gray-400 italic">
-                      Not provided
-                    </span>
-                  )}
-                  {user.phoneVerified && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Verified
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setIsEditingPhone(true)}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  {user.phone ? "Update" : "Add"}
-                </button>
-              </div>
+              <>
+                <FiLogOut size={19} className="shrink-0" />
+                <span>{t("mine.profile.logout", "Logout")}</span>
+              </>
             )}
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-3 mt-3 w-full md:w-auto">
-            <button
-              onClick={handleEditProfile}
-              className="px-8 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition shadow-sm w-full md:w-fit"
-            >
-              Wax ka beddel Profile-ka
-            </button>
-
-            <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className={`px-8 py-2.5 text-white text-sm font-bold rounded-lg transition shadow-sm md:absolute md:top-6 md:right-6 w-full md:w-auto ${
-                isLoggingOut
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-red-700 hover:bg-red-800"
-              }`}
-            >
-              {isLoggingOut ? <LoginLoading /> : "Ka bax (Logout)"}
-            </button>
-          </div>
+          </button>
         </div>
-      </div>
-
-      <div className="bg-amber-50 border-l-4 border-amber-400 p-5 rounded-xl">
-        <h3 className="font-bold text-amber-800 mb-1 text-center md:text-left">
-          Ka qeyb qaado inaad Karaadi ka dhigto mid ammaan ah
-        </h3>
-        <p className="text-sm text-amber-900 leading-relaxed text-center md:text-left">
-          Caddee in aad adiga tahay adigoo isticmaalaya **WAAFI** si aad u hesho
-          dhammaan adeegyada Karaadi. Waxay kaa dhigeysaa mid lagu kalsoonaan
-          karo oo fursada guusha macaamilkaaga way kordheysaa.
-        </p>
       </div>
     </div>
   );

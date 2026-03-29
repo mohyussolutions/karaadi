@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { CONTACT_ENDPOINTS } from "../constant/constant";
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 interface TicketData {
   senderName: string;
@@ -18,29 +18,13 @@ interface MessageData {
   senderRole: "USER" | "SUPPORT_MANAGER" | "ADMIN";
 }
 
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
 export async function createTicket(data: TicketData) {
   try {
     const headers = await getAuthHeaders();
 
     const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify(data),
       cache: "no-store",
     });
@@ -60,7 +44,7 @@ export async function getTicketHistory(email: string) {
     const headers = await getAuthHeaders();
 
     const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -80,7 +64,7 @@ export async function getTicketDetails(id: string | number) {
     const headers = await getAuthHeaders();
 
     const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(id), {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
     return res.ok ? await res.json() : null;
@@ -98,7 +82,7 @@ export async function addTicketMessage(
 
     const res = await fetch(CONTACT_ENDPOINTS.MESSAGES(ticketId), {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify(messageData),
       cache: "no-store",
     });
@@ -122,7 +106,7 @@ export async function updateTicketStatus(
 
     const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(ticketId), {
       method: "PATCH",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ status }),
       cache: "no-store",
     });
@@ -143,7 +127,7 @@ export async function deleteTicket(ticketId: string | number) {
 
     const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(ticketId), {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -165,7 +149,7 @@ export async function deleteMessage(messageId: string | number) {
       `${CONTACT_ENDPOINTS.TICKETS}/messages/${messageId}`,
       {
         method: "DELETE",
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -181,7 +165,7 @@ export async function getAllTickets() {
     const headers = await getAuthHeaders();
 
     const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -197,7 +181,7 @@ export async function getTicketStats() {
     const headers = await getAuthHeaders();
 
     const res = await fetch(CONTACT_ENDPOINTS.STATS, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

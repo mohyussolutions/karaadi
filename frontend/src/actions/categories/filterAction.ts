@@ -25,10 +25,7 @@ export async function getGlobalFilteredResults(params: FilterParams) {
 
     const res = await fetch(url, {
       method: "GET",
-      next: {
-        revalidate: 120,
-        tags: ["global-search"],
-      },
+      cache: "no-store",
     });
 
     if (!res.ok) return [];
@@ -44,10 +41,7 @@ export async function getFilterMetadata() {
 
     const res = await fetch(url, {
       method: "GET",
-      next: {
-        revalidate: 86400,
-        tags: ["filter-metadata"],
-      },
+      cache: "no-store",
     });
 
     if (!res.ok) return { regions: [] };

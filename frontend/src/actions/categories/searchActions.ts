@@ -1,36 +1,15 @@
 "use server";
 
 import { SEARCH_HISTORY_ENDPOINTS } from "../constant/constant";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-
-async function getAuthHeaders(token?: string) {
-  const cookieStore = await cookies();
-  const cookieToken =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-  const authToken = token || cookieToken;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-  };
-
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-    console.log("✅ Auth token added to headers");
-  } else {
-    console.warn("❌ No auth token found");
-  }
-
-  return headers;
-}
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export const getSearchHistory = async (token?: string) => {
   try {
     const headers = await getAuthHeaders(token);
     const response = await fetch(SEARCH_HISTORY_ENDPOINTS.SEARCH_HISTORY, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -41,7 +20,6 @@ export const getSearchHistory = async (token?: string) => {
 
     const data = await response.json();
 
-    // Check if response contains error message
     if (data && data.message === "Not authorized") {
       console.error("Not authorized to fetch search history");
       return [];
@@ -59,7 +37,7 @@ export const logSearch = async (query: string, token?: string) => {
     const headers = await getAuthHeaders(token);
     const response = await fetch(SEARCH_HISTORY_ENDPOINTS.LOG_SEARCH, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ query }),
       cache: "no-store",
     });
@@ -86,7 +64,7 @@ export const getPopularSearches = async (token?: string) => {
 
     const response = await fetch(SEARCH_HISTORY_ENDPOINTS.POPULAR_SEARCHES, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -104,7 +82,6 @@ export const getPopularSearches = async (token?: string) => {
     const data = await response.json();
     console.log("Popular searches raw data:", data);
 
-    // Check if response contains error message
     if (data && data.message === "Not authorized") {
       console.error("Not authorized to fetch popular searches");
       return [];
@@ -124,7 +101,7 @@ export const deleteSearchQuery = async (query: string, token?: string) => {
       `${SEARCH_HISTORY_ENDPOINTS.DELETE_BY_QUERY}?q=${encodeURIComponent(query)}`,
       {
         method: "DELETE",
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -153,7 +130,7 @@ export const deleteSearchById = async (id: string, token?: string) => {
     const headers = await getAuthHeaders(token);
     const response = await fetch(SEARCH_HISTORY_ENDPOINTS.DELETE_BY_ID(id), {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -181,7 +158,7 @@ export const searchItems = async (query: string, token?: string) => {
     const headers = await getAuthHeaders(token);
     const response = await fetch(SEARCH_HISTORY_ENDPOINTS.SEARCH_ITEMS(query), {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

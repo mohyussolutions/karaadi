@@ -15,9 +15,11 @@ import {
   MdLocationCity,
 } from "react-icons/md";
 import { HiOutlineTag } from "react-icons/hi";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { verifySession } from "@/actions/core/authAction";
+import { useTranslation } from "react-i18next";
 
 import { createMarketplaceItem } from "@/actions/categories/marketplaceActions";
-import { verifySession } from "@/actions/core/authAction";
 import {
   getAllRegions,
   getAllCities,
@@ -63,6 +65,7 @@ const categoryNestedMap: Record<string, any[]> = {
 };
 
 export default function MarketplaceAdForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -208,17 +211,17 @@ export default function MarketplaceAdForm() {
     }
   };
 
-  if (!currentUser)
-    return (
-      <div className="p-10 text-center font-bold text-gray-400">LOADING...</div>
-    );
+  if (!currentUser) return <Loading />;
 
   return (
-    <div className="max-w-4xl mx-auto mt-6 p-4 md:p-8 bg-white rounded-2xl shadow-2xl border border-gray-100">
+    <div className="w-full mx-auto mt-6 p-4 md:p-8 bg-white rounded-2xl border border-gray-100">
       <ToastContainer />
       <div className="text-center mb-10">
         <h1 className="text-3xl font-black text-gray-800 flex items-center justify-center gap-3">
-          Gudbi Xayeysiis <span className="text-blue-600">Marketplace</span>
+          {t("createAd.title", { defaultValue: "Gudbi Xayeysiis Marketplace" })}{" "}
+          <span className="text-blue-600">
+            {t("categories.Marketplace", { defaultValue: "Marketplace" })}
+          </span>
         </h1>
       </div>
 
@@ -238,7 +241,7 @@ export default function MarketplaceAdForm() {
                 .filter((cat) => cat.key === "Marketplace")
                 .map((cat, i) => (
                   <option key={i} value={cat.name}>
-                    {cat.so ?? cat.name}
+                    {cat.labelKey ? t(cat.labelKey) : (cat.so ?? cat.name)}
                   </option>
                 ))}
             </select>
@@ -255,10 +258,12 @@ export default function MarketplaceAdForm() {
               className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none"
               required
             >
-              <option value="">Dooro Qaybta</option>
+              <option value="">
+                {t("createAd.selectCategory", { defaultValue: "Dooro Qaybta" })}
+              </option>
               {marketplaceSubCategories.map((cat: any) => (
                 <option key={cat.title} value={cat.title}>
-                  {cat.so}
+                  {cat.labelKey ? t(cat.labelKey) : (cat.so ?? cat.title)}
                 </option>
               ))}
             </select>
@@ -272,10 +277,14 @@ export default function MarketplaceAdForm() {
               }
               className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none"
             >
-              <option value="">Qayb hoosaadka</option>
+              <option value="">
+                {t("createAd.selectSubcategory", {
+                  defaultValue: "Qayb hoosaadka",
+                })}
+              </option>
               {(categoryNestedMap[formData.category] || []).map((sub: any) => (
                 <option key={sub.title} value={sub.title}>
-                  {sub.so}
+                  {sub.labelKey ? t(sub.labelKey) : (sub.so ?? sub.title)}
                 </option>
               ))}
             </select>
@@ -290,7 +299,9 @@ export default function MarketplaceAdForm() {
                   setFormData({ ...formData, price: e.target.value })
                 }
                 className="w-full border-2 border-gray-100 bg-gray-50 pl-11 pr-4 py-3 rounded-xl outline-none"
-                placeholder="Qiimaha"
+                placeholder={t("createAd.pricePlaceholder", {
+                  defaultValue: "Qiimaha",
+                })}
                 required
               />
             </div>
@@ -305,7 +316,9 @@ export default function MarketplaceAdForm() {
                 setFormData({ ...formData, title: e.target.value })
               }
               className="w-full border-2 border-gray-100 bg-gray-50 pl-11 pr-4 py-3 rounded-xl outline-none"
-              placeholder="Cinwaanka xayeysiiska"
+              placeholder={t("createAd.titlePlaceholder", {
+                defaultValue: "Cinwaanka xayeysiiska",
+              })}
               required
             />
           </div>
@@ -325,7 +338,9 @@ export default function MarketplaceAdForm() {
               className="w-full border-2 border-white bg-white px-4 py-3 rounded-xl shadow-sm outline-none"
               required
             >
-              <option value="">Dooro Gobol</option>
+              <option value="">
+                {t("createAd.selectRegion", { defaultValue: "Dooro Gobol" })}
+              </option>
               {regions.map((reg) => (
                 <option key={reg.id} value={reg.id}>
                   {reg.name}
@@ -344,7 +359,9 @@ export default function MarketplaceAdForm() {
               required={!showNewCityInputs}
               disabled={!formData.region}
             >
-              <option value="">Dooro Magaalada</option>
+              <option value="">
+                {t("createAd.selectCity", { defaultValue: "Dooro Magaalada" })}
+              </option>
               {filteredCities.map((c) => (
                 <option key={c.id} value={c.name}>
                   {c.name}
@@ -362,7 +379,9 @@ export default function MarketplaceAdForm() {
             <MdLocationCity className="text-blue-500 text-2xl" />
             <input
               type="text"
-              placeholder="Qor magaca magaalada"
+              placeholder={t("createAd.newCityPlaceholder", {
+                defaultValue: "Qor magaca magaalada",
+              })}
               className="w-full border-2 border-white bg-white px-4 py-3 rounded-xl outline-none"
               value={newCity}
               onChange={(e) => setNewCity(e.target.value)}
@@ -390,7 +409,8 @@ export default function MarketplaceAdForm() {
 
         <div className="space-y-4">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <MdAddPhotoAlternate className="text-purple-600 text-lg" /> Sawirada
+            <MdAddPhotoAlternate className="text-purple-600 text-lg" />{" "}
+            {t("createAd.images", { defaultValue: "Sawirada" })}
           </label>
           <div className="flex flex-wrap gap-4">
             <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
@@ -436,7 +456,9 @@ export default function MarketplaceAdForm() {
               : "bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-blue-100"
           }`}
         >
-          {isLoading ? "Gudbinaya..." : "Gudbi Xayeysiiska"}
+          {isLoading
+            ? t("createAd.submitting", { defaultValue: "Gudbinaya..." })
+            : t("createAd.submit", { defaultValue: "Gudbi Xayeysiiska" })}
         </button>
       </form>
     </div>

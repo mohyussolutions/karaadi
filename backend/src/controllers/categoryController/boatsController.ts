@@ -13,41 +13,12 @@ import {
   isExpired,
   getDaysUntilExpiry,
 } from "src/hooks/useExpire.ts";
+import { CreateBoatBody } from "src/types/boat.types.ts";
 
 const catchAsync =
   (fn: any) => (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
-
-interface BoatQuery {
-  type?: string;
-  region?: string;
-  city?: string;
-  subCategory?: string;
-  category?: string;
-}
-
-interface CreateBoatBody {
-  userId: string;
-  feeId?: string;
-  planId?: string;
-  title: string;
-  mainCategory: string;
-  category: string | string[];
-  subcategory: string | string[];
-  images: string[];
-  price: number;
-  feeAmount: number;
-  planAmount: number;
-  type: string;
-  boatModel: string;
-  transmission: string;
-  color: string;
-  region: string;
-  city: string;
-  so?: string;
-  description: string;
-}
 
 const CACHE_KEYS = {
   TOTAL: "boats:total",
@@ -78,15 +49,15 @@ const ensureSingleString = (id: any): string => {
 const mapBoatResponse = (boat: any) => {
   if (!boat) return null;
   const expired = isExpired(boat.expiryDate);
+
   if (expired && boat.isPaid) {
     prisma.boat
       .update({
         where: { id: boat.id },
-        data: { isPaid: false, maGaday: true },
+        data: { isPaid: false },
       })
       .catch(() => {});
     boat.isPaid = false;
-    boat.maGaday = true;
   }
 
   let planName = "Basic 30 Days";
@@ -98,7 +69,6 @@ const mapBoatResponse = (boat: any) => {
 
   return {
     ...boat,
-    maGaday: expired ? false : boat.maGaday,
     isExpired: expired,
     status: expired ? "expired" : boat.isPaid ? "active" : "pending",
     selectedPlan: boat.plan
@@ -119,9 +89,10 @@ export const checkAndUpdateExpiredListings = catchAsync(
       where: {
         expiryDate: { lt: now },
         isPaid: true,
-        maGaday: false,
       },
-      data: { isPaid: false, maGaday: true },
+      data: {
+        isPaid: false,
+      },
     });
 
     if (expiredBoats.count > 0) {
@@ -288,16 +259,18 @@ export const updateBoatPayment = catchAsync(
         .status(404)
         .json({ success: false, message: "Boat not found" });
 
-    const expired = isExpired(boat.expiryDate);
-    const expiryDate = planId
-      ? calculateExpiryDate(planId, boat.planAmount)
-      : getDefaultExpiryDate();
+    const subPlan = await prisma.subPlan.findFirst({
+      where: { isActive: true },
+    });
+    const expiryDate =
+      planId && subPlan
+        ? calculateExpiryDate(subPlan, boat.planAmount)
+        : getDefaultExpiryDate();
 
     const updatedBoat = await prisma.boat.update({
       where: { id },
       data: {
-        isPaid: expired ? false : true,
-        maGaday: false,
+        isPaid: true,
         expiryDate,
         planId: planId || boat.planId,
       },

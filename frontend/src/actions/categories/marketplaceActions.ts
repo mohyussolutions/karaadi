@@ -3,7 +3,8 @@ import {
   apiUrlsForCategoryTotals,
   PAYMENT_ENDPOINTS,
 } from "../constant/constant";
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+
 export type MarketplaceItem = {
   _id: string;
   id: string;
@@ -89,12 +90,11 @@ export async function getMarketplaceItemById(
 export async function getAdminMarketplaceItems(
   token?: string,
 ): Promise<AdminMarketplaceItem[]> {
-  const headers: HeadersInit = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers = await getAuthHeaders(token);
 
   const response = await fetch(apiUrlsForCategoryTotals.allIncludingUnpaid, {
     method: "GET",
-    headers,
+    headers: headers as HeadersInit,
     cache: "no-store",
   });
 
@@ -113,12 +113,11 @@ export async function deleteAdminMarketplaceItem(
   itemId: string,
   token?: string,
 ): Promise<boolean> {
-  const headers: HeadersInit = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers = await getAuthHeaders(token);
 
   const response = await fetch(apiUrlsForCategoryTotals.DeleteItem(itemId), {
     method: "DELETE",
-    headers,
+    headers: headers as HeadersInit,
   });
 
   return response.ok;
@@ -129,12 +128,11 @@ export async function updateAdminMarketplaceItemPaidStatus(
   isPaid: boolean,
   token?: string,
 ): Promise<boolean> {
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers = await getAuthHeaders(token);
 
   const response = await fetch(apiUrlsForCategoryTotals.UpdateItem(itemId), {
     method: "PATCH",
-    headers,
+    headers: headers as HeadersInit,
     body: JSON.stringify({ isPaid }),
   });
 
@@ -145,12 +143,11 @@ export async function createMarketplaceItem(
   data: CreateMarketplaceData,
   token?: string,
 ) {
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers = await getAuthHeaders(token);
 
   const response = await fetch(apiUrlsForCategoryTotals.Marketplace, {
     method: "POST",
-    headers,
+    headers: headers as HeadersInit,
     body: JSON.stringify(data),
     cache: "no-store",
   });
@@ -167,14 +164,13 @@ export async function createMarketplaceItem(
 export async function updateMarketplaceItem(
   id: string,
   data: Partial<CreateMarketplaceData>,
-  token: string,
+  token?: string,
 ) {
+  const headers = await getAuthHeaders(token);
+
   const response = await fetch(apiUrlsForCategoryTotals.UpdateItem(id), {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: headers as HeadersInit,
     body: JSON.stringify(data),
     cache: "no-store",
   });
@@ -189,12 +185,11 @@ export async function deleteMarketplaceItem(
   id: string,
   token?: string,
 ): Promise<boolean> {
-  const headers: HeadersInit = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers = await getAuthHeaders(token);
 
   const response = await fetch(apiUrlsForCategoryTotals.DeleteItem(id), {
     method: "DELETE",
-    headers,
+    headers: headers as HeadersInit,
   });
 
   return response.ok;
@@ -213,23 +208,11 @@ export async function getItemDetailAction(id: string) {
 
 export async function getTotalMarketplaceItemsCount() {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("idToken")?.value ||
-      cookieStore.get("accessToken")?.value;
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    const headers = await getAuthHeaders();
 
     const response = await fetch(apiUrlsForCategoryTotals.TotalMarketplace, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

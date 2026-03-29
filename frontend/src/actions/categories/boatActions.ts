@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export type Boat = {
   _id: string;
@@ -32,32 +32,12 @@ export type Boat = {
 
 type CreateBoatData = Omit<Boat, "_id" | "user">;
 
-async function getAuthHeaders(token?: string) {
-  const cookieStore = await cookies();
-  const cookieToken =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-  const authToken = token || cookieToken;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-  }
-
-  return headers;
-}
-
 export async function getBoats(): Promise<Boat[] | null> {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(apiUrlsForCategoryTotals.Boats, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -77,7 +57,7 @@ export async function getBoatById(id: string): Promise<Boat | null> {
     const headers = await getAuthHeaders();
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -92,12 +72,37 @@ export async function getBoatById(id: string): Promise<Boat | null> {
   }
 }
 
-export async function createBoat(payload: any, token: string) {
+export type CreateBoatPayload = {
+  userId: string;
+  title: string;
+  description: string;
+  price: number;
+  mainCategory: string;
+  category: string[];
+  subcategory: string[];
+  type: string;
+  boatModel: string;
+  year?: number;
+  mileage?: number;
+  transmission?: string;
+  fuelType?: string;
+  color: string;
+  region: string;
+  city: string;
+  images: string[];
+  isPaid?: boolean;
+  planId?: string;
+  planAmount?: number;
+  feeId?: string;
+  feeAmount?: number;
+};
+
+export async function createBoat(payload: CreateBoatPayload, token?: string) {
   try {
     const headers = await getAuthHeaders(token);
     const response = await fetch(apiUrlsForCategoryTotals.Boats, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify(payload),
       cache: "no-store",
     });
@@ -116,13 +121,13 @@ export async function createBoat(payload: any, token: string) {
 export async function updateBoat(
   id: string,
   data: Partial<CreateBoatData>,
-  token: string,
+  token?: string,
 ) {
   try {
     const headers = await getAuthHeaders(token);
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "PUT",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify(data),
       cache: "no-store",
     });
@@ -152,7 +157,7 @@ export async function updateBoatPayment(
       `${apiUrlsForCategoryTotals.Boats}/${boatId}/payment`,
       {
         method: "PUT",
-        headers,
+        headers: headers as HeadersInit,
         body: JSON.stringify({ paymentId, planId }),
         cache: "no-store",
       },
@@ -178,12 +183,12 @@ export async function updateBoatPayment(
   }
 }
 
-export async function deleteBoat(id: string, token: string) {
+export async function deleteBoat(id: string, token?: string) {
   try {
     const headers = await getAuthHeaders(token);
     const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -204,7 +209,7 @@ export async function getTotalBoatsAction(): Promise<number> {
     const headers = await getAuthHeaders();
     const res = await fetch(apiUrlsForCategoryTotals.TotalBoats, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -226,7 +231,7 @@ export async function getAllBoatsAdminAction() {
     const headers = await getAuthHeaders();
     const res = await fetch(apiUrlsForCategoryTotals.BoatsAdmin, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -247,7 +252,7 @@ export async function toggleBoatPaymentAction(
     const headers = await getAuthHeaders();
     const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "PUT",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ isPaid: !currentStatus }),
       cache: "no-store",
     });
@@ -267,7 +272,7 @@ export async function deleteBoatAction(id: string) {
     const headers = await getAuthHeaders();
     const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

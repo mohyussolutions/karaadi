@@ -1,38 +1,53 @@
 import { SEARCH_ENDPOINT } from "../constant/constant";
 
-export async function getGlobalSearchResults(query: string) {
+export type SearchResult = {
+  id?: string;
+  _id?: string;
+  title?: string;
+  description?: string;
+  price?: number;
+  images?: string[];
+  city?: string;
+  region?: string;
+  source?: string;
+  make?: string;
+  brand?: string;
+  vehicleModel?: string;
+  boatModel?: string;
+  modelName?: string;
+  bedrooms?: number;
+  squareFeet?: number;
+  company?: string;
+  salary?: number;
+  hours?: number;
+  enginePower?: string;
+  mainCategory?: string;
+  category?: string;
+  subcategory?: string[];
+  [key: string]: unknown;
+};
+
+export async function getGlobalSearchResults(
+  query: string,
+): Promise<SearchResult[]> {
   try {
-    if (!query || query.trim() === "") {
-      return [];
-    }
-    const normalizedQuery = query.trim();
+    const normalizedQuery = query?.trim();
+    if (!normalizedQuery) return [];
+
     const res = await fetch(
       `${SEARCH_ENDPOINT}?q=${encodeURIComponent(normalizedQuery)}`,
       {
         cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       },
     );
-    if (!res.ok) {
-      let errorMsg = `Search request failed with status: ${res.status}`;
-      try {
-        const errorData = await res.json();
-        errorMsg += ` | Message: ${errorData?.message || JSON.stringify(errorData)}`;
-      } catch {
-        try {
-          const errorText = await res.text();
-          errorMsg += ` | Response: ${errorText}`;
-        } catch {}
-      }
-      console.error(errorMsg);
-      return [];
-    }
-    const results = await res.json();
 
-    return (results || []).map((item: any) => {
-      let category = "marketplace";
+    if (!res.ok) return [];
+
+    const results = (await res.json()) as SearchResult[];
+
+    return (results || []).map((item) => {
+      let cat = "marketplace";
 
       if (
         item.source === "cars" ||
@@ -40,38 +55,34 @@ export async function getGlobalSearchResults(query: string) {
         item.brand ||
         item.vehicleModel
       ) {
-        category = "cars";
+        cat = "cars";
       } else if (item.source === "boats" || item.boatModel) {
-        category = "boats";
+        cat = "boats";
       } else if (item.source === "motorcycles" || item.modelName) {
-        category = "motorcycles";
+        cat = "motorcycles";
       } else if (
         item.source === "realestate" ||
         item.bedrooms !== undefined ||
         item.squareFeet
       ) {
-        category = "real-estate";
+        cat = "real-estate";
       } else if (item.source === "jobs" || item.company || item.salary) {
-        category = "jobs";
+        cat = "jobs";
       } else if (
         item.source === "farmequipment" ||
         item.hours !== undefined ||
         item.enginePower
       ) {
-        category = "farmequipment";
+        cat = "farmequipment";
       } else if (item.mainCategory) {
-        category = item.mainCategory.toLowerCase();
+        cat = item.mainCategory.toLowerCase();
       } else if (item.category) {
-        category = item.category.toLowerCase();
+        cat = item.category.toLowerCase();
       }
 
-      return {
-        ...item,
-        category: category,
-      };
+      return { ...item, category: cat };
     });
-  } catch (error) {
-    console.error("Search Action Error:", error);
+  } catch {
     return [];
   }
 }

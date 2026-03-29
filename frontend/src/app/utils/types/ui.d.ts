@@ -1,4 +1,4 @@
-// src/types/ui/Error.ts
+
 
 import { ReactNode } from "react";
 

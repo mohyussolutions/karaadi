@@ -1,0 +1,26 @@
+import { z } from "zod";
+
+export const createBoatSchema = z.object({
+  userId: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  price: z.number(),
+  mainCategory: z.string().min(1),
+  category: z.array(z.string()),
+  subcategory: z.array(z.string()),
+  type: z.string().min(1),
+  boatModel: z.string().min(1),
+  year: z.number().optional(),
+  mileage: z.number().optional(),
+  transmission: z.string().optional(),
+  fuelType: z.string().optional(),
+  color: z.string().min(1),
+  region: z.string().min(1),
+  city: z.string().min(1),
+  images: z.array(z.string()),
+  isPaid: z.boolean().optional(),
+  planId: z.string().optional(),
+  planAmount: z.number().optional(),
+  feeId: z.string().optional(),
+  feeAmount: z.number().optional(),
+});

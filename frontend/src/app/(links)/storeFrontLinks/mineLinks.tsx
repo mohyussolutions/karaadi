@@ -18,6 +18,7 @@ interface NavLink {
   name: string;
   href: string;
   icon: IconType;
+  labelKey?: string;
 }
 
 interface OptionLink {
@@ -26,14 +27,40 @@ interface OptionLink {
   href: string;
   icon: IconType;
   colorClass: string;
+  labelKey?: string;
 }
 
 export const navLinks: NavLink[] = [
-  { name: "My Ads", href: "/mine/my-ads", icon: FiList },
-  { name: "Favorites", href: "/mine/favorites", icon: FiHeart },
-  { name: "Saved", href: "/mine/saved-searches", icon: FiSearch },
-  { name: "Tickets", href: "/mine/TicketHistory", icon: FiClock },
-  { name: "Settings", href: "/mine/settings", icon: FiSettings },
+  {
+    name: "My Ads",
+    href: "/mine/my-ads",
+    icon: FiList,
+    labelKey: "mine.nav.myAds",
+  },
+  {
+    name: "Favorites",
+    href: "/mine/favorites",
+    icon: FiHeart,
+    labelKey: "mine.nav.favorites",
+  },
+  {
+    name: "Saved",
+    href: "/mine/saved-searches",
+    icon: FiSearch,
+    labelKey: "mine.nav.saved",
+  },
+  {
+    name: "Tickets",
+    href: "/mine/TicketHistory",
+    icon: FiClock,
+    labelKey: "mine.nav.tickets",
+  },
+  {
+    name: "Settings",
+    href: "/mine/settings",
+    icon: FiSettings,
+    labelKey: "mine.nav.settings",
+  },
 ];
 
 export const settingsOptions: OptionLink[] = [
@@ -43,6 +70,7 @@ export const settingsOptions: OptionLink[] = [
     href: "/mine/settings/privacy",
     icon: FaShieldAlt,
     colorClass: "text-blue-600",
+    labelKey: "mine.settings.privacy",
   },
   {
     title: "Security",
@@ -50,6 +78,7 @@ export const settingsOptions: OptionLink[] = [
     href: "/mine/settings/security",
     icon: FaLock,
     colorClass: "text-green-600",
+    labelKey: "mine.settings.security",
   },
   {
     title: "Payment",
@@ -57,6 +86,7 @@ export const settingsOptions: OptionLink[] = [
     href: "/mine/settings/payment",
     icon: FaCreditCard,
     colorClass: "text-gray-700",
+    labelKey: "mine.settings.payment",
   },
   {
     title: "Subscription",
@@ -64,6 +94,7 @@ export const settingsOptions: OptionLink[] = [
     href: "/mine/settings/subscription",
     icon: FaBell,
     colorClass: "text-gray-700",
+    labelKey: "mine.settings.subscription",
   },
 ];
 
@@ -74,6 +105,7 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/my-ads",
     icon: FaBullhorn,
     colorClass: "text-green-600",
+    labelKey: "mine.account.myAds",
   },
   {
     title: "My Account",
@@ -81,6 +113,7 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/account",
     icon: FaUserCircle,
     colorClass: "text-blue-600",
+    labelKey: "mine.account.myAccount",
   },
   {
     title: "Settings",
@@ -88,6 +121,7 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/settings",
     icon: FaCog,
     colorClass: "text-gray-700",
+    labelKey: "mine.account.settings",
   },
   {
     title: "Favorites",
@@ -95,6 +129,7 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/favorites",
     icon: FaHeart,
     colorClass: "text-red-500",
+    labelKey: "mine.account.favorites",
   },
   {
     title: "Saved Searches",
@@ -102,6 +137,7 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/saved-searches",
     icon: FaSearch,
     colorClass: "text-orange-500",
+    labelKey: "mine.account.savedSearches",
   },
   {
     title: "For Businesses",
@@ -109,6 +145,7 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/businesses",
     icon: FaBuilding,
     colorClass: "text-pink-600",
+    labelKey: "mine.account.forBusinesses",
   },
   {
     title: "Contact History",
@@ -116,6 +153,7 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/TicketHistory",
     icon: FaHistory,
     colorClass: "text-pink-600",
+    labelKey: "mine.account.contactHistory",
   },
   {
     title: "My Subscriptions",
@@ -123,5 +161,6 @@ export const accountOptions: OptionLink[] = [
     href: "/mine/my-subscription",
     icon: FaBell,
     colorClass: "text-yellow-500",
+    labelKey: "mine.account.mySubscriptions",
   },
 ];

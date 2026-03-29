@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { REAL_ESTATE_ENDPOINTS } from "../constant/constant";
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export type RealEstate = {
   id: string;
@@ -23,26 +23,6 @@ export type RealEstate = {
   maGadayn?: boolean;
 };
 
-async function getAuthHeaders(token?: string) {
-  const cookieStore = await cookies();
-  const cookieToken =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-  const authToken = token || cookieToken;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-  }
-
-  return headers;
-}
-
 const addCacheBuster = (url: string) => {
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}_t=${Date.now()}`;
@@ -55,7 +35,7 @@ export async function getTotalRealEstateCount(): Promise<number> {
 
     const response = await fetch(url, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -76,7 +56,7 @@ export async function getRealEstateById(
 
     const response = await fetch(url, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -95,7 +75,7 @@ export async function getRealEstateListings(): Promise<RealEstate[]> {
 
     const response = await fetch(url, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -119,7 +99,7 @@ export async function fetchAdminRealEstate() {
     const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.ADMIN_ALL);
 
     const res = await fetch(url, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
     if (!res.ok) return [];
@@ -136,7 +116,7 @@ export async function updatePaidStatus(id: string, newStatus: boolean) {
 
     const res = await fetch(url, {
       method: "PATCH",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ isPaid: newStatus }),
       cache: "no-store",
     });
@@ -158,7 +138,7 @@ export async function deleteRealEstate(id: string) {
 
     const response = await fetch(url, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -172,14 +152,14 @@ export async function deleteRealEstate(id: string) {
   }
 }
 
-export async function createRealEstate(data: any, token: string) {
+export async function createRealEstate(data: any, token?: string) {
   try {
     const headers = await getAuthHeaders(token);
     const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.BASE);
 
     const response = await fetch(url, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify(data),
       cache: "no-store",
     });

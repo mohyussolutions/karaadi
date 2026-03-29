@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
@@ -13,11 +14,12 @@ import {
   FarmEquipment,
 } from "@/actions/categories/FarmequipmentAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function FertilizerSpreader() {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const subCategoryLinks =
     FertilizerSpreaderNestedSub as TraktorSubCategoryItem[];
@@ -74,7 +76,7 @@ export default function FertilizerSpreader() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) => {
+      const filtered = (results as any[]).filter((item) => {
         const cat = String(item.category || "").toLowerCase();
         const sub = String(item.subcategory || "").toLowerCase();
         return (
@@ -82,7 +84,8 @@ export default function FertilizerSpreader() {
           sub.includes("fertilizer") ||
           cat.includes("bacriminta")
         );
-      });
+      }) as FarmEquipment[];
+
       setSearchResults(filtered);
     }, 400);
     return () => clearTimeout(delayDebounce);
@@ -201,7 +204,12 @@ export default function FertilizerSpreader() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${selectedCategory === category.title ? "text-emerald-100" : "text-gray-500"}`}
                 >

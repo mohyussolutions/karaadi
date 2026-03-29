@@ -5,6 +5,7 @@ import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 import { useRouter, usePathname } from "next/navigation";
 import { FiSearch, FiHeadphones, FiLogOut, FiX } from "react-icons/fi";
 import { verifySession, logout } from "@/actions/core/authAction";
+import { useTranslation } from "react-i18next";
 
 interface SupportSidebarProps {
   open: boolean;
@@ -16,6 +17,7 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
   const pathname = usePathname();
   const [hasMounted, setHasMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setHasMounted(true);
@@ -104,7 +106,9 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
         </p>
 
         {SUPPORT_LINKS.map((item: any) => {
-          const title = item.label || item.name;
+          const title = item.labelKey
+            ? t(item.labelKey)
+            : item.label || item.name;
           const Icon = item.icon;
           const active = isActive(item.href);
 

@@ -9,10 +9,19 @@ export default function TrackVisitor() {
     if (hasRun.current) return;
     hasRun.current = true;
 
-    fetch("http://localhost:8080/api/visitors/track-user", {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => {});
+    const track = () => {
+      fetch("http://localhost:8080/api/visitors/track-user", {
+        method: "POST",
+        credentials: "include",
+        keepalive: true,
+      }).catch(() => {});
+    };
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(track);
+    } else {
+      setTimeout(track, 1);
+    }
   }, []);
 
   return null;

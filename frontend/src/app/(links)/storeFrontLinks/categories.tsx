@@ -17,6 +17,11 @@ import {
 import { RiAdvertisementFill } from "react-icons/ri";
 import { MdOutlineSubscriptions, MdWork } from "react-icons/md";
 import { CiMoneyBill } from "react-icons/ci";
+import { LuSofa } from "react-icons/lu";
+import { IoIosBoat } from "react-icons/io";
+import { FiBarChart2 } from "react-icons/fi";
+import { HiSearchCircle } from "react-icons/hi";
+
 import {
   MainCategory,
   SettingLink,
@@ -24,8 +29,6 @@ import {
 } from "@/app/utils/types/categoriestype";
 
 import { MohyusLogoIcon } from "@/app/utils/icons/customerIcons";
-import { LuSofa } from "react-icons/lu";
-import { IoIosBoat } from "react-icons/io";
 import {
   boatsSubCategories,
   jobsSubCategories,
@@ -34,9 +37,7 @@ import {
   realEstateSubCategories,
   traktorSubCategories,
 } from "./subCategories";
-import { FiBarChart2 } from "react-icons/fi";
 import { carsSubCategories } from "./nestedSubcategoryForCars";
-import { HiSearchCircle } from "react-icons/hi";
 
 export const allCategories: MainCategory[] = [
   {
@@ -55,7 +56,7 @@ export const allCategories: MainCategory[] = [
     name: "Real Estate",
     href: "/real-estate",
     icon: <AiOutlineHome />,
-    so: "Hantida Ma-guurtad",
+    so: "Guryaha, hantida maguurtada ah",
     dashboardIcon: FaWarehouse,
     dashboardLink: "/dashboard/categories/real-estate",
     subCategories: realEstateSubCategories,
@@ -168,24 +169,18 @@ export const sidebarLinks: SidebarLink[] = [
     link: "/dashboard/FeeManagement",
   },
   { name: "Jobs", icon: MdWork, link: "/dashboard/categories/jobs" },
-
   {
     name: "Agencies",
     icon: CiMoneyBill,
     link: "/dashboard/categories/Agencies",
   },
-  {
-    name: "Reports",
-    icon: FiBarChart2,
-    link: "/dashboard/categories/Reports",
-  },
+  { name: "Reports", icon: FiBarChart2, link: "/dashboard/categories/Reports" },
   {
     name: "Most Search",
     icon: HiSearchCircle,
     link: "/dashboard/categories/mostSavedSearch",
   },
   { name: "Users", icon: FaUsers, link: "/dashboard/users" },
-
   { name: "Massages", icon: FaMoneyBillWave, link: "/dashboard/Massages" },
   { name: "Chats", icon: FaComments, link: "/dashboard/chats" },
   { name: "Visitor List", icon: FaUserCheck, link: "/dashboard/VisitorList" },
@@ -197,10 +192,7 @@ export const settingLinks: SettingLink[] = [
   {
     title: "Visitor Management",
     items: ["View visitors", "Track activity", "Delete visitor data"],
-    actionButton: {
-      text: "Open Visitor Manager",
-      type: "visitors",
-    },
+    actionButton: { text: "Open Visitor Manager", type: "visitors" },
   },
   {
     title: "User Roles",
@@ -226,13 +218,12 @@ export const settingLinks: SettingLink[] = [
       href: "/dashboard/settings/security",
     },
   },
-
   {
     title: "Regional Management",
     items: [
       "View and manage all regions",
       "Add or delete major regions",
-      "Sync regional data from external sources",
+      "Sync regional data",
     ],
     actionButton: {
       text: "Manage Regions",
@@ -242,13 +233,10 @@ export const settingLinks: SettingLink[] = [
   {
     title: "City & District Management",
     items: [
-      "Update city names and local IDs",
-      "Assign cities to specific regions",
-      "Delete or disable local districts",
+      "Update city names",
+      "Assign cities to regions",
+      "Delete districts",
     ],
-    actionButton: {
-      text: "Manage Cities",
-      href: "/dashboard/settings/cities",
-    },
+    actionButton: { text: "Manage Cities", href: "/dashboard/settings/cities" },
   },
 ];

@@ -1,6 +1,7 @@
 import prisma from "../../core/utils/db.ts";
 import cacheManager from "../../services/redisserver/cacheManager.ts";
 import { Request, Response } from "express";
+import { CACHE_TTL, CACHE_KEYS } from "../../constants/config.constants.ts";
 
 interface SearchResultItem {
   id: string;
@@ -21,13 +22,18 @@ export const globalSearch = async (req: Request, res: Response) => {
   const queryStr = q.trim();
   if (!queryStr) return res.json([]);
 
-  const cacheKey = `search:${queryStr.toLowerCase()}`;
+  const cacheKey = CACHE_KEYS.SEARCH_RESULTS
+    ? CACHE_KEYS.SEARCH_RESULTS(queryStr.toLowerCase())
+    : `search:${queryStr.toLowerCase()}`;
+  const searchTTL = CACHE_TTL.SEARCH || 120;
 
   try {
+    await cacheManager.connect?.();
+
     const cachedResults = await cacheManager.get(cacheKey);
     if (cachedResults) return res.json(cachedResults);
 
-    const keywords: string[] = queryStr.split(" ").filter(Boolean);
+    const keywords = queryStr.split(" ").filter(Boolean);
     const searchPrice = keywords.find((word) => !isNaN(Number(word)));
     const priceValue = searchPrice ? Number(searchPrice) : null;
     const mode = "insensitive";
@@ -36,7 +42,7 @@ export const globalSearch = async (req: Request, res: Response) => {
       await Promise.all([
         prisma.marketplace.findMany({
           where: {
-            AND: keywords.map((word: string) => ({
+            AND: keywords.map((word) => ({
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
@@ -55,7 +61,7 @@ export const globalSearch = async (req: Request, res: Response) => {
         }),
         prisma.realEstate.findMany({
           where: {
-            AND: keywords.map((word: string) => ({
+            AND: keywords.map((word) => ({
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
@@ -74,7 +80,7 @@ export const globalSearch = async (req: Request, res: Response) => {
         }),
         prisma.car.findMany({
           where: {
-            AND: keywords.map((word: string) => ({
+            AND: keywords.map((word) => ({
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
@@ -94,7 +100,7 @@ export const globalSearch = async (req: Request, res: Response) => {
         }),
         prisma.boat.findMany({
           where: {
-            AND: keywords.map((word: string) => ({
+            AND: keywords.map((word) => ({
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
@@ -114,7 +120,7 @@ export const globalSearch = async (req: Request, res: Response) => {
         }),
         prisma.motorcycle.findMany({
           where: {
-            AND: keywords.map((word: string) => ({
+            AND: keywords.map((word) => ({
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
@@ -134,7 +140,7 @@ export const globalSearch = async (req: Request, res: Response) => {
         }),
         prisma.farmequipment.findMany({
           where: {
-            AND: keywords.map((word: string) => ({
+            AND: keywords.map((word) => ({
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
@@ -154,7 +160,7 @@ export const globalSearch = async (req: Request, res: Response) => {
         }),
         prisma.job.findMany({
           where: {
-            AND: keywords.map((word: string) => ({
+            AND: keywords.map((word) => ({
               OR: [
                 { title: { contains: word, mode } },
                 { description: { contains: word, mode } },
@@ -168,28 +174,22 @@ export const globalSearch = async (req: Request, res: Response) => {
       ]);
 
     const results = [
-      ...market.map((i: SearchResultItem) => ({
-        ...i,
-        itemType: "marketplace",
-      })),
-      ...real.map((i: SearchResultItem) => ({ ...i, itemType: "real-estate" })),
-      ...cars.map((i: SearchResultItem) => ({ ...i, itemType: "car" })),
-      ...boats.map((i: SearchResultItem) => ({ ...i, itemType: "boat" })),
-      ...motos.map((i: SearchResultItem) => ({ ...i, itemType: "motorcycle" })),
-      ...farmequipments.map((i: SearchResultItem) => ({
-        ...i,
-        itemType: "farmequipment",
-      })),
-      ...jobs.map((i: SearchResultItem) => ({ ...i, itemType: "job" })),
+      ...market.map((i) => ({ ...i, itemType: "marketplace" })),
+      ...real.map((i) => ({ ...i, itemType: "real-estate" })),
+      ...cars.map((i) => ({ ...i, itemType: "car" })),
+      ...boats.map((i) => ({ ...i, itemType: "boat" })),
+      ...motos.map((i) => ({ ...i, itemType: "motorcycle" })),
+      ...farmequipments.map((i) => ({ ...i, itemType: "farmequipment" })),
+      ...jobs.map((i) => ({ ...i, itemType: "job" })),
     ].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-    await cacheManager.set(cacheKey, results, 300);
+    await cacheManager.set(cacheKey, results, searchTTL);
     res.json(results);
-  } catch (error: any) {
-    console.error("Search API Error:", error.message);
-    res.status(500).json({ error: "Search failed", details: error.message });
+  } catch (error) {
+    console.error("Search API Error:", error);
+    res.status(500).json({ error: "Search failed" });
   }
 };

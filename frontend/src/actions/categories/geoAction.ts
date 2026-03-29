@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { FILTERING_ENDPOINTS, geoEndpoints } from "../constant/constant";
 import { GeoStats, Region } from "@/app/utils/types/geoTypes";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export const getTotalOfCities = async (): Promise<number> => {
   const stats = await getGeoStats();
@@ -16,9 +17,10 @@ export const getTotalOfRegions = async (): Promise<number> => {
 
 export const getAllRegions = async (): Promise<Region[]> => {
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(geoEndpoints.GET_ALL_REGIONS, {
+      headers: headers as HeadersInit,
       cache: "no-store",
-      next: { tags: ["geo-regions"] },
     });
     return res.ok ? await res.json() : [];
   } catch {
@@ -28,10 +30,12 @@ export const getAllRegions = async (): Promise<Region[]> => {
 
 export const addRegion = async (data: { id: string; name: string }) => {
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(geoEndpoints.ADD_REGION, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: headers as HeadersInit,
       body: JSON.stringify(data),
+      cache: "no-store",
     });
     if (res.ok) {
       revalidateTag("geo-regions");
@@ -46,10 +50,12 @@ export const addRegion = async (data: { id: string; name: string }) => {
 
 export const updateRegion = async (id: string, name: string) => {
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(geoEndpoints.UPDATE_REGION(id), {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: headers as HeadersInit,
       body: JSON.stringify({ name }),
+      cache: "no-store",
     });
     if (res.ok) {
       revalidateTag("geo-regions");
@@ -63,8 +69,11 @@ export const updateRegion = async (id: string, name: string) => {
 
 export const deleteRegion = async (id: string) => {
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(geoEndpoints.DELETE_REGION(id), {
       method: "DELETE",
+      headers: headers as HeadersInit,
+      cache: "no-store",
     });
     if (res.ok) {
       revalidateTag("geo-regions");
@@ -79,13 +88,14 @@ export const deleteRegion = async (id: string) => {
 
 export const getAllCities = async (regionId?: string) => {
   try {
+    const headers = await getAuthHeaders();
     const url = regionId
       ? `${geoEndpoints.GET_ALL_CITIES}?regionId=${regionId}`
       : geoEndpoints.GET_ALL_CITIES;
 
     const res = await fetch(url, {
+      headers: headers as HeadersInit,
       cache: "no-store",
-      next: { tags: ["geo-cities"] },
     });
     return res.ok ? await res.json() : [];
   } catch {
@@ -94,10 +104,17 @@ export const getAllCities = async (regionId?: string) => {
 };
 
 export const addCity = async (
-  newCityName: string,
-  newCitySo: string,
-  region: string,
-  data: {
+  newCityNameOrData:
+    | string
+    | {
+        id: string;
+        name: string;
+        regionId: string;
+        isActive: boolean;
+      },
+  newCitySo?: string,
+  region?: string,
+  data?: {
     id: string;
     name: string;
     regionId: string;
@@ -105,10 +122,34 @@ export const addCity = async (
   },
 ) => {
   try {
+    const headers = await getAuthHeaders();
+
+    let payload: {
+      id: string;
+      name: string;
+      regionId: string;
+      isActive: boolean;
+    };
+
+    if (typeof newCityNameOrData === "string") {
+
+      payload = data
+        ? data
+        : {
+            id: newCityNameOrData.toLowerCase().replace(/\s+/g, "-"),
+            name: newCitySo || newCityNameOrData,
+            regionId: region || "",
+            isActive: true,
+          };
+    } else {
+      payload = newCityNameOrData;
+    }
+
     const res = await fetch(geoEndpoints.ADD_CITY, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      headers: headers as HeadersInit,
+      body: JSON.stringify(payload),
+      cache: "no-store",
     });
 
     const result = await res.json();
@@ -127,7 +168,12 @@ export const addCity = async (
 
 export const deleteCity = async (id: string) => {
   try {
-    const res = await fetch(geoEndpoints.DELETE_CITY(id), { method: "DELETE" });
+    const headers = await getAuthHeaders();
+    const res = await fetch(geoEndpoints.DELETE_CITY(id), {
+      method: "DELETE",
+      headers: headers as HeadersInit,
+      cache: "no-store",
+    });
     if (res.ok) {
       revalidateTag("geo-cities");
       revalidateTag("geo-stats");
@@ -141,9 +187,10 @@ export const deleteCity = async (id: string) => {
 
 export const getGeoStats = async (): Promise<GeoStats> => {
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(geoEndpoints.GET_GEO_STATS, {
+      headers: headers as HeadersInit,
       cache: "no-store",
-      next: { tags: ["geo-stats"] },
     });
     return res.ok ? await res.json() : { totalRegions: 0, totalCities: 0 };
   } catch {
@@ -153,10 +200,12 @@ export const getGeoStats = async (): Promise<GeoStats> => {
 
 export const syncGeoData = async (payload: any) => {
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(geoEndpoints.SYNC_DATA, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: headers as HeadersInit,
       body: JSON.stringify(payload),
+      cache: "no-store",
     });
     if (res.ok) {
       revalidateTag("geo-regions");
@@ -179,6 +228,7 @@ export const filterByPriceAndRooms = async (filters: {
   maxRooms?: string | number;
 }) => {
   try {
+    const headers = await getAuthHeaders();
     const params = new URLSearchParams();
 
     Object.entries(filters).forEach(([key, value]) => {
@@ -191,6 +241,7 @@ export const filterByPriceAndRooms = async (filters: {
 
     const res = await fetch(url, {
       method: "GET",
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

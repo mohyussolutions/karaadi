@@ -97,13 +97,13 @@ class CacheManager {
   ): Promise<void> {
     if (!this.isReady()) return;
     await this.client.setEx(key, ttl, JSON.stringify(value));
-    console.log(chalk.gray(`[SET] ${key}`));
+    // ...existing code...
   }
 
   public async delete(key: string): Promise<void> {
     if (!this.isReady()) return;
     await this.client.del(key);
-    console.log(chalk.yellow(`[DEL] ${key}`));
+    // ...existing code...
   }
 
   public async deletePattern(pattern: string): Promise<void> {

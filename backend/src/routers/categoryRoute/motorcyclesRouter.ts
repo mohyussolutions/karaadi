@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { createMotorcycleSchema } from "../../validation/motorcycles.validation.ts";
 import {
   getAllMotorcycles,
   getMotorcycleById,
@@ -11,46 +13,42 @@ import {
 import {
   adminAndManager,
   ProtectRoute,
-} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+} from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const motorcyclesRoutes = Router();
 
-motorcyclesRoutes.get("/", (req, res, next) => {
-  getAllMotorcycles(req, res).catch(next);
-});
+motorcyclesRoutes.get("/", getAllMotorcycles);
 
 motorcyclesRoutes.get(
   "/all-including-unpaid",
   ProtectRoute,
   adminAndManager,
-  (req, res, next) => {
-    getAllMotorcyclesIncludingUnpaid(req, res).catch(next);
-  },
+  getAllMotorcyclesIncludingUnpaid,
 );
 
 motorcyclesRoutes.get(
   "/total",
   ProtectRoute,
   adminAndManager,
-  (req, res, next) => {
-    getTotalMotorcycles(req, res).catch(next);
-  },
+  getTotalMotorcycles,
 );
 
-motorcyclesRoutes.get("/:id", ProtectRoute, (req, res, next) => {
-  getMotorcycleById(req, res).catch(next);
-});
+motorcyclesRoutes.get("/:id", ProtectRoute, getMotorcycleById);
 
-motorcyclesRoutes.post("/", ProtectRoute, (req, res, next) => {
-  createMotorcycle(req, res).catch(next);
-});
+motorcyclesRoutes.post(
+  "/",
+  ProtectRoute,
+  validateRequest(createMotorcycleSchema),
+  createMotorcycle,
+);
 
-motorcyclesRoutes.patch("/:id", ProtectRoute, (req, res, next) => {
-  updateMotorcycle(req, res).catch(next);
-});
+motorcyclesRoutes.patch(
+  "/:id",
+  ProtectRoute,
+  validateRequest(createMotorcycleSchema),
+  updateMotorcycle,
+);
 
-motorcyclesRoutes.delete("/:id", ProtectRoute, (req, res, next) => {
-  deleteMotorcycle(req, res).catch(next);
-});
+motorcyclesRoutes.delete("/:id", ProtectRoute, deleteMotorcycle);
 
 export default motorcyclesRoutes;

@@ -1,212 +1,292 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
-  getProfile,
   updateProfile,
+  verifySession,
   deleteAccount,
-} from "@/actions/core/accountAction";
-import { verifySession } from "@/actions/core/authAction";
-import Loading from "../../components/shared/Loading/Loading";
-import Image from "next/image";
+  updatePhone,
+} from "@/actions/core/authAction";
+import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import {
+  FiUser,
+  FiPhone,
+  FiTrash2,
+  FiCheckCircle,
+  FiPhoneCall,
+  FiAlertTriangle,
+  FiX,
+} from "react-icons/fi";
 
-export default function AccountPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [accessToken, setAccessToken] = useState<string>("");
+const ProfileEditPage = () => {
+  const { t } = useTranslation();
   const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const session = await verifySession();
-        if (!session) {
-          setAccessToken("");
-          setUser(null);
-          router.push("/login");
-          return;
-        }
-        setUser(session);
-        setPreviewUrl(session.profileImage || null);
-        const token = session.accessToken || session.token || "";
-        setAccessToken(token);
-        if (token) {
-          const data = await getProfile(token);
-          if (!data.error) {
-            setUser(data);
-            setPreviewUrl(data.profileImage || null);
-          }
-        }
-      } catch (error) {
-        setAccessToken("");
-        setUser(null);
-        router.push("/login");
-      } finally {
-        setLoading(false);
+    const loadUserData = async () => {
+      const session = await verifySession();
+      if (session) {
+        setUsername(session.username || "");
+        setPhone(session.phone || "");
+        setEmail(session.email || "");
+        setAccessToken(session.accessToken || session.token || "");
       }
-    }
-    loadData();
-  }, [router]);
+    };
+    loadUserData();
+  }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
+  const handleUpdatePhone = async () => {
+    if (!phone)
+      return toast.error(
+        t("mine.account.phoneRequired", "Phone number is required"),
+      );
+    if (!accessToken)
+      return toast.error(
+        t("mine.account.authRequired", "Authentication required"),
+      );
 
-  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!accessToken) {
-      alert("Session expired. Please log in again.");
-      setUser(null);
-      setAccessToken("");
-      router.push("/login");
-      return;
-    }
-    setUpdating(true);
-    const formData = new FormData();
-    const username = (e.currentTarget.username as HTMLInputElement).value;
-    const phone = (e.currentTarget.phone as HTMLInputElement).value;
-    if (username) formData.append("username", username);
-    if (phone) formData.append("phone", phone);
-    if (selectedFile) formData.append("profileImage", selectedFile);
-    const result = await updateProfile(formData, accessToken);
-    if (result.success) {
-      alert("Profile updated successfully!");
-      setUser(result.data?.user || result.data);
-      setSelectedFile(null);
-    } else {
-      if (result.error && result.error.toLowerCase().includes("401")) {
-        alert("Session expired. Please log in again.");
-        setUser(null);
-        setAccessToken("");
-        router.push("/login");
+    setPhoneLoading(true);
+    try {
+      const result = await updatePhone(phone, accessToken);
+      if (result.success) {
+        toast.success(
+          t("mine.account.phoneUpdated", "Phone number updated successfully"),
+        );
       } else {
-        alert(result.error || "Update failed");
+        toast.error(
+          result.error ||
+            t("mine.account.phoneUpdateFailed", "Failed to update phone"),
+        );
       }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setPhoneLoading(false);
     }
-    setUpdating(false);
   };
 
-  const handleDelete = async () => {
-    if (!accessToken) {
-      alert("Session expired. Please log in again.");
-      setUser(null);
-      setAccessToken("");
-      router.push("/login");
-      return;
-    }
-    if (
-      !confirm(
-        "Are you sure you want to delete your account? This action cannot be undone.",
-      )
-    )
-      return;
-    const result = await deleteAccount(accessToken);
-    if (result.success) {
-      setUser(null);
-      setAccessToken("");
-      router.push("/login");
-    } else {
-      if (result.error && result.error.toLowerCase().includes("401")) {
-        alert("Session expired. Please log in again.");
-        setUser(null);
-        setAccessToken("");
-        router.push("/login");
+  const handleUpdateProfile = async () => {
+    if (!accessToken)
+      return toast.error(
+        t("mine.account.authRequired", "Authentication required"),
+      );
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("username", username);
+
+      const result = await updateProfile(formData, accessToken);
+      if (result.success) {
+        toast.success(
+          t("mine.account.usernameUpdated", "Username updated successfully"),
+        );
       } else {
-        alert("Failed to delete account");
+        toast.error(
+          result.error ||
+            t("mine.account.usernameUpdateFailed", "Failed to update username"),
+        );
       }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <Loading />;
+  const confirmDelete = async () => {
+    if (!accessToken)
+      return toast.error(
+        t("mine.account.authRequired", "Authentication required"),
+      );
+
+    setDeleteLoading(true);
+    try {
+      const result = await deleteAccount(accessToken);
+      if (result.success) {
+        toast.success(
+          t("mine.account.deleted", "Account deleted successfully"),
+        );
+        router.push("/");
+      } else {
+        toast.error(
+          result.error ||
+            t(
+              "mine.account.deleteFailed",
+              "Security token invalid or session expired",
+            ),
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setDeleteLoading(false);
+      setIsModalOpen(false);
+    }
+  };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg mt-10">
-      <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
-      <form onSubmit={handleUpdate} className="space-y-6">
-        <div className="flex flex-col items-center">
-          <div className="relative w-32 h-32 mb-4">
-            {previewUrl ? (
-              <Image
-                src={previewUrl}
-                alt="Profile"
-                fill
-                className="rounded-full object-cover border-4 border-gray-100 shadow-sm"
-              />
-            ) : (
-              <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-100 shadow-sm">
-                <span className="text-3xl text-gray-400">
-                  {user?.username?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+    <div className="min-h-screen py-12 px-4 bg-gray-50/50">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <FiUser className="w-6 h-6 text-blue-600" />
+            </div>
+            <h4 className="text-lg font-bold text-gray-900">
+              {t("mine.account.username", "Username")}
+            </h4>
           </div>
-          <input
-            type="file"
-            name="profileImage"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 file:cursor-pointer cursor-pointer"
-          />
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition"
+              placeholder={t("mine.account.yourUsername", "Your username")}
+            />
+            <button
+              onClick={handleUpdateProfile}
+              disabled={loading}
+              className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:bg-gray-400 transition flex items-center justify-center gap-2"
+            >
+              <FiCheckCircle size={18} />
+              {loading
+                ? t("mine.account.updating", "Updating...")
+                : t("mine.account.updateUsername", "Update Username")}
+            </button>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            type="email"
-            value={user?.email || ""}
-            className="w-full p-2 border rounded mt-1 bg-gray-100 cursor-not-allowed"
-            disabled
-          />
-          <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-green-50 rounded-lg">
+              <FiPhone className="w-6 h-6 text-green-600" />
+            </div>
+            <h4 className="text-lg font-bold text-gray-900">
+              {t("mine.account.phoneNumber", "Phone Number")}
+            </h4>
+          </div>
+          <div className="space-y-4">
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 transition"
+              placeholder={t("mine.account.phonePlaceholder", "61XXXXXXX")}
+            />
+            <button
+              onClick={handleUpdatePhone}
+              disabled={phoneLoading}
+              className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:bg-gray-400 transition flex items-center justify-center gap-2"
+            >
+              <FiPhoneCall size={18} />
+              {phoneLoading
+                ? t("mine.account.updating", "Updating...")
+                : t("mine.account.updatePhone", "Update Phone")}
+            </button>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Username
-          </label>
-          <input
-            type="text"
-            name="username"
-            defaultValue={user?.username}
-            className="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
+
+        <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-5">
+            <FiTrash2 size={80} />
+          </div>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-red-50 rounded-lg">
+              <FiTrash2 className="w-6 h-6 text-red-600" />
+            </div>
+            <h4 className="text-lg font-bold text-gray-900">
+              {t("mine.account.dangerZone", "Danger Zone")}
+            </h4>
+          </div>
+          <div className="bg-red-50/50 rounded-xl p-4 mb-4 border border-red-100">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-red-700 font-medium">
+                {t("mine.account.emailLabel", "Email:")}
+              </span>
+              <span className="text-red-900 font-bold">{email}</span>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 mb-6">
+            {t(
+              "mine.account.deleteWarning",
+              "Deleting your account is a permanent action. All your listings, messages, and profile data will be removed from our systems immediately.",
+            )}
+          </p>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full py-3 bg-white text-red-600 border-2 border-red-600 font-bold rounded-xl hover:bg-red-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+          >
+            <FiTrash2 size={18} />
+            Delete Account Permanently
+          </button>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Phone
-          </label>
-          <input
-            type="text"
-            name="phone"
-            defaultValue={user?.phone || ""}
-            className="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={updating}
-          className="w-full bg-blue-600 text-white py-2 rounded-md font-bold hover:bg-blue-700 disabled:bg-gray-400 transition"
-        >
-          {updating ? "Saving..." : "Update Profile"}
-        </button>
-      </form>
-      <div className="mt-12 pt-6 border-t border-red-100">
-        <h2 className="text-red-600 font-bold text-lg">Danger Zone</h2>
-        <button
-          onClick={handleDelete}
-          className="mt-2 text-red-500 hover:text-red-700 hover:underline text-sm font-medium"
-        >
-          Delete Account Permanently
-        </button>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-6">
+              <div className="p-3 bg-red-100 rounded-2xl">
+                <FiAlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition"
+              >
+                <FiX size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <h3 className="text-2xl font-black text-gray-900 mb-2">
+              {t("mine.account.wait", "Wait a second!")}
+            </h3>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              {t(
+                "mine.account.confirmDeleteText",
+                "Are you absolutely sure? This will permanently erase everything associated with",
+              )}{" "}
+              <span className="font-bold text-gray-900">{email}</span>.{" "}
+              {t("mine.account.cannotUndo", "You cannot undo this.")}
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+                className="w-full py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition disabled:bg-gray-400 flex items-center justify-center gap-2"
+              >
+                {deleteLoading
+                  ? t("mine.account.erasing", "Erasing Data...")
+                  : t(
+                      "mine.account.yesDeleteEverything",
+                      "Yes, Delete Everything",
+                    )}
+              </button>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                disabled={deleteLoading}
+                className="w-full py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition"
+              >
+                {t("mine.account.stay", "Actually, I'll Stay")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default ProfileEditPage;

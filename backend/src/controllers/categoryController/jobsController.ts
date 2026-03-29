@@ -31,7 +31,10 @@ export const getAllJobs = async (req: Request, res: Response) => {
 
     return res.json(jobsWithStatus);
   } catch (error) {
-    return res.status(500).json({ message: "Server Error" });
+    console.error("[Jobs API] getAllJobs error:", error);
+    return res
+      .status(200)
+      .json({ jobs: [], error: "Jobs unavailable. Please try again later." });
   }
 };
 

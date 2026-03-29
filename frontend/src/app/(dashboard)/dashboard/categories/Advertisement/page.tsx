@@ -381,7 +381,11 @@ const AdvertisementManager = () => {
                       <div className="mt-2">
                         <span className="text-sm text-gray-500">Image:</span>
                         <img
-                          src={ad.imageUrl}
+                          src={
+                            /^https?:\/\//.test(ad.imageUrl)
+                              ? ad.imageUrl
+                              : "https://via.placeholder.com/150?text=No+Image"
+                          }
                           alt={ad.title}
                           className="mt-1 max-w-xs max-h-32 object-contain border rounded"
                           onError={(e) => {

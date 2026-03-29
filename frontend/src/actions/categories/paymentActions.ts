@@ -8,27 +8,8 @@ import {
   PaymentStats,
 } from "../../app/utils/types/payment";
 import { PAYMENT_ENDPOINTS } from "../constant/constant";
-import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
-
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 const addCacheBuster = (url: string) => {
   const separator = url.includes("?") ? "&" : "?";
@@ -44,7 +25,7 @@ export async function createPaymentAction(
 
     const response = await fetch(url, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ payment: data }),
       cache: "no-store",
     });
@@ -75,7 +56,7 @@ export async function getAllPaymentsAction(
     }
 
     const response = await fetch(url.toString(), {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -115,7 +96,7 @@ export async function getPaymentStatsAction(
     }
 
     const response = await fetch(url.toString(), {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -141,7 +122,7 @@ export async function updatePaymentStatusAction(
 
     const response = await fetch(url, {
       method: "PUT",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify(data),
       cache: "no-store",
     });
@@ -166,7 +147,7 @@ export async function deletePaymentAction(id: string) {
 
     const response = await fetch(url, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -189,7 +170,7 @@ export async function searchPaymentsAction(query: string): Promise<Payment[]> {
     url.searchParams.append("query", query);
 
     const response = await fetch(url.toString(), {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -208,7 +189,7 @@ export async function getItemDetailAction(id: string) {
 
     const response = await fetch(url, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

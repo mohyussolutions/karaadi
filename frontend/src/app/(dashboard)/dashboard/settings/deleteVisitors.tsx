@@ -22,7 +22,14 @@ function VisitorManager({ onBack }: VisitorManagerProps): JSX.Element {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/all`);
+      const response = await fetch(`${API_BASE_URL}/all`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response.status === 401) {
+        setError("Unauthorized. Please log in again.");
+        return;
+      }
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
       const data: { total: number; visitors: Visitor[] } =

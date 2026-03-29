@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import { User } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import {
@@ -13,10 +12,10 @@ import {
   formatExpiryDate,
   isExpired,
 } from "src/hooks/useExpire.ts";
-
-interface AuthRequest extends Request {
-  user?: User & { _id?: string; sub?: string };
-}
+import {
+  AuthRequest,
+  CreateFarmequipmentBody,
+} from "src/types/farmequipment.types.ts";
 
 const selectUserBasic = {
   select: { username: true, email: true, phone: true, profileImage: true },
@@ -34,30 +33,6 @@ const CACHE_KEYS = {
   TOTAL: "tractors:total",
   DETAIL: (id: string) => `tractor:detail:${id}`,
 };
-
-interface CreateFarmequipmentBody {
-  title: string;
-  description: string;
-  price: number;
-  mainCategory: string;
-  category: string[];
-  subcategory: string[];
-  region: string;
-  city: string;
-  make: string;
-  farmequipmentModel: string;
-  type: string;
-  condition: string;
-  enginePower: string;
-  fuelType: string;
-  year: number;
-  hours?: number;
-  images: string[];
-  isPaid?: boolean;
-  planId?: string;
-  planAmount?: number;
-  userId?: string;
-}
 
 const prepareTractorData = async (
   body: CreateFarmequipmentBody,
@@ -165,7 +140,6 @@ export const updateTractor = async (req: AuthRequest, res: Response) => {
       const userId = req.body.userId || req.user?.id || req.user?._id;
       const data = await prepareTractorData(req.body, userId);
 
-      // Check expiry and set isPaid to false if expired
       let expiryDateToCheck: Date | null = data.expiryDate ?? null;
       if (expiryDateToCheck === null) {
         const current = await prisma.farmequipment.findUnique({

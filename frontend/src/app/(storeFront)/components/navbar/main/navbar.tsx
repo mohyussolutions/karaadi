@@ -15,7 +15,15 @@ const Navbar = () => {
   const checkSession = useCallback(async () => {
     try {
       const userData = await verifySession();
-      setUser(userData);
+      if (userData) {
+        setUser({
+          ...userData,
+          profileImage:
+            userData.profileImage === null ? undefined : userData.profileImage,
+        });
+      } else {
+        setUser(null);
+      }
     } catch {
       setUser(null);
     }
@@ -23,7 +31,7 @@ const Navbar = () => {
 
   useEffect(() => {
     checkSession();
-  }, [pathname, checkSession]);
+  }, [checkSession]);
 
   return (
     <nav className="border-b bg-white sticky top-0 z-50 border-gray-400">

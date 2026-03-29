@@ -57,7 +57,6 @@ class SocketService {
     });
   }
 
-  // Event management
   on(event: string, callback: (data: any) => void) {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);

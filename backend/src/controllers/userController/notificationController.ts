@@ -45,7 +45,6 @@ export const getUserNotifications = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const userIdValue = Array.isArray(userId) ? userId[0] : userId;
 
-    // Fix: Ensure page and limit are strings
     const page = typeof req.query.page === "string" ? req.query.page : "1";
     const limit = typeof req.query.limit === "string" ? req.query.limit : "20";
 
@@ -80,7 +79,6 @@ export const getUserNotifications = async (req: Request, res: Response) => {
       prisma.notification.count({ where: { userId: userIdValue } }),
     ]);
 
-    // Fetch item details for notifications that have itemId and itemType
     const notificationsWithItems = await Promise.all(
       notifications.map(async (notification) => {
         if (notification.itemId && notification.itemType) {
@@ -237,16 +235,12 @@ export const markAllNotificationsAsRead = async (
   }
 };
 
-// This function is called when a subscription is created - saves the subscription for future matches
 export const createSubscriptionNotification = async (subscription: any) => {
   try {
-    // This just logs that a subscription was created
-    // The actual notifications will be created when items match this subscription later
     console.log(
       `Subscription created: ${subscription.id} for user ${subscription.userId}`,
     );
 
-    // You could optionally send a confirmation notification to the user
     const io = getIO();
     if (io) {
       io.to(`user_${subscription.userId}`).emit("subscriptionCreated", {
@@ -260,7 +254,6 @@ export const createSubscriptionNotification = async (subscription: any) => {
   }
 };
 
-// This function is called when an item is created - finds matching subscriptions and creates notifications
 export const createItemMatchNotifications = async (
   itemType: string,
   itemId: string,
@@ -289,11 +282,10 @@ export const createItemMatchNotifications = async (
       posterId,
     } = itemDetails;
 
-    // Find all active subscriptions that match this item
     const matchingSubscriptions = await prisma.subscription.findMany({
       where: {
         isActive: true,
-        userId: { not: posterId }, // Don't notify the poster about their own item
+        userId: { not: posterId },
         AND: [
           {
             OR: [
@@ -327,7 +319,6 @@ export const createItemMatchNotifications = async (
       return { success: true, count: 0 };
     }
 
-    // Create notifications for all matching subscribers
     const notificationsData = matchingSubscriptions.map((sub) => ({
       userId: sub.userId,
       senderId: posterId,
@@ -354,7 +345,6 @@ export const createItemMatchNotifications = async (
       skipDuplicates: true,
     });
 
-    // Update subscription notification counts
     await prisma.subscription.updateMany({
       where: {
         id: { in: matchingSubscriptions.map((s) => s.id) },
@@ -365,7 +355,6 @@ export const createItemMatchNotifications = async (
       },
     });
 
-    // Get created notifications for real-time sending
     const createdNotifications = await prisma.notification.findMany({
       where: {
         itemId,
@@ -387,7 +376,6 @@ export const createItemMatchNotifications = async (
       },
     });
 
-    // Send real-time notifications via socket
     const io = getIO();
     if (io) {
       const notificationsByUser = createdNotifications.reduce(
@@ -630,7 +618,6 @@ export const getNotificationsBySubscription = async (
       },
     });
 
-    // Get the subscription details
     const subscription = await prisma.subscription.findUnique({
       where: { id },
       select: {

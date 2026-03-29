@@ -1,10 +1,16 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import { getPaginationParams } from "src/constants/config.constants.ts";
+import { getPaginationParams } from "../../constants/config.constants.ts";
 import { PaymentService } from "../../services/paymentServer/paymentServer.ts";
 import { useErrorHandler } from "../../hooks/useErrorHandler.ts";
 import { ResponseCodes } from "../../config/waafipay.service.responseCodes.ts";
 import { PaymentStatus } from "@prisma/client";
+import { paymentValidation } from "../../validation/payment.validation.ts";
+import {
+  PaymentMethod,
+  ItemCategory,
+  ListingType,
+} from "../../types/payment.ts";
 
 const paymentService = new PaymentService();
 
@@ -17,6 +23,9 @@ const getQueryString = (param: any): string | undefined => {
 interface PaymentRequestBody {
   payment?: any;
   userId?: string;
+  itemId?: string;
+  itemCategory?: ItemCategory;
+  listingType?: ListingType;
   [key: string]: any;
 }
 
@@ -48,7 +57,19 @@ export const createPayment = async (
       });
     }
 
-    const result = await paymentService.processWaafiPayment({ ...p, userId });
+    const validation = paymentValidation.safeParse({ ...p, userId });
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment data",
+        errors: validation.error.flatten().fieldErrors,
+      });
+    }
+
+    const result = await paymentService.processWaafiPayment(
+      validation.data as any,
+    );
 
     if (!result.success) {
       return res.status(400).json({
@@ -66,6 +87,196 @@ export const createPayment = async (
       responseCode: ResponseCodes.SUCCESS.code,
       amount: result.amount,
       transactionId: result.transactionId,
+    });
+  } catch (err: any) {
+    const handledError = useErrorHandler(err);
+    return res.status(500).json(handledError);
+  }
+};
+
+export const createCardPaymentIntent = async (
+  req: Request<{}, {}, PaymentRequestBody>,
+  res: Response,
+) => {
+  try {
+    const p = req.body?.payment || req.body;
+    const userId = p?.userId || (req as any).user?.id;
+    const itemId = p?.itemId || req.body.itemId;
+    const itemCategory = p?.itemCategory || req.body.itemCategory;
+    const listingType = p?.listingType || req.body.listingType;
+
+    if (!p || typeof p !== "object") {
+      return res.status(400).json({
+        success: false,
+        message: "Payment information is required.",
+        responseCode: 400,
+        key: "MISSING_DATA",
+        userFriendly: true,
+      });
+    }
+
+    if (!userId || typeof userId !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Missing userId in payment object or authentication.",
+        responseCode: 400,
+        key: "MISSING_USER_ID",
+        userFriendly: true,
+      });
+    }
+
+    if (!itemId || typeof itemId !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "itemId is required for payment.",
+        responseCode: 400,
+        key: "MISSING_ITEM_ID",
+        userFriendly: true,
+      });
+    }
+
+    if (!itemCategory) {
+      return res.status(400).json({
+        success: false,
+        message: "itemCategory is required for payment.",
+        responseCode: 400,
+        key: "MISSING_ITEM_CATEGORY",
+        userFriendly: true,
+      });
+    }
+
+    const cardPaymentData = {
+      ...p,
+      userId,
+      itemId,
+      itemCategory,
+      listingType,
+      paymentMethod: PaymentMethod.CARD,
+    };
+
+    const validation = paymentValidation.safeParse(cardPaymentData);
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment data",
+        errors: validation.error.flatten().fieldErrors,
+      });
+    }
+
+    // Convert listingType string to enum if needed
+    const processedListingType =
+      listingType === "FREE"
+        ? ListingType.FREE
+        : listingType === "FEE"
+          ? ListingType.FEE
+          : undefined;
+
+    const result = await paymentService.processPayment({
+      ...validation.data,
+      itemId,
+      itemCategory,
+      listingType: processedListingType,
+      paymentMethod: PaymentMethod.CARD,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({
+        key: result.key,
+        message: result.message,
+        responseCode: result.responseCode,
+        amount: result.amount || null,
+      });
+    }
+
+    if (result.requiresConfirmation) {
+      return res.status(201).json({
+        success: true,
+        requiresConfirmation: true,
+        clientSecret: result.clientSecret,
+        paymentIntentId: result.paymentIntentId,
+        transactionId: result.transactionId,
+        amount: result.amount,
+        message: "Payment intent created. Please confirm the payment.",
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      key: ResponseCodes.SUCCESS.key,
+      message: "Payment processed successfully!",
+      responseCode: ResponseCodes.SUCCESS.code,
+      amount: result.amount,
+      transactionId: result.transactionId,
+    });
+  } catch (err: any) {
+    const handledError = useErrorHandler(err);
+    return res.status(500).json(handledError);
+  }
+};
+
+export const confirmCardPayment = async (req: Request, res: Response) => {
+  try {
+    const { paymentIntentId } = req.body;
+
+    if (!paymentIntentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment intent ID is required",
+      });
+    }
+
+    const result = await paymentService.confirmCardPayment(paymentIntentId);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message,
+        key: result.key,
+        responseCode: result.responseCode,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Payment confirmed successfully",
+      transactionId: result.transactionId,
+      amount: result.amount,
+    });
+  } catch (err: any) {
+    const handledError = useErrorHandler(err);
+    return res.status(500).json(handledError);
+  }
+};
+
+export const refundCardPayment = async (req: Request, res: Response) => {
+  try {
+    const { paymentIntentId, amount } = req.body;
+
+    if (!paymentIntentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment intent ID is required",
+      });
+    }
+
+    const result = await paymentService.refundCardPayment(
+      paymentIntentId,
+      amount,
+    );
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Refund processed successfully",
+      refundId: result.refundId,
+      amount: result.amount,
     });
   } catch (err: any) {
     const handledError = useErrorHandler(err);
@@ -206,7 +417,7 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: "Unable to update payment.",
+      message: "Failed to update payment status.",
     });
   }
 };
@@ -394,6 +605,9 @@ export const getPaymentById = async (req: Request, res: Response) => {
 
 const paymentController = {
   createPayment,
+  createCardPaymentIntent,
+  confirmCardPayment,
+  refundCardPayment,
   getItemDetail,
   getPaymentStats,
   getAllPayments,

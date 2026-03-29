@@ -1,11 +1,11 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {},
   reactStrictMode: true,
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**.istockphoto.com", // Catch-all for istock
+        hostname: "**.istockphoto.com",
       },
       {
         protocol: "https",
@@ -16,7 +16,7 @@ const nextConfig = {
         hostname: "plus.unsplash.com",
       },
       {
-        protocol: "https",
+        protocol: "https", // General Unsplash wildcard
         hostname: "**.unsplash.com",
       },
       {
@@ -59,11 +59,6 @@ const nextConfig = {
         protocol: "http",
         hostname: "localhost",
         port: "8080",
-      },
-
-      {
-        protocol: "https",
-        hostname: "images.unsplo-1568680870491-590cd4e224ab",
       },
       {
         protocol: "https",

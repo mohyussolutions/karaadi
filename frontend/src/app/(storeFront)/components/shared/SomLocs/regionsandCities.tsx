@@ -40,27 +40,18 @@ export default function LocationSelector({
   const [expandedRegions, setExpandedRegions] = useState<
     Record<string, boolean>
   >({});
-  const [loading, setLoading] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
-    const fetchGeoData = async () => {
-      try {
-        const [regionsData, citiesData] = await Promise.all([
-          getAllRegions(),
-          getAllCities(),
-        ]);
+
+    Promise.all([getAllRegions(), getAllCities()]).then(
+      ([regionsData, citiesData]) => {
         setRegions(
           [...regionsData].sort((a, b) => a.name.localeCompare(b.name)),
         );
         setCities(citiesData.filter((city: City) => city.isActive !== false));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGeoData();
+      },
+    );
   }, []);
 
   const currentRegionList = useMemo(
@@ -75,12 +66,10 @@ export default function LocationSelector({
     const nextRegions = currentRegionList.includes(regionName)
       ? currentRegionList.filter((r) => r !== regionName)
       : [...currentRegionList, regionName];
-
     setExpandedRegions((prev) => ({
       ...prev,
       [regionName]: !prev[regionName],
     }));
-
     onFilterChange(
       nextRegions.length > 0 ? nextRegions.join(",") : null,
       checkedCities,
@@ -106,39 +95,23 @@ export default function LocationSelector({
         </span>
         {isMobileOpen ? <MdClose className="text-2xl" /> : null}
       </button>
-
       <div
         className={`
         ${isMobileOpen ? "block" : "hidden md:block"}
-        bg-white border border-gray-100 rounded-2xl shadow-xl md:shadow-sm p-5 max-h-[85vh] overflow-y-auto
+        bg-white border border-gray-100 rounded-2xl shadow-xl md:shadow-sm p-5 max-h-none overflow-y-visible
       `}
       >
         <h3 className="hidden md:block text-xl font-black mb-6 text-gray-800 border-b pb-4 text-center">
           Goobta (Location)
         </h3>
-
         <div className="space-y-2">
-          {loading
-            ? // Skeleton Loader to prevent layout jump
-              Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center py-2 animate-pulse"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 bg-gray-200 rounded" />
-                    <div className="h-4 w-24 bg-gray-200 rounded" />
-                  </div>
-                  <div className="w-8 h-4 bg-gray-100 rounded-full" />
-                </div>
-              ))
+          {regions.length === 0
+            ? null
             : regions.map((region) => {
                 const regionCities = cities
                   .filter((c) => c.regionId === region.id)
                   .sort((a, b) => a.name.localeCompare(b.name));
-
                 if (regionCities.length === 0) return null;
-
                 return (
                   <RegionItem
                     key={region.id}
@@ -158,7 +131,6 @@ export default function LocationSelector({
                 );
               })}
         </div>
-
         {hasActiveFilters && (
           <button
             onClick={() => onFilterChange(null, {})}

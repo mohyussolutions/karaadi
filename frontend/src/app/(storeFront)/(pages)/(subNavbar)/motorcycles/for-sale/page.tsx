@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { getMotorcycles } from "@/actions/categories/motorcycleActions";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
@@ -11,7 +12,8 @@ import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regio
 import SearchInput from "@/app/(search)/SearchInput";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 
-export default function MotoForSale() {
+export default function MotorcyclesForSalePage() {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -170,7 +172,9 @@ export default function MotoForSale() {
                 }`}
               >
                 <span className="text-xs font-bold leading-tight">
-                  {category.so}
+                  {t(category.labelKey ?? "", {
+                    defaultValue: category.so ?? category.title ?? category.key,
+                  })}
                 </span>
                 <span
                   className={`text-[9px] uppercase tracking-tighter mt-1 ${selectedCategory === category.title ? "text-blue-100" : "text-gray-400"}`}

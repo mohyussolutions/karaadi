@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Trash2, Plus, Briefcase, Loader2, Filter, X } from "lucide-react";
+import { Trash2, Plus, Briefcase, Loader2 } from "lucide-react";
 import {
   createJob,
   deleteJob,
   fetchJobs,
   Job,
+  CreateJobData,
+  EmploymentType,
 } from "@/actions/categories/jobActions";
 import { verifySession } from "@/actions/core/authAction";
+import { toast, ToastContentProps } from "react-toastify";
 
 const JobsDashboard = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -16,14 +19,15 @@ const JobsDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateJobData>({
     title: "",
     company: "",
+    description: "",
+    location: "",
+    type: "Full-time",
     city: "",
     region: "",
-    employmentType: "Full-time",
     isPaid: true,
   });
 
@@ -49,7 +53,7 @@ const JobsDashboard = () => {
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authenticated || !isAdmin) {
-      alert("You don't have permission to create jobs");
+      toast.error("You don't have permission to create jobs");
       return;
     }
 
@@ -57,36 +61,82 @@ const JobsDashboard = () => {
     const result = await createJob(formData);
 
     if (result.success) {
+      toast.success("Job created successfully!");
       await loadJobs();
       setFormData({
         title: "",
         company: "",
+        description: "",
+        location: "",
+        type: "Full-time",
         city: "",
         region: "",
-        employmentType: "Full-time",
         isPaid: true,
       });
     } else {
-      alert(result.error || "Failed to create job");
+      toast.error(result.error || "Failed to create job");
     }
     setIsSubmitting(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!authenticated || !isAdmin) {
-      alert("You don't have permission to delete jobs");
+      toast.error("You don't have permission to delete jobs");
       return;
     }
-    if (!confirm("Are you sure you want to delete this job?")) return;
 
-    const originalJobs = [...jobs];
-    setJobs((prev) => prev.filter((job) => job.id !== id));
+    toast(
+      (t: ToastContentProps) => (
+        <div className="flex flex-col gap-2">
+          <p className="font-medium">
+            Are you sure you want to delete this job?
+          </p>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => {
+                toast.dismiss(t.toastProps.toastId);
+              }}
+              className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                toast.dismiss(t.toastProps.toastId);
+                const loadingToast = toast.loading("Deleting job...");
 
-    const result = await deleteJob(id);
-    if (!result.success) {
-      setJobs(originalJobs);
-      alert(result.error || "Failed to delete job");
-    }
+                const originalJobs = [...jobs];
+                setJobs((prev) => prev.filter((job) => job.id !== id));
+                const result = await deleteJob(id);
+                toast.dismiss(loadingToast);
+
+                if (result.success) {
+                  toast.success("Job deleted successfully");
+                } else {
+                  setJobs(originalJobs);
+                  toast.error(result.error || "Failed to delete job");
+                }
+              }}
+              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+      },
+    );
+  };
+
+  const updateFormField = <K extends keyof CreateJobData>(
+    field: K,
+    value: CreateJobData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   if (!authenticated && !loading) {
@@ -155,7 +205,6 @@ const JobsDashboard = () => {
             </div>
           </div>
 
-          {/* Create Job Form Section */}
           <section className="bg-white p-4 sm:p-5 md:p-6 rounded-xl shadow-sm border border-gray-200 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
             <h2 className="text-xs sm:text-sm font-semibold uppercase text-gray-400 mb-3 sm:mb-4 tracking-wider">
               Add New Listing
@@ -168,26 +217,37 @@ const JobsDashboard = () => {
                 className="w-full border border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"
                 placeholder="Job Title *"
                 value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
+                onChange={(e) => updateFormField("title", e.target.value)}
                 required
               />
               <input
                 className="w-full border border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"
                 placeholder="Company Name *"
                 value={formData.company}
-                onChange={(e) =>
-                  setFormData({ ...formData, company: e.target.value })
-                }
+                onChange={(e) => updateFormField("company", e.target.value)}
+                required
+              />
+              <input
+                className="w-full border border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"
+                placeholder="Description *"
+                value={formData.description}
+                onChange={(e) => updateFormField("description", e.target.value)}
+                required
+              />
+              <input
+                className="w-full border border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"
+                placeholder="Location *"
+                value={formData.location}
+                onChange={(e) => updateFormField("location", e.target.value)}
                 required
               />
               <select
                 className="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"
-                value={formData.employmentType}
+                value={formData.type}
                 onChange={(e) =>
-                  setFormData({ ...formData, employmentType: e.target.value })
+                  updateFormField("type", e.target.value as EmploymentType)
                 }
+                required
               >
                 <option value="Full-time">Full-time</option>
                 <option value="Part-time">Part-time</option>
@@ -198,18 +258,14 @@ const JobsDashboard = () => {
                 className="w-full border border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"
                 placeholder="City *"
                 value={formData.city}
-                onChange={(e) =>
-                  setFormData({ ...formData, city: e.target.value })
-                }
+                onChange={(e) => updateFormField("city", e.target.value)}
                 required
               />
               <input
                 className="w-full border border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"
                 placeholder="Region *"
                 value={formData.region}
-                onChange={(e) =>
-                  setFormData({ ...formData, region: e.target.value })
-                }
+                onChange={(e) => updateFormField("region", e.target.value)}
                 required
               />
               <button
@@ -227,9 +283,7 @@ const JobsDashboard = () => {
             </form>
           </section>
 
-          {/* Jobs List Section */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -260,7 +314,7 @@ const JobsDashboard = () => {
                             {job.title}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {job.company || "Direct Hire"}
+                            {job.company}
                           </div>
                         </td>
                         <td className="p-4">
@@ -301,7 +355,6 @@ const JobsDashboard = () => {
               </table>
             </div>
 
-            {/* Mobile Card View */}
             <div className="md:hidden">
               {jobs.length > 0 ? (
                 <div className="divide-y divide-gray-100">
@@ -316,7 +369,7 @@ const JobsDashboard = () => {
                             {job.title}
                           </h3>
                           <p className="text-sm text-gray-500 truncate">
-                            {job.company || "Direct Hire"}
+                            {job.company}
                           </p>
                         </div>
                         <button

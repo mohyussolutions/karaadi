@@ -1,0 +1,766 @@
+{
+  "nav": {
+    "home": "Hoyga",
+    "about": "Nagu Saabsan",
+    "contact": "Laxiriir",
+    "login": "Soo gal",
+    "notifications": "Ogeysiisyo",
+    "newAd": "Xayeysiin",
+    "messages": "Farriimo",
+    "mine": "Aniga",
+    "profile": "Xogta"
+  },
+  "welcome": "Ku soo dhawaada Karaadi",
+  "search": "Raadi...",
+  "auth": {
+    "login": {
+      "title": "Ku soo dhawaaw!",
+      "subtitle": "Soo gal akoonkaaga",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Furaha sirta ah",
+      "forgotPassword": "Ma ilowday furaha?",
+      "loginButton": "Soo gal",
+      "tooManyAttempts": "Isku day badan. Fadlan sug 15 daqiiqo.",
+      "accountLocked": "Akaawntka waa xanniban yahay. Dib u dejiso furaha ama la xiriir taageerada.",
+      "failed": "Soo galida way fashilantay. Hubi xogtaada.",
+      "noAccount": "Ma lihid akoon?",
+      "register": "Diiwaangeli"
+    }
+  },
+  "lang": {
+    "en": "Ingiriisi",
+    "so": "Soomaali"
+  },
+  "notifications": {
+    "title": "Ogeysiisyo",
+    "tabs": {
+      "unread": "Aan la akhriyin",
+      "all": "Dhammaan"
+    },
+    "empty": {
+      "unread": "Ma jiraan ogeysiisyo aan la akhriyin",
+      "all": "Weli wax ogeysiis ah ma jiraan"
+    },
+    "time": {
+      "justNow": "Hadda",
+      "minutesSuffix": " daqiiqo ka hor",
+      "hoursSuffix": " saac ka hor",
+      "daysSuffix": " maalin ka hor"
+    },
+    "card": {
+      "match": "Isku dhac",
+      "viewDetail": "Eeg Faahfaahin",
+      "markRead": "Akhri",
+      "delete": "Tirtir"
+    }
+  },
+  "footer": {
+    "company": "Shirkad",
+    "support": "Taageero",
+    "categories": "Qeybaha",
+    "legal": "Sharci",
+    "about": "Nagu Saabsan",
+    "contact": "Laxiriir",
+    "helpCenter": "Caawimo",
+    "terms": "Shuruudaha",
+    "marketplace": "Suuqa",
+    "realEstate": "hantida maguurtada ah",
+    "cars": "Gawaarida",
+    "privacy": "Qarsoodi",
+    "cookies": "Cookies",
+    "followUs": "Na soo raac",
+    "rights": "© {{yearStart}}–{{yearEnd}} {{brand}}. Dhammaan xuquuqda waa la keydiyay.",
+    "rights_short": "Fadlan ixtiraam xuquuqda daabacaadda. Ha qaybinin ogolaansho la'aan {{brand}}.",
+    "developedBy": "Waxaa horumariyay"
+  },
+  "support": {
+    "links": {
+      "home": "Hoyga",
+      "users": "Isticmaaleyaal",
+      "reports": "Warbixin",
+      "ads": "Xayeysiin",
+      "banners": "Baanner",
+      "announcements": "Ogeysiisyo",
+      "messaging": "Farriimo",
+      "contentReview": "Dib u eegis Mawduuc",
+      "system": "Nidaam"
+    }
+  },
+  "categories": {
+    "Marketplace": "Suuq",
+    "RealEstate": "Guryaha, hantida maguurtada ah",
+    "Cars": "Gawaarida",
+    "Boats": "Doomo",
+    "farmequipment": "Qalabka Beeraha",
+    "Motorcycles": "Mootooyin",
+    "Jobs": "Shaqo",
+    "Smartsuuq": "Smartsuuq"
+  },
+  "createAd": {
+    "categories": "Qeybaha",
+    "public": "Shirkad",
+    "private": "Shaqsi",
+    "title": "Ku soo gudbi Xayeysiiska Suuqa",
+    "selectCategory": "Dooro Qaybta",
+    "selectSubcategory": "Dooro Qayb hoosaadka",
+    "selectRegion": "Dooro Gobol",
+    "selectCity": "Dooro Magaalada",
+    "newCityPlaceholder": "Geli magaca magaalada cusub",
+    "titlePlaceholder": "Cinwaanka xayeysiiska",
+    "pricePlaceholder": "Qiimaha",
+    "descriptionPlaceholder": "Sharaxaad",
+    "images": "Sawiro",
+    "submit": "Gudbi Xayeysiiska",
+    "submitting": "Gudbinaya..."
+  },
+  "createRealEstate": {
+    "title": "Guryaha, hantida maguurtada ah",
+    "mainCategory": "Qaybta Ugu Muhiimsan",
+    "category": "Qaybta",
+    "type": "Nooca",
+    "selectCategory": "Dooro Qaybta",
+    "selectType": "Nooca Guriga/Dhulka",
+    "titlePlaceholder": "Cinwaanka",
+    "pricePlaceholder": "Qiimaha ($)",
+    "addressPlaceholder": "Cinwaanka",
+    "selectRegion": "Dooro Gobol",
+    "selectCity": "Dooro Magaalada",
+    "addCity": "+ Magac Magaalada",
+    "newCityPlaceholder": "Geli magaca magaalada cusub",
+    "upload": "Soo geli",
+    "descriptionPlaceholder": "Faahfaahin dheeraad ah...",
+    "titleLabel": "Cinwaanka",
+    "priceLabel": "Qiimaha ($)",
+    "addressLabel": "Cinwaanka",
+    "regionLabel": "Gobol",
+    "cityLabel": "Magaalada",
+    "newCityLabel": "Magaalada Cusub",
+    "descriptionLabel": "Faahfaahin",
+    "fillRequired": "Fadlan buuxi banaanada muhiimka ah",
+    "uploadAtLeastOneImage": "Ugu yaraan hal sawir soo geli",
+    "cityAddFailed": "Magaalada lama darid waayay",
+    "submittedSuccess": "Xayeysiiska waa la gudbiyey!",
+    "submitError": "Cillad ayaa dhacday",
+    "networkError": "Cillad dhinaca network-ka ah",
+    "loadingRegions": "Gobolada ayaa soo laadaya...",
+    "noCities": "Ma jiraan magaalooyin la heli karo",
+    "submit": "Gudbi Xayeysiiska",
+    "submitting": "Gudbinaya..."
+  },
+  "createCars": {
+    "title": "Xayeysiis Gawaari",
+    "mainCategory": "Qaybta Weyn",
+    "category": "Qaybta",
+    "type": "Nooca",
+    "selectCategory": "Dooro Qaybta",
+    "selectType": "Dooro Nooca",
+    "titlePlaceholder": "Cinwaanka",
+    "brandPlaceholder": "Brand",
+    "modelPlaceholder": "Model",
+    "yearPlaceholder": "Sannadka",
+    "gearPlaceholder": "Gear",
+    "selectRegion": "Dooro Gobol",
+    "selectCity": "Dooro Magaalada",
+    "addCity": "+ Magaalo kale",
+    "newCityPlaceholder": "Qor magaca magaalada cusub",
+    "upload": "Soo geli",
+    "descriptionPlaceholder": "Faahfaahin dheeraad ah...",
+    "pricePlaceholder": "Qiimaha ($)",
+    "mileagePlaceholder": "Mileage (KM)",
+    "fillRequired": "Fadlan buuxi banaanada muhiimka ah",
+    "cityAddFailed": "Magaalada lama darid waayay",
+    "submittedSuccess": "Xayeysiiska waa la gudbiyey!",
+    "submitError": "Cillad ayaa dhacday",
+    "networkError": "Cillad dhinaca network-ka ah",
+    "loadingRegions": "Gobolada ayaa soo laadaya...",
+    "noCities": "Ma jiraan magaalooyin la heli karo",
+    "submit": "Gudbi Xayeysiiska",
+    "submitting": "Gudbinaya..."
+  },
+  "createMotorcycle": {
+    "heading": "Xayaysiiso Mooto",
+    "mainCategoryLabel": "Qaybta Weyn",
+    "categoryLabel": "Qaybta",
+    "selectCategory": "Dooro Qaybta",
+    "subCategoryLabel": "Qayb-hoosaadka",
+    "selectSubcategory": "Dooro Qayb-hoosaadka",
+    "titlePlaceholder": "Title-ka Mootada",
+    "titleLabel": "Cinwaanka",
+    "makePlaceholder": "Shirkadda (Make)",
+    "modelPlaceholder": "Model-ka",
+    "yearPlaceholder": "Sannadka",
+    "mileagePlaceholder": "Mileage",
+    "pricePlaceholder": "Qiimaha ($)",
+    "selectRegion": "Dooro Gobol",
+    "selectCity": "Dooro Magaalo",
+    "addCity": "+ Magaalo kale",
+    "newCityPlaceholder": "Qor magaca magaalada cusub",
+    "newCityLabel": "Magaalada Cusub",
+    "descriptionPlaceholder": "Faahfaahin dheeraad ah...",
+    "descriptionLabel": "Faahfaahin",
+    "regionLabel": "Bari",
+    "cityLabel": "Magaalo",
+    "upload": "Soo geli",
+    "fillRequired": "Fadlan buuxi banaanada muhiimka ah",
+    "imagePreviewAlt": "Hordhaca sawirka",
+    "uploadAtLeastOneImage": "Ugu yaraan hal sawir soo geli",
+    "cityAddFailed": "Magaalada lama darid waayay",
+    "submittedSuccess": "Xayeysiiska waa la gudbiyey!",
+    "submitError": "Cillad ayaa dhacday",
+    "networkError": "Cillad dhinaca network-ka ah",
+    "registering": "Diiwaangelinta ayaa socota...",
+    "successMessage": "Guul! Xayeysiiska waa la dhajiyey.",
+    "errorMessage": "Cillad farsamo ayaa dhacday.",
+    "submit": "Gudbi Xayeysiiska",
+    "submitting": "Gudbinaya..."
+  },
+  "createFarmequipment": {
+    "title": "Qalabka Beeraha",
+    "mainCategory": "Qaybta Ugu Muhiimsan",
+    "category": "Qaybta",
+    "titlePlaceholder": "Cinwaanka",
+    "pricePlaceholder": "Qiimaha ($)",
+    "descriptionPlaceholder": "Faahfaahin dheeraad ah...",
+    "images": "Sawiro",
+    "regionLabel": "Bari",
+    "cityLabel": "Magaalo",
+    "newCityLabel": "Magaalada Cusub",
+    "addCity": "+ Magaalo kale",
+    "newCityPlaceholder": "Geli magaca magaalada cusub",
+    "submit": "Gudbi Xayeysiiska",
+    "submitting": "Gudbinaya...",
+    "technicalDetails": "Tilmaamaha Farsamo",
+    "makePlaceholder": "Shirkadda (Make)",
+    "modelPlaceholder": "Model-ka",
+    "typePlaceholder": "Nooca (Type)",
+    "yearPlaceholder": "Sanadka (Year)",
+    "conditionPlaceholder": "Xaaladda (Condition)",
+    "hoursPlaceholder": "Saacadaha (Hours)",
+    "enginePowerPlaceholder": "Engine Power (HP)",
+    "fuelTypePlaceholder": "Nooca Shiidaalka",
+    "locationLabel": "Goobta",
+    "imagesLabel": "Sawirada",
+    "upload": "Soo geli",
+    "loading": "La soo laadinaayo..."
+  },
+  "createBoats": {
+    "title": "Xayeysiis Doomo",
+    "pageTitle": "Doomo",
+    "mainCategory": "Qaybta Weyn",
+    "category": "Qaybta",
+    "city": "Magaalo / City",
+    "addingCity": "Magaalada ayaa la darayaa...",
+    "addAnotherCity": "+ Magaalo kale",
+    "typePlaceholder": "Nooca (waa lama huraan)",
+    "modelPlaceholder": "Model",
+    "gearboxPlaceholder": "Gearbox",
+    "colorPlaceholder": "Color",
+    "feeLabel": "Lacagta Adeegga",
+    "subcategory": "Qayb-hoosaadka",
+    "selectCategory": "Dooro Qaybta",
+    "selectSubcategory": "Dooro Qayb-hoosaadka",
+    "selectRegion": "Dooro Gobol",
+    "selectCity": "Dooro Magaalada",
+    "addCity": "+ Magaalo kale",
+    "newCityPlaceholder": "Qor magaca magaalada cusub",
+    "titlePlaceholder": "Cinwaanka",
+    "pricePlaceholder": "Qiimaha ($)",
+    "descriptionPlaceholder": "Faahfaahin dheeraad ah...",
+
+    "fillRequired": "Fadlan buuxi banaanada muhiimka ah",
+    "cityAddFailed": "Magaalada lama darid waayay",
+    "submittedSuccess": "Xayeysiiska waa la gudbiyey!",
+    "submitError": "Cillad ayaa dhacday",
+    "networkError": "Cillad dhinaca network-ka ah",
+    "loadingRegions": "Gobolada ayaa soo laadaya...",
+    "noCities": "Ma jiraan magaalooyin la heli karo",
+    "submit": "Gudbi Xayeysiiska",
+    "submitting": "Gudbinaya..."
+  },
+  "mohyusLogoAlt": "Mohyus Logo",
+  "sidebar": {
+    "Home": "Hoyga",
+    "Marketplace": "Suuq",
+    "Cars": "Gawaari",
+    "Boats": "Doomo",
+    "Motorcycles": "Mooto",
+    "Real Estate": "Guryo",
+    "Farmequipment": "Qalab Beeraha",
+    "Advertisement": "Xayeysiin",
+    "subscription": "Ku Biir",
+    "FeeManagement": "Lacag Maarey",
+    "Jobs": "Shaqo",
+    "Agencies": "Hay'ado",
+    "Reports": "Warbixin",
+    "Most Search": "Raadinta",
+    "Users": "Isticmaaleyaal",
+    "Massages": "Farriimo",
+    "Chats": "Wadahadal",
+    "Visitor List": "Booqdayaasha",
+    "Payments": "Lacag-bixin",
+    "Settings": "Dejinta"
+  },
+  "settings": {
+    "Visitor Management": "Booqdayaasha",
+    "User Roles": "Doorka",
+    "Payments": "Lacag-bixin",
+    "Security": "Amniga",
+    "Regional Management": "Gobollada",
+    "City & District Management": "Magaalooyinka",
+    "Open Visitor Manager": "Fur Booqdayaasha",
+    "Go to User Roles": "Tag Doorka",
+    "Open Payment Settings": "Fur Lacag-bixinta",
+    "Security Settings": "Dejinta Amniga",
+    "Manage Regions": "Maamul Gobollada",
+    "Manage Cities": "Maamul Magaalooyinka"
+  },
+  "subcategories": {
+    "marketplace": {
+      "antiques": "Qadiimiga",
+      "electronics": "Elektarooniga",
+      "animalAndSupplies": "Xayawaan & Agab",
+      "sportsAndOutdoors": "Ciyaaraha & Dibadda",
+      "furniture": "Alaabta Guriga",
+      "fashion": "Dharka & Boorsooyinka"
+    },
+    "realEstate": {
+      "forRent": "Kirada",
+      "forSale": "Iibka",
+      "landForSale": "Dhulka",
+      "farmForSale": "Beeraha",
+      "commercial": "Ganacsiga"
+    },
+    "cars": {
+      "carsForSale": "Gawaari Iibka",
+      "leaseCars": "Gawaari Kirada",
+      "trailers": "Rimoor",
+      "carParts": "Qaybaha",
+      "truck": "Xamuulka",
+      "electricCars": "Korontada",
+      "buses": "Basaska"
+    },
+    "carsNested": {
+      "carsForSale": {
+        "sedan": "Sedan",
+        "suv": "SUV/4x4",
+        "hatchback": "Hatchback",
+        "convertible": "Convertible",
+        "minivan": "Minivan"
+      },
+      "lease": {
+        "sedanLease": "Sedan Kiro",
+        "suvLease": "SUV Kiro",
+        "vanMinibusLease": "Van Kiro",
+        "truckPickupLease": "Xamuul Kiro",
+        "otherLeaseVehicles": "Gawaari Kale"
+      },
+      "parts": {
+        "engines": "Matoorrada",
+        "tiresRims": "Taayirada",
+        "bodyParts": "Qaybaha Jidhka"
+      },
+      "trucks": {
+        "pickupTruck": "Pickup",
+        "heavyTruck": "Xamuul Culus",
+        "truckSpareParts": "Qaybaha Xamuulka",
+        "flatbedTankTruck": "Flatbed/Tank",
+        "otherTrucks": "Xamuul Kale"
+      },
+      "electric": {
+        "electricSedan": "Sedan Koronto",
+        "electricSUV": "SUV Koronto",
+        "otherElectricCar": "Gawaari Koronto Kale"
+      },
+      "trailers": {
+        "boatTrailer": "Rimoor Doon",
+        "trailerSpareParts": "Qaybaha Rimoor",
+        "heavyDutyTrailer": "Rimoor Culus",
+        "otherTrailers": "Rimoor Kale"
+      },
+      "buses": {
+        "coachBuses": "Basas Waaweyn",
+        "minibuses": "Basas Yar-yar",
+        "schoolBuses": "Basas Dugsi",
+        "cityBuses": "Basas Magaalada"
+      }
+    },
+    "motorcycles": {
+      "forSale": "Iibka",
+      "forRent": "Kirada",
+      "spareParts": "Qaybaha",
+      "other": "Kale"
+    },
+    "boats": {
+      "boatsForSale": "Doomo Iibka",
+      "boatsForRent": "Doomo Kirada",
+      "boatEnginesForSale": "Matoorada Doomo",
+      "boatParts": "Qaybaha Doomo"
+    },
+    "boatsNested": {
+      "boatsForSale": {
+        "fishingBoat": "Doon Kalluumaysi",
+        "leisureYacht": "Doon Raaxo",
+        "sailboat": "Doon Shiraac",
+        "speedboat": "Doon Xawaare"
+      },
+      "boatsForRent": {
+        "fishingBoatRental": "Kiro Doon Kalluumaysi",
+        "yachtCharter": "Kiro Doon Raaxo"
+      },
+      "engines": {
+        "outboardEngine": "Matoor Dibadda",
+        "inboardEngine": "Matoor Gudaha",
+        "usedEngine": "Matoor La Isticmaalay"
+      },
+      "parts": {
+        "engineParts": "Qaybaha Matoorrada",
+        "navigationEquipment": "Qalabka Navigashanka",
+        "safetyGear": "Qalabka Badbaadada"
+      }
+    },
+    "traktor": {
+      "tractorForSale": "Cagaf Iibka",
+      "farmTools": "Qalabka Beeraha",
+      "fertilizerSpreader": "Faafiyaha Bacriminta",
+      "grainHarvester": "Makiinada Goosashada"
+    },
+    "traktorNested": {
+      "top": {
+        "tractorForSale": "Cagaf Iibka",
+        "farmTools": "Qalabka Beeraha",
+        "fertilizerSpreader": "Faafiyaha Bacriminta",
+        "grainHarvester": "Makiinada Goosashada"
+      },
+      "tractorForSale": {
+        "newTractor": "Cagaf Cusub",
+        "usedTractor": "Cagaf La Isticmaalay"
+      },
+      "farmTools": {
+        "plowTillageEquipment": "Qalabka Wax Laguu Qoto",
+        "seedingEquipment": "Qalabka Abuuritaanka",
+        "harvestingEquipment": "Qalabka Goosashada"
+      },
+      "fertilizerSpreader": {
+        "mountedSpreader": "Faafiyaha Mounted",
+        "towedSpreader": "Faafiyaha Towed"
+      },
+      "grainHarvester": {
+        "selfPropelledHarvester": "Harvester Isu Wada",
+        "pullTypeHarvester": "Harvester Jiidan"
+      }
+    },
+    "jobs": {
+      "FullTime": "Waqti Buuxa",
+      "PartTime": "Waqti Kooban",
+      "Physical": "Shaqo Jidheed",
+      "Internship": "Tababar",
+      "Remote": "Shaqo Fog",
+      "Tech": "Tiknooloji",
+      "Finance": "Maaliyadda",
+      "Education": "Waxbarashada",
+      "links": {
+        "it": "Shaqooyinka IT",
+        "airport": "Shaqooyinka Garoomada",
+        "cleaning": "Shaqooyinka Nadaafadda"
+      }
+    },
+    "realEstateNested": {
+      "forRent": {
+        "apartmentFlat": "Guri Dabaq",
+        "houseVilla": "Guri Gooni",
+        "commercialOffice": "Xafiis",
+        "warehouseStorage": "Bakhaar/Keyd",
+        "singleRoom": "Qol Keli"
+      },
+      "forSale": {
+        "newHouseVilla": "Guri Cusub",
+        "usedHouseVilla": "Guri La Isticmaalay",
+        "apartmentFlatForSale": "Guri Dabaq Iibka",
+        "completedBuilding": "Dhisme Dhameystiran"
+      },
+      "landForSale": {
+        "residentialLand": "Dhul Degganaan",
+        "commercialLand": "Dhul Ganacsi",
+        "industrialLand": "Dhul Warshad"
+      },
+      "farmForSale": {
+        "agriculturalLand": "Dhul Beereed",
+        "livestockFarm": "Beerta Xoolaha",
+        "treeForestFarms": "Beeraha Geedaha"
+      },
+      "commercial": {
+        "retailSpaceShop": "Goob Tafaariiq",
+        "hotelGuesthouse": "Huteel",
+        "commercialBuilding": "Dhisme Ganacsi",
+        "largeWarehouse": "Bakhaar Weyn"
+      }
+    },
+    "motorcyclesNested": {
+      "forSale": {
+        "newMotorcycle": "Mooto Cusub",
+        "usedMotorcycle": "Mooto La Isticmaalay",
+        "newVespa": "Vespa Cusub",
+        "usedVespa": "Vespa La Isticmaalay",
+        "newBajaj": "Bajaaj Cusub",
+        "usedBajaj": "Bajaaj La Isticmaalay",
+        "sportBikes": "Mootooyin Ciyaar",
+        "cargoBikes": "Mootooyin Xamuul",
+        "cargoBajaj": "Bajaaj Xamuul"
+      },
+      "forRent": {
+        "motorcycleRental": "Mootooyin Kiro",
+        "vespaRental": "Vespa Kiro",
+        "cargoMotorcycleRental": "Mooto Xamuul Kiro",
+        "bajajForRent": "Bajaaj Kiro",
+        "cargoBajajRental": "Bajaaj Xamuul Kiro",
+        "dailyBajajRental": "Bajaaj Kiro Maalinle"
+      },
+      "parts": {
+        "motorcycleEngines": "Matoorrada Mootooyinka",
+        "tiresRims": "Taayirada",
+        "protectiveGear": "Qalabka Ilaalinta",
+        "bajajEngines": "Matoorrada Bajaaj",
+        "bajajBodyParts": "Qaybaha Jidhka Bajaaj"
+      },
+      "other": {
+        "miscellaneousEquipment": "Qalabka Kale"
+      }
+    },
+    "marketplaceNested": {
+      "antiques": {
+        "bowls": "Baaquli",
+        "parts": "Qaybo",
+        "coffeeService": "Adeegga Bunka",
+        "porcelain": "Fooraan",
+        "vintage": "Duug",
+        "other": "Kale"
+      },
+      "electronics": {
+        "mobilePhones": "Telefoonada",
+        "laptopsComputers": "Kumbuyuutarada",
+        "tvsAccessories": "TV-yada",
+        "camerasPhotography": "Kamaradaha",
+        "homeAppliances": "Qalabka Guriga",
+        "other": "Kale"
+      },
+      "animalAndSupplies": {
+        "livestock": "Xoolaha",
+        "pets": "Xayawaanka",
+        "feed": "Quudinta",
+        "accessories": "Agabka",
+        "other": "Kale"
+      },
+      "sportsAndOutdoors": {
+        "gymEquipment": "Qalabka Jimicsiga",
+        "bicycles": "Baaskiilada",
+        "sportingGoods": "Qalabka Ciyaaraha",
+        "campingGear": "Qalabka Safarka",
+        "toys": "Ciyaaraha",
+        "other": "Kale"
+      },
+      "furniture": {
+        "sofasCouches": "Fadhiyada",
+        "bedsMattresses": "Sariiraha",
+        "tablesDesks": "Miisaska",
+        "kitchenFurnishings": "Qalabka Jikada",
+        "other": "Kale"
+      },
+      "fashion": {
+        "mensClothing": "Dharka Ragga",
+        "womensClothing": "Dharka Haweenka",
+        "shoesFootwear": "Kabaha",
+        "bagsWallets": "Boorsooyinka",
+        "other": "Kale"
+      }
+    },
+    "jobsNested": {
+      "fullTime": {
+        "administrationOffice": "Maamulka",
+        "itTechnology": "IT",
+        "healthcare": "Caafimaadka",
+        "salesMarketing": "Iibka",
+        "engineeringConstruction": "Injineernimo"
+      },
+      "partTime": {
+        "officeAssistant": "Kaaliye",
+        "studentEmployment": "Shaqo Ardayeed",
+        "foodDeliveryRunner": "Bixinta Cuntada"
+      },
+      "freelance": {
+        "graphicDesigner": "Naqshadeeye",
+        "webDeveloper": "Web Developer",
+        "freelanceWriter": "Qoraa"
+      },
+      "experienceLevels": {
+        "entry": "Bilow",
+        "mid": "Dhexe",
+        "senior": "Sare"
+      },
+      "educationLevels": {
+        "highschool": "Dugsiga Sare",
+        "diploma": "Diploma",
+        "bachelor": "Bachelor",
+        "master": "Master"
+      },
+      "applicationMethods": {
+        "email": "Email",
+        "url": "Website",
+        "phone": "Taleefan"
+      }
+    }
+  },
+  "mine": {
+    "nav": {
+      "myAds": "My Ads",
+      "favorites": "Favorites",
+      "saved": "Saved",
+      "tickets": "Tickets",
+      "settings": "Settings"
+    },
+    "settings": {
+      "privacy": "Privacy",
+      "security": "Security",
+      "payment": "Payment",
+      "subscription": "Subscription",
+      "verifyPhone": "Xaqiiji Telefoonka",
+      "verifyEmail": "Xaqiiji Iimaylka"
+    },
+    "account": {
+      "myAds": "Xayeysiisadayda",
+      "myAccount": "Akoonkayga",
+      "settings": "Dejinta",
+      "favorites": "Ku-dhaw",
+      "savedSearches": "Raadinta La Keydiyay",
+      "forBusinesses": "Shirkadaha",
+      "contactHistory": "Taariikhda Xiriirka",
+      "mySubscriptions": "Ku Biiritaankayga"
+    },
+    "profile": {
+      "noUser": "Xog isticmaale lama helin.",
+      "defaultDisplayName": "Isticmaalaha",
+      "verified": "La Xaqiijiyay",
+      "edit": "Tafatir",
+      "logout": "Ka bax"
+    },
+    "currentProfile": "Xogta Hadda",
+    "guest": "Marti",
+    "emailAddress": "Cinwaanka Email-ka",
+    "notAvailable": "Ma jiraan",
+    "searchHistory": {
+      "recent": "Taariikhda Raadinta Ugu Dambeysay",
+      "noRecords": "Lama helin rikoodh raadinta ah",
+      "trending": "Raadinta Xiisaha Leh",
+      "hits": "hits"
+    },
+    "tickets": {
+      "title": "Taariikhda Tigidhada",
+      "noTickets": "Lama helin tigidhyo.",
+      "status": {
+        "done": "Dhamaaday",
+        "inProgress": "Socda"
+      },
+      "id": "ID:",
+      "close": "Xidho",
+      "viewConversation": "Eeg Wadahadalka",
+      "yourOriginalRequest": "Codsigaaga Asalka Ah",
+      "you": "Adiga",
+      "supportTeam": "Kooxda Taageerada",
+      "caseResolved": "Kiiska Waa La Xaliyay"
+    },
+    "subscriptions": {
+      "errorLoading": "Khalad ayaa ka dhacay laadinta ku biiritaannada",
+      "deleteFailed": "Ku biiritaanka lama tirtirin",
+      "title": "Ku Biiritaannadayda",
+      "status": {
+        "active": "ACTIVE",
+        "inactive": "INACTIVE"
+      },
+      "paid": "✓ Paid",
+      "unpaid": "⚠ Unpaid",
+      "category": "Qayb",
+      "region": "Gobol",
+      "cities": "Magaalooyinka",
+      "priceRange": "Xadka Qiimaha",
+      "created": "La Abuuray:",
+      "expired": "Dhacday:",
+      "expires": "Wuu Dhici Doonaa:",
+      "processing": "Habayn...",
+      "payNow": "Bixinta Hadda",
+      "delete": "Tirtir"
+    },
+    "businesses": {
+      "noAccountInfo": "Xog akoon lama helin.",
+      "checkLogin": "Fadlan hubi inaad si sax ah u soo gashay.",
+      "noBusinessConnected": "Ma jiro ganacsi ku xiran akoonkan",
+      "contactAdmin": "Akoonkaagu weli kuma xirnayn ganacsi. La xiriir maamulaha akoonkaaga si aad u hesho marin.",
+      "userInfo": "Xogta Isticmaalaha:",
+      "id": "ID:",
+      "ifBusinessCustomer": "Haddii aad tahay macmiil ganacsi",
+      "contactAdminDesc": "La xiriir qofka maamulka ee ganacsiga si uu kuu daro akoonkan.",
+      "becomeBusinessCustomer": "Noqo macmiil ganacsi",
+      "createProfileDesc": "Abuur profile-kaaga ganacsiga si aad u bilowdo xayeysiinta.",
+      "startNow": "Hadda bilow"
+    },
+    "myAds": {
+      "deleteFailed": "Tirtirka xayeysiiska wuu fashilmay.",
+      "relistConfirm": "Miyaa lacag $5 lagu soo celinayaa xayeysiiskan?",
+      "paymentSuccess": "Lacag-bixin guul! Xayeysiiskaaga waa firfircoon yahay.",
+      "paymentFailed": "Lacag-bixin la'aan. Fadlan isku day mar kale.",
+      "title": "Xayeysiisyadayda",
+      "empty": "Maan samayn xayeysiis weli.",
+      "createFirst": "Abuur Xayeysiiskaaga Ugu Horeeya",
+      "itemPlaceholder": "sharaxaad",
+      "sold": "✓ La Iibiyey",
+      "payToRelist": " Lacag Bixi Si Loo Soo Celiyo",
+      "payNow": "Bixi Hadda $5",
+      "edit": "Tafatir",
+      "delete": "Tirtir"
+    }
+  },
+  "descriptions": {
+    "myAdsDesc": "Eeg dhammaan xayeysiisyadaada iyo tirakoobka",
+    "myAccountDesc": "Eeg faahfaahintaada KARAADI iyo Smartsuuq",
+    "settingsDesc": "Maamul dejinta akoonkaaga KARAADI",
+    "favoritesDesc": "Eeg dhammaan xayeysiisyada aad jeceshahay oo aad ku keydisay KARAADI",
+    "savedSearchesDesc": "Maamul oo habee raadintaada la keydiyay",
+    "forBusinessesDesc": "Eeg shirkadaha aad u leedahay ogolaansho",
+    "contactHistoryDesc": "La soco codsiyadaaga taageero iyo fariimaha",
+    "mySubscriptionsDesc": "Maamul ku biiritaankaaga iyo qorshooyaha lacag bixinta"
+  },
+  "messages": {
+    "title": "Farriimo"
+  },
+  "chats": {
+    "yourChats": "Wadahadaladaada",
+    "conversations": "wadahadal",
+    "noMessagesYet": "Weli wax fariin ah ma jiraan",
+    "startConversation": "Bilow wada sheekeysi adigoo fariin diraya!",
+    "aboutPrefix": "Ku saabsan:",
+    "deleted": {
+      "you": "Waxaad tirtirtay farriintan",
+      "other": "Farriintan waa la tirtiray"
+    },
+    "edited": "wax laga badalay",
+    "failed": "Fashilmay",
+    "online": "Online",
+    "offline": "Offline",
+    "seller": "Iibiyaha",
+    "chatFallback": "Wadahadal",
+    "selectConversationMobile": "Xulo wadahadal",
+    "welcome": "Kusoo dhawow Farriimaha",
+    "tapToStart": "Taabo wadahadal si aad u bilowdo fariin diris",
+    "selectToStart": "Xulo wadahadal si aad uga bilowdo sheekeysiga",
+    "confirmDelete": "Ma hubtaa inaad tirtirayso wadahadalkan?",
+    "deletedSuccess": "Wadahadalku waa la tirtiray",
+    "deletedFailed": "Waa la guul darreystay tirtirka wadahadalka",
+    "delete": "Tirtir"
+  },
+  "checkout": {
+    "steps": {
+      "account": "Akoon",
+      "newAd": "Xayeysiin",
+      "summary": "Koobid",
+      "payment": "Lacag-bixin"
+    }
+  }
+}

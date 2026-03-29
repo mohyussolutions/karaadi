@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
@@ -16,6 +17,7 @@ import {
 } from "@/actions/categories/realEstateActions";
 
 function Commercial() {
+  const { t } = useTranslation();
   const subCategoryLinks = RealEstateCommercialNestedSub;
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -247,7 +249,10 @@ function Commercial() {
                   {category.icon}
                 </div>
                 <span className="text-[15px] font-medium block leading-tight">
-                  {category.so}
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
                 </span>
                 <span
                   className={`text-[10px] uppercase mt-1 ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}

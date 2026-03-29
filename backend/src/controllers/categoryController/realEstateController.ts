@@ -46,7 +46,10 @@ export const getAllRealEstates = async (req: Request, res: Response) => {
       cacheKey,
       async () => {
         return await prisma.realEstate.findMany({
-          where: { isPaid: true },
+          where: {
+            isPaid: true,
+            OR: [{ expiryDate: null }, { expiryDate: { gt: new Date() } }],
+          },
           select: {
             id: true,
             title: true,
@@ -184,7 +187,6 @@ export const createRealEstate = async (req: Request, res: Response) => {
       county,
       images,
       userId,
-      isPaid,
       planId,
       planAmount,
     } = req.body;
@@ -201,8 +203,11 @@ export const createRealEstate = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const expiryDate =
-      planId && planAmount ? calculateExpiryDate(planId, planAmount) : null;
+    let expiryDate = null;
+    if (planId && planAmount) {
+      const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
+      expiryDate = plan ? calculateExpiryDate(plan, planAmount) : null;
+    }
 
     const newProperty = await prisma.realEstate.create({
       data: {
@@ -218,7 +223,8 @@ export const createRealEstate = async (req: Request, res: Response) => {
           : [subcategory].filter(Boolean),
         bedrooms: bedrooms ? Number(bedrooms) : 1,
         bathrooms: bathrooms ? Number(bathrooms) : 1,
-        isPaid: isPaid !== undefined ? Boolean(isPaid) : true,
+        isPaid: false,
+        maGaday: false,
         squareFeet: squareFeet ? Number(squareFeet) : null,
         address: address || "",
         hasGarage: hasGarage !== undefined ? Boolean(hasGarage) : false,
@@ -249,31 +255,82 @@ export const createRealEstate = async (req: Request, res: Response) => {
   }
 };
 
+export const updateRealEstatePayment = async (req: Request, res: Response) => {
+  try {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { paymentId, planId } = req.body;
+
+    const property = await prisma.realEstate.findUnique({ where: { id } });
+    if (!property) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Property not found" });
+    }
+
+    const subPlan = await prisma.subPlan.findFirst({
+      where: { isActive: true },
+    });
+    const expiryDate =
+      planId && subPlan && property.planAmount
+        ? calculateExpiryDate(subPlan, property.planAmount)
+        : null;
+
+    const updatedProperty = await prisma.realEstate.update({
+      where: { id },
+      data: {
+        isPaid: true,
+        expiryDate,
+        planId: planId || property.planId,
+      },
+    });
+
+    if (paymentId) {
+      await prisma.payment.updateMany({
+        where: { id: paymentId },
+        data: { realEstateId: id, status: "COMPLETED", paidAt: new Date() },
+      });
+    }
+
+    await Promise.all([
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
+      cacheManager.deletePattern("realestate:*:all"),
+    ]);
+
+    return res.json({ success: true, data: updatedProperty });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const updateRealEstate = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { planId, planAmount, ...updateData } = req.body;
+    const { planId, planAmount, category, subcategory, ...updateData } =
+      req.body;
+
+    const processedData: any = { ...updateData };
+
+    if (category) {
+      processedData.category = Array.isArray(category) ? category[0] : category;
+    }
+    if (subcategory) {
+      processedData.subcategory = Array.isArray(subcategory)
+        ? subcategory[0]
+        : subcategory;
+    }
 
     if (planId && planAmount) {
-      updateData.expiryDate = calculateExpiryDate(planId, planAmount);
-    }
-
-    let expiryDateToCheck = updateData.expiryDate;
-    if (!expiryDateToCheck) {
-      const current = await prisma.realEstate.findUnique({
-        where: { id },
-        select: { expiryDate: true },
-      });
-      expiryDateToCheck = current?.expiryDate;
-    }
-
-    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
-      updateData.isPaid = false;
+      const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
+      processedData.expiryDate = plan
+        ? calculateExpiryDate(plan, planAmount)
+        : null;
+      processedData.planId = planId;
+      processedData.planAmount = planAmount;
     }
 
     const updatedProperty = await prisma.realEstate.update({
       where: { id },
-      data: updateData,
+      data: processedData,
       include: { user: selectUserBasic },
     });
 

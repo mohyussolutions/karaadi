@@ -2,16 +2,13 @@ import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { Prisma } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
+
 import {
   CACHE_TTL,
   getPaginationParams,
 } from "src/constants/config.constants.ts";
-
-interface AdQuery {
-  position?: string;
-  limit?: string;
-  page?: string;
-}
+import { skip } from "@prisma/client/runtime/client";
+import { AdQuery } from "src/types/advertisement.types.ts";
 
 const selectUser = {
   select: { id: true, username: true, profileImage: true },

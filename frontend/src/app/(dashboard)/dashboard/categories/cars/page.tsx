@@ -154,7 +154,10 @@ export default function CarsPage() {
   const uniqueMainCategories = carsSubCategories.map((cat) => cat.title);
 
   const getNestedItems = () => {
-    return carsNestedCategoriesMap[activeMainTitle] || [];
+    if (!activeMainTitle) return [];
+    return (
+      (carsNestedCategoriesMap as Record<string, any[]>)[activeMainTitle] || []
+    );
   };
 
   const handleSubCategoryClick = (subcategoryTitle: string) => {
@@ -326,7 +329,7 @@ export default function CarsPage() {
                     {carsSubCategories.find((c) => c.title === activeMainTitle)
                       ?.so || activeMainTitle}
                   </button>
-                  {getNestedItems().map((sub) => (
+                  {getNestedItems().map((sub: any) => (
                     <button
                       key={`sub-cat-${activeMainTitle}-${sub.title}`}
                       onClick={() => handleSubCategoryClick(sub.title)}
@@ -433,7 +436,7 @@ export default function CarsPage() {
                           (c) => c.title === activeMainTitle,
                         )?.so || activeMainTitle}
                       </button>
-                      {getNestedItems().map((sub) => (
+                      {getNestedItems().map((sub: any) => (
                         <button
                           key={`mobile-sub-cat-${activeMainTitle}-${sub.title}`}
                           onClick={() => handleSubCategoryClick(sub.title)}

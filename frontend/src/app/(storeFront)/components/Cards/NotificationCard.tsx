@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { FiTrash2, FiExternalLink, FiCheck } from "react-icons/fi";
 
@@ -21,6 +22,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   isUrgent,
   isSubscriptionAlert,
 }) => {
+  const { t } = useTranslation();
   return (
     <div
       className={`p-4 bg-white rounded-xl border transition-all ${isUrgent ? "border-red-500 ring-1 ring-red-100 bg-red-50/30" : "border-gray-200"} shadow-sm flex flex-col gap-3`}
@@ -33,7 +35,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
             </span>
             {isSubscriptionAlert && (
               <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
-                Match
+                {t("notifications.card.match", { defaultValue: "Match" })}
               </span>
             )}
           </div>
@@ -45,6 +47,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
         <button
           onClick={() => onDelete(notification.id)}
           className="text-gray-300 hover:text-red-500"
+          title={t("notifications.card.delete", { defaultValue: "Delete" })}
         >
           <FiTrash2 size={14} />
         </button>
@@ -54,14 +57,16 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           href={getItemLink(notification)}
           className="text-blue-600 text-[10px] font-black uppercase flex items-center gap-1 hover:opacity-70"
         >
-          <FiExternalLink size={10} /> View Detail
+          <FiExternalLink size={10} />{" "}
+          {t("notifications.card.viewDetail", { defaultValue: "View Detail" })}
         </Link>
         {!notification.isRead && (
           <button
             onClick={() => onMarkRead(notification.id)}
             className="text-gray-400 hover:text-green-600 text-[10px] font-black uppercase flex items-center gap-1"
           >
-            <FiCheck size={10} /> Mark Read
+            <FiCheck size={10} />{" "}
+            {t("notifications.card.markRead", { defaultValue: "Mark Read" })}
           </button>
         )}
       </div>

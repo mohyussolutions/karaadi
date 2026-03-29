@@ -1,4 +1,4 @@
-// app/(dashboard)/dashboard/managment/types/management.ts
+
 import { IconType } from "react-icons";
 
 export type UserRole = "admin" | "manager" | "support";

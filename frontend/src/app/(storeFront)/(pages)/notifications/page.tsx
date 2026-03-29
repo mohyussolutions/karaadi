@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { FiRefreshCw } from "react-icons/fi";
 import {
   fetchNotifications,
@@ -19,12 +20,22 @@ const NotificationsComponent = () => {
   const formatTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
+    const { t } = i18nRef.current;
+    if (mins < 1)
+      return t("notifications.time.justNow", { defaultValue: "Just now" });
+    if (mins < 60)
+      return `${mins}${t("notifications.time.minutesSuffix", { defaultValue: "m ago" })}`;
     const hours = Math.floor(diff / 3600000);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(diff / 86400000)}d ago`;
+    if (hours < 24)
+      return `${hours}${t("notifications.time.hoursSuffix", { defaultValue: "h ago" })}`;
+    return `${Math.floor(diff / 86400000)}${t("notifications.time.daysSuffix", { defaultValue: "d ago" })}`;
   };
+
+  const i18nRef = React.useRef<any>({ t: (k: string, o?: any) => k });
+  const { t, i18n } = useTranslation();
+  React.useEffect(() => {
+    i18nRef.current = { t: i18n.t.bind(i18n) };
+  }, [i18n]);
 
   const getItemLink = (n: any) => {
     const type = n.itemType?.toLowerCase();
@@ -115,20 +126,22 @@ const NotificationsComponent = () => {
     <div className="flex flex-col h-screen overflow-hidden">
       <header className="border-b px-6 py-5 shrink-0 flex justify-between items-center">
         <h1 className="text-xl font-black uppercase tracking-tight">
-          Notifications
+          {t("notifications.title", { defaultValue: "Notifications" })}
         </h1>
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("unread")}
             className={`px-4 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1 ${activeTab === "unread" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"}`}
           >
-            Unread {unreadCount > 0 && `(${unreadCount})`}
+            {t("notifications.tabs.unread", { defaultValue: "Unread" })}{" "}
+            {unreadCount > 0 && `(${unreadCount})`}
           </button>
           <button
             onClick={() => setActiveTab("all")}
             className={`px-4 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1 ${activeTab === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"}`}
           >
-            All {allCount > 0 && `(${allCount})`}
+            {t("notifications.tabs.all", { defaultValue: "All" })}{" "}
+            {allCount > 0 && `(${allCount})`}
           </button>
         </div>
       </header>
@@ -139,8 +152,12 @@ const NotificationsComponent = () => {
             <div className="text-center py-20">
               <p className="text-gray-400 text-sm font-medium">
                 {activeTab === "unread"
-                  ? "No unread notifications"
-                  : "No notifications yet"}
+                  ? t("notifications.empty.unread", {
+                      defaultValue: "No unread notifications",
+                    })
+                  : t("notifications.empty.all", {
+                      defaultValue: "No notifications yet",
+                    })}
               </p>
             </div>
           ) : (

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { managerTotalLinks } from "@/app/(links)/managmentLinks/managerLinks";
 import { TeamPerformanceChart } from "./LineChart";

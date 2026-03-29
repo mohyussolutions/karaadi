@@ -1,6 +1,7 @@
 import express from "express";
-import { Response, Request } from "express";
 import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { updateAdSchema } from "../../validation/myAd.validation.ts";
 import {
   deleteAd,
   getAds,
@@ -9,20 +10,15 @@ import {
 
 const myAdsRouter = express.Router();
 
-myAdsRouter.get("/my-ads", ProtectRoute, (req: Request, res: Response) => {
-  getAds(req, res);
-});
+myAdsRouter.get("/my-ads", ProtectRoute, getAds);
 
-myAdsRouter.put("/update/:id", ProtectRoute, (req: Request, res: Response) => {
-  updateAd(req, res);
-});
-
-myAdsRouter.delete(
-  "/delete/:id",
+myAdsRouter.put(
+  "/update/:id",
   ProtectRoute,
-  (req: Request, res: Response) => {
-    deleteAd(req, res);
-  },
+  validateRequest(updateAdSchema),
+  updateAd,
 );
+
+myAdsRouter.delete("/delete/:id", ProtectRoute, deleteAd);
 
 export default myAdsRouter;

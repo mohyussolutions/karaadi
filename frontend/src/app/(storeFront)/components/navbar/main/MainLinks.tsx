@@ -5,12 +5,17 @@ import { User } from "@/app/utils/types/user";
 import { getNavItems } from "@/app/(links)/storeFrontLinks/MainLinks";
 import { useEffect, useState, useTransition } from "react";
 import { fetchNotifications } from "@/actions/core/notificationsAction";
+import Lang from "@/i18n/Lang";
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 
 const NavItems = ({ user }: { user: User | null }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [notificationCount, setNotificationCount] = useState(0);
+  const { t } = useTranslation();
+  const { activeLanguage } = useLanguage();
 
   const isUserValid = Boolean(user?._id);
 
@@ -29,36 +34,38 @@ const NavItems = ({ user }: { user: User | null }) => {
 
   const handleClick = (href: string) => {
     if (pathname === href) return;
-
-    const targetAddr =
+    const target =
       !isUserValid && href !== "/login" && href !== "/" ? "/login" : href;
-
-    startTransition(() => {
-      router.push(targetAddr);
-    });
+    startTransition(() => router.push(target));
   };
 
   return (
-    <div className="flex items-center gap-2 sm:gap-8 px-1 sm:px-4 py-2">
-      <ul className="flex w-full sm:w-auto justify-between sm:justify-start items-center sm:space-x-2 space-x-6">
+    <div className="flex items-center gap-1 sm:gap-2">
+      <Lang />
+      <ul className="flex items-center gap-x-0.5 sm:gap-x-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
 
           return (
-            <li key={item.label} className="relative">
+            <li
+              key={item.href}
+              className="relative h-12 sm:h-14 flex items-center"
+            >
               <button
                 disabled={isPending}
                 onClick={() => handleClick(item.href)}
-                className={`flex flex-col sm:flex-row items-center justify-center transition-all duration-200 px-2 py-2 md:px-4 text-blue-700 
-                  ${isActive ? "font-black" : "font-medium"}`}
+                className={`flex items-center justify-center transition-colors duration-200 px-2 sm:px-3 h-full gap-1 sm:gap-2
+                  ${isActive ? "text-blue-600 font-bold" : "text-gray-600 hover:text-blue-600 font-semibold"}`}
               >
-                <span className="text-[24px] sm:text-[20px]">{item.icon}</span>
-                <span className="hidden sm:inline ml-2 text-sm">
-                  {item.label}
+                <span className="text-xl sm:text-[22px] flex items-center">
+                  {item.icon}
+                </span>
+                <span className="hidden md:inline text-xs sm:text-[13px] lowercase">
+                  {item.labelKey ? t(item.labelKey) : item.label}
                 </span>
 
                 {isActive && (
-                  <span className="absolute -bottom-1 left-0 w-full h-[3px] bg-blue-700 rounded-t-md" />
+                  <span className="absolute bottom-0 left-0 w-full h-[2px] sm:h-[3px] bg-blue-600 rounded-t-md" />
                 )}
               </button>
             </li>

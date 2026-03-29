@@ -1,25 +1,26 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
-import SearchInput from "@/app/(search)/SearchInput";
-// Updated import to use the correct functions and types
+
 import {
   getFarmequipment,
   FarmEquipment,
 } from "@/actions/categories/FarmequipmentAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { TraktorTopCategories } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function TractorForSale() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const subCategoryLinks = TraktorTopCategories;
+  const { t } = useTranslation();
 
-  // Use the correct FarmEquipment type
   const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -38,11 +39,9 @@ export default function TractorForSale() {
     async function loadData() {
       try {
         setIsLoading(true);
-        // Using the updated fetch function
         const data = await getFarmequipment();
         setItems(data || []);
       } catch (err) {
-        console.error("Failed to load farm equipment:", err);
         setIsError(true);
       } finally {
         setIsLoading(false);
@@ -58,14 +57,18 @@ export default function TractorForSale() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      // Filter results to ensure they belong to the Tractor/Farm category
-      const filtered = results.filter(
-        (item: any) =>
-          item.mainCategory === "Traktor" ||
-          item.mainCategory === "Farm Equipment" ||
-          item.type?.toLowerCase().includes("tractor"),
-      );
-      setSearchResults(filtered);
+
+      const filtered = (results as any[]).filter((item) => {
+        const mainCat = String(item.mainCategory || "");
+        const type = String(item.type || "").toLowerCase();
+        return (
+          mainCat === "Traktor" ||
+          mainCat === "Farm Equipment" ||
+          type.includes("tractor")
+        );
+      });
+
+      setSearchResults(filtered as FarmEquipment[]);
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [query]);
@@ -152,7 +155,6 @@ export default function TractorForSale() {
       <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
-      {/* Subcategory Scroll UI */}
       <div className="relative py-6">
         <div className="flex justify-center relative items-center">
           <button
@@ -184,7 +186,12 @@ export default function TractorForSale() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}
                 >
@@ -203,7 +210,6 @@ export default function TractorForSale() {
       </div>
 
       <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
-        {/* Sidebar */}
         <aside className="md:w-1/3 sticky top-4 self-start">
           <LocationSelector
             onFilterChange={(reg, cities) => {
@@ -224,7 +230,6 @@ export default function TractorForSale() {
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="md:w-2/3 w-full">
           <div className="mb-6 text-sm font-medium text-gray-600 bg-blue-50 py-2 px-4 rounded-lg inline-block border border-blue-100">
             {isLoading

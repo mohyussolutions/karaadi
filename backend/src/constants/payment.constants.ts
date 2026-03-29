@@ -35,3 +35,20 @@ export const CATEGORY_FIELD_MAP: Record<ItemCategory, string> = {
   [ItemCategory.FARMEQUIPMENT]: "farmequipmentId",
   [ItemCategory.JOB]: "jobId",
 } as const;
+
+export const EXPIRY_CONFIG = {
+  BASIC_DAYS: 30,
+  STANDARD_DAYS: 60,
+  PREMIUM_DAYS: 90,
+  A_DAY: 24 * 60 * 60 * 1000,
+};
+
+export const EXPIRY_MESSAGES = {
+  NO_EXPIRY: "No expiry",
+};
+
+export const EXPIRY_STATUS = {
+  ACTIVE: "active",
+  EXPIRED: "expired",
+  PENDING: "pending",
+};

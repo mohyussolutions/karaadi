@@ -7,8 +7,28 @@ export interface ResponseCodeDetail {
 export const ResponseCodes = {
   SUCCESS: {
     code: 2001,
-    message: "Request or transaction is approved successfully",
+    message: "Transaction approved successfully",
     key: "RCS_SUCCESS",
+  },
+  INVALID_ACCOUNT: {
+    code: 2002,
+    message: "Invalid account number",
+    key: "RCS_INVALID_ACCOUNT",
+  },
+  INSUFFICIENT_BALANCE: {
+    code: 2003,
+    message: "Insufficient balance",
+    key: "RCS_INSUFFICIENT_BALANCE",
+  },
+  TRANSACTION_FAILED: {
+    code: 2004,
+    message: "Transaction failed",
+    key: "RCS_TRANSACTION_FAILED",
+  },
+  TIMEOUT: {
+    code: 2005,
+    message: "Transaction timeout",
+    key: "RCS_TIMEOUT",
   },
   INVALID_HPPKEY: {
     code: 5301,
@@ -97,6 +117,4 @@ export const ResponseCodes = {
     message: "Payment amount must be greater than zero",
     key: "RCS_INVALID_AMOUNT",
   },
-} as const satisfies Record<string, ResponseCodeDetail>;
-
-export type ResponseCodeKeys = keyof typeof ResponseCodes;
+} as const;

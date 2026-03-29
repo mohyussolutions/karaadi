@@ -6,13 +6,13 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import { FashionNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import {
   getMarketplaceItems,
   MarketplaceItem,
 } from "@/actions/categories/marketplaceActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function FashionAndAccessories() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,13 +43,11 @@ export default function FashionAndAccessories() {
     loadItems();
   }, []);
 
-  const allFashionItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.includes("Fashion & Accessories")
-        : item.category === "Fashion & Accessories",
-    );
-  }, [items]);
+  const allFashionItems = items.filter((item) =>
+    Array.isArray(item.category)
+      ? item.category.includes("Fashion & Accessories")
+      : item.category === "Fashion & Accessories",
+  );
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -63,78 +61,74 @@ export default function FashionAndAccessories() {
           ? item.category.includes("Fashion & Accessories")
           : item.category === "Fashion & Accessories",
       );
-      setSearchResults(filtered);
+      const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
+        _id: item._id ?? item.id ?? "",
+        id: item.id ?? item._id ?? "",
+        user: item.user ?? null,
+        title: item.title ?? "",
+        description: item.description ?? "",
+        city: item.city ?? "",
+        price: item.price ?? 0,
+        images: item.images ?? [],
+        category: item.category ?? "",
+        subcategory: item.subcategory ?? "",
+        region: item.region ?? "",
+        mainCategory: item.mainCategory ?? "Fashion & Accessories",
+      }));
+      setSearchResults(mappedResults);
     }, 400);
 
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  const regionCityCounts = useMemo(() => {
-    const regionCounts: Record<string, number> = {};
-    const cityCounts: Record<string, number> = {};
+  const regionCounts: Record<string, number> = {};
+  const cityCounts: Record<string, number> = {};
+  allFashionItems.forEach((item) => {
+    const capitalize = (s: string) =>
+      s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    if (item.region) {
+      const reg = capitalize(item.region.trim());
+      regionCounts[reg] = (regionCounts[reg] || 0) + 1;
+    }
+    if (item.city) {
+      const cit = capitalize(item.city.trim());
+      cityCounts[cit] = (cityCounts[cit] || 0) + 1;
+    }
+  });
+  const regionCityCounts = { regionCounts, cityCounts };
 
-    allFashionItems.forEach((item) => {
-      const capitalize = (s: string) =>
-        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-      if (item.region) {
-        const reg = capitalize(item.region.trim());
-        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
-      }
-      if (item.city) {
-        const cit = capitalize(item.city.trim());
-        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
-      }
+  let itemsToDisplay = query.trim() ? searchResults : allFashionItems;
+  if (selectedSubcategory) {
+    itemsToDisplay = itemsToDisplay.filter((item) => {
+      const subs = Array.isArray(item.subcategory)
+        ? item.subcategory
+        : [item.subcategory];
+      return subs.some(
+        (s) => s?.toLowerCase() === selectedSubcategory.toLowerCase(),
+      );
     });
-    return { regionCounts, cityCounts };
-  }, [allFashionItems]);
-
-  const itemsToDisplay = useMemo(() => {
-    let list = query.trim() ? searchResults : allFashionItems;
-
-    if (selectedSubcategory) {
-      list = list.filter((item) => {
-        const subs = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory];
-        return subs.some(
-          (s) => s?.toLowerCase() === selectedSubcategory.toLowerCase(),
-        );
-      });
-    }
-
-    if (selectedRegion) {
-      const activeRegs = selectedRegion.split(",");
-      list = list.filter(
-        (item) =>
-          item.region &&
-          activeRegs.some(
-            (r) => r.toLowerCase() === item.region!.toLowerCase(),
-          ),
-      );
-    }
-
-    const activeCities = Object.keys(checkedCities).filter(
-      (city) => checkedCities[city],
+  }
+  if (selectedRegion) {
+    const activeRegs = selectedRegion.split(",");
+    itemsToDisplay = itemsToDisplay.filter(
+      (item) =>
+        item.region &&
+        activeRegs.some((r) => r.toLowerCase() === item.region!.toLowerCase()),
     );
-    if (activeCities.length > 0) {
-      list = list.filter(
-        (item) =>
-          item.city &&
-          activeCities.some(
-            (c) => c.toLowerCase() === item.city!.toLowerCase(),
-          ),
-      );
-    }
-
-    return Array.from(new Map(list.map((item) => [item._id, item])).values());
-  }, [
-    allFashionItems,
-    searchResults,
-    query,
-    selectedSubcategory,
-    selectedRegion,
-    checkedCities,
-  ]);
+  }
+  const activeCities = Object.keys(checkedCities).filter(
+    (city) => checkedCities[city],
+  );
+  if (activeCities.length > 0) {
+    itemsToDisplay = itemsToDisplay.filter(
+      (item) =>
+        item.city &&
+        activeCities.some((c) => c.toLowerCase() === item.city!.toLowerCase()),
+    );
+  }
+  itemsToDisplay = Array.from(
+    new Map(itemsToDisplay.map((item) => [item._id, item])).values(),
+  );
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {

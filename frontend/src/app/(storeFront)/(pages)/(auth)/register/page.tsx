@@ -33,7 +33,7 @@ function RegisterUser() {
   };
 
   return (
-    <div className="min-h-screen from-blue-90 via-white to-green-200 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FEFDFD] flex items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
         className="bg-white max-w-md w-full p-10 rounded-3xl shadow-xl flex flex-col"

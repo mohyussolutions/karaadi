@@ -10,10 +10,115 @@ import {
   resetPassword,
   refreshTokenLogic,
   deleteFromCognito,
-  updateUserAttributes,
-  adminUpdateUser,
 } from "../../core/utils/cognitoauth.ts";
 import prisma from "../../core/utils/db.ts";
+
+export const deleteMyAccount = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const user = (req as any).user;
+  const authHeader = req.headers.authorization;
+  const accessToken = authHeader?.split(" ")[1];
+
+  console.log("--- DELETE ACCOUNT REQUEST ---");
+  console.log("Token from Header:", accessToken);
+  console.log("ID from Body:", req.body.id);
+  console.log("ID from Middleware User:", user?.id);
+
+  const rawId = req.body.id || user?.id || user?.sub;
+  const userId = Array.isArray(rawId)
+    ? (rawId[0] as string)
+    : (rawId as string);
+
+  if (!userId) return res.status(400).json({ error: "User ID is required" });
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { cognitoId: true },
+    });
+
+    if (!dbUser) return res.status(404).json({ error: "User not found" });
+
+    const targetCognitoId = dbUser.cognitoId;
+
+    await prisma.user.delete({ where: { id: userId } });
+
+    if (targetCognitoId) {
+      try {
+        await deleteFromCognito(targetCognitoId);
+        console.log("Successfully deleted Cognito User:", targetCognitoId);
+      } catch (err: any) {
+        console.error("Cognito Error:", err.message);
+      }
+    }
+
+    ["idToken", "refreshToken", "accessToken", "token"].forEach((c) =>
+      res.clearCookie(c),
+    );
+
+    return res.status(200).json({ success: true, message: "Account deleted" });
+  } catch (error: any) {
+    console.error("Database Error:", error.message);
+    return res.status(500).json({ error: error.message || "Deletion failed" });
+  }
+};
+
+export const deleteUserByAdmin = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const { id } = req.params;
+  const authHeader = req.headers.authorization;
+  const adminToken = authHeader?.split(" ")[1];
+
+  console.log("--- Admin Delete User ---");
+  console.log("Target User ID:", id);
+  console.log("Admin Token:", adminToken);
+
+  const userId = Array.isArray(id) ? (id[0] as string) : (id as string);
+
+  if (!userId) {
+    console.log("Error: Admin did not provide target ID");
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { cognitoId: true },
+    });
+
+    if (!dbUser) {
+      console.log("Error: Target user not found for ID:", userId);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const targetCognitoId = dbUser.cognitoId;
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+    console.log("Admin: DB record deleted");
+
+    if (targetCognitoId) {
+      try {
+        await deleteFromCognito(targetCognitoId);
+        console.log("Admin: Cognito account deleted");
+      } catch (err: any) {
+        console.error("Admin: Cognito cleanup failed:", err.message);
+      }
+    }
+
+    return res.status(200).json({ success: true, message: "User deleted" });
+  } catch (error: any) {
+    console.error("Admin Delete Exception:", error.message);
+    return res
+      .status(500)
+      .json({ error: error.message || "Failed to delete user" });
+  }
+};
 
 export const registerUser = async (
   email: string,
@@ -55,142 +160,44 @@ export const registerUser = async (
       },
     });
   } catch (dbErr: any) {
-    try {
-      await deleteFromCognito(email);
-    } catch (cleanupErr: any) {
-      console.error(
-        "Failed to rollback Cognito user after DB error:",
-        cleanupErr,
-      );
-    }
     throw new Error(dbErr?.message || "Failed to create user in database");
   }
 
   return cognitoResult;
 };
 
-export const updatePhone = async (req: any, res: Response) => {
+export const updatePhoneInDb = async (req: any, res: Response) => {
   try {
     const { phone } = req.body;
-    const accessToken = req.headers.authorization?.split(" ")[1];
     const userId = req.user?.id || req.user?.sub;
 
-    console.log("Updating phone for user:", userId);
-    console.log("Access token present:", !!accessToken);
-
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized - missing user" });
-    }
-
-    if (!phone) {
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!phone)
       return res.status(400).json({ error: "Phone number is required" });
-    }
 
-    const formattedPhone = phone.startsWith("+") ? phone : `+${phone}`;
+    let formattedPhone = phone.trim();
+    if (!formattedPhone.startsWith("+"))
+      formattedPhone = `+252${formattedPhone}`;
 
-    // Try client-side update if an access token is provided and appears to be an access token
-    let cognitoUpdated = false;
-    try {
-      if (accessToken) {
-        const decoded: any = jwt.decode(accessToken);
-        const tokenUse = decoded?.token_use || decoded?.TokenUse || null;
-        if (tokenUse === "access") {
-          try {
-            await updateUserAttributes(accessToken, {
-              phone_number: formattedPhone,
-            });
-            cognitoUpdated = true;
-          } catch (cognitoError: any) {
-            console.error("Cognito update failed:", cognitoError);
-            // fall through to admin/DB fallback
-          }
-        } else {
-          console.log(
-            "Provided token is not an access token (token_use=",
-            tokenUse,
-            ") - skipping client update",
-          );
-        }
-      } else {
-        console.log("No access token provided, will attempt admin/DB update");
-      }
-    } catch (decodeErr: any) {
-      console.error(
-        "Failed to decode access token, will attempt admin/DB update:",
-        decodeErr,
-      );
-    }
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { phone: formattedPhone },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        phone: true,
+        profileImage: true,
+      },
+    });
 
-    // If client update didn't succeed, attempt server-side admin update (if creds available)
-    if (!cognitoUpdated) {
-      const userRecord = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { email: true },
-      });
-      const username = userRecord?.email;
-      if (!username) {
-        // persist in DB as a best-effort
-        await prisma.user.update({
-          where: { id: userId },
-          data: { phone: formattedPhone },
-        });
-        return res.status(200).json({
-          message:
-            "Phone updated in database, but Cognito update skipped (missing user email).",
-          phone: formattedPhone,
-          warning: "db_only",
-        });
-      }
-
-      // detect whether admin creds are configured locally
-      const hasAdminCreds = Boolean(
-        (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
-        (process.env.AWS_CONFIG_FILE &&
-          process.env.AWS_SDK_LOAD_CONFIG === "1"),
-      );
-
-      try {
-        await adminUpdateUser(username, {
-          phone_number: formattedPhone,
-          phone_number_verified: "true",
-        } as any);
-        cognitoUpdated = true;
-      } catch (adminErr: any) {
-        console.error(
-          "adminUpdateUser also failed:",
-          adminErr?.message || adminErr,
-        );
-        // continue to persist in DB
-      }
-
-      // Persist authoritative phone in DB regardless
-      await prisma.user.update({
-        where: { id: userId },
-        data: { phone: formattedPhone },
-      });
-
-      if (!cognitoUpdated) {
-        const warning = hasAdminCreds
-          ? "cognito_admin_failed"
-          : "missing_aws_credentials";
-        return res.status(200).json({
-          message:
-            "Phone updated in database, but Cognito update did not complete.",
-          phone: formattedPhone,
-          warning,
-        });
-      }
-    }
-
-    // If we reached here, Cognito was updated (client or admin) and DB persisted above
-    return res.status(200).json({
+    res.json({
+      success: true,
       message: "Phone number updated successfully",
-      phone: formattedPhone,
-      verified: true,
+      user: updatedUser,
     });
   } catch (error: any) {
-    console.error("Error updating phone:", error);
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -240,7 +247,6 @@ export const loginUsingDb = async (email: string, password: string) => {
     process.env.JWT_SECRET!,
     { expiresIn: "1h" },
   );
-
   const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
     expiresIn: "7d",
   });
@@ -306,11 +312,8 @@ export const resetPasswordIncontroller = async (
 ) => {
   try {
     const { email, newPassword, resetCode } = req.body;
-    if (!email || !newPassword || !resetCode) {
-      return res
-        .status(400)
-        .json({ error: "Email, new password, and reset code are required." });
-    }
+    if (!email || !newPassword || !resetCode)
+      return res.status(400).json({ error: "Required fields missing." });
     await resetPassword(email, newPassword, resetCode);
     res.status(200).json({ message: "Password reset successfully!" });
   } catch (error: any) {
@@ -323,16 +326,11 @@ export const logout = async (req: Request, res: Response) => {
     res.clearCookie("token");
     res.clearCookie("idToken");
     res.clearCookie("refreshToken");
-
     const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith("Bearer ")) {
+    if (authHeader?.startsWith("Bearer "))
       await cognitoSignOut(authHeader.split(" ")[1]);
-    }
     res.status(200).json({ success: true });
   } catch {
-    res.clearCookie("token");
-    res.clearCookie("idToken");
-    res.clearCookie("refreshToken");
     res.status(200).json({ success: true });
   }
 };
@@ -342,7 +340,6 @@ export const getUserProfile = async (req: Request, res: Response) => {
     const userId =
       (req as any).user?.id || (req as any).user?.sub || (req as any).user?._id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -358,7 +355,6 @@ export const getUserProfile = async (req: Request, res: Response) => {
         updatedAt: true,
       },
     });
-
     res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch profile" });
@@ -367,119 +363,20 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
 export const updateProfileImage = async (req: any, res: Response) => {
   try {
-    const {
-      imageKey,
-      username: newUsername,
-      email: newEmail,
-      phone: newPhone,
-    } = req.body;
-    const accessToken = req.headers.authorization?.split(" ")[1];
+    const file = req.file || req.files?.profileImage;
     const userId = req.user?.id || req.user?.sub;
-
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-    const cdnBaseUrl = process.env.CDN_BASE_URL;
-    const imageUrl = imageKey ? `${cdnBaseUrl}/${imageKey}` : undefined;
-
-    // Prepare attributes to update in Cognito if any
-    const cognitoAttributes: any = {};
-    if (newUsername) cognitoAttributes.preferred_username = newUsername;
-    if (newEmail) cognitoAttributes.email = newEmail;
-    if (newPhone) cognitoAttributes.phone_number = newPhone;
-    if (imageUrl) cognitoAttributes.profile = imageUrl;
-
-    let cognitoUpdated = false;
-
-    // Try client-side update when provided token is an access token
-    try {
-      if (accessToken) {
-        const decoded: any = jwt.decode(accessToken);
-        const tokenUse = decoded?.token_use || decoded?.TokenUse || null;
-        if (
-          tokenUse === "access" &&
-          Object.keys(cognitoAttributes).length > 0
-        ) {
-          try {
-            await updateUserAttributes(accessToken, cognitoAttributes);
-            cognitoUpdated = true;
-          } catch (cognitoErr: any) {
-            console.error(
-              "Cognito updateUserAttributes failed:",
-              cognitoErr?.message || cognitoErr,
-            );
-          }
-        } else if (tokenUse !== "access") {
-          console.log(
-            "Provided token is not an access token (token_use=",
-            tokenUse,
-            ") - skipping client update",
-          );
-        }
-      } else {
-        console.log(
-          "No access token provided for profile update, will attempt admin/DB update",
-        );
-      }
-    } catch (decodeErr: any) {
-      console.error(
-        "Failed to decode access token for profile update:",
-        decodeErr?.message || decodeErr,
-      );
-    }
-
-    if (!cognitoUpdated && Object.keys(cognitoAttributes).length > 0) {
-      const userRecord = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { email: true },
-      });
-      const cognitoUsername = userRecord?.email;
-
-      try {
-        if (cognitoUsername) {
-          await adminUpdateUser(cognitoUsername, cognitoAttributes);
-          cognitoUpdated = true;
-        }
-      } catch (adminErr: any) {
-        console.error(
-          "adminUpdateUser profile update failed:",
-          adminErr?.message || adminErr,
-        );
-      }
-    }
-
-    // Persist changes to our DB (authoritative)
-    const updateData: any = {};
-    if (newUsername) updateData.username = newUsername;
-    if (newEmail) updateData.email = newEmail;
-    if (newPhone) updateData.phone = newPhone;
-    if (imageUrl) updateData.profileImage = imageUrl;
-
-    if (Object.keys(updateData).length > 0) {
-      await prisma.user.update({ where: { id: userId }, data: updateData });
-    }
-
-    // If Cognito couldn't be updated, return 200 with a warning so frontend can continue
-    if (Object.keys(cognitoAttributes).length > 0 && !cognitoUpdated) {
-      const hasAdminCreds = Boolean(
-        (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
-        (process.env.AWS_CONFIG_FILE &&
-          process.env.AWS_SDK_LOAD_CONFIG === "1"),
-      );
-      const warning = hasAdminCreds
-        ? "cognito_admin_failed"
-        : "missing_aws_credentials";
-      return res.status(200).json({
-        message: "Profile saved in database",
-        profileImage: imageUrl,
-        warning,
-      });
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Profile updated", profileImage: imageUrl });
+    if (!userId || !file)
+      return res.status(400).json({ error: "Missing data" });
+    const imageBase64 =
+      file.buffer?.toString("base64") || file.data?.toString("base64");
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { profileImage: imageBase64 },
+      select: { id: true, username: true, email: true, profileImage: true },
+    });
+    res.json({ success: true, user: updatedUser });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -488,146 +385,18 @@ export const getUsersCount = async (_req: Request, res: Response) => {
     const totalUsers = await prisma.user.count();
     res.status(200).json({ totalUsers });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to get total users" });
-  }
-};
-
-export const deleteAccount = async (req: any, res: Response) => {
-  const userId = req.user?.id || req.user?.sub || req.user?._id;
-  if (!userId) return res.status(400).json({ error: "User ID is required" });
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true, cognitoId: true },
-    });
-    if (!user) return res.status(404).json({ error: "User not found" });
-    let dbError = null;
-    let cognitoError = null;
-    const cognitoEmail = user.email;
-    try {
-      await prisma.user.delete({ where: { id: userId } });
-    } catch (err: any) {
-      dbError = err?.message || err;
-      console.error("Failed to delete user from database:", dbError);
-    }
-    if (cognitoEmail) {
-      try {
-        await deleteFromCognito(cognitoEmail);
-      } catch (err: any) {
-        cognitoError = err?.message || err;
-        console.error("Failed to delete user from Cognito:", cognitoError);
-      }
-    }
-    res.clearCookie("idToken");
-    res.clearCookie("refreshToken");
-    res.clearCookie("accessToken");
-    res.clearCookie("token");
-    if (!dbError && !cognitoError) {
-      return res.status(200).json({
-        success: true,
-        message: "Account deleted successfully",
-      });
-    } else {
-      return res.status(207).json({
-        success: true,
-        warning: "Partial deletion",
-        cognitoError,
-        dbError,
-      });
-    }
-  } catch (error: any) {
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to delete account" });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const refreshTokenController = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
-    if (!refreshToken) {
-      return res.status(400).json({ error: "Refresh token is required" });
-    }
-
+    if (!refreshToken)
+      return res.status(400).json({ error: "Refresh token required" });
     const newTokens = await refreshTokenLogic(refreshToken);
-    res
-      .status(200)
-      .json({ message: "Token refreshed successfully", tokens: newTokens });
+    res.status(200).json({ tokens: newTokens });
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to refresh token" });
-  }
-};
-
-export const deleteUserById = async (req: Request, res: Response) => {
-  const userId = req.params.id as string;
-
-  if (!userId) {
-    return res.status(400).json({ error: "User ID is required" });
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    // Detect whether admin creds are configured
-    const hasAdminCreds = Boolean(
-      (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
-      (process.env.AWS_CONFIG_FILE && process.env.AWS_SDK_LOAD_CONFIG === "1"),
-    );
-
-    let cognitoDeleted = false;
-    let cognitoError: any = null;
-
-    if (hasAdminCreds) {
-      try {
-        await deleteFromCognito(user.email || "");
-        cognitoDeleted = true;
-      } catch (err: any) {
-        cognitoError = err?.message || err;
-        console.error("Failed to delete Cognito user:", cognitoError);
-      }
-    } else {
-      console.warn("Skipping Cognito deletion: missing AWS admin credentials");
-    }
-
-    let dbDeleted = false;
-    let dbError: any = null;
-    try {
-      await prisma.user.delete({ where: { id: userId } });
-      dbDeleted = true;
-    } catch (err: any) {
-      dbError = err?.message || err;
-      console.error("Failed to delete user from database:", dbError);
-    }
-
-    if (dbDeleted && (cognitoDeleted || !hasAdminCreds)) {
-      const warning = !hasAdminCreds ? "missing_aws_credentials" : undefined;
-      return res.status(200).json({
-        message: "User deletion processed",
-        cognitoDeleted,
-        dbDeleted,
-        warning,
-      });
-    }
-
-    return res.status(500).json({
-      error: "Failed to delete user completely",
-      cognitoDeleted,
-      cognitoError,
-      dbDeleted,
-      dbError,
-    });
-  } catch (error: any) {
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to delete user by ID" });
+    res.status(500).json({ error: error.message });
   }
 };

@@ -1,8 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { SUBS_ENDPOINTS } from "../constant/constant";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 interface Subscription {
   id: string;
@@ -16,30 +16,6 @@ interface Subscription {
   status: string;
   createdAt: string;
   expiryDate?: string;
-}
-
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-    Cookie: cookieHeader,
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
 }
 
 const addCacheBuster = (url: string) => {
@@ -62,7 +38,7 @@ async function fetchApi<T>(
         headers: {
           ...headers,
           ...options?.headers,
-        },
+        } as HeadersInit,
         cache: "no-store",
       });
 
@@ -133,7 +109,6 @@ export async function searchSubscriptions(filters: Record<string, unknown>) {
 
 export async function getAllSubscriptionsAdmin(
   filters: Record<string, unknown>,
-  p0: string | undefined,
 ) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {

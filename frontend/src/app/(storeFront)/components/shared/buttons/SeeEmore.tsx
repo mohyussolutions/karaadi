@@ -12,10 +12,10 @@ export default function SeeEmore({ onClick, className }: SeeEmoreProps) {
   return (
     <button
       onClick={onClick}
-      className={`group flex items-center gap-2 transition-all duration-300 ${
+      className={
         className ||
-        "px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 shadow-md hover:shadow-blue-200"
-      }`}
+        "group flex items-center gap-2 transition-all duration-300 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 shadow-md hover:shadow-blue-200"
+      }
     >
       <span className="text-sm font-semibold">See More</span>
       <ChevronDown

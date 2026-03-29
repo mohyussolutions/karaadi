@@ -102,10 +102,18 @@ function AdminSubscriptionsPage() {
   const fetchSubscriptions = async (tokenOverride?: string) => {
     try {
       setLoading(true);
-      const subs = await getAllSubscriptionsAdmin(
-        filters as Record<string, any>,
-        tokenOverride || accessToken,
-      );
+
+      const filtersRecord: Record<string, unknown> = {
+        search: filters.search,
+        status: filters.status,
+        region: filters.region,
+        category: filters.category,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+      };
+
+      const subs = await getAllSubscriptionsAdmin(filtersRecord);
+
       const mapped: Subscription[] = subs.map((sub: any) => ({
         id: sub._id || sub.id,
         _id: sub._id || sub.id,
@@ -131,7 +139,7 @@ function AdminSubscriptionsPage() {
         priceMin: sub.priceMin,
         priceMax: sub.priceMax,
         notificationCount: sub.notificationCount || 0,
-      })) as Subscription[];
+      }));
 
       setSubscriptions(mapped);
       setRegions(
@@ -210,56 +218,68 @@ function AdminSubscriptionsPage() {
 
   if (loading)
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-gray-50 overflow-hidden">
+      <div className="w-screen h-screen flex items-center justify-center bg-gray-50">
         <Loading />
       </div>
     );
 
   return (
-    <div className="w-screen min-h-screen bg-gray-50 overflow-hidden">
-      <div className="w-full h-full px-3 sm:px-4 md:px-6 py-4 sm:py-6 overflow-y-auto">
-        <div className="w-full max-w-full mx-auto flex flex-col gap-4 sm:gap-6">
-          {/* Header Section */}
+    <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="w-full px-3 sm:px-4 md:px-6 py-4 sm:py-6">
+        <div className="w-full max-w-7xl mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-800 break-words uppercase tracking-tight">
                 Subscriptions
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
+              <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5 break-words">
                 Manage automated user alerts and preferences
               </p>
             </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() =>
+                  setFilters({
+                    search: "",
+                    status: "",
+                    region: "",
+                    category: "",
+                    dateFrom: "",
+                    dateTo: "",
+                  })
+                }
+                className="px-2 sm:px-3 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition text-xs sm:text-sm whitespace-nowrap"
+              >
+                Clear
+              </button>
               <button
                 onClick={() => fetchSubscriptions()}
-                className="p-2 bg-white border border-gray-300 rounded-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 transition-all shadow-sm"
+                className="p-2 bg-white border border-gray-300 rounded-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 transition-all shadow-sm flex-shrink-0"
                 title="Refresh"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
-
               <button
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-                className="sm:hidden flex items-center justify-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
+                className="sm:hidden flex items-center justify-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap"
               >
                 <Filter className="h-3 w-3" />
                 {mobileFiltersOpen ? "Hide" : "Filters"}
               </button>
-
               <button
                 onClick={handleExportCSV}
                 disabled={exporting || filteredSubscriptions.length === 0}
-                className="px-3 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-1 shadow-sm transition text-xs sm:text-sm"
+                className="px-2 sm:px-3 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-1 shadow-sm transition text-xs sm:text-sm whitespace-nowrap"
               >
                 <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                {exporting ? "Exporting..." : "Export CSV"}
+                <span className="hidden xs:inline">
+                  {exporting ? "Exporting..." : "CSV"}
+                </span>
               </button>
             </div>
           </div>
 
-          {/* Stats Cards - Full width stack */}
-          <div className="grid grid-cols-1 gap-3 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
             <StatsCard
               title="Total"
               value={stats.total}
@@ -290,8 +310,7 @@ function AdminSubscriptionsPage() {
             />
           </div>
 
-          {/* Desktop Filter Section */}
-          <div className="hidden sm:block bg-white rounded-xl border border-gray-200 p-4 w-full">
+          <div className="hidden sm:block bg-white rounded-xl border border-gray-200 p-4 w-full overflow-hidden">
             <FilterSection
               filters={filters}
               regions={regions}
@@ -321,9 +340,8 @@ function AdminSubscriptionsPage() {
             />
           </div>
 
-          {/* Mobile Filter Section */}
           {mobileFiltersOpen && (
-            <div className="sm:hidden bg-white rounded-xl border border-gray-200 p-4 w-full">
+            <div className="sm:hidden bg-white rounded-xl border border-gray-200 p-4 w-full overflow-hidden">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-gray-700 text-sm">Filters</h3>
                 <button
@@ -363,7 +381,7 @@ function AdminSubscriptionsPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden w-full">
+          <div className="bg-white rounded-xl border border-gray-200 w-full overflow-x-auto">
             <SubscriptionTable
               subscriptions={filteredSubscriptions}
               onViewDetails={setSelectedSubscription}

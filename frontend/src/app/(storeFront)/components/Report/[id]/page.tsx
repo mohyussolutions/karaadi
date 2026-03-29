@@ -54,6 +54,7 @@ export default function ReportPage() {
 
     try {
       const result = await createReport({
+        userId: user?._id,
         reason,
         details,
         itemType: "MARKETPLACE",
@@ -85,7 +86,7 @@ export default function ReportPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 py-16 px-6">
+      <div className="min-h-screen py-16 px-6">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-[32px] p-12 shadow-sm border border-gray-100 text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">

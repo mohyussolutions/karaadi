@@ -3,10 +3,6 @@ import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
 import prisma from "./db.ts";
 import bcrypt from "bcrypt";
-import {
-  CognitoIdentityProviderClient,
-  AdminDeleteUserCommand,
-} from "@aws-sdk/client-cognito-identity-provider";
 
 interface VerifiedTokenData {
   _id?: string;
@@ -35,6 +31,8 @@ interface UserAttributes {
   "custom:isAdmin"?: string;
   "custom:isManager"?: string;
   "custom:isSupport"?: string;
+  "custom:phone_number"?: string;
+  "custom:profile"?: string;
 }
 
 export const cognitoClient = new AWS.CognitoIdentityServiceProvider({
@@ -42,6 +40,91 @@ export const cognitoClient = new AWS.CognitoIdentityServiceProvider({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
+
+export const deleteFromCognito = async (cognitoId: string): Promise<void> => {
+  const params = {
+    UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+    Username: cognitoId,
+  };
+  try {
+    await cognitoClient.adminDeleteUser(params).promise();
+  } catch (error: any) {
+    throw new Error(error.message || "Cognito deletion failed");
+  }
+};
+
+export const deleteMyAccount = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const user = (req as any).user;
+  const authHeader = req.headers.authorization;
+  const accessToken = authHeader?.split(" ")[1];
+
+  const rawId = req.body.id || user?.id || user?.sub;
+  const userId = Array.isArray(rawId)
+    ? (rawId[0] as string)
+    : (rawId as string);
+
+  console.log("--- DELETION PROCESS STARTED ---");
+  console.log("Target User ID (DB):", userId);
+  console.log("Request Token:", accessToken ? "Present" : "Missing");
+
+  if (!userId) {
+    console.error("Deletion Aborted: No User ID found");
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        cognitoId: true,
+        username: true,
+      },
+    });
+
+    if (!dbUser) {
+      console.error(`Deletion Aborted: User ${userId} not found in database`);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log("Deleting User Record:", {
+      id: dbUser.id,
+      email: dbUser.email,
+      username: dbUser.username,
+      cognitoId: dbUser.cognitoId,
+    });
+
+    const targetCognitoId = dbUser.cognitoId;
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+    console.log("Database record successfully removed");
+
+    if (targetCognitoId) {
+      try {
+        await deleteFromCognito(targetCognitoId);
+        console.log(`AWS Cognito User ${targetCognitoId} successfully removed`);
+      } catch (err: any) {
+        console.error("AWS Cognito Deletion Error:", err.message);
+      }
+    }
+
+    ["idToken", "refreshToken", "accessToken", "token"].forEach((c) =>
+      res.clearCookie(c),
+    );
+
+    console.log("--- DELETION PROCESS COMPLETE ---");
+    return res.status(200).json({ success: true, message: "Account deleted" });
+  } catch (error: any) {
+    console.error("Fatal Deletion Error:", error.message);
+    return res.status(500).json({ error: error.message || "Deletion failed" });
+  }
+};
 export const signUp = async (
   email: string,
   password: string,
@@ -105,41 +188,59 @@ export const signIn = async (
     const isManager = decodedToken["custom:isManager"] === "true";
     const isSupport = decodedToken["custom:isSupport"] === "true";
 
-    const phone = decodedToken["custom:phone_number"] || "";
-    const profileImage = decodedToken["custom:profile"] || "";
+    const cognitoPhone = decodedToken["custom:phone_number"] || "";
+    const cognitoProfileImage = decodedToken["custom:profile"] || "";
     const preferredUsername =
       decodedToken.preferred_username || email.split("@")[0];
 
-    const userRecord = await prisma.user.upsert({
+    let userRecord = await prisma.user.findUnique({
       where: { cognitoId: decodedToken.sub },
-      update: {
-        email: decodedToken.email,
-        username: preferredUsername,
-        phone: phone,
-        profileImage: profileImage,
-      },
-      create: {
-        cognitoId: decodedToken.sub,
-        email: decodedToken.email,
-        username: preferredUsername,
-        phone: phone,
-        profileImage: profileImage,
-        password: await bcrypt.hash(password, 10),
-        isAdmin: false,
-        isManager: false,
-        isSupport: false,
-      },
     });
 
-    if (req && req.session) {
+    if (userRecord) {
+      userRecord = await prisma.user.update({
+        where: { cognitoId: decodedToken.sub },
+        data: {
+          email: decodedToken.email,
+          username: preferredUsername,
+          phone:
+            userRecord.phone && userRecord.phone !== "false"
+              ? userRecord.phone
+              : cognitoPhone,
+          profileImage:
+            userRecord.profileImage && userRecord.profileImage !== "false"
+              ? userRecord.profileImage
+              : cognitoProfileImage !== "false"
+                ? cognitoProfileImage
+                : null,
+        },
+      });
+    } else {
+      userRecord = await prisma.user.create({
+        data: {
+          cognitoId: decodedToken.sub,
+          email: decodedToken.email,
+          username: preferredUsername,
+          phone: cognitoPhone !== "false" ? cognitoPhone : "",
+          profileImage:
+            cognitoProfileImage !== "false" ? cognitoProfileImage : null,
+          password: await bcrypt.hash(password, 10),
+          isAdmin: false,
+          isManager: false,
+          isSupport: false,
+        },
+      });
+    }
+
+    if (req?.session) {
       req.session.idToken = idToken;
       req.session.refreshToken = refreshToken;
       req.session.accessToken = accessToken;
       req.session.user = {
         sub: decodedToken.sub,
         username: userRecord.username,
-        phone: phone,
-        profileImage: profileImage,
+        phone: userRecord.phone || "",
+        profileImage: userRecord.profileImage || "",
         isAdmin,
         isManager,
         isSupport,
@@ -154,11 +255,13 @@ export const signIn = async (
         accessToken,
         email,
         username: userRecord.username,
-        phone,
-        profileImage,
+        phone: userRecord.phone || "",
+        profileImage: userRecord.profileImage || "",
         isAdmin,
         isManager,
         isSupport,
+        cognitoId: userRecord.cognitoId || decodedToken.sub,
+        id: userRecord.id,
       },
     };
   } catch (error: unknown) {
@@ -167,7 +270,6 @@ export const signIn = async (
     throw new Error("An unknown error occurred");
   }
 };
-
 export const verifySession = async (
   req: Request & { accessToken?: string },
   res: Response,
@@ -199,12 +301,14 @@ export const verifySession = async (
       return res.status(401).json({ message: "Session expired" });
     }
 
+    const cleanField = (val: any) =>
+      val === "false" || val == null || val === "" ? null : val;
     const responseUser = {
       id: userRecord.id,
       email: userRecord.email,
       username: userRecord.username,
-      phone: userRecord.phone,
-      profileImage: userRecord.profileImage,
+      phone: cleanField(userRecord.phone),
+      profileImage: cleanField(userRecord.profileImage),
       isAdmin: userRecord.isAdmin || decoded["custom:isAdmin"] === "true",
       isManager: userRecord.isManager || decoded["custom:isManager"] === "true",
       isSupport: userRecord.isSupport || decoded["custom:isSupport"] === "true",
@@ -259,8 +363,18 @@ export const updateUserAttributes = async (
   }
   if (attributes.phone_number) {
     userAttributes.push({
-      Name: "custom:phone_number",
+      Name: "phone_number",
       Value: attributes.phone_number,
+    });
+    userAttributes.push({
+      Name: "phone_number_verified",
+      Value: "true",
+    });
+  }
+  if (attributes["custom:phone_number"]) {
+    userAttributes.push({
+      Name: "custom:phone_number",
+      Value: attributes["custom:phone_number"],
     });
   }
   if (attributes.profile) {
@@ -293,23 +407,6 @@ export const updateUserAttributes = async (
       UserAttributes: userAttributes,
     })
     .promise();
-};
-
-export const updateUserProfileCognito = async (req: Request): Promise<void> => {
-  const accessToken = req.headers.authorization?.split(" ")[1];
-  if (!accessToken) throw new Error("No access token");
-
-  const { username, email, phone } = req.body;
-  const attributes: UserAttributes = {};
-
-  if (username) attributes.preferred_username = username;
-  if (email) attributes.email = email;
-  if (phone) attributes.phone_number = phone;
-  if (req.file) {
-    attributes.profile = `${process.env.CDN_BASE_URL}/uploads/${req.file.originalname}`;
-  }
-
-  await updateUserAttributes(accessToken, attributes);
 };
 
 export const updateUserRole = async (
@@ -524,24 +621,5 @@ export const refreshTokenLogicV2 = async (
   } catch (error: any) {
     console.error("Error refreshing token in Cognito:", error.message);
     throw new Error("Error refreshing token");
-  }
-};
-
-export const deleteFromCognito = async (email: string) => {
-  try {
-    const params = {
-      UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
-      Username: email,
-    };
-    const result = await cognitoClient.adminDeleteUser(params).promise();
-    console.log(`Cognito user with email "${email}" deleted successfully.`);
-    return result;
-  } catch (error: any) {
-    const errorMsg = error?.message || error?.code || "Unknown Cognito error";
-    console.error(
-      `Failed to delete Cognito user with email "${email}":`,
-      errorMsg,
-    );
-    throw new Error(`Cognito deletion error: ${errorMsg}`);
   }
 };

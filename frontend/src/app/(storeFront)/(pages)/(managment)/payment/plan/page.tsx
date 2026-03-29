@@ -28,16 +28,13 @@ function PlanContent() {
   useEffect(() => {
     const initData = async () => {
       try {
-        // Fetch boat details to get feeAmount
         if (boatId) {
           const boatData = await getBoatById(boatId);
           setBoat(boatData);
         }
 
-        // Fetch subscription plans
         const response = await getSubPlans();
         const config = Array.isArray(response) ? response[0] : response;
-
         const transformed = SUBSCRIPTION_PLANS.map((item) => ({
           ...item,
           price: config ? Number(config[item.key]) || 0 : 0,

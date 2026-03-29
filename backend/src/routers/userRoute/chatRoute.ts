@@ -1,4 +1,6 @@
 import express from "express";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { createChatSchema } from "../../validation/chat.validation.ts";
 import {
   createChat,
   getUserChats,
@@ -13,11 +15,16 @@ import {
 import {
   adminAndManager,
   ProtectRoute,
-} from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+} from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
 
 const chatRoutes = express.Router();
 
-chatRoutes.post("/create", ProtectRoute, createChat);
+chatRoutes.post(
+  "/create",
+  ProtectRoute,
+  validateRequest(createChatSchema),
+  createChat,
+);
 chatRoutes.get("/user/:userId", ProtectRoute, getUserChats);
 chatRoutes.get("/:chatId", ProtectRoute, getChatById);
 chatRoutes.delete("/:chatId", ProtectRoute, deleteChat);

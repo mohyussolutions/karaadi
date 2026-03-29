@@ -1,8 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { PAYMENT_ENDPOINTS } from "../constant/constant";
 import { revalidatePath } from "next/cache";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export type Payment = {
   id: string;
@@ -59,29 +59,12 @@ export type PaymentStats = {
   };
 };
 
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
 export async function createPayment(paymentData: any) {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(PAYMENT_ENDPOINTS.CREATE, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ payment: paymentData }),
       cache: "no-store",
     });
@@ -132,7 +115,7 @@ export async function getAllPayments(params?: {
 
     const response = await fetch(url.toString(), {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -159,7 +142,7 @@ export async function deletePayment(id: string) {
 
     const response = await fetch(PAYMENT_ENDPOINTS.DELETE(id), {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -190,7 +173,7 @@ export async function getPaymentStats(): Promise<PaymentStats | null> {
     const headers = await getAuthHeaders();
     const response = await fetch(PAYMENT_ENDPOINTS.STATS, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -209,7 +192,7 @@ export async function getMyPayments(): Promise<Payment[]> {
     const headers = await getAuthHeaders();
     const response = await fetch(PAYMENT_ENDPOINTS.GET_MY_PAYMENTS, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -239,7 +222,7 @@ export async function getPaymentById(id: string): Promise<Payment | null> {
     const headers = await getAuthHeaders();
     const response = await fetch(PAYMENT_ENDPOINTS.GET_BY_ID(id), {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -262,7 +245,7 @@ export async function updatePaymentStatus(
     const headers = await getAuthHeaders();
     const response = await fetch(PAYMENT_ENDPOINTS.UPDATE_STATUS(id), {
       method: "PATCH",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ status, transactionId }),
       cache: "no-store",
     });
@@ -294,7 +277,7 @@ export async function searchPayments(query: string): Promise<Payment[]> {
 
     const response = await fetch(url.toString(), {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -313,7 +296,7 @@ export async function getItemDetail(id: string) {
     const headers = await getAuthHeaders();
     const response = await fetch(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id), {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -331,7 +314,7 @@ export const getTotalTransactions = async () => {
     const headers = await getAuthHeaders();
     const res = await fetch(PAYMENT_ENDPOINTS.TRANSACTIONS, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });

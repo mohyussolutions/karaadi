@@ -32,7 +32,7 @@ const messagesData = [
 export default function SupportCharts() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-      {/* WEEKLY REPORTS BAR CHART */}
+      
       <div className="bg-white shadow-md p-6 rounded-2xl border border-gray-200">
         <h3 className="text-lg font-semibold mb-4">Weekly User Reports</h3>
         <div className="h-72">
@@ -48,7 +48,7 @@ export default function SupportCharts() {
         </div>
       </div>
 
-      {/* MONTHLY SUPPORT MESSAGES LINE CHART */}
+      
       <div className="bg-white shadow-md p-6 rounded-2xl border border-gray-200">
         <h3 className="text-lg font-semibold mb-4">Monthly Support Messages</h3>
         <div className="h-72">

@@ -1,0 +1,766 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About Us",
+    "contact": "Contact",
+    "login": "Login",
+    "notifications": "Notifications",
+    "newAd": "New Ad",
+    "messages": "Messages",
+    "mine": "Mine",
+    "profile": "Profile"
+  },
+  "welcome": "Welcome to Karaadi",
+  "search": "Search here...",
+  "auth": {
+    "login": {
+      "title": "Welcome Back!",
+      "subtitle": "Login to your account",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Password",
+      "forgotPassword": "Forgot password?",
+      "loginButton": "Login",
+      "tooManyAttempts": "Too many attempts. Please wait 15 minutes.",
+      "accountLocked": "Account locked. Reset password or contact support.",
+      "failed": "Login failed. Check your credentials.",
+      "noAccount": "Don't have an account?",
+      "register": "Register"
+    }
+  },
+  "lang": {
+    "en": "English",
+    "so": "Somali"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "tabs": {
+      "unread": "Unread",
+      "all": "All"
+    },
+    "empty": {
+      "unread": "No unread notifications",
+      "all": "No notifications yet"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesSuffix": "m ago",
+      "hoursSuffix": "h ago",
+      "daysSuffix": "d ago"
+    },
+    "card": {
+      "match": "Match",
+      "viewDetail": "View Detail",
+      "markRead": "Mark Read",
+      "delete": "Delete"
+    }
+  },
+  "footer": {
+    "company": "Company",
+    "support": "Support",
+    "categories": "Categories",
+    "legal": "Legal",
+    "about": "About Us",
+    "contact": "Contact",
+    "helpCenter": "Help Center",
+    "terms": "Terms",
+    "marketplace": "Marketplace",
+    "realEstate": "Real Estate",
+    "cars": "Cars",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "followUs": "Follow Us",
+    "rights": "© {{yearStart}}–{{yearEnd}} {{brand}}. All rights reserved.",
+    "rights_short": "Please respect copyright. Do not redistribute without permission from {{brand}}.",
+    "developedBy": "Developed by"
+  },
+  "support": {
+    "links": {
+      "home": "Home",
+      "users": "Users",
+      "reports": "Reports",
+      "ads": "Ads",
+      "banners": "Banners",
+      "announcements": "Announcements",
+      "messaging": "Messaging",
+      "contentReview": "Content Review",
+      "system": "System"
+    }
+  },
+  "categories": {
+    "Marketplace": "Marketplace",
+    "RealEstate": "Real Estate",
+    "Cars": "Cars",
+    "Boats": "Boats",
+    "farmequipment": "Farm Equipment",
+    "Motorcycles": "Motorcycles",
+    "Jobs": "Jobs",
+    "Smartsuuq": "Smartsuuq"
+  },
+  "mohyusLogoAlt": "Mohyus Logo",
+  "createAd": {
+    "categories": "Categories",
+    "public": "Public",
+    "private": "Private",
+    "title": "Create Marketplace Ad",
+    "selectCategory": "Select category",
+    "selectSubcategory": "Select subcategory",
+    "selectRegion": "Select region",
+    "selectCity": "Select city",
+    "newCityPlaceholder": "Enter new city name",
+    "titlePlaceholder": "Ad title",
+    "pricePlaceholder": "Price",
+    "descriptionPlaceholder": "Description",
+    "images": "Images",
+    "submit": "Submit Ad",
+    "submitting": "Submitting..."
+  },
+  "createRealEstate": {
+    "title": "Real Estate",
+    "mainCategory": "Main Category",
+    "category": "Category",
+    "type": "Type",
+    "selectCategory": "Select category",
+    "selectType": "Select type",
+    "titlePlaceholder": "Title",
+    "pricePlaceholder": "Price ($)",
+    "addressPlaceholder": "Address",
+    "selectRegion": "Select region",
+    "selectCity": "Select city",
+    "addCity": "+ Add city",
+    "newCityPlaceholder": "Enter new city name",
+    "upload": "Upload",
+    "descriptionPlaceholder": "More details...",
+    "titleLabel": "Title",
+    "priceLabel": "Price ($)",
+    "addressLabel": "Address",
+    "regionLabel": "Region",
+    "cityLabel": "City",
+    "newCityLabel": "New city",
+    "descriptionLabel": "Description",
+    "fillRequired": "Please fill the required fields",
+    "uploadAtLeastOneImage": "Please upload at least one image",
+    "cityAddFailed": "Failed to add city",
+    "submittedSuccess": "Listing submitted!",
+    "submitError": "An error occurred",
+    "networkError": "Network error occurred",
+    "loadingRegions": "Loading regions...",
+    "noCities": "No cities available",
+    "submit": "Submit Listing",
+    "submitting": "Submitting..."
+  },
+  "createCars": {
+    "title": "Cars Listing",
+    "mainCategory": "Main Category",
+    "category": "Category",
+    "type": "Type",
+    "selectCategory": "Select category",
+    "selectType": "Select type",
+    "titlePlaceholder": "Title",
+    "brandPlaceholder": "Brand",
+    "modelPlaceholder": "Model",
+    "yearPlaceholder": "Year",
+    "gearPlaceholder": "Gear",
+    "selectRegion": "Select region",
+    "selectCity": "Select city",
+    "addCity": "+ Add city",
+    "newCityPlaceholder": "Enter new city name",
+    "upload": "Upload",
+    "descriptionPlaceholder": "More details...",
+    "pricePlaceholder": "Price ($)",
+    "mileagePlaceholder": "Mileage (KM)",
+    "fillRequired": "Please fill the required fields",
+    "cityAddFailed": "Failed to add city",
+    "submittedSuccess": "Listing submitted!",
+    "submitError": "An error occurred",
+    "networkError": "Network error occurred",
+    "loadingRegions": "Loading regions...",
+    "noCities": "No cities available",
+    "submit": "Submit Listing",
+    "submitting": "Submitting..."
+  },
+  "createMotorcycle": {
+    "heading": "Create Motorcycle Ad",
+    "mainCategoryLabel": "Main Category",
+    "categoryLabel": "Category",
+    "selectCategory": "Select category",
+    "subCategoryLabel": "Subcategory",
+    "selectSubcategory": "Select subcategory",
+    "titlePlaceholder": "Motorcycle title",
+    "titleLabel": "Title",
+    "makePlaceholder": "Make",
+    "modelPlaceholder": "Model",
+    "yearPlaceholder": "Year",
+    "mileagePlaceholder": "Mileage",
+    "pricePlaceholder": "Price ($)",
+    "selectRegion": "Select region",
+    "selectCity": "Select city",
+    "addCity": "+ Add city",
+    "newCityPlaceholder": "Enter new city name",
+    "newCityLabel": "New City",
+    "descriptionPlaceholder": "More details...",
+    "descriptionLabel": "Description",
+    "regionLabel": "Region",
+    "cityLabel": "City",
+    "upload": "Upload",
+    "fillRequired": "Please fill the required fields",
+    "imagePreviewAlt": "Image preview",
+    "uploadAtLeastOneImage": "Please upload at least one image",
+    "cityAddFailed": "Failed to add city",
+    "submittedSuccess": "Listing submitted!",
+    "submitError": "An error occurred",
+    "networkError": "Network error occurred",
+    "registering": "Registering...",
+    "successMessage": "Success! Your listing has been posted.",
+    "errorMessage": "An error occurred",
+    "submit": "Submit Listing",
+    "submitting": "Submitting..."
+  },
+  "createFarmequipment": {
+    "title": "Farm Equipment Listing",
+    "mainCategory": "Main Category",
+    "category": "Category",
+    "titlePlaceholder": "Title",
+    "pricePlaceholder": "Price ($)",
+    "descriptionPlaceholder": "More details...",
+    "images": "Images",
+    "regionLabel": "Region",
+    "cityLabel": "City",
+    "newCityLabel": "New City",
+    "addCity": "+ Add city",
+    "newCityPlaceholder": "Enter new city name",
+    "submit": "Submit Listing",
+    "submitting": "Submitting...",
+    "technicalDetails": "Technical Details",
+    "makePlaceholder": "Make",
+    "modelPlaceholder": "Model",
+    "typePlaceholder": "Type",
+    "yearPlaceholder": "Year",
+    "conditionPlaceholder": "Condition",
+    "hoursPlaceholder": "Hours",
+    "enginePowerPlaceholder": "Engine Power (HP)",
+    "fuelTypePlaceholder": "Fuel Type",
+    "locationLabel": "Location",
+    "imagesLabel": "Images",
+    "upload": "Upload",
+    "loading": "Loading..."
+  },
+  "createBoats": {
+    "title": "Boats Listing",
+    "pageTitle": "Boats",
+    "mainCategory": "Main Category",
+    "category": "Category",
+    "city": "City / Magaalo",
+    "addingCity": "Adding city...",
+    "addAnotherCity": "+ Add city",
+    "typePlaceholder": "Type (required)",
+    "modelPlaceholder": "Model",
+    "gearboxPlaceholder": "Gearbox",
+    "colorPlaceholder": "Color",
+    "feeLabel": "Lacagta Adeegga",
+    "subcategory": "Subcategory",
+    "selectCategory": "Select category",
+    "selectSubcategory": "Select subcategory",
+    "selectRegion": "Select region",
+    "selectCity": "Select city",
+    "addCity": "+ Add city",
+    "newCityPlaceholder": "Enter new city name",
+    "titlePlaceholder": "Title",
+    "pricePlaceholder": "Price ($)",
+    "descriptionPlaceholder": "More details...",
+    "upload": "Upload",
+    "fillRequired": "Please fill the required fields",
+    "cityAddFailed": "Failed to add city",
+    "submittedSuccess": "Listing submitted!",
+    "submitError": "An error occurred",
+    "networkError": "Network error occurred",
+    "loadingRegions": "Loading regions...",
+    "noCities": "No cities available",
+    "submit": "Submit Listing",
+    "submitting": "Submitting..."
+  },
+  "sidebar": {
+    "Home": "Home",
+    "Marketplace": "Marketplace",
+    "Cars": "Cars",
+    "Boats": "Boats",
+    "Motorcycles": "Motorcycles",
+    "Real Estate": "Real Estate",
+    "Farmequipment": "Farm Equipment",
+    "Advertisement": "Advertisement",
+    "subscription": "Subscription",
+    "FeeManagement": "Fee Management",
+    "Jobs": "Jobs",
+    "Agencies": "Agencies",
+    "Reports": "Reports",
+    "Most Search": "Most Search",
+    "Users": "Users",
+    "Massages": "Messages",
+    "Chats": "Chats",
+    "Visitor List": "Visitor List",
+    "Payments": "Payments",
+    "Settings": "Settings"
+  },
+  "settings": {
+    "Visitor Management": "Visitor Management",
+    "User Roles": "User Roles",
+    "Payments": "Payments",
+    "Security": "Security",
+    "Regional Management": "Regional Management",
+    "City & District Management": "City & District Management",
+    "Open Visitor Manager": "Open Visitor Manager",
+    "Go to User Roles": "Go to User Roles",
+    "Open Payment Settings": "Open Payment Settings",
+    "Security Settings": "Security Settings",
+    "Manage Regions": "Manage Regions",
+    "Manage Cities": "Manage Cities"
+  },
+  "subcategories": {
+    "marketplace": {
+      "antiques": "Antiques & Art",
+      "electronics": "Electronics",
+      "animalAndSupplies": "Animal & Supplies",
+      "sportsAndOutdoors": "Sports & Outdoors",
+      "furniture": "Furniture",
+      "fashion": "Fashion"
+    },
+    "realEstate": {
+      "forRent": "For Rent",
+      "forSale": "For Sale",
+      "landForSale": "Land for Sale",
+      "farmForSale": "Farm for Sale",
+      "commercial": "Commercial"
+    },
+    "cars": {
+      "carsForSale": "Cars for Sale",
+      "leaseCars": "Lease Cars",
+      "trailers": "Trailers",
+      "carParts": "Car Parts",
+      "truck": "Truck",
+      "electricCars": "Electric Cars",
+      "buses": "Buses"
+    },
+    "motorcycles": {
+      "forSale": "For Sale",
+      "forRent": "For Rent",
+      "spareParts": "Spare Parts",
+      "other": "Other"
+    },
+    "boats": {
+      "boatsForSale": "Boats for Sale",
+      "boatsForRent": "Boats for Rent",
+      "boatEnginesForSale": "Boat Engines for Sale",
+      "boatParts": "Boat Parts"
+    },
+    "boatsNested": {
+      "boatsForSale": {
+        "fishingBoat": "Fishing Boat",
+        "leisureYacht": "Leisure Yacht",
+        "sailboat": "Sailboat",
+        "speedboat": "Speedboat"
+      },
+      "boatsForRent": {
+        "fishingBoatRental": "Fishing Boat Rental",
+        "yachtCharter": "Yacht Charter"
+      },
+      "engines": {
+        "outboardEngine": "Outboard Engine",
+        "inboardEngine": "Inboard Engine",
+        "usedEngine": "Used Engine"
+      },
+      "parts": {
+        "engineParts": "Engine Parts",
+        "navigationEquipment": "Navigation Equipment",
+        "safetyGear": "Safety Gear"
+      }
+    },
+    "traktor": {
+      "tractorForSale": "Tractor for Sale",
+      "farmTools": "Farm Tools",
+      "fertilizerSpreader": "Fertilizer Spreader",
+      "grainHarvester": "Grain Harvester"
+    },
+    "carsNested": {
+      "carsForSale": {
+        "sedan": "Sedan",
+        "suv": "SUV/4x4",
+        "hatchback": "Hatchback",
+        "convertible": "Convertible",
+        "minivan": "Minivan"
+      },
+      "lease": {
+        "sedanLease": "Sedan Lease",
+        "suvLease": "SUV/4x4 Lease",
+        "vanMinibusLease": "Van/Minibus Lease",
+        "truckPickupLease": "Truck/Pickup Lease",
+        "otherLeaseVehicles": "Other Lease Vehicles"
+      },
+      "parts": {
+        "engines": "Engines",
+        "tiresRims": "Tires & Rims",
+        "bodyParts": "Body Parts"
+      },
+      "trucks": {
+        "pickupTruck": "Pickup Truck",
+        "heavyTruck": "Heavy Truck",
+        "truckSpareParts": "Truck Spare Parts",
+        "flatbedTankTruck": "Flatbed/Tank Truck",
+        "otherTrucks": "Other Trucks"
+      },
+      "electric": {
+        "electricSedan": "Electric Sedan",
+        "electricSUV": "Electric SUV",
+        "otherElectricCar": "Other Electric Car"
+      },
+      "trailers": {
+        "boatTrailer": "Boat Trailer",
+        "trailerSpareParts": "Trailer Spare Parts",
+        "heavyDutyTrailer": "Heavy Duty Trailer",
+        "otherTrailers": "Other Trailers"
+      },
+      "buses": {
+        "coachBuses": "Coach Buses",
+        "minibuses": "Minibuses",
+        "schoolBuses": "School Buses",
+        "cityBuses": "City Buses"
+      }
+    },
+    "traktorNested": {
+      "top": {
+        "tractorForSale": "Tractor for Sale",
+        "farmTools": "Farm Tools",
+        "fertilizerSpreader": "Fertilizer Spreader",
+        "grainHarvester": "Grain Harvester"
+      },
+      "tractorForSale": {
+        "newTractor": "New Tractor",
+        "usedTractor": "Used Tractor"
+      },
+      "farmTools": {
+        "plowTillageEquipment": "Plow/Tillage Equipment",
+        "seedingEquipment": "Seeding Equipment",
+        "harvestingEquipment": "Harvesting Equipment"
+      },
+      "fertilizerSpreader": {
+        "mountedSpreader": "Mounted Spreader",
+        "towedSpreader": "Towed Spreader"
+      },
+      "grainHarvester": {
+        "selfPropelledHarvester": "Self-Propelled Harvester",
+        "pullTypeHarvester": "Pull-Type Harvester"
+      }
+    },
+    "jobs": {
+      "FullTime": "Full-Time",
+      "PartTime": "Part-Time",
+      "Physical": "Physical/Manual Labor",
+      "Internship": "Internship",
+      "Remote": "Remote",
+      "Tech": "IT & Tech",
+      "Finance": "Finance & Accounting",
+      "Education": "Education",
+      "links": {
+        "it": "IT Jobs",
+        "airport": "Airport Jobs",
+        "cleaning": "Cleaning & Maintenance Jobs"
+      }
+    },
+    "realEstateNested": {
+      "forRent": {
+        "apartmentFlat": "Apartment/Flat",
+        "houseVilla": "House/Villa",
+        "commercialOffice": "Commercial Office",
+        "warehouseStorage": "Warehouse/Storage",
+        "singleRoom": "Single Room"
+      },
+      "forSale": {
+        "newHouseVilla": "New House/Villa",
+        "usedHouseVilla": "Used House/Villa",
+        "apartmentFlatForSale": "Apartment/Flat for Sale",
+        "completedBuilding": "Completed Building"
+      },
+      "landForSale": {
+        "residentialLand": "Residential Land",
+        "commercialLand": "Commercial Land",
+        "industrialLand": "Industrial Land"
+      },
+      "farmForSale": {
+        "agriculturalLand": "Agricultural Land",
+        "livestockFarm": "Livestock Farm",
+        "treeForestFarms": "Tree/Forest Farms"
+      },
+      "commercial": {
+        "retailSpaceShop": "Retail Space/Shop",
+        "hotelGuesthouse": "Hotel/Guesthouse",
+        "commercialBuilding": "Commercial Building",
+        "largeWarehouse": "Large Warehouse"
+      }
+    },
+    "motorcyclesNested": {
+      "forSale": {
+        "newMotorcycle": "New Motorcycle",
+        "usedMotorcycle": "Used Motorcycle",
+        "newVespa": "New Vespa",
+        "usedVespa": "Used Vespa",
+        "newBajaj": "New Bajaj",
+        "usedBajaj": "Used Bajaj",
+        "sportBikes": "Sport Bikes",
+        "cargoBikes": "Cargo Bikes",
+        "cargoBajaj": "Cargo Bajaj (Tuk Tuk)"
+      },
+      "forRent": {
+        "motorcycleRental": "Motorcycle Rental",
+        "vespaRental": "Vespa Rental",
+        "cargoMotorcycleRental": "Cargo Motorcycle Rental",
+        "bajajForRent": "Bajaj for Rent",
+        "cargoBajajRental": "Cargo Bajaj Rental",
+        "dailyBajajRental": "Daily Bajaj Rental"
+      },
+      "parts": {
+        "motorcycleEngines": "Motorcycle Engines",
+        "tiresRims": "Tires/Rims",
+        "protectiveGear": "Protective Gear",
+        "bajajEngines": "Bajaj Engines",
+        "bajajBodyParts": "Bajaj Body Parts"
+      },
+      "other": {
+        "miscellaneousEquipment": "Miscellaneous Equipment"
+      }
+    },
+    "marketplaceNested": {
+      "antiques": {
+        "bowls": "Bowls",
+        "parts": "Parts / Pieces",
+        "coffeeService": "Coffee Service",
+        "porcelain": "Porcelain",
+        "vintage": "Vintage",
+        "other": "Other"
+      },
+      "electronics": {
+        "mobilePhones": "Mobile Phones",
+        "laptopsComputers": "Laptops & Computers",
+        "tvsAccessories": "TVs & Accessories",
+        "camerasPhotography": "Cameras & Photography",
+        "homeAppliances": "Home Appliances",
+        "other": "Other"
+      },
+      "animalAndSupplies": {
+        "livestock": "Livestock (Goats, Cattle)",
+        "pets": "Pets (Dogs, Cats)",
+        "feed": "Animal Feed & Hay",
+        "accessories": "Pet Accessories",
+        "other": "Other"
+      },
+      "sportsAndOutdoors": {
+        "gymEquipment": "Gym Equipment",
+        "bicycles": "Bicycles",
+        "sportingGoods": "Sporting Goods",
+        "campingGear": "Camping & Hiking Gear",
+        "toys": "Toys",
+        "other": "Other"
+      },
+      "furniture": {
+        "sofasCouches": "Sofas & Couches",
+        "bedsMattresses": "Beds & Mattresses",
+        "tablesDesks": "Tables & Desks",
+        "kitchenFurnishings": "Kitchen Furnishings",
+        "other": "Other"
+      },
+      "fashion": {
+        "mensClothing": "Men's Clothing",
+        "womensClothing": "Women's Clothing",
+        "shoesFootwear": "Shoes & Footwear",
+        "bagsWallets": "Bags & Wallets",
+        "other": "Other"
+      }
+    },
+    "jobsNested": {
+      "fullTime": {
+        "administrationOffice": "Administration & Office",
+        "itTechnology": "IT & Technology",
+        "healthcare": "Healthcare",
+        "salesMarketing": "Sales & Marketing",
+        "engineeringConstruction": "Engineering & Construction"
+      },
+      "partTime": {
+        "officeAssistant": "Office Assistant",
+        "studentEmployment": "Student Employment",
+        "foodDeliveryRunner": "Food Delivery/Runner"
+      },
+      "freelance": {
+        "graphicDesigner": "Graphic Designer",
+        "webDeveloper": "Web Developer",
+        "freelanceWriter": "Freelance Writer"
+      },
+      "experienceLevels": {
+        "entry": "Entry Level",
+        "mid": "Mid Level",
+        "senior": "Senior Level"
+      },
+      "educationLevels": {
+        "highschool": "High School",
+        "diploma": "Diploma",
+        "bachelor": "Bachelor's",
+        "master": "Master's/PhD"
+      },
+      "applicationMethods": {
+        "email": "Apply by Email",
+        "url": "Apply by Website/URL",
+        "phone": "Call/Contact by Phone"
+      }
+    }
+  },
+  "footer_extra": {},
+  "mine": {
+    "nav": {
+      "myAds": "My Ads",
+      "favorites": "Favorites",
+      "saved": "Saved",
+      "tickets": "Tickets",
+      "settings": "Settings"
+    },
+    "settings": {
+      "privacy": "Privacy",
+      "security": "Security",
+      "payment": "Payment",
+      "subscription": "Subscription",
+      "verifyEmail": "Verify Email"
+    },
+    "account": {
+      "myAds": "My Ads",
+      "myAccount": "My Account",
+      "settings": "Settings",
+      "favorites": "Favorites",
+      "savedSearches": "Saved Searches",
+      "forBusinesses": "For Businesses",
+      "contactHistory": "Contact History",
+      "mySubscriptions": "My Subscriptions"
+    },
+    "profile": {
+      "noUser": "No user data found.",
+      "defaultDisplayName": "User",
+      "verified": "Verified",
+      "edit": "Edit",
+      "logout": "Logout"
+    },
+    "currentProfile": "Current Profile",
+    "guest": "Guest",
+    "emailAddress": "Email Address",
+    "notAvailable": "N/A",
+    "searchHistory": {
+      "recent": "Recent Search History",
+      "noRecords": "No search records found",
+      "trending": "Trending Searches",
+      "hits": "hits"
+    },
+    "tickets": {
+      "title": "My Tickets",
+      "noTickets": "No tickets found.",
+      "status": {
+        "done": "Done",
+        "inProgress": "In Progress"
+      },
+      "id": "ID:",
+      "close": "Close",
+      "viewConversation": "View Conversation",
+      "yourOriginalRequest": "Your Original Request",
+      "you": "You",
+      "supportTeam": "Support Team",
+      "caseResolved": "Case Resolved"
+    },
+    "subscriptions": {
+      "errorLoading": "Error loading subscriptions",
+      "deleteFailed": "Failed to delete subscription",
+      "title": "My Subscriptions",
+      "status": {
+        "active": "ACTIVE",
+        "inactive": "INACTIVE"
+      },
+      "paid": "✓ Paid",
+      "unpaid": "⚠ Unpaid",
+      "category": "Category",
+      "region": "Region",
+      "cities": "Cities",
+      "priceRange": "Price Range",
+      "created": "Created:",
+      "expired": "Expired:",
+      "expires": "Expires:",
+      "processing": "Processing...",
+      "payNow": "Pay Now",
+      "delete": "Delete"
+    },
+    "businesses": {
+      "noAccountInfo": "No account information found.",
+      "checkLogin": "Please ensure you are logged in correctly.",
+      "noBusinessConnected": "No business is connected to this account",
+      "contactAdmin": "Your account is not connected to a business yet. Contact your account administrator to gain access to the Business Center.",
+      "userInfo": "User Information:",
+      "id": "ID:",
+      "ifBusinessCustomer": "If you are a business customer",
+      "contactAdminDesc": "Contact your colleague who has admin rights for your business to add this account.",
+      "becomeBusinessCustomer": "Become a business customer",
+      "createProfileDesc": "Create your business profile to start advertising.",
+      "startNow": "Start now"
+    },
+    "myAds": {
+      "deleteFailed": "Delete ad failed.",
+      "relistConfirm": "Pay $5 to relist this item?",
+      "paymentSuccess": "Payment successful! Your ad is now active.",
+      "paymentFailed": "Payment failed. Please try again.",
+      "title": "My Ads",
+      "empty": "You haven't created any ads yet.",
+      "createFirst": "Create Your First Ad",
+      "itemPlaceholder": "item",
+      "sold": "✓ Sold",
+      "payToRelist": "💳 Pay to Relist",
+      "payNow": "Pay Now $5",
+      "edit": "Edit",
+      "delete": "Delete"
+    }
+  },
+  "descriptions": {
+    "myAdsDesc": "See all your ads and track statistics",
+    "myAccountDesc": "View your details on KARAADI and Smartsuuq",
+    "settingsDesc": "Manage your account settings on KARAADI",
+    "favoritesDesc": "View all ads you like and have saved on KARAADI",
+    "savedSearchesDesc": "Manage and customize your saved searches",
+    "forBusinessesDesc": "View companies you have access to",
+    "contactHistoryDesc": "Track your support requests and messages",
+    "mySubscriptionsDesc": "Manage your subscriptions and payment plans"
+  },
+  "messages": {
+    "title": "Messages"
+  },
+  "chats": {
+    "yourChats": "Your Chats",
+    "conversations": "conversation",
+    "noMessagesYet": "No messages yet",
+    "startConversation": "Start a conversation by sending a message!",
+    "aboutPrefix": "About:",
+    "deleted": {
+      "you": "You deleted this message",
+      "other": "This message was deleted"
+    },
+    "edited": "edited",
+    "failed": "Failed",
+    "online": "Online",
+    "offline": "Offline",
+    "seller": "Seller",
+    "chatFallback": "Chat",
+    "selectConversationMobile": "Select a conversation",
+    "welcome": "Welcome to Messages",
+    "tapToStart": "Tap on a chat to start messaging",
+    "selectToStart": "Select a conversation to start chatting",
+    "confirmDelete": "Are you sure you want to delete this chat?",
+    "deletedSuccess": "Chat deleted",
+    "deletedFailed": "Failed to delete chat",
+    "delete": "Delete"
+  },
+  "checkout": {
+    "steps": {
+      "account": "Account",
+      "newAd": "New Ad",
+      "summary": "Summary",
+      "payment": "Payment"
+    }
+  }
+}

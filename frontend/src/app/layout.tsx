@@ -3,10 +3,12 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ClientI18nProvider from "./Guard/ClientI18nProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
   title: "Karaadi",
   description: "iska gad ama soo gado alaabo",
   icons: {
-    icon: "./logo.jpg",
+    icon: "/logo.jpg",
   },
 };
 
@@ -27,24 +29,17 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable}`}
+    >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className="antialiased min-h-screen flex flex-col bg-[#f6f8fb] text-gray-900"
         suppressHydrationWarning
       >
-        {children}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
+        <ClientI18nProvider>{children}</ClientI18nProvider>
+        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       </body>
     </html>
   );

@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useGetRoute } from "../../hooks/useGetRoute";
 import Loading from "../../shared/Loading/Loading";
+import { useTranslation } from "react-i18next";
 
 interface ChatHeaderProps {
   selectedChat: any;
@@ -17,14 +17,30 @@ export const ChatHeader = ({
   isConnected,
   onBack,
 }: ChatHeaderProps) => {
+  const { t } = useTranslation();
   const itemType = selectedChat?.item?.type;
   const itemRoute = useGetRoute({ category: itemType });
   const itemId = selectedChat.item?.id;
-  const itemTitle = selectedChat.item?.title || "Chat";
+  const itemTitle =
+    selectedChat.item?.title ||
+    t("chats.chatFallback", { defaultValue: "Chat" });
   const otherUser = selectedChat.otherUser;
-  const username = otherUser?.username || "Seller";
+  const username =
+    otherUser?.username || t("chats.seller", { defaultValue: "Seller" });
   const profileImage = otherUser?.profileImage;
   const userInitial = username.charAt(0).toUpperCase();
+  const avatarSrc = (() => {
+    try {
+      if (profileImage && profileImage.startsWith("/assets/users/")) {
+        const initial = userInitial || "U";
+        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='transparent' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black' font-size='16' font-family='Arial, Helvetica, sans-serif'>${initial}</text></svg>`;
+        return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      }
+    } catch (e) {
+
+    }
+    return profileImage;
+  })();
 
   if (!selectedChat) {
     return (
@@ -59,13 +75,22 @@ export const ChatHeader = ({
         )}
         <div className="relative mr-4">
           <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl overflow-hidden bg-blue-600 shadow-sm flex items-center justify-center text-white font-black">
-            {profileImage ? (
-              <Image
-                src={profileImage}
+            {avatarSrc ? (
+              <img
+                src={avatarSrc}
                 alt={username}
                 width={48}
                 height={48}
                 className="object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  if (target && !target.dataset.fallback) {
+                    target.dataset.fallback = "1";
+                    const initial = username?.charAt(0)?.toUpperCase() || "U";
+                    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='transparent' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black' font-size='16' font-family='Arial, Helvetica, sans-serif'>${initial}</text></svg>`;
+                    target.src = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+                  }
+                }}
               />
             ) : (
               userInitial
@@ -94,7 +119,9 @@ export const ChatHeader = ({
             <span className="text-blue-600">@{username}</span>
             <span className="opacity-30">|</span>
             <span className={isConnected ? "text-green-600" : "text-gray-400"}>
-              {isConnected ? "Online" : "Offline"}
+              {isConnected
+                ? t("chats.online", { defaultValue: "Online" })
+                : t("chats.offline", { defaultValue: "Offline" })}
             </span>
           </div>
         </div>

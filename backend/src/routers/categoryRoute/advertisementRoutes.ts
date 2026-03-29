@@ -14,6 +14,8 @@ import {
   adminAndManager,
   ProtectRoute,
 } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { createAdvertisementSchema } from "../../validation/advertisement.validation.ts";
 
 const advertisementRouter = Router();
 
@@ -26,12 +28,14 @@ advertisementRouter.post(
   "/",
   ProtectRoute,
   adminAndManager,
+  validateRequest(createAdvertisementSchema),
   createAdvertisement,
 );
 advertisementRouter.put(
   "/:id",
   ProtectRoute,
   adminAndManager,
+  validateRequest(createAdvertisementSchema),
   updateAdvertisement,
 );
 advertisementRouter.delete(

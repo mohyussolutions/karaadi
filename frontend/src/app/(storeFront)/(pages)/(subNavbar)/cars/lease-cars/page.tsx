@@ -6,13 +6,15 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
-import { LeaseCarsNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
-import SearchInput from "@/app/(search)/SearchInput";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { getCars, Car } from "@/actions/categories/carActions";
+import SearchInput from "@/app/ui/search/SearchInput";
+import { carsNestedCategoriesMap } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import { useTranslation } from "react-i18next";
 
 export default function RentCars() {
-  const subCategoryLinks = LeaseCarsNestedSub;
+  const subCategoryLinks = carsNestedCategoriesMap.LeaseCarsNestedSub;
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<Car[]>([]);
@@ -145,7 +147,7 @@ export default function RentCars() {
     if (query.trim()) return `Natiijada: "${query}"`;
     if (!selectedSubcategory) return "Gawaarida Kirada ah (Rent Cars)";
     const found = subCategoryLinks.find(
-      (cat) =>
+      (cat: { so: string; title: string }) =>
         cat.so === selectedSubcategory || cat.title === selectedSubcategory,
     );
     return found ? `${found.so} (${found.title})` : selectedSubcategory;
@@ -197,7 +199,12 @@ export default function RentCars() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}
                 >

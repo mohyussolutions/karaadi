@@ -1,3 +1,39 @@
+export const getSubscriptionStats = async (req: Request, res: Response) => {
+  try {
+    const stats = await cacheManager.withCache(
+      CACHE_KEYS.STATS,
+      async () => {
+        const [byCategory, total, active, paid] = await Promise.all([
+          prisma.subscription.groupBy({
+            by: ["category"],
+            _count: { _all: true },
+          }),
+          prisma.subscription.count(),
+          prisma.subscription.count({ where: { isActive: true } }),
+          prisma.subscription.count({ where: { isPaid: true } }),
+        ]);
+        return { byCategory, total, active, paid };
+      },
+      CACHE_TTL.STATS,
+    );
+    res.json({ success: true, stats });
+  } catch (err) {
+    res.status(500).json({ error: "Stats failed" });
+  }
+};
+
+export const getTotalSubscriptions = async (req: Request, res: Response) => {
+  try {
+    const total = await cacheManager.withCache(
+      CACHE_KEYS.TOTAL,
+      async () => await prisma.subscription.count(),
+      CACHE_TTL.STATS,
+    );
+    res.json({ success: true, total });
+  } catch (err) {
+    res.status(500).json({ error: "Count failed" });
+  }
+};
 import { Request, Response } from "express";
 import { User } from "@prisma/client";
 import chalk from "chalk";
@@ -456,22 +492,14 @@ export const deleteSubscriptionAdmin = async (
 
 export const getAllSubscriptionsAdmin = async (req: Request, res: Response) => {
   try {
-    const { page, limit, skip } = getPaginationParams(
-      req.query.page as string,
-      req.query.limit as string,
-    );
-
-    const cacheKey = CACHE_KEYS.ADMIN_ALL(page, limit);
+    const cacheKey = "subscriptions:admin:all";
     const subscriptions = await cacheManager.withCache(
       cacheKey,
       async () => {
         const subs = await prisma.subscription.findMany({
           include: includeUser,
           orderBy: { createdAt: "desc" },
-          skip,
-          take: limit,
         });
-
         return subs.map((sub) => ({
           ...sub,
           isExpired: isExpired(sub.expiryDate),
@@ -481,56 +509,12 @@ export const getAllSubscriptionsAdmin = async (req: Request, res: Response) => {
       },
       CACHE_TTL.LIST,
     );
-
-    const total = await prisma.subscription.count();
-
     res.json({
       success: true,
-      data: subscriptions,
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      subscriptions,
     });
   } catch (err) {
     res.status(500).json({ error: "Fetch all failed" });
-  }
-};
-
-export const getTotalSubscriptions = async (req: Request, res: Response) => {
-  try {
-    const total = await cacheManager.withCache(
-      CACHE_KEYS.TOTAL,
-      async () => await prisma.subscription.count(),
-      CACHE_TTL.STATS,
-    );
-
-    res.json({ success: true, total });
-  } catch (err) {
-    res.status(500).json({ error: "Count failed" });
-  }
-};
-
-export const getSubscriptionStats = async (req: Request, res: Response) => {
-  try {
-    const stats = await cacheManager.withCache(
-      CACHE_KEYS.STATS,
-      async () => {
-        const [byCategory, total, active, paid] = await Promise.all([
-          prisma.subscription.groupBy({
-            by: ["category"],
-            _count: { _all: true },
-          }),
-          prisma.subscription.count(),
-          prisma.subscription.count({ where: { isActive: true } }),
-          prisma.subscription.count({ where: { isPaid: true } }),
-        ]);
-
-        return { byCategory, total, active, paid };
-      },
-      CACHE_TTL.STATS,
-    );
-
-    res.json({ success: true, stats });
-  } catch (err) {
-    res.status(500).json({ error: "Stats failed" });
   }
 };
 

@@ -376,7 +376,7 @@ export default function AdminReportsPage() {
             </>
           )}
 
-          {/* Desktop Filter Section */}
+          
           <div className="hidden sm:block bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
               <select
@@ -432,7 +432,7 @@ export default function AdminReportsPage() {
             </div>
           </div>
 
-          {/* Mobile Filter Section */}
+          
           {mobileFiltersOpen && (
             <div className="sm:hidden bg-white rounded-xl p-4 border border-gray-100 mb-5">
               <div className="space-y-3">
@@ -534,7 +534,7 @@ export default function AdminReportsPage() {
             </div>
           )}
 
-          {/* Desktop Table View */}
+          
           <div className="hidden md:block bg-white rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -667,7 +667,7 @@ export default function AdminReportsPage() {
             </div>
           </div>
 
-          {/* Mobile Card View */}
+          
           <div className="md:hidden space-y-3">
             {reports.length === 0 ? (
               <div className="bg-white rounded-xl p-8 text-center text-gray-400 font-medium text-sm">

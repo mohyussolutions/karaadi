@@ -25,7 +25,8 @@ export default function ChatInputArea({
     if (textareaRef.current) {
       const textarea = textareaRef.current;
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
+      const maxH = isMobile ? 120 : 180;
+      textarea.style.height = `${Math.min(textarea.scrollHeight, maxH)}px`;
 
       if (isMobile && selectedChat) {
         setTimeout(() => textarea.focus(), 300);
@@ -52,7 +53,7 @@ export default function ChatInputArea({
 
   return (
     <div className="bg-white border-t border-slate-100 p-4 md:p-6">
-      <div className="max-w-5xl mx-auto relative flex items-end gap-3 bg-slate-50 border border-slate-200 rounded-[2rem] p-2 transition-all focus-within:ring-[5px] focus-within:ring-blue-600/10 focus-within:border-blue-500 focus-within:bg-white shadow-sm">
+      <div className="max-w-5xl mx-auto relative flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-[2rem] p-1.5 sm:p-2 transition-all focus-within:ring-[5px] focus-within:ring-blue-600/10 focus-within:border-blue-500 focus-within:bg-white shadow-sm">
         <textarea
           ref={textareaRef}
           value={newMessage}
@@ -61,11 +62,11 @@ export default function ChatInputArea({
           placeholder={`Message ${
             selectedChat?.otherUser?.username || "Seller"
           }...`}
-          className="flex-1 bg-transparent border-none focus:ring-0 px-5 py-4 text-slate-700 text-sm md:text-base resize-none leading-relaxed placeholder:text-slate-400 rounded-[1.8rem]"
+          className="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 sm:px-5 sm:py-4 text-slate-700 text-sm md:text-base resize-none leading-relaxed placeholder:text-slate-400 rounded-[1.8rem]"
           rows={1}
           style={{
-            minHeight: "60px",
-            maxHeight: "180px",
+            minHeight: isMobile ? 40 : 60,
+            maxHeight: isMobile ? 120 : 180,
             overflowY: "auto",
           }}
           disabled={sending}
@@ -74,7 +75,7 @@ export default function ChatInputArea({
         <button
           onClick={handleSend}
           disabled={!newMessage.trim() || sending}
-          className={`group flex items-center justify-center h-[52px] w-[52px] md:w-auto md:px-8 rounded-[1.5rem] font-bold transition-all shrink-0 ${
+          className={`group flex items-center justify-center h-[44px] sm:h-[52px] w-[44px] sm:w-[52px] md:w-auto md:px-8 rounded-[1.3rem] sm:rounded-[1.5rem] font-bold transition-all shrink-0 ${
             !newMessage.trim() || sending
               ? "bg-slate-200 text-slate-400 cursor-not-allowed"
               : "bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700 active:scale-90"
@@ -85,7 +86,7 @@ export default function ChatInputArea({
           ) : (
             <>
               <span className="hidden md:inline mr-2">Send</span>
-              <Send className="h-4 w-4 md:h-5 md:w-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              <Send className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </>
           )}
         </button>

@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import RealEstateCard from "@/app/(storeFront)/components/Cards/RealEstateCard";
 import { RealEstateForSaleNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryProperties";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
+
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import PriceRangeFilter from "@/app/(storeFront)/components/Filters/PriceRangeFilter";
@@ -15,8 +16,10 @@ import {
   getRealEstateListings,
   RealEstate,
 } from "@/actions/categories/realEstateActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 function ForSale() {
+  const { t } = useTranslation();
   const subCategoryLinks = RealEstateForSaleNestedSub;
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -210,7 +213,10 @@ function ForSale() {
                   {category.icon}
                 </div>
                 <span className="text-[15px] font-medium block leading-tight">
-                  {category.so}
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
                 </span>
                 <span
                   className={`text-[10px] uppercase mt-1 ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}

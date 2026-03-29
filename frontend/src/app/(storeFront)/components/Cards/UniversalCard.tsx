@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, memo } from "react";
+import React, { useState, memo, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AiOutlineHeart } from "react-icons/ai";
@@ -14,6 +14,11 @@ export interface UniversalCardProps {
   images?: string[];
   description?: string | string[];
   maGaday?: boolean;
+  make?: string;
+  year?: string | number;
+  model?: string;
+  mileage?: number | string;
+  area?: string;
   category?: string;
   priority?: boolean;
   renderBadges?: () => React.ReactNode;
@@ -21,20 +26,25 @@ export interface UniversalCardProps {
   renderFooter?: () => React.ReactNode;
   imageHeight?: string;
   children?: React.ReactNode;
-
-  make?: string;
-  model?: string;
-  year?: number;
-  mileage?: number;
-  area?: string;
-  rooms?: number;
-  company?: string;
-  location?: string;
-  employmentType?: string;
+  [key: string]: unknown;
 }
 
-const UniversalCard = memo(
-  ({
+const PLACEHOLDER_IMAGE = "/placeholder.png";
+
+const isValidUrl = (url: string): boolean => {
+  if (!url || typeof url !== "string") return false;
+  if (url.startsWith("/") || url.startsWith("./") || url.startsWith("../"))
+    return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const UniversalCard = memo((props: UniversalCardProps) => {
+  const {
     id,
     title = "Untitled",
     price,
@@ -47,116 +57,118 @@ const UniversalCard = memo(
     renderBadges,
     renderMeta,
     renderFooter,
-    imageHeight = "h-56",
+    imageHeight = "h-64 md:h-56",
     children,
-  }: UniversalCardProps) => {
-    const [imgSrc, setImgSrc] = useState<string>(
-      images?.[0] || "/placeholder.png",
-    );
+  } = props;
 
-    const routePath = useGetRoute({ category });
-    const href = id ? `${routePath}/${id}` : "#";
+  const [imgError, setImgError] = useState(false);
+  const routePath = useGetRoute({ category });
+  const href = id ? `${routePath}/${id}` : "#";
 
-    const displayDescription = useMemo(() => {
-      if (!description) return "";
-      return Array.isArray(description) ? description.join(" ") : description;
-    }, [description]);
+  const validFirstImage = images?.find(isValidUrl);
+  const imgSrc =
+    imgError || !validFirstImage ? PLACEHOLDER_IMAGE : validFirstImage;
+  const displayDescription = Array.isArray(description)
+    ? description.join(" ")
+    : description || "";
 
-    const CardBody = (
-      <>
-        <div
-          className={`relative w-full ${imageHeight} overflow-hidden bg-gray-50`}
-        >
-          <Image
-            src={imgSrc}
-            alt={title}
-            fill
-            sizes="(max-width: 768px) 100vw, 25vw"
-            priority={priority}
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={() => setImgSrc("/placeholder.png")}
-          />
+  const CardContent = (
+    <>
+      <div
+        className={`relative w-full ${imageHeight} overflow-hidden bg-gray-100 rounded-2xl`}
+      >
+        <Image
+          src={imgSrc}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          priority={priority}
+          className="object-cover"
+          onError={() => setImgError(true)}
+          loading={priority ? "eager" : "lazy"}
+          unoptimized={imgSrc.startsWith("/") ? false : true}
+        />
 
-          <div className="absolute top-3 right-3 z-10">
-            <button
-              className="bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            >
-              <AiOutlineHeart
-                className="text-gray-600 hover:text-red-500"
-                size={18}
-              />
-            </button>
-          </div>
-
-          {renderBadges
-            ? renderBadges()
-            : maGaday && (
-                <span className="absolute top-3 left-3 bg-orange-50 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-md uppercase">
-                  waa la gatay
-                </span>
-              )}
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            type="button"
+            className="bg-white/90 p-2.5 rounded-full shadow-sm hover:bg-white transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <AiOutlineHeart className="text-gray-900" size={22} />
+          </button>
         </div>
 
-        <div className="p-4 flex flex-col flex-grow space-y-2">
-          {price !== undefined && (
-            <div className="flex items-baseline gap-1 text-blue-700 font-bold">
-              <span className="text-xl">{price.toLocaleString()}</span>
-              <span className="text-sm">
+        {renderBadges?.() ||
+          (maGaday && (
+            <span className="absolute top-3 left-3 bg-orange-700 text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wide shadow-md">
+              waa la gatay
+            </span>
+          ))}
+      </div>
+
+      <div className="py-3 px-1 flex flex-col flex-grow space-y-2">
+        {price !== undefined && (
+          <div className="flex items-center w-fit">
+            <div className="bg-blue-50 text-blue-800 font-black px-2.5 py-1 rounded-lg flex items-baseline gap-1 border border-blue-100">
+              <span className="text-xl md:text-lg">
+                {price.toLocaleString()}
+              </span>
+              <span className="text-[10px] uppercase">
                 {category === "marketplace" ? "kr" : "$"}
               </span>
             </div>
-          )}
-
-          <h3 className="text-gray-900 font-semibold text-sm line-clamp-1 group-hover:text-blue-700 transition-colors">
-            {title}
-          </h3>
-
-          {displayDescription && (
-            <p className="text-gray-500 text-xs line-clamp-2 h-8 leading-relaxed">
-              {displayDescription}
-            </p>
-          )}
-
-          {renderMeta && renderMeta()}
-
-          <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
-            {renderFooter ? (
-              renderFooter()
-            ) : (
-              <>
-                <span className="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">
-                  {city || "Somalia"}
-                </span>
-                <span className="text-gray-400 text-[10px] uppercase font-bold">
-                  {category}
-                </span>
-              </>
-            )}
           </div>
-        </div>
-      </>
-    );
-
-    return (
-      <div className="group border border-gray-100 rounded-2xl overflow-hidden bg-white hover:shadow-xl transition-all duration-300 flex flex-col h-full">
-        {children ? (
-          <div className="relative block flex-grow cursor-pointer">
-            {CardBody}
-            {children}
-          </div>
-        ) : (
-          <Link href={href} className="relative block flex-grow">
-            {CardBody}
-          </Link>
         )}
+
+        <h3 className="text-black font-black text-base md:text-sm line-clamp-1 leading-tight tracking-tight">
+          {title}
+        </h3>
+
+        {displayDescription && (
+          <p className="text-gray-800 text-sm md:text-xs font-bold line-clamp-2 leading-snug">
+            {displayDescription}
+          </p>
+        )}
+
+        {renderMeta?.()}
+
+        <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-100">
+          {renderFooter ? (
+            renderFooter()
+          ) : (
+            <>
+              <span className="bg-emerald-50 text-emerald-800 font-black text-[11px] md:text-[10px] px-2.5 py-1 rounded-md uppercase tracking-widest border border-emerald-100">
+                {city || "Lama yaqaan"}
+              </span>
+              <span className="bg-gray-100 text-gray-900 text-[11px] md:text-[10px] px-2.5 py-1 rounded-md uppercase font-black tracking-tighter border border-gray-200">
+                {category}
+              </span>
+            </>
+          )}
+        </div>
       </div>
-    );
-  },
-);
+    </>
+  );
+
+  return (
+    <div className="bg-white flex flex-col h-full w-full md:max-w-[320px] rounded-2xl p-1 hover:shadow-lg transition-shadow duration-200">
+      {children ? (
+        <div className="relative block flex-grow cursor-pointer">
+          {CardContent}
+          {children}
+        </div>
+      ) : (
+        <Link href={href} className="relative block flex-grow">
+          {CardContent}
+        </Link>
+      )}
+    </div>
+  );
+});
 
 UniversalCard.displayName = "UniversalCard";
 export default UniversalCard;

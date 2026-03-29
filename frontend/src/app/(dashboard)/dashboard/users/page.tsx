@@ -133,16 +133,25 @@ export default function UserPage() {
     <div className="w-full min-h-screen bg-gray-50">
       <div className="w-full px-4 sm:px-6 py-6">
         <div className="w-full">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2">
-                <FiUser className="text-blue-600" size={24} />
-                User Management
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Manage all registered users
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                <img
+                  src={filteredUsers[0]?.profileImage || PLACEHOLDER_IMAGE}
+                  alt={filteredUsers[0]?.username || "User"}
+                  className="w-full h-full object-cover"
+                  onError={handleImageError}
+                />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2">
+                  <FiUser className="text-blue-600" size={24} />
+                  User Management
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Manage all registered users
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -159,7 +168,6 @@ export default function UserPage() {
             </div>
           </div>
 
-          {/* Search Bar */}
           <div className="mb-6">
             <div className="relative">
               <input
@@ -184,7 +192,6 @@ export default function UserPage() {
             </div>
           </div>
 
-          {/* Mobile View - Stacked Cards */}
           <div className="md:hidden space-y-3">
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
@@ -255,12 +262,14 @@ export default function UserPage() {
             )}
           </div>
 
-          {/* Desktop View - Table */}
           <div className="hidden md:block w-full">
             <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="border-b px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left">
+                      Profile Image
+                    </th>
                     <th className="border-b px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left">
                       User
                     </th>
@@ -285,6 +294,16 @@ export default function UserPage() {
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50">
+                        <td className="border-b px-6 py-4">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                            <img
+                              src={user.profileImage || PLACEHOLDER_IMAGE}
+                              alt={user.username}
+                              className="w-full h-full object-cover"
+                              onError={handleImageError}
+                            />
+                          </div>
+                        </td>
                         <td className="border-b px-6 py-4">
                           <div className="flex items-center gap-3">
                             {user.profileImage ? (

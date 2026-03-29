@@ -70,12 +70,7 @@ export const sendMessage = async (req: Request, res: Response) => {
   try {
     let { chatId, senderId, receiverId, content, imageUrl } = req.body;
 
-    console.log("Received message request:", {
-      chatId,
-      senderId,
-      receiverId,
-      content: content?.substring(0, 50),
-    });
+    // received message request
 
     if (!chatId || !senderId || !content) {
       return res.status(400).json({
@@ -100,7 +95,6 @@ export const sendMessage = async (req: Request, res: Response) => {
     // If receiverId is not provided, determine it from the chat
     if (!receiverId) {
       receiverId = chat.senderId === senderId ? chat.receiverId : chat.senderId;
-      console.log("Determined receiverId from chat:", receiverId);
     }
 
     const encryptedContent = EncryptionController.encrypt(content);
@@ -143,7 +137,6 @@ export const sendMessage = async (req: Request, res: Response) => {
       message: decryptedMessage,
     });
 
-    console.log("Message sent successfully:", message.id);
     res.status(201).json(decryptedMessage);
   } catch (error: any) {
     console.error("Error sending message:", error);

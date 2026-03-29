@@ -1,46 +1,67 @@
 "use client";
 
-import { useMemo } from "react";
+import { FeedItem } from "@/app/utils/types/feed";
 
-export interface FeedItem {
-  id: string | number;
-  category: string;
-  price: number;
-  images: string[];
-  [key: string]: any;
+interface PriorityMap {
+  [key: string]: number;
 }
 
+const PRIORITY_ORDER: PriorityMap = {
+  premium90: 1,
+  standard60: 2,
+  basic30: 3,
+};
+
+const DEFAULT_PRIORITY = 3;
+
 export function useRandomFeed(
-  initialData: Record<string, any[] | null>,
+  initialData: Record<string, FeedItem[] | null>,
   searchResults: FeedItem[] | null,
 ): FeedItem[] {
-  return useMemo(() => {
-    if (searchResults !== null) {
-      return searchResults.map((item) => ({
+  if (searchResults !== null) {
+    return searchResults.map((item) => ({
+      ...item,
+      price: Number(item?.price) || 0,
+      images: Array.isArray(item?.images) ? item.images : [],
+    }));
+  }
+
+  const allItems: FeedItem[] = [];
+
+  for (const [categoryKey, items] of Object.entries(initialData)) {
+    if (!Array.isArray(items)) continue;
+
+    for (const item of items) {
+      allItems.push({
         ...item,
+        category: categoryKey,
         price: Number(item?.price) || 0,
         images: Array.isArray(item?.images) ? item.images : [],
-      }));
+        priority: item.priority || "basic30",
+      });
     }
+  }
 
-    const allItems: FeedItem[] = Object.entries(initialData).flatMap(
-      ([categoryKey, items]) => {
-        if (!Array.isArray(items)) return [];
-        return items.map((item) => ({
-          ...item,
-          category: categoryKey,
-          price: Number(item?.price) || 0,
-          images: Array.isArray(item?.images) ? item.images : [],
-        }));
-      },
-    );
+  const premium: FeedItem[] = [];
+  const standard: FeedItem[] = [];
+  const basic: FeedItem[] = [];
 
-    const shuffled = [...allItems];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+  for (const item of allItems) {
+    const priority = item.priority;
+    if (priority === "premium90") premium.push(item);
+    else if (priority === "standard60") standard.push(item);
+    else basic.push(item);
+  }
 
-    return shuffled;
-  }, [searchResults, initialData]);
+  for (let i = standard.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [standard[i], standard[j]] = [standard[j], standard[i]];
+  }
+
+  for (let i = basic.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [basic[i], basic[j]] = [basic[j], basic[i]];
+  }
+
+  return [...premium, ...standard, ...basic];
 }

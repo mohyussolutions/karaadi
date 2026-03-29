@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
@@ -13,6 +15,7 @@ import { getCars, Car } from "@/actions/categories/carActions";
 
 export default function Truck() {
   const subCategoryLinks = TruckNestedSub;
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<Car[]>([]);
@@ -168,7 +171,6 @@ export default function Truck() {
       <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
-      {/* Subcategory Navigation */}
       <div className="relative py-6">
         <div className="flex justify-center relative items-center">
           <button
@@ -200,7 +202,12 @@ export default function Truck() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}
                 >
@@ -255,7 +262,6 @@ export default function Truck() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
-                // Skeleton Pulse UI
                 Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}

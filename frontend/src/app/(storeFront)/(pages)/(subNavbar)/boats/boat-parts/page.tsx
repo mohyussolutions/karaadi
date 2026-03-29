@@ -7,9 +7,9 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import { BoatPartsNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
-import SearchInput from "@/app/(search)/SearchInput";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { getBoats, Boat } from "@/actions/categories/boatActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function BoatParts() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -51,10 +51,37 @@ export default function BoatParts() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter(
-        (item: any) =>
-          item.mainCategory === "Boats" && item.category.includes("Boat Parts"),
-      );
+      const filtered = results
+        .filter(
+          (item: any) =>
+            item.mainCategory === "Boats" &&
+            item.category.includes("Boat Parts"),
+        )
+        .map((item: any) => ({
+          _id: item._id ?? item.id ?? "",
+          user: item.user ?? "",
+          title: item.title ?? "",
+          so: item.so ?? "",
+          mainCategory: item.mainCategory ?? "Boats",
+          category: item.category ?? [],
+          subcategory: item.subcategory ?? [],
+          region: item.region ?? "",
+          city: item.city ?? "",
+          district: item.district ?? "",
+          subDistrict: item.subDistrict ?? null,
+          description: item.description ?? "",
+          price: item.price ?? 0,
+          images: item.images ?? [],
+          type: item.type ?? "",
+          boatModel: item.boatModel ?? "",
+          transmission: item.transmission ?? "",
+          color: item.color ?? "",
+          maGaday: item.maGaday ?? false,
+          isPaid: item.isPaid ?? false,
+          feeAmount: item.feeAmount,
+          planId: item.planId,
+          expiryDate: item.expiryDate ?? null,
+        }));
       setSearchResults(filtered);
     }, 400);
     return () => clearTimeout(delayDebounce);

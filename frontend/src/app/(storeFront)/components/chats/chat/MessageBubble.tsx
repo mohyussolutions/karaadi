@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Edit3, Trash2, X, Check, ShieldCheck } from "lucide-react";
 import { BsThreeDots } from "react-icons/bs";
 import { Message } from "@/app/utils/types/chat";
@@ -18,6 +19,7 @@ export const MessageBubble = ({
   onDelete,
   onRetry,
 }: MessageBubbleProps) => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(msg.content);
   const [showActions, setShowActions] = useState(false);
@@ -113,8 +115,12 @@ export const MessageBubble = ({
               <p className="text-sm md:text-[15px] leading-relaxed whitespace-pre-wrap break-words">
                 {msg.deleted
                   ? isOwnMessage
-                    ? "You deleted this message"
-                    : "This message was deleted"
+                    ? t("chats.deleted.you", {
+                        defaultValue: "You deleted this message",
+                      })
+                    : t("chats.deleted.other", {
+                        defaultValue: "This message was deleted",
+                      })
                   : msg.content}
               </p>
 
@@ -131,17 +137,21 @@ export const MessageBubble = ({
                         hour: "2-digit",
                         minute: "2-digit",
                       })
-                    : "Just now"}
+                    : t("notifications.time.justNow", {
+                        defaultValue: "Just now",
+                      })}
                 </span>
 
                 {msg.isEdited && !msg.deleted && (
                   <span className="italic font-black text-amber-400">
-                    (edited)
+                    ({t("chats.edited", { defaultValue: "edited" })})
                   </span>
                 )}
 
                 {msg.status === "failed" && (
-                  <span className="text-red-500 font-bold">Failed</span>
+                  <span className="text-red-500 font-bold">
+                    {t("chats.failed", { defaultValue: "Failed" })}
+                  </span>
                 )}
 
                 {isOwnMessage && msg.status === "sent" && !msg.deleted && (

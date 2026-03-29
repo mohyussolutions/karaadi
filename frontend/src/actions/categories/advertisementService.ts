@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { ADVERTISEMENT_ENDPOINTS } from "../constant/constant";
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export interface Advertisement {
   createdAt: string | number | Date;
@@ -21,26 +21,6 @@ export interface Advertisement {
   endDate?: Date;
 }
 
-async function getAuthHeaders(token?: string) {
-  const cookieStore = await cookies();
-  const cookieToken =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-  const authToken = token || cookieToken;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-  }
-
-  return headers;
-}
-
 const addCacheBuster = (url: string) => {
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}_t=${Date.now()}`;
@@ -57,7 +37,7 @@ export const getAdvertisements = async (
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(url.toString(), {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
     if (!response.ok) return [];
@@ -75,7 +55,7 @@ export const getAdvertisementById = async (
     const response = await fetch(
       addCacheBuster(ADVERTISEMENT_ENDPOINTS.GET_BY_ID(id)),
       {
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -92,7 +72,7 @@ export const getAdvertisementStats = async (): Promise<any> => {
     const response = await fetch(
       addCacheBuster(ADVERTISEMENT_ENDPOINTS.STATS),
       {
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -108,7 +88,7 @@ export const trackAdClick = async (adId: string): Promise<void> => {
     const headers = await getAuthHeaders();
     await fetch(addCacheBuster(ADVERTISEMENT_ENDPOINTS.CLICK(adId)), {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
   } catch (error) {
@@ -126,7 +106,7 @@ export const createAdvertisement = async (
       addCacheBuster(ADVERTISEMENT_ENDPOINTS.CREATE),
       {
         method: "POST",
-        headers,
+        headers: headers as HeadersInit,
         body: JSON.stringify(data),
         cache: "no-store",
       },
@@ -151,7 +131,7 @@ export const updateAdvertisement = async (
       addCacheBuster(ADVERTISEMENT_ENDPOINTS.UPDATE(id)),
       {
         method: "PUT",
-        headers,
+        headers: headers as HeadersInit,
         body: JSON.stringify(data),
         cache: "no-store",
       },
@@ -176,7 +156,7 @@ export const deleteAdvertisement = async (
       addCacheBuster(ADVERTISEMENT_ENDPOINTS.DELETE(id)),
       {
         method: "DELETE",
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -196,7 +176,7 @@ export const getAdStats = async (): Promise<any> => {
     const response = await fetch(
       addCacheBuster(ADVERTISEMENT_ENDPOINTS.STATS),
       {
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );

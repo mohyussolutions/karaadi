@@ -1,24 +1,23 @@
 "use client";
 
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import { AnimalAndSuppliesNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
-import SearchInput from "@/app/(search)/SearchInput";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import {
   getMarketplaceItems,
   MarketplaceItem,
 } from "@/actions/categories/marketplaceActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function AnimalAndSupplies() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
@@ -30,101 +29,92 @@ export default function AnimalAndSupplies() {
   );
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const data = await getMarketplaceItems();
-        if (data) setItems(data);
-      } catch (err) {
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
+    getMarketplaceItems().then((data) => {
+      setItems(data || []);
+      setIsLoading(false);
+    });
   }, []);
 
-  const allAnimalItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.includes("Animals & Supplies")
-        : item.category === "Animals & Supplies",
-    );
-  }, [items]);
-
   useEffect(() => {
-    const delayDebounce = setTimeout(async () => {
+    const delayDebounce = setTimeout(() => {
       if (!query.trim()) {
         setSearchResults([]);
         return;
       }
-      const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) =>
-        Array.isArray(item.category)
-          ? item.category.includes("Animals & Supplies")
-          : item.category === "Animals & Supplies",
-      );
-      setSearchResults(filtered);
+      getGlobalSearchResults(query).then((results) => {
+        const filtered = results.filter((item: any) =>
+          Array.isArray(item.category)
+            ? item.category.includes("Animals & Supplies")
+            : item.category === "Animals & Supplies",
+        );
+        const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
+          _id: item._id ?? item.id ?? "",
+          id: item.id ?? item._id ?? "",
+          user: item.user ?? "",
+          title: item.title ?? "",
+          description: item.description ?? "",
+          city: item.city ?? "",
+          price: item.price ?? 0,
+          images: item.images ?? [],
+          category: item.category ?? "",
+          subcategory: item.subcategory ?? "",
+          region: item.region ?? "",
+          mainCategory: item.mainCategory ?? "Animals & Supplies",
+        }));
+        setSearchResults(mappedResults);
+      });
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  const regionCityCounts = useMemo(() => {
-    const regionCounts: Record<string, number> = {};
-    const cityCounts: Record<string, number> = {};
+  const allAnimalItems: MarketplaceItem[] = items.filter((item) =>
+    Array.isArray(item.category)
+      ? item.category.includes("Animals & Supplies")
+      : item.category === "Animals & Supplies",
+  );
 
-    allAnimalItems.forEach((item) => {
-      if (item.region) {
-        const reg = item.region.toLowerCase().trim();
-        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
-      }
-      if (item.city) {
-        const cit = item.city.toLowerCase().trim();
-        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
-      }
+  const regionCounts: Record<string, number> = {};
+  const cityCounts: Record<string, number> = {};
+  for (const item of allAnimalItems) {
+    if (item.region) {
+      const reg = item.region.toLowerCase().trim();
+      regionCounts[reg] = (regionCounts[reg] || 0) + 1;
+    }
+    if (item.city) {
+      const cit = item.city.toLowerCase().trim();
+      cityCounts[cit] = (cityCounts[cit] || 0) + 1;
+    }
+  }
+  const regionCityCounts = { regionCounts, cityCounts };
+
+  let itemsToDisplay: MarketplaceItem[] = query.trim()
+    ? searchResults
+    : allAnimalItems;
+  if (selectedSubcategory) {
+    itemsToDisplay = itemsToDisplay.filter((item: MarketplaceItem) => {
+      const sub = Array.isArray(item.subcategory)
+        ? item.subcategory
+        : [item.subcategory];
+      return sub.some((s) =>
+        s?.toLowerCase().includes(selectedSubcategory?.toLowerCase() || ""),
+      );
     });
-    return { regionCounts, cityCounts };
-  }, [allAnimalItems]);
-
-  const itemsToDisplay = useMemo(() => {
-    let list = query.trim() ? searchResults : allAnimalItems;
-
-    if (selectedSubcategory) {
-      list = list.filter((item) => {
-        const sub = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory];
-        return sub.some((s) =>
-          s?.toLowerCase().includes(selectedSubcategory.toLowerCase()),
-        );
-      });
-    }
-
-    if (selectedRegion) {
-      list = list.filter(
-        (item) =>
-          item.region?.toLowerCase().trim() ===
-          selectedRegion.toLowerCase().trim(),
-      );
-    }
-
-    const activeCities = Object.keys(checkedCities).filter(
-      (city) => checkedCities[city],
+  }
+  if (selectedRegion) {
+    itemsToDisplay = itemsToDisplay.filter(
+      (item: MarketplaceItem) =>
+        item.region?.toLowerCase().trim() ===
+        (selectedRegion?.toLowerCase().trim() || ""),
     );
-    if (activeCities.length > 0) {
-      list = list.filter((item) =>
-        activeCities.includes(item.city?.toLowerCase().trim() || ""),
-      );
-    }
-
-    return list;
-  }, [
-    allAnimalItems,
-    searchResults,
-    query,
-    selectedSubcategory,
-    selectedRegion,
-    checkedCities,
-  ]);
+  }
+  const activeCitiesList = Object.keys(checkedCities).filter(
+    (city) => checkedCities[city],
+  );
+  if (activeCitiesList.length > 0) {
+    itemsToDisplay = itemsToDisplay.filter((item: MarketplaceItem) =>
+      activeCitiesList.includes(item.city?.toLowerCase().trim() || ""),
+    );
+  }
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -136,20 +126,12 @@ export default function AnimalAndSupplies() {
     }
   };
 
-  if (isError)
-    return (
-      <div className="text-red-500 p-10 font-bold text-center">
-        Cilad ayaa ku timid soo dejinta alaabta.
-      </div>
-    );
-
   return (
     <div className="container mx-auto px-4 pb-10">
       <SearchInput onSearch={setQuery} />
       <div className="pt-2">
         <PathSegmentsDisplay />
       </div>
-
       <div className="relative py-6">
         <div className="flex justify-center relative">
           <button
@@ -194,28 +176,35 @@ export default function AnimalAndSupplies() {
           </button>
         </div>
       </div>
-
       <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
         <aside className="md:w-1/3 sticky top-4 self-start">
-          <LocationSelector
-            onFilterChange={(reg, cities) => {
-              setSelectedRegion(reg);
-              setCheckedCities(cities);
-            }}
-            selectedRegion={selectedRegion}
-            checkedCities={checkedCities}
-            regionCounts={regionCityCounts.regionCounts}
-            cityCounts={regionCityCounts.cityCounts}
-          />
-          <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
-            <SomaliMap
-              selectedRegion={selectedRegion}
-              onRegionClick={setSelectedRegion}
-              items={allAnimalItems}
-            />
-          </div>
+          {isLoading ? (
+            <div className="animate-pulse space-y-4">
+              <div className="h-32 bg-gray-100 rounded-xl" />
+              <div className="h-40 bg-gray-100 rounded-xl" />
+            </div>
+          ) : (
+            <>
+              <LocationSelector
+                onFilterChange={(reg, cities) => {
+                  setSelectedRegion(reg);
+                  setCheckedCities(cities);
+                }}
+                selectedRegion={selectedRegion}
+                checkedCities={checkedCities}
+                regionCounts={regionCityCounts.regionCounts}
+                cityCounts={regionCityCounts.cityCounts}
+              />
+              <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
+                <SomaliMap
+                  selectedRegion={selectedRegion}
+                  onRegionClick={setSelectedRegion}
+                  items={allAnimalItems}
+                />
+              </div>
+            </>
+          )}
         </aside>
-
         <main className="md:w-2/3 w-full">
           <div className="mb-6 text-sm font-medium text-gray-600 bg-blue-50 py-2 px-4 rounded-lg inline-block border border-blue-100">
             Waxaa la soo bandhigayaa{" "}
@@ -224,7 +213,6 @@ export default function AnimalAndSupplies() {
             </span>{" "}
             alaabta xoolaha ah
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {itemsToDisplay.length > 0
               ? itemsToDisplay.map((item) => (

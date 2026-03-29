@@ -1,4 +1,9 @@
-import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+import { ProtectRoute } from "../../core/middelware/authMiddlewareBothDbAndCognito.ts";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import {
+  createTicketSchema,
+  updateTicketSchema,
+} from "../../validation/customerSupport.validation.ts";
 import {
   createTicket,
   deleteTicket,
@@ -9,20 +14,22 @@ import { Router } from "express";
 
 const customerSupportRoutes = Router();
 
-customerSupportRoutes.get("/", ProtectRoute, (req, res, next) => {
-  getTicketsAndMetrics(req, res).catch(next);
-});
+customerSupportRoutes.get("/", ProtectRoute, getTicketsAndMetrics);
 
-customerSupportRoutes.post("/", ProtectRoute, (req, res, next) => {
-  createTicket(req, res).catch(next);
-});
+customerSupportRoutes.post(
+  "/",
+  ProtectRoute,
+  validateRequest(createTicketSchema),
+  createTicket,
+);
 
-customerSupportRoutes.put("/:id", ProtectRoute, (req, res, next) => {
-  updateTicket(req, res).catch(next);
-});
+customerSupportRoutes.put(
+  "/:id",
+  ProtectRoute,
+  validateRequest(updateTicketSchema),
+  updateTicket,
+);
 
-customerSupportRoutes.delete("/:id", ProtectRoute, (req, res, next) => {
-  deleteTicket(req, res).catch(next);
-});
+customerSupportRoutes.delete("/:id", ProtectRoute, deleteTicket);
 
 export default customerSupportRoutes;

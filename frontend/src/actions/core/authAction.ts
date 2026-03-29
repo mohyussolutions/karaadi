@@ -1,5 +1,11 @@
 import { normalizeUser } from "@/app/(storeFront)/components/hooks/useNormalizeUser";
 import { apiUrls } from "../constant/constant";
+import {
+  NormalizedUser,
+  RawUserData,
+  SessionResponse,
+} from "@/app/utils/types/user.types";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export interface User {
   _id: string;
@@ -37,7 +43,7 @@ export async function login(email: string, password: string): Promise<User> {
       "Content-Type": "application/json",
       "Cache-Control": "max-age=0, must-revalidate",
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, username: email }),
   });
 
   if (!response.ok) throw new Error("Login failed");
@@ -45,41 +51,53 @@ export async function login(email: string, password: string): Promise<User> {
   const data: LoginResponse = await response.json();
   const u = data.user || data;
 
-  const user = normalizeUser({
+  let profileImage = null;
+  if (
+    typeof u.profileImage === "string" &&
+    u.profileImage.trim() !== "" &&
+    u.profileImage !== "false"
+  ) {
+    profileImage = u.profileImage;
+  }
+
+  const userData = {
     _id: u.id || u._id,
     username: u.username,
     email: u.email,
-    profileImage: u.profileImage,
+    profileImage,
     isAdmin: toBool(u.isAdmin),
     isManager: toBool(u.isManager),
     isSupport: toBool(u.isSupport),
     phone: u.phone || "",
+    phoneVerified: toBool(u.phoneVerified),
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
     token: data.token,
     expiresIn: data.expiresIn,
-  }) as User;
+  };
+
+  const user = normalizeUser(userData) as User;
 
   return user;
 }
 
 export async function logout(accessToken?: string): Promise<void> {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
   const response = await fetch(apiUrls.LOGOUT, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
     headers,
   });
-
   if (!response.ok) throw new Error("Logout failed");
 }
 
 export async function verifySession(
   accessToken?: string,
-): Promise<User | null> {
+): Promise<NormalizedUser | null> {
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -97,23 +115,28 @@ export async function verifySession(
     if (response.status === 401) return null;
     if (!response.ok) throw new Error("Session verification failed");
 
-    const data = await response.json();
-    const u = data.user || {};
+    const data: SessionResponse = await response.json();
+    const userData: RawUserData = data.user || {};
 
-    return normalizeUser({
-      _id: u.id || u._id || u.sub || "",
-      username:
-        u.username || u.preferred_username || u.email?.split("@")[0] || "",
-      email: u.email || "",
-      profileImage: u.profileImage || "",
-      phone: u.phone || "",
-      token: data.token || u.token || "",
-      accessToken: data.accessToken || u.accessToken || accessToken || "",
-      refreshToken: data.refreshToken || u.refreshToken || "",
-      isAdmin: toBool(u.isAdmin) || toBool(u["custom:isAdmin"]) || false,
-      isManager: toBool(u.isManager) || toBool(u["custom:isManager"]) || false,
-      isSupport: toBool(u.isSupport) || toBool(u["custom:isSupport"]) || false,
-    });
+    const normalizedData: RawUserData = {
+      id: userData.id || userData._id || userData.sub,
+      username: userData.username || userData.preferred_username,
+      email: userData.email,
+      profileImage: userData.profileImage,
+      phone: userData.phone,
+      phoneVerified: userData.phoneVerified,
+      token: data.token || userData.token,
+      accessToken: data.accessToken || userData.accessToken || accessToken,
+      refreshToken: data.refreshToken || userData.refreshToken,
+      isAdmin: userData.isAdmin,
+      isManager: userData.isManager,
+      isSupport: userData.isSupport,
+      "custom:isAdmin": userData["custom:isAdmin"],
+      "custom:isManager": userData["custom:isManager"],
+      "custom:isSupport": userData["custom:isSupport"],
+    };
+
+    return normalizeUser(normalizedData);
   } catch {
     return null;
   }
@@ -140,9 +163,10 @@ export async function confirmEmail(
   code: string,
   accessToken?: string,
 ): Promise<void> {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
   const response = await fetch(apiUrls.CONFIRM, {
     method: "POST",
     credentials: "include",
@@ -181,16 +205,16 @@ export async function resetPassword(
 
 export async function getProfile(accessToken?: string): Promise<any> {
   try {
-    const headers: any = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
     const response = await fetch(apiUrls.PROFILE, {
       method: "POST",
       credentials: "include",
       cache: "no-store",
       headers,
     });
-
     if (!response.ok) throw new Error("Failed to fetch profile");
     return await response.json();
   } catch (error) {
@@ -211,42 +235,69 @@ export async function updateProfile(
       body: formData,
       cache: "no-store",
     });
-
     if (!response.ok) {
       const errorMsg = await response.text();
       return { success: false, error: errorMsg || "Update failed" };
     }
-
     const data = await response.json();
     return { success: true, data };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
 }
-
 export async function deleteAccount(
   accessToken: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!accessToken) return { success: false, error: "Auth required" };
+
+    const session = await verifySession(accessToken);
+    const userId = session?._id;
+
+    console.log("Client-Side Request: Deleting User", userId);
+
+    const cleanToken = accessToken.startsWith("Bearer ")
+      ? accessToken
+      : `Bearer ${accessToken}`;
+
     const response = await fetch(apiUrls.DELETE_ACCOUNT, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: cleanToken,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({ id: userId }),
       cache: "no-store",
     });
 
-    if (!response.ok) return { success: false, error: "Delete failed" };
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: `HTTP ${response.status}` }));
+      console.warn(
+        "Server-Side Deletion Failed:",
+        response.status,
+        errorData.error,
+      );
+      return { success: false, error: errorData.error || "Delete failed" };
+    }
+
+    console.log("Client-Side: Account deletion confirmed by server");
     return { success: true };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch (error: any) {
+    console.warn("Network Error during deletion:", error?.message || error);
+    return {
+      success: false,
+      error: (error as Error).message || "Network error",
+    };
   }
 }
 
 export async function getUsers(accessToken?: string): Promise<User[]> {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
   const response = await fetch(apiUrls.USERS.BASE, {
     method: "POST",
     credentials: "include",
@@ -261,9 +312,10 @@ export async function getUserById(
   id: string,
   accessToken?: string,
 ): Promise<User> {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
   const response = await fetch(apiUrls.USERS.BY_ID(id), {
     method: "POST",
     credentials: "include",
@@ -280,9 +332,10 @@ export async function createUser(
   password: string,
   accessToken?: string,
 ): Promise<User> {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
   const response = await fetch(apiUrls.USERS.BASE, {
     method: "POST",
     credentials: "include",
@@ -299,9 +352,10 @@ export async function updateUser(
   data: Partial<User>,
   accessToken?: string,
 ): Promise<User> {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
   const response = await fetch(apiUrls.USERS.BY_ID(id), {
     method: "POST",
     credentials: "include",
@@ -317,9 +371,10 @@ export async function deleteUser(
   id: string,
   accessToken?: string,
 ): Promise<void> {
-  const headers: any = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
   const response = await fetch(apiUrls.USERS.BY_ID(id), {
     method: "DELETE",
     credentials: "include",
@@ -339,11 +394,6 @@ export async function updatePhone(
   expired?: boolean;
 }> {
   try {
-    console.log(
-      "Updating phone with token:",
-      accessToken.substring(0, 20) + "...",
-    );
-
     const response = await fetch(apiUrls.UPDATE_PHONE, {
       method: "PUT",
       credentials: "include",
@@ -354,23 +404,50 @@ export async function updatePhone(
       },
       body: JSON.stringify({ phone }),
     });
-
     const data = await response.json();
-
     if (!response.ok) {
-      console.error("Update phone error:", data);
       if (response.status === 401 && data.code === "TOKEN_EXPIRED") {
         return { success: false, error: "Session expired", expired: true };
       }
       return { success: false, error: data.error || "Failed to update phone" };
     }
-
     return {
       success: true,
       phone: data.phone,
     };
   } catch (error) {
-    console.error("Update phone exception:", error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function updateProfileImage(
+  file: File,
+  accessToken: string,
+): Promise<{ success: boolean; profileImage?: string; error?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append("profileImage", file);
+
+    const response = await fetch(apiUrls.UPDATE_PROFILE, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+      cache: "no-store",
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || `HTTP error ${response.status}`,
+      };
+    }
+    return {
+      success: true,
+      profileImage: data.user?.profileImage,
+    };
+  } catch (error) {
     return { success: false, error: (error as Error).message };
   }
 }

@@ -1,0 +1,19 @@
+{
+  "email": {
+    "welcome_subject": "Ku soo dhowaad Suuqeena!",
+    "welcome_body": "Haye {{name}}, waad ku mahadsantahay ku soo biiristaada.",
+    "reset_password_subject": "Bedel lambarkaaga sirta ah",
+    "order_confirmed_subject": "Dalabkaaga waa la xaqiijiyay"
+  },
+  "notification": {
+    "new_message": "Farriin cusub ayaa ka timid {{sender}}",
+    "ad_approved": "Xayeysiiskaaga '{{title}}' hadda waa live!",
+    "ad_rejected": "Xayeysiiskaaga waa la diiday. Fadlan hubi shuruucda."
+  },
+  "api_errors": {
+    "unauthorized": "Waa inaad soo gashaa si aad tan u sameyso.",
+    "not_found": "Waxaad raadineysay lama helin.",
+    "validation_failed": "Fadlan hubi xogta aad gelisay.",
+    "server_error": "Khalad ayaa naga dhacay dhankayaga."
+  }
+}

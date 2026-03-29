@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 const API_BASE = "http://localhost:8080/api";
 
@@ -16,30 +16,11 @@ export interface VisitorStats {
   unique: number;
 }
 
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value ||
-    cookieStore.get("accessToken")?.value ||
-    cookieStore.get("token")?.value;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
 export async function fetchVisitors(): Promise<Visitor[]> {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE}/visitors/all`, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -60,7 +41,7 @@ export async function fetchVisitorStats(): Promise<VisitorStats> {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE}/visitors/all`, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -94,7 +75,7 @@ export async function fetchTotalVisitors(): Promise<number> {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE}/visitors/all`, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -117,7 +98,7 @@ export async function deleteVisitor(id: string): Promise<boolean> {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE}/visitors/${id}`, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

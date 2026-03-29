@@ -1,7 +1,7 @@
 "use server";
 
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 export type FarmEquipment = {
@@ -47,41 +47,6 @@ type ApiResponse<T> = {
   message?: string;
 };
 
-type HeadersWithAuth = {
-  "Content-Type": string;
-  "Cache-Control": string;
-  Pragma: string;
-  Expires: string;
-  Authorization?: string;
-};
-
-async function getAuthHeaders(token?: string): Promise<HeadersWithAuth> {
-  const cookieStore = await cookies();
-
-  const cookieToken =
-    cookieStore.get("idToken")?.value ||
-    cookieStore.get("accessToken")?.value ||
-    cookieStore.get("token")?.value;
-
-  const authToken = token || cookieToken;
-
-  const headers: HeadersWithAuth = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-    console.log("✅ Auth token found and added to headers");
-  } else {
-    console.warn("❌ No auth token found in cookies");
-  }
-
-  return headers;
-}
-
 export async function getAllFarmEquipment(): Promise<FarmEquipment[]> {
   try {
     const headers = await getAuthHeaders();
@@ -103,7 +68,6 @@ export async function getAllFarmEquipment(): Promise<FarmEquipment[]> {
       _id: item._id || item.id,
     }));
   } catch (error) {
-    console.error("Error fetching all farm equipment:", error);
     return [];
   }
 }
@@ -127,7 +91,6 @@ export async function getFarmequipment(): Promise<FarmEquipment[]> {
       _id: item._id || item.id,
     }));
   } catch (error) {
-    console.error("Error fetching farm equipment:", error);
     return [];
   }
 }
@@ -149,7 +112,6 @@ export async function getFarmEquipmentById(
       _id: item._id || (item as any).id,
     };
   } catch (error) {
-    console.error("Error fetching farm equipment by id:", error);
     return null;
   }
 }
@@ -185,7 +147,6 @@ export async function createTraktor(
     revalidatePath("/admin/farm-equipment");
     return { success: true, _id: result.id || result._id || "" };
   } catch (error) {
-    console.error("Error creating traktor:", error);
     return { success: false, message: "Cilad ayaa dhacday" };
   }
 }
@@ -219,7 +180,6 @@ export async function updateTraktor(
     revalidatePath("/admin/farm-equipment");
     return { success: true, traktorId: id };
   } catch (error) {
-    console.error("Error updating traktor:", error);
     return { success: false, message: "Cilad ayaa dhacday" };
   }
 }
@@ -244,43 +204,26 @@ export async function deleteTraktor(id: string, token?: string) {
     revalidatePath("/admin/farm-equipment");
     return { success: true, message: "Xayeysiiskii waa la tirtiray." };
   } catch (error) {
-    console.error("Error deleting traktor:", error);
     return { success: false };
   }
 }
 
 export async function getFarmEquipmentTotal(): Promise<number> {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("idToken")?.value ||
-      cookieStore.get("accessToken")?.value;
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    const headers = await getAuthHeaders();
 
     const res = await fetch(apiUrlsForCategoryTotals.TotalFarmEquipment, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
 
     if (!res.ok) {
-      console.error(`Failed to fetch total farm equipment: ${res.status}`);
       return 0;
     }
 
     const data = await res.json();
-    console.log(data);
     return (
       data.totalTractors ??
       data.totalFarmEquipment ??
@@ -289,10 +232,10 @@ export async function getFarmEquipmentTotal(): Promise<number> {
       0
     );
   } catch (err) {
-    console.error("Error fetching total farm equipment:", err);
     return 0;
   }
 }
+
 export async function toggleFarmEquipmentPaymentAction(
   id: string,
   currentStatus: boolean,

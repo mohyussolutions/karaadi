@@ -7,9 +7,12 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import { BoatsForSaleNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
-import SearchInput from "@/app/(search)/SearchInput";
-import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import {
+  getGlobalSearchResults,
+  type SearchResult,
+} from "@/actions/common/getGlobalSearchResults";
 import { getBoats, Boat } from "@/actions/categories/boatActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function BoatsForSale() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -20,7 +23,7 @@ export default function BoatsForSale() {
     null,
   );
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Boat[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
     {},
@@ -68,26 +71,33 @@ export default function BoatsForSale() {
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  const itemsToDisplay = useMemo(() => {
-    let list = query.trim() ? searchResults : allBoatsForSale;
+  const itemsToDisplay = useMemo<(Boat | SearchResult)[]>(() => {
+    let list: (Boat | SearchResult)[] = query.trim()
+      ? searchResults
+      : allBoatsForSale;
 
     if (selectedSubcategory) {
-      list = list.filter((item) =>
-        item.subcategory.some((sub) =>
-          sub.toLowerCase().includes(selectedSubcategory.toLowerCase()),
-        ),
+      list = list.filter(
+        (item) =>
+          Array.isArray((item as any).subcategory) &&
+          (item as any).subcategory.some((sub: string) =>
+            sub.toLowerCase().includes(selectedSubcategory.toLowerCase()),
+          ),
       );
     }
 
     if (selectedRegion) {
-      list = list.filter((item) => item.region === selectedRegion);
+      list = list.filter((item) => (item as any).region === selectedRegion);
     }
 
     const activeCities = Object.keys(checkedCities).filter(
       (city) => checkedCities[city],
     );
     if (activeCities.length > 0) {
-      list = list.filter((item) => activeCities.includes(item.city));
+      list = list.filter(
+        (item) =>
+          (item as any).city && activeCities.includes((item as any).city),
+      );
     }
 
     return list;
@@ -187,7 +197,7 @@ export default function BoatsForSale() {
             <SomaliMap
               selectedRegion={selectedRegion}
               onRegionClick={setSelectedRegion}
-              items={itemsToDisplay}
+              items={itemsToDisplay as any}
             />
           </div>
         </aside>
@@ -214,18 +224,21 @@ export default function BoatsForSale() {
                       className="h-72 w-full bg-gray-100 animate-pulse rounded-xl"
                     />
                   ))
-                : itemsToDisplay.map((item) => (
-                    <UniversalCard
-                      key={item._id}
-                      id={item._id}
-                      title={item.title}
-                      description={item.description}
-                      city={item.city}
-                      price={item.price}
-                      images={item.images}
-                      category="Boats"
-                    />
-                  ))}
+                : itemsToDisplay.map((item) => {
+                    const it = item as any;
+                    return (
+                      <UniversalCard
+                        key={it._id}
+                        id={it._id}
+                        title={it.title}
+                        description={it.description}
+                        city={it.city}
+                        price={it.price}
+                        images={it.images}
+                        category="Boats"
+                      />
+                    );
+                  })}
               {!isLoading && itemsToDisplay.length === 0 && (
                 <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-medium">
                   Ma jiraan doonyo iib ah oo la helay.

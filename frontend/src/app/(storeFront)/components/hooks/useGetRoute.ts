@@ -23,5 +23,6 @@ export const useGetRoute = (item?: { category?: any }) => {
         ? cat[0]?.toLowerCase()
         : "";
 
-  return ROUTE_MAP[category] || LinksDetails.itemDetails;
+  const route = ROUTE_MAP[category] || LinksDetails.itemDetails;
+  return route.startsWith("/") ? route : `/${route}`;
 };

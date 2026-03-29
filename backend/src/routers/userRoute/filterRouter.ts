@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { globalFilteringQuerySchema } from "../../validation/globalFiltering.validation.ts";
 import {
   globalFiltering,
   getFilterMetadata,
@@ -7,7 +9,11 @@ import {
 
 const filterRouter = Router();
 
-filterRouter.get("/global-filter", globalFiltering);
+filterRouter.get(
+  "/global-filter",
+  validateRequest(globalFilteringQuerySchema, "query"),
+  globalFiltering,
+);
 filterRouter.get("/metadata", getFilterMetadata);
 filterRouter.get("/range-price-rooms", rangePriceAndRooms);
 

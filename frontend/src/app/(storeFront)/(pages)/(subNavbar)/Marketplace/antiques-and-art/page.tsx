@@ -7,12 +7,12 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import { AntiquesAndArtNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
-import SearchInput from "@/app/(search)/SearchInput";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import {
   getMarketplaceItems,
   MarketplaceItem,
 } from "@/actions/categories/marketplaceActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function AntiquesAndArt() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,21 @@ export default function AntiquesAndArt() {
           ? item.category.includes("Antiques & Art")
           : item.category === "Antiques & Art",
       );
-      setSearchResults(filtered);
+      const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
+        _id: item._id ?? item.id ?? "",
+        id: item.id ?? item._id ?? "",
+        user: item.user ?? null,
+        title: item.title ?? "",
+        description: item.description ?? "",
+        city: item.city ?? "",
+        price: item.price ?? 0,
+        images: item.images ?? [],
+        category: item.category ?? "",
+        subcategory: item.subcategory ?? "",
+        region: item.region ?? "",
+        mainCategory: item.mainCategory ?? "Antiques & Art",
+      }));
+      setSearchResults(mappedResults);
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [query]);

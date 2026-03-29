@@ -1,4 +1,4 @@
-// types/listing.types.ts
+
 export interface ListingPlan {
   id: string;
   name: string;
@@ -18,7 +18,6 @@ export interface ListingPlanSelectorProps {
   errors: Record<string, string>;
 }
 
-// Common subscription form data interface
 export interface SubscriptionFormData {
   plan: string;
   billingCycle: "monthly" | "yearly";

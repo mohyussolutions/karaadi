@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
@@ -8,22 +9,21 @@ import {
   FertilizerSpreaderNestedSub,
   TraktorSubCategoryItem,
 } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
-// Updated: Import the unified action and type
 import {
   getFarmequipment,
   FarmEquipment,
 } from "@/actions/categories/FarmequipmentAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function FertilizerSpreader() {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const subCategoryLinks =
     FertilizerSpreaderNestedSub as TraktorSubCategoryItem[];
 
-  // Updated: Use FarmEquipment type
   const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -40,7 +40,6 @@ export default function FertilizerSpreader() {
     async function loadData() {
       try {
         setIsLoading(true);
-        // Updated: Using the correct server action
         const data = await getFarmequipment();
         setItems(data || []);
       } catch (err) {
@@ -55,13 +54,12 @@ export default function FertilizerSpreader() {
   const allFertilizerItems = useMemo(() => {
     if (!Array.isArray(items)) return [];
     return items.filter((item: FarmEquipment) => {
-      // Logic: Convert arrays to strings for flexible searching
       const cat = Array.isArray(item.category)
         ? item.category.join(" ").toLowerCase()
-        : "";
+        : String(item.category || "").toLowerCase();
       const sub = Array.isArray(item.subcategory)
         ? item.subcategory.join(" ").toLowerCase()
-        : "";
+        : String(item.subcategory || "").toLowerCase();
       const title = (item.title || "").toLowerCase();
 
       return (
@@ -80,7 +78,7 @@ export default function FertilizerSpreader() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) => {
+      const filtered = (results as any[]).filter((item) => {
         const cat = String(item.category || "").toLowerCase();
         const sub = String(item.subcategory || "").toLowerCase();
         return (
@@ -88,7 +86,8 @@ export default function FertilizerSpreader() {
           sub.includes("fertilizer") ||
           cat.includes("bacriminta")
         );
-      });
+      }) as FarmEquipment[];
+
       setSearchResults(filtered);
     }, 400);
     return () => clearTimeout(delayDebounce);
@@ -174,7 +173,6 @@ export default function FertilizerSpreader() {
       <SearchInput onSearch={setQuery} />
       <PathSegmentsDisplay />
 
-      {/* Horizontal Category Scroll */}
       <div className="relative py-6">
         <div className="flex justify-center relative items-center">
           <button
@@ -206,11 +204,11 @@ export default function FertilizerSpreader() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
-                <span
-                  className={`text-[10px] uppercase ${selectedCategory === category.title ? "text-emerald-100" : "text-gray-500"}`}
-                >
-                  ({category.title})
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
                 </span>
               </button>
             ))}
@@ -225,7 +223,6 @@ export default function FertilizerSpreader() {
       </div>
 
       <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
-        {/* Sidebar Filters */}
         <aside className="md:w-1/3 sticky top-4 self-start">
           <LocationSelector
             onFilterChange={(reg, cities) => {
@@ -246,7 +243,6 @@ export default function FertilizerSpreader() {
           </div>
         </aside>
 
-        {/* Listings Main */}
         <main className="md:w-2/3 w-full">
           <div className="mb-6 text-sm font-medium text-gray-600 bg-emerald-50 py-2 px-4 rounded-lg inline-block border border-emerald-100">
             {isLoading

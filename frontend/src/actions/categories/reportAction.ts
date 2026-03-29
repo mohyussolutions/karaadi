@@ -1,10 +1,11 @@
-"use server"; // <-- ADD THIS AT THE VERY TOP
+"use server";
 
 import { REPORT_ENDPOINTS } from "../constant/constant";
-import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 interface ReportData {
+  userId: string;
   reason: string;
   details?: string;
   description?: string;
@@ -25,30 +26,6 @@ interface PaginationParams {
   search?: string;
 }
 
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-    Cookie: cookieHeader,
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
 const addCacheBuster = (url: string) => {
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}_t=${Date.now()}`;
@@ -61,7 +38,7 @@ export async function createReport(data: ReportData) {
 
     const response = await fetch(url, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       body: JSON.stringify(data),
       cache: "no-store",
@@ -93,7 +70,7 @@ export async function getAllReports(params: PaginationParams = {}) {
         : REPORT_ENDPOINTS.GET_ALL;
 
     const response = await fetch(addCacheBuster(url), {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -110,7 +87,7 @@ export async function getReportStats() {
     const url = addCacheBuster(REPORT_ENDPOINTS.STATS);
 
     const response = await fetch(url, {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -138,7 +115,7 @@ export async function getUserReports(
         : REPORT_ENDPOINTS.USER_REPORTS(userId);
 
     const response = await fetch(addCacheBuster(url), {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -155,7 +132,7 @@ export async function getReportById(id: string) {
     const url = addCacheBuster(REPORT_ENDPOINTS.GET_BY_ID(id));
 
     const response = await fetch(url, {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -173,7 +150,7 @@ export async function updateReportStatus(id: string, data: UpdateStatusData) {
 
     const response = await fetch(url, {
       method: "PATCH",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       body: JSON.stringify(data),
       cache: "no-store",
@@ -197,7 +174,7 @@ export async function deleteReport(id: string) {
 
     const response = await fetch(url, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -218,7 +195,7 @@ export async function getTotalReports() {
     const url = addCacheBuster(REPORT_ENDPOINTS.TOTAL);
 
     const response = await fetch(url, {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });

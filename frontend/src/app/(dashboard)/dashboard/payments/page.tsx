@@ -160,7 +160,7 @@ export default function Payments() {
         </div>
       </div>
 
-      {/* Status Filter Chips */}
+      
       <div className="mb-6 flex flex-wrap gap-2">
         <button
           onClick={() => setStatusFilter("all")}

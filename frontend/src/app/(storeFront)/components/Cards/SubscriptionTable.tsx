@@ -35,36 +35,35 @@ const SubscriptionTable = ({
 
   return (
     <div className="w-full">
-      {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left border-collapse text-xs md:text-sm">
           <thead>
             <tr className="bg-gray-50/50 border-b border-gray-100">
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 User
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 Title
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 Category
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 Region
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 Cities
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 Price Range
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 Status
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">
                 Created
               </th>
-              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+              <th className="px-2 md:px-4 py-2 md:py-3 text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest text-right">
                 Actions
               </th>
             </tr>
@@ -87,45 +86,45 @@ const SubscriptionTable = ({
                     key={sub.id || sub._id}
                     className="hover:bg-blue-50/30 transition-colors group"
                   >
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900">
+                    <td className="px-2 md:px-4 py-2 md:py-3 max-w-[120px] truncate">
+                      <div className="font-bold text-gray-900 truncate">
                         {userInfo.username}
                       </div>
-                      <div className="text-xs text-gray-500 truncate max-w-[150px]">
+                      <div className="text-xs text-gray-500 truncate">
                         {userInfo.email}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-bold text-gray-800 line-clamp-1">
+                    <td className="px-2 md:px-4 py-2 md:py-3 max-w-[120px] truncate">
+                      <span className="text-sm font-bold text-gray-800 truncate">
                         {sub.title}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded">
+                    <td className="px-2 md:px-4 py-2 md:py-3 max-w-[100px] truncate">
+                      <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded truncate">
                         {sub.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
+                    <td className="px-2 md:px-4 py-2 md:py-3 max-w-[100px] truncate">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 truncate">
                         <MapPin size={12} className="text-red-400" />
-                        {sub.region}
+                        <span className="truncate">{sub.region}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5">
+                    <td className="px-2 md:px-4 py-2 md:py-3 max-w-[120px] truncate">
+                      <div className="flex items-center gap-1.5 truncate">
                         <Map size={12} className="text-emerald-400 shrink-0" />
-                        <span className="text-xs font-medium text-gray-700 truncate max-w-[120px]">
+                        <span className="text-xs font-medium text-gray-700 truncate">
                           {sub.cities?.slice(0, 2).join(", ")}
                           {sub.cities?.length > 2 && "..."}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-bold text-gray-700">
+                    <td className="px-2 md:px-4 py-2 md:py-3 max-w-[90px] truncate">
+                      <span className="text-xs font-bold text-gray-700 truncate">
                         ${sub.priceMin || 0} - ${sub.priceMax || "∞"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-2 md:px-4 py-2 md:py-3">
                       {sub.status === "active" || sub.isActive ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-700">
                           <CheckCircle size={10} className="mr-1" /> Active
@@ -136,10 +135,10 @@ const SubscriptionTable = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-xs text-gray-500">
+                    <td className="px-2 md:px-4 py-2 md:py-3 text-xs text-gray-500">
                       {formatDate(sub.createdAt)}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-2 md:px-4 py-2 md:py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => onViewDetails(sub)}
@@ -165,7 +164,6 @@ const SubscriptionTable = ({
         </table>
       </div>
 
-      {/* Mobile Card View */}
       <div className="md:hidden space-y-4 w-full">
         {subscriptions.length === 0 ? (
           <div className="px-4 py-12 text-center text-gray-400 font-medium bg-white rounded-xl border border-gray-100">
@@ -179,7 +177,7 @@ const SubscriptionTable = ({
                 key={sub.id || sub._id}
                 className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all"
               >
-                {/* User Info */}
+                
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="font-bold text-gray-900 text-base">
@@ -205,14 +203,14 @@ const SubscriptionTable = ({
                   </div>
                 </div>
 
-                {/* Title */}
+                
                 <div className="mb-3">
                   <span className="text-sm font-bold text-gray-800 line-clamp-2">
                     {sub.title}
                   </span>
                 </div>
 
-                {/* Category & Status Row */}
+                
                 <div className="flex flex-wrap gap-2 mb-3">
                   <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded">
                     {sub.category}
@@ -228,7 +226,7 @@ const SubscriptionTable = ({
                   )}
                 </div>
 
-                {/* Location Info Grid */}
+                
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div className="bg-gray-50 p-2 rounded-lg">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
@@ -251,7 +249,7 @@ const SubscriptionTable = ({
                   </div>
                 </div>
 
-                {/* Price & Date Row */}
+                
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-50 p-2 rounded-lg">
                     <span className="text-[10px] text-gray-500 block">

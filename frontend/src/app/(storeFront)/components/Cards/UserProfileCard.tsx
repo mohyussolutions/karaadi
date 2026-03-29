@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useState } from "react";
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ export default function UserCard({
   onSendMessage,
 }: Props) {
   const router = useRouter();
+  const [imgError, setImgError] = useState(false);
 
   const handleMessageClick = () => {
     if (maGaday) return;
@@ -57,15 +59,42 @@ export default function UserCard({
   };
 
   const displayUsername = user.username || "Seller";
+  const initial = displayUsername.charAt(0)?.toUpperCase() || "U";
+
+  const getImageSrc = () => {
+    if (imgError) {
+      return `data:image/svg+xml;utf8,${encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+          <rect width="100%" height="100%" fill="#f3f4f6"/>
+          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="24" font-weight="bold">${initial}</text>
+        </svg>
+      `)}`;
+    }
+
+    if (user.profileImage && user.profileImage.startsWith("/assets/users/")) {
+      return `data:image/svg+xml;utf8,${encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+          <rect width="100%" height="100%" fill="#f3f4f6"/>
+          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="24" font-weight="bold">${initial}</text>
+        </svg>
+      `)}`;
+    }
+
+    return user.profileImage || "/user.jpg";
+  };
 
   return (
     <div className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
       <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-gray-50 flex-shrink-0">
         <Image
-          src={user.profileImage || "/user.jpg"}
+          src={getImageSrc()}
           alt={displayUsername}
-          fill
-          className="object-cover"
+          width={64}
+          height={64}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+          priority={false}
+          loading="lazy"
         />
       </div>
 

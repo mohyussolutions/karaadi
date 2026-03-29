@@ -7,9 +7,12 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import { BoatEnginesNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
-import SearchInput from "@/app/(search)/SearchInput";
-import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import {
+  getGlobalSearchResults,
+  SearchResult,
+} from "@/actions/common/getGlobalSearchResults";
 import { getBoats, Boat } from "@/actions/categories/boatActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function BoatEngines() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -31,7 +34,7 @@ export default function BoatEngines() {
       try {
         const data = await getBoats();
         setItems(data || []);
-      } catch (err) {
+      } catch {
         setIsError(true);
       } finally {
         setIsLoading(false);
@@ -54,11 +57,11 @@ export default function BoatEngines() {
       }
       const results = await getGlobalSearchResults(query);
       const filtered = results.filter(
-        (item: any) =>
+        (item: SearchResult) =>
           item.mainCategory === "Boats" &&
-          item.category.includes("Boat Engines for Sale"),
+          item.category?.includes("Boat Engines for Sale"),
       );
-      setSearchResults(filtered);
+      setSearchResults(filtered as unknown as Boat[]);
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [query]);
@@ -66,13 +69,11 @@ export default function BoatEngines() {
   const regionCityCounts = useMemo(() => {
     const regionCounts: Record<string, number> = {};
     const cityCounts: Record<string, number> = {};
-
     allEngineItems.forEach((item) => {
       if (item.region)
         regionCounts[item.region] = (regionCounts[item.region] || 0) + 1;
       if (item.city) cityCounts[item.city] = (cityCounts[item.city] || 0) + 1;
     });
-
     return { regionCounts, cityCounts };
   }, [allEngineItems]);
 
@@ -81,22 +82,19 @@ export default function BoatEngines() {
 
     if (selectedSubcategory) {
       list = list.filter((item) =>
-        item.subcategory.some((sub) =>
+        item.subcategory?.some((sub) =>
           sub.toLowerCase().includes(selectedSubcategory.toLowerCase()),
         ),
       );
     }
-
-    if (selectedRegion) {
+    if (selectedRegion)
       list = list.filter((item) => item.region === selectedRegion);
-    }
 
     const activeCities = Object.keys(checkedCities).filter(
       (city) => checkedCities[city],
     );
-    if (activeCities.length > 0) {
+    if (activeCities.length > 0)
       list = list.filter((item) => activeCities.includes(item.city));
-    }
 
     return list;
   }, [
@@ -143,11 +141,7 @@ export default function BoatEngines() {
                     prev === filter.title ? null : filter.title,
                   )
                 }
-                className={`flex-shrink-0 w-40 flex flex-col items-center text-center rounded-lg p-4 transition-all m-2 border ${
-                  selectedSubcategory === filter.title
-                    ? "bg-blue-100 border-blue-400 scale-105 shadow-sm"
-                    : "bg-gray-50 border-gray-200"
-                }`}
+                className={`flex-shrink-0 w-40 flex flex-col items-center text-center rounded-lg p-4 transition-all m-2 border ${selectedSubcategory === filter.title ? "bg-blue-100 border-blue-400 scale-105 shadow-sm" : "bg-gray-50 border-gray-200"}`}
               >
                 <div className="text-xl mb-1 text-blue-600">{filter.icon}</div>
                 <span className="text-sm font-bold text-gray-800">
@@ -198,38 +192,27 @@ export default function BoatEngines() {
             matoorada doonyaha
           </div>
 
-          {isError ? (
-            <div className="text-red-500 p-10 font-bold text-center bg-red-50 rounded-xl">
-              Cilad ayaa ku timid soo dejinta matoorada. Fadlan dib u tijaabi.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {isLoading
-                ? Array.from({ length: 6 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="h-72 w-full bg-gray-100 animate-pulse rounded-xl"
-                    />
-                  ))
-                : itemsToDisplay.map((item) => (
-                    <UniversalCard
-                      key={item._id}
-                      id={item._id}
-                      title={item.title}
-                      description={item.description}
-                      city={item.city}
-                      price={item.price}
-                      images={item.images}
-                      category="Boats"
-                    />
-                  ))}
-              {!isLoading && itemsToDisplay.length === 0 && (
-                <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-medium">
-                  Ma jiraan matoorada doonyaha oo la helay deegaankan.
-                </div>
-              )}
-            </div>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading
+              ? Array.from({ length: 6 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="h-72 w-full bg-gray-100 animate-pulse rounded-xl"
+                  />
+                ))
+              : itemsToDisplay.map((item: any) => (
+                  <UniversalCard
+                    key={item._id}
+                    id={item._id}
+                    title={item.title}
+                    description={item.description}
+                    city={item.city}
+                    price={item.price}
+                    images={item.images}
+                    category="boats"
+                  />
+                ))}
+          </div>
         </main>
       </div>
     </div>

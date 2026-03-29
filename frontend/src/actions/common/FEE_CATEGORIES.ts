@@ -33,7 +33,7 @@ export const FEE_CATEGORIES = [
     ],
   },
   {
-    title: "Real Estate (Hantida Ma-guurtada)",
+    title: "Real Estate (hantida maguurtada ah)",
     fees: [
       { key: "rent", label: "Kirada (Rent)", type: LISTING_TYPES.FEE },
       { key: "sale", label: "Iib (Sale)", type: LISTING_TYPES.FEE },

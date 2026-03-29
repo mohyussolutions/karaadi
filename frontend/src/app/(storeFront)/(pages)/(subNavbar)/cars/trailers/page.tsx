@@ -5,6 +5,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { TrailerNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import { useTranslation } from "react-i18next";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
@@ -13,6 +14,7 @@ import { getCars, Car } from "@/actions/categories/carActions";
 
 export default function Trailers() {
   const subCategoryLinks = TrailerNestedSub;
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<Car[]>([]);
@@ -195,7 +197,12 @@ export default function Trailers() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}
                 >

@@ -16,8 +16,10 @@ interface ChartDataItem {
 export default function DashboardPage() {
   const [regionData, setRegionData] = useState<ChartDataItem[]>([]);
   const [cityData, setCityData] = useState<ChartDataItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let ignore = false;
     async function fetchRegions() {
       try {
         const regions: Region[] = await getAllRegions();
@@ -25,7 +27,7 @@ export default function DashboardPage() {
           name: r.name,
           buyers: Math.floor(Math.random() * 500) + 50,
         }));
-        setRegionData(formatted);
+        if (!ignore) setRegionData(formatted);
       } catch (error) {
         console.error(error);
       }
@@ -41,15 +43,27 @@ export default function DashboardPage() {
           }))
           .sort((a: ChartDataItem, b: ChartDataItem) => b.buyers - a.buyers)
           .slice(0, 8);
-        setCityData(formatted);
+        if (!ignore) setCityData(formatted);
       } catch (error) {
         console.error(error);
       }
     }
 
-    fetchRegions();
-    fetchCities();
+    Promise.all([fetchRegions(), fetchCities()]).then(() => {
+      if (!ignore) setLoading(false);
+    });
+    return () => {
+      ignore = true;
+    };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4">

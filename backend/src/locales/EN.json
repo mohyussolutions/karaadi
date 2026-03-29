@@ -1,0 +1,19 @@
+{
+  "email": {
+    "welcome_subject": "Welcome to our Marketplace!",
+    "welcome_body": "Hi {{name}}, thanks for joining us.",
+    "reset_password_subject": "Reset your password",
+    "order_confirmed_subject": "Your order is confirmed"
+  },
+  "notification": {
+    "new_message": "You have a new message from {{sender}}",
+    "ad_approved": "Your ad '{{title}}' is now live!",
+    "ad_rejected": "Your ad was rejected. Please check the rules."
+  },
+  "api_errors": {
+    "unauthorized": "You must be logged in to do this.",
+    "not_found": "The requested item was not found.",
+    "validation_failed": "Please check your input and try again.",
+    "server_error": "Something went wrong on our end."
+  }
+}

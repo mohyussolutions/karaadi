@@ -2,28 +2,13 @@
 
 import { verifySession } from "@/actions/core/authAction";
 import { SEARCH_HISTORY_ENDPOINTS } from "@/actions/constant/constant";
-
-async function getAuthHeaders() {
-  const session = await verifySession();
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (session?.accessToken) {
-    headers["Authorization"] = `Bearer ${session.accessToken}`;
-  }
-
-  return headers;
-}
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export const fetchPopularSearches = async () => {
   try {
     const headers = await getAuthHeaders();
     const res = await fetch(SEARCH_HISTORY_ENDPOINTS.POPULAR_SEARCHES, {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
     return res.ok ? await res.json() : [];
@@ -39,7 +24,7 @@ export const deleteGlobalTrending = async (query: string) => {
       `${SEARCH_HISTORY_ENDPOINTS.DELETE_BY_QUERY}?q=${encodeURIComponent(query)}`,
       {
         method: "DELETE",
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -54,7 +39,7 @@ export const deleteLogEntry = async (logId: string) => {
     const headers = await getAuthHeaders();
     const res = await fetch(SEARCH_HISTORY_ENDPOINTS.DELETE_BY_ID(logId), {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
     return res.ok;
@@ -72,7 +57,7 @@ export const saveSearchToDb = async (query: string) => {
 
     const response = await fetch(SEARCH_HISTORY_ENDPOINTS.LOG_SEARCH, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({
         query: query.trim(),
         category: "all",
@@ -90,7 +75,7 @@ export const fetchSearchItemPreview = async (query: string) => {
   try {
     const headers = await getAuthHeaders();
     const res = await fetch(SEARCH_HISTORY_ENDPOINTS.SEARCH_ITEMS(query), {
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
     if (!res.ok) return null;

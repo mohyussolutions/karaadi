@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Socket } from "socket.io-client";
-import Image from "next/image";
 import SocketManager from "./ServerClientsSocket";
 import ChatMessagesDisplay from "./ChatMessagesDisplay";
 import ChatInputArea from "./InputTextarea";
@@ -28,6 +28,22 @@ export default function ChatSystem({
   const [sending, setSending] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { t } = useTranslation();
+  const [singletonBlocked, setSingletonBlocked] = useState(false);
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ((window as any).__CHAT_SYSTEM_MOUNTED) {
+      setSingletonBlocked(true);
+      return;
+    }
+    (window as any).__CHAT_SYSTEM_MOUNTED = true;
+    mountedRef.current = true;
+    return () => {
+      if (mountedRef.current) delete (window as any).__CHAT_SYSTEM_MOUNTED;
+    };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdsRef = useRef<Set<number>>(new Set());
@@ -45,6 +61,7 @@ export default function ChatSystem({
       try {
         const response = await fetch(
           API_ENDPOINTS.CHATS.USER_CHATS(currentUserId),
+          { credentials: "include" },
         );
         if (response.ok) {
           const existingChats = await response.json();
@@ -88,6 +105,7 @@ export default function ChatSystem({
                     itemId,
                     "Marketplace",
                   ),
+                  { credentials: "include" },
                 );
                 if (findResponse.ok) {
                   const foundChat = await findResponse.json();
@@ -161,6 +179,7 @@ export default function ChatSystem({
 
       const response = await fetch(
         API_ENDPOINTS.CHATS.CHAT_MESSAGES(chatId, currentUserId),
+        { credentials: "include" },
       );
 
       if (response.ok) {
@@ -184,6 +203,7 @@ export default function ChatSystem({
     try {
       const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           senderId: currentUserId,
@@ -284,12 +304,13 @@ export default function ChatSystem({
     try {
       const response = await fetch(API_ENDPOINTS.MESSAGES.SEND, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chatId: targetChatId,
+          chatId: String(targetChatId),
           content: messageContent,
-          senderId: currentUserId,
-          receiverId,
+          senderId: String(currentUserId),
+          receiverId: receiverId ? String(receiverId) : undefined,
         }),
       });
 
@@ -351,11 +372,18 @@ export default function ChatSystem({
 
   const deleteChat = async (chatId: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this chat?")) return;
+    const confirmed =
+      typeof window !== "undefined" &&
+      window.confirm(
+        t("chats.confirmDelete", {
+          defaultValue: "Are you sure you want to delete this chat?",
+        }),
+      );
+    if (!confirmed) return;
     try {
       const response = await fetch(
         API_ENDPOINTS.CHATS.DELETE(chatId, currentUserId),
-        { method: "DELETE" },
+        { method: "DELETE", credentials: "include" },
       );
       if (response.ok) {
         setChats((prev) => prev.filter((chat) => chat.id !== chatId));
@@ -364,8 +392,30 @@ export default function ChatSystem({
           setMessages([]);
           if (onChatChange) onChatChange(0);
         }
+        try {
+          alert(t("chats.deletedSuccess", { defaultValue: "Chat deleted" }));
+        } catch (e) {
+
+        }
+      } else {
+        try {
+          const errorData = await response.json().catch(() => ({}));
+          alert(
+            t("chats.deletedFailed", {
+              defaultValue: errorData.message || "Failed to delete chat",
+            }),
+          );
+        } catch (e) {
+          alert(
+            t("chats.deletedFailed", { defaultValue: "Failed to delete chat" }),
+          );
+        }
       }
-    } catch {}
+    } catch (err) {
+      alert(
+        t("chats.deletedFailed", { defaultValue: "Failed to delete chat" }),
+      );
+    }
   };
 
   const handleDeleteMessage = async (messageId: number | string) => {
@@ -374,6 +424,7 @@ export default function ChatSystem({
         API_ENDPOINTS.MESSAGES.DELETE_MESSAGE(Number(messageId)),
         {
           method: "DELETE",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: currentUserId }),
         },
@@ -395,6 +446,7 @@ export default function ChatSystem({
         API_ENDPOINTS.MESSAGES.UPDATE_MESSAGE(Number(messageId)),
         {
           method: "PUT",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: newContent, userId: currentUserId }),
         },
@@ -476,6 +528,8 @@ export default function ChatSystem({
     }
   };
 
+  if (singletonBlocked) return null;
+
   return (
     <SocketManager
       currentUserId={currentUserId}
@@ -487,7 +541,7 @@ export default function ChatSystem({
       onMessageSent={handleMessageSent}
       onMessageSaved={() => {}}
     >
-      <div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-200px)] border rounded-lg overflow-hidden bg-white">
+      <div className="flex h-full min-h-0 border rounded-lg overflow-hidden bg-white">
         {(!isMobile || !selectedChat) && (
           <div
             className={`${
@@ -495,15 +549,19 @@ export default function ChatSystem({
             } border-r bg-gray-50 flex flex-col`}
           >
             <div className="p-3 md:p-4 border-b bg-white">
-              <h2 className="text-lg md:text-xl font-bold">Your Chats</h2>
+              <h2 className="text-lg md:text-xl font-bold">
+                {t("chats.yourChats", { defaultValue: "Your Chats" })}
+              </h2>
               <p className="text-xs md:text-sm text-gray-500">
-                {chats.length} conversation{chats.length !== 1 ? "s" : ""}
+                {chats.length}{" "}
+                {t("chats.conversations", { defaultValue: "conversation" })}
+                {chats.length !== 1 ? "s" : ""}
               </p>
             </div>
             <div className="flex-1 overflow-y-auto">
-              {chats.map((chat) => (
+              {chats.map((chat, idx) => (
                 <div
-                  key={chat.id}
+                  key={`${chat.id ?? chat._id ?? chat.receiverId ?? "chat"}-${chat.item?.id ?? ""}-${idx}`}
                   onClick={() => handleSelectChat(chat)}
                   className={`w-full p-3 md:p-4 text-left border-b hover:bg-gray-100 transition-colors flex items-start group relative cursor-pointer ${
                     selectedChat?.id === chat.id
@@ -514,12 +572,43 @@ export default function ChatSystem({
                   <div className="relative mr-2 md:mr-3 flex-shrink-0">
                     <div className="w-8 h-8 md:w-12 md:h-12 rounded-full overflow-hidden bg-blue-100">
                       {chat.otherUser?.profileImage ? (
-                        <Image
-                          src={chat.otherUser.profileImage}
+                        <img
+                          src={(() => {
+                            try {
+                              const src = chat.otherUser.profileImage;
+                              if (src && src.startsWith("/assets/users/")) {
+                                const initial =
+                                  chat.otherUser?.username
+                                    ?.charAt(0)
+                                    ?.toUpperCase() || "U";
+                                const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='transparent' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black' font-size='16' font-family='Arial, Helvetica, sans-serif'>${initial}</text></svg>`;
+                                return `data:image/svg+xml;utf8,${encodeURIComponent(
+                                  svg,
+                                )}`;
+                              }
+                              return src;
+                            } catch (e) {
+                              return chat.otherUser.profileImage;
+                            }
+                          })()}
                           alt={chat.otherUser.username}
                           width={48}
                           height={48}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            if (target && !target.dataset.fallback) {
+                              target.dataset.fallback = "1";
+                              const initial =
+                                chat.otherUser?.username
+                                  ?.charAt(0)
+                                  ?.toUpperCase() || "U";
+                              const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='transparent' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black' font-size='16' font-family='Arial, Helvetica, sans-serif'>${initial}</text></svg>`;
+                              target.src = `data:image/svg+xml;utf8,${encodeURIComponent(
+                                svg,
+                              )}`;
+                            }
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm md:text-lg">
@@ -547,19 +636,23 @@ export default function ChatSystem({
                         </span>
                       ) : (
                         <span className="italic text-gray-400 truncate block">
-                          No messages yet
+                          {t("chats.noMessagesYet", {
+                            defaultValue: "No messages yet",
+                          })}
                         </span>
                       )}
                     </div>
                     {chat.item?.title && (
                       <div className="text-[10px] md:text-xs text-blue-600 mt-1 truncate">
-                        About: {chat.item.title}
+                        {t("chats.aboutPrefix", { defaultValue: "About:" })}{" "}
+                        {chat.item.title}
                       </div>
                     )}
                   </div>
                   <button
                     onClick={(e) => deleteChat(chat.id, e)}
                     className="absolute right-2 top-2 p-1.5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={t("chats.delete", { defaultValue: "Delete" })}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

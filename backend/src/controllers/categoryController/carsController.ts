@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
-
 import prisma from "src/core/utils/db.ts";
 import {
   calculateExpiryDate,
@@ -14,47 +13,11 @@ import {
   CACHE_TTL,
   getPaginationParams,
 } from "src/constants/config.constants.ts";
-
-interface CarQuery {
-  type?: string;
-  listingType?: string;
-  region?: string;
-  city?: string;
-  district?: string;
-  subcategory?: string;
-  category?: string;
-}
-
-interface CreateCarBody {
-  userId: string;
-  title: string;
-  description: string;
-  price: number;
-  mainCategory: string;
-  category: string[];
-  subcategory: string[];
-  brand: string;
-  vehicleModel: string;
-  year?: number;
-  mileage?: number;
-  transmission?: string;
-  fuelType?: string;
-  color: string;
-  region: string;
-  city: string;
-  images: string[];
-  so?: string;
-  isPaid?: boolean;
-  planId?: string;
-  planAmount?: number;
-  feeId?: string;
-  feeAmount?: number;
-}
-
-interface PaymentUpdateBody {
-  paymentId?: string;
-  planId?: string;
-}
+import {
+  CarQuery,
+  CreateCarBody,
+  PaymentUpdateBody,
+} from "src/types/car.types.ts";
 
 const CACHE_KEYS = {
   TOTAL: "cars:total",
@@ -126,7 +89,10 @@ export const getAllCars = async (req: Request, res: Response) => {
     const cars = await cacheManager.withCache(
       cacheKey,
       async () => {
-        const filter: Prisma.CarWhereInput = { isPaid: true };
+        const filter: Prisma.CarWhereInput = {
+          isPaid: true,
+          OR: [{ expiryDate: null }, { expiryDate: { gt: new Date() } }],
+        };
 
         if (type) filter.title = { contains: type, mode: "insensitive" };
         if (region) filter.region = region;
@@ -250,7 +216,6 @@ export const createCar = async (
 
     let expiryDate = null;
     if (planId && planAmount) {
-      // Fetch the plan object (SubPlan) for expiry calculation
       const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
       expiryDate = plan ? calculateExpiryDate(plan, planAmount) : null;
     }
@@ -275,7 +240,7 @@ export const createCar = async (
         city,
         images: Array.isArray(images) ? images : [],
         so: so || null,
-        isPaid: typeof isPaid === "boolean" ? isPaid : false,
+        isPaid: false,
         planId: planId || null,
         planAmount: planAmount || 0,
         feeId: feeId || null,
@@ -317,23 +282,18 @@ export const updateCarPayment = async (
       return res.status(404).json({ success: false, message: "Car not found" });
     }
 
-    const expired = isExpired(car.expiryDate);
-    let expiryDate = null;
-    if (car.planId && car.planAmount) {
-      const plan = await prisma.subPlan.findUnique({
-        where: { id: car.planId },
-      });
-      expiryDate = plan
-        ? calculateExpiryDate(plan, car.planAmount)
+    const subPlan = await prisma.subPlan.findFirst({
+      where: { isActive: true },
+    });
+    const expiryDate =
+      planId && subPlan && car.planAmount
+        ? calculateExpiryDate(subPlan, car.planAmount)
         : getDefaultExpiryDate();
-    } else {
-      expiryDate = getDefaultExpiryDate();
-    }
 
     const updatedCar = await prisma.car.update({
       where: { id },
       data: {
-        isPaid: expired ? false : true,
+        isPaid: true,
         expiryDate,
         planId: planId || car.planId,
       },
@@ -367,24 +327,9 @@ export const updateCar = async (
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    const updateData = { ...req.body } as Prisma.CarUpdateInput;
-
-    // Check expiry and set isPaid to false if expired
-    let expiryDateToCheck: Date | null = (updateData as any).expiryDate ?? null;
-    if (expiryDateToCheck === null) {
-      const current = await prisma.car.findUnique({
-        where: { id },
-        select: { expiryDate: true },
-      });
-      expiryDateToCheck = current?.expiryDate ?? null;
-    }
-    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
-      (updateData as any).isPaid = false;
-    }
-
     const updatedCar = await prisma.car.update({
       where: { id },
-      data: updateData,
+      data: req.body,
       include: { user: selectUserBasic },
     });
 

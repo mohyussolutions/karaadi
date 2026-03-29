@@ -5,6 +5,7 @@ import { IoMdArrowDropdown } from "react-icons/io";
 import { TiArrowSortedUp } from "react-icons/ti";
 
 import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
+import { useTranslation } from "react-i18next";
 import {
   boatsSubCategories,
   marketplaceSubCategories,
@@ -14,32 +15,64 @@ import {
 } from "@/app/(links)/storeFrontLinks/subCategories";
 import { carsSubCategories } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
 
+const CATEGORIES = {
+  Marketplace: "Marketplace",
+  RealEstate: "RealEstate",
+  Cars: "Cars",
+  Motorcycles: "Motorcycles",
+  Boats: "Boats",
+  Farmequipment: "Farmequipment",
+} as const;
+
+const OPTION = {
+  Public: "Public",
+  Private: "Private",
+} as const;
+
 interface CategoryOption {
   title: string;
   description?: string;
   so?: string;
   href?: string;
   icon?: JSX.Element;
+  labelKey?: string;
 }
 
-const categoryOptions: { [key: string]: CategoryOption[] } = {
-  Marketplace: marketplaceSubCategories,
-  RealEstate: realEstateSubCategories,
-  Cars: carsSubCategories,
-  Motorcycles: motorcyclesSubCategories,
-  Boats: boatsSubCategories,
-  Farmequipment: traktorSubCategories,
+const categoryOptions: { [key: string]: ReadonlyArray<CategoryOption> } = {
+  [CATEGORIES.Marketplace]: marketplaceSubCategories,
+  [CATEGORIES.RealEstate]: realEstateSubCategories,
+  [CATEGORIES.Cars]: carsSubCategories,
+  [CATEGORIES.Motorcycles]: motorcyclesSubCategories,
+  [CATEGORIES.Boats]: boatsSubCategories,
+  [CATEGORIES.Farmequipment]: traktorSubCategories,
 };
+
+const createPublicPrivateOptions = (
+  description = "",
+): ReadonlyArray<CategoryOption> => [
+  {
+    title: OPTION.Public,
+    description,
+    so: "Shirkad",
+    labelKey: "createAd.public",
+  },
+  {
+    title: OPTION.Private,
+    description,
+    so: "Shaqsi",
+    labelKey: "createAd.private",
+  },
+];
 
 const getAdCreationPath = (categoryKey: string): string | null => {
   switch (categoryKey) {
-    case "RealEstate":
+    case CATEGORIES.RealEstate:
       return "/create-ad-for-real-estate";
-    case "Farmequipment":
+    case CATEGORIES.Farmequipment:
       return "/create-ad-for-farmequipment";
-    case "Motorcycles":
+    case CATEGORIES.Motorcycles:
       return "/create-ad-for-motorcycles";
-    case "Boats":
+    case CATEGORIES.Boats:
       return "/create-ad-for-boats";
     default:
       return null;
@@ -47,6 +80,7 @@ const getAdCreationPath = (categoryKey: string): string | null => {
 };
 
 function Ads() {
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [, setOption] = useState<string | null>(null);
   const [openModel, setOpenModel] = useState(false);
@@ -62,20 +96,20 @@ function Ads() {
     }
   };
 
-  const getPublicPrivateOptions = (): CategoryOption[] => {
+  const getPublicPrivateOptions = (): ReadonlyArray<CategoryOption> => {
     const description = categoryOptions.Cars?.[0]?.description || "";
-    return [
-      { title: "Public", description, so: "Shirkad" },
-      { title: "Private", description, so: "Shaqsi" },
-    ];
+    return createPublicPrivateOptions(description);
   };
 
-  const getOptionsForCategory = (): CategoryOption[] => {
+  const getOptionsForCategory = (): ReadonlyArray<CategoryOption> => {
     if (!selectedCategory) return [];
 
     const categoryKey = selectedCategory.replace(/\s/g, "");
 
-    if (selectedCategory === "Marketplace" || selectedCategory === "Cars") {
+    if (
+      selectedCategory === CATEGORIES.Marketplace ||
+      selectedCategory === CATEGORIES.Cars
+    ) {
       return getPublicPrivateOptions();
     }
 
@@ -92,14 +126,15 @@ function Ads() {
 
     if (!selectedCategory) return;
 
-    if (selectedOptionTitle === "Public") {
+    if (selectedOptionTitle === OPTION.Public) {
       router.push("/business-customer");
       return;
     }
 
     if (
-      selectedOptionTitle === "Private" &&
-      (selectedCategory === "Marketplace" || selectedCategory === "Cars")
+      selectedOptionTitle === OPTION.Private &&
+      (selectedCategory === CATEGORIES.Marketplace ||
+        selectedCategory === CATEGORIES.Cars)
     ) {
       const path =
         selectedCategory === "Marketplace"
@@ -123,7 +158,9 @@ function Ads() {
     <div className="border bg-gray-90 min-h-[45rem] m-4 rounded-lg">
       <div className="bg-gray-10 flex flex-col md:flex-row md:items-start md:justify-start gap-5 p-5 rounded-lg">
         <div className="space-y-4 w-full md:w-1/2">
-          <h2 className="text-2xl font-bold mb-2">Categories</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            {t("createAd.categories", { defaultValue: "Categories" })}
+          </h2>
           {allCategories
             .filter(
               (category) =>
@@ -145,7 +182,13 @@ function Ads() {
                 <span className="flex items-center space-x-2">
                   {category.icon}
                   <span>
-                    {category.name} {category.so && `(${category.so})`}
+                    {category.labelKey
+                      ? t(category.labelKey, {
+                          defaultValue: category.so ?? category.name,
+                        })
+                      : t(`categories.${category.key}`, {
+                          defaultValue: category.so ?? category.name,
+                        })}
                   </span>
                 </span>
                 {selectedCategory === category.name && openModel ? (
@@ -170,12 +213,13 @@ function Ads() {
                     className="px-4 mt-2 py-2 rounded-lg text-left bg-white hover:bg-gray-200 text-gray-800 w-full"
                   >
                     <span className="block">
-                      {item.title}
-                      {item.so && (
-                        <span className="block text-sm text-gray-500">
-                          ({item.so})
-                        </span>
-                      )}
+                      {item.labelKey
+                        ? t(item.labelKey, {
+                            defaultValue: item.so ?? item.title,
+                          })
+                        : t(item.title ?? "", {
+                            defaultValue: item.so ?? item.title,
+                          })}
                     </span>
                   </button>
                 </div>

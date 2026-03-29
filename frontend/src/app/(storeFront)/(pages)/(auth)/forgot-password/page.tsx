@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
     <div className="flex items-center justify-center min-h-screen">
       <form
         onSubmit={handleForgotPassword}
-        className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md
+        className="bg-[#FEFDFD] shadow-xl rounded-2xl p-8 w-full max-w-md
           ring-1 ring-gray-200
           transition-transform transform hover:scale-[1.02] duration-300"
       >

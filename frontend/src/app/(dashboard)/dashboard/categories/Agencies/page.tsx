@@ -260,11 +260,16 @@ export default function AgencyDashboard() {
               >
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={agency.image}
-                      className="w-8 h-8 rounded-lg object-cover bg-gray-100 shadow-sm"
-                      alt=""
-                    />
+                    {agency.image ? (
+                      <img
+                        src={`/api/images/${agency.image}`}
+                        className="w-8 h-8 rounded-lg object-cover bg-gray-100 shadow-sm"
+                        alt={agency.name}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : null}
                     <div>
                       <p className="font-bold text-gray-900">{agency.name}</p>
                       <p className="text-[10px] text-gray-500">{agency.type}</p>

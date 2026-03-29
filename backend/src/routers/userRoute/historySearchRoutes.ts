@@ -1,4 +1,9 @@
 import { Router } from "express";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import {
+  createSearchLogSchema,
+  deleteSearchLogSchema,
+} from "../../validation/historySearch.validation.ts";
 import {
   createSearchLog,
   deleteSearchLogByQuery,
@@ -12,7 +17,11 @@ import {
 
 const historySearchRoutes = Router();
 
-historySearchRoutes.post("/log", createSearchLog);
+historySearchRoutes.post(
+  "/log",
+  validateRequest(createSearchLogSchema),
+  createSearchLog,
+);
 
 historySearchRoutes.get(
   "/admin/logs",
@@ -27,6 +36,7 @@ historySearchRoutes.delete(
   "/delete-by-query",
   ProtectRoute,
   adminAndManager,
+  validateRequest(deleteSearchLogSchema, "query"),
   deleteSearchLogByQuery,
 );
 

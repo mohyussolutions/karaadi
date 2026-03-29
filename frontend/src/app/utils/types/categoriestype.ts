@@ -7,19 +7,21 @@ export interface CategoryOption {
   description?: string;
   icon?: JSX.Element;
   href?: string;
+  labelKey?: string;
 }
 
 export interface MainCategory {
   title: ReactNode;
   key?: string;
   name?: string | undefined;
+  labelKey?: string;
   href: string;
   icon: JSX.Element;
   so?: string;
   dashboardIcon: IconType;
   dashboardLink: string;
   logo?: string;
-  subCategories: CategoryOption[];
+  subCategories: CategoryOption[] | ReadonlyArray<CategoryOption>;
 }
 
 export interface AdminLink {
@@ -49,4 +51,5 @@ export interface SubCategory {
   title: string;
   href: string;
   so: string;
+  labelKey?: string;
 }

@@ -1,8 +1,8 @@
 "use server";
 
 import { apiUrls } from "@/actions/constant/constant";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export interface User {
   id: string;
@@ -10,25 +10,6 @@ export interface User {
   username: string;
   createdAt: string;
   updatedAt: string;
-}
-
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  return headers;
 }
 
 const addCacheBuster = (url: string) => {
@@ -42,7 +23,7 @@ export async function fetchAllUsers() {
     const url = addCacheBuster(`${apiUrls.USERS.BASE}/all-users`);
 
     const res = await fetch(url, {
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -62,7 +43,7 @@ export async function deleteUserAction(id: string) {
 
     const res = await fetch(url, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });
@@ -83,7 +64,7 @@ export async function updateUserAction(id: string, username: string) {
 
     const res = await fetch(url, {
       method: "PUT",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ username }),
       credentials: "include",
       cache: "no-store",
@@ -101,24 +82,11 @@ export async function updateUserAction(id: string, username: string) {
 
 export async function getTotalUsersAction(accessToken?: string) {
   try {
-    const cookieStore = await cookies();
-    const token =
-      accessToken ||
-      cookieStore.get("idToken")?.value ||
-      cookieStore.get("accessToken")?.value ||
-      cookieStore.get("token")?.value;
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    const headers = await getAuthHeaders(accessToken);
 
     const res = await fetch(`${apiUrls.USERS.BASE}/total-users`, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

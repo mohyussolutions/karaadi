@@ -12,42 +12,40 @@ import {
   updateMarketplaceItem,
 } from "../../controllers/categoryController/marketplaceController.ts";
 import { Router } from "express";
+import { createMarketplaceItemSchema } from "../../validation/marketplace.validation.ts";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
 
 const marketplaceRoutes = Router();
 
-marketplaceRoutes.get("/", (req, res, next) => {
-  getAllMarketplaceItems(req, res).catch(next);
-});
+marketplaceRoutes.get("/", getAllMarketplaceItems);
 marketplaceRoutes.get(
   "/total",
   ProtectRoute,
   adminAndManager,
-  (req, res, next) => {
-    getTotalMarketplaceItems(req, res).catch(next);
-  },
+  getTotalMarketplaceItems,
 );
 marketplaceRoutes.get(
   "/all-including-unpaid",
   ProtectRoute,
   adminAndManager,
-  (req, res, next) => {
-    getAllMarketplaceItemsAdmin(req, res).catch(next);
-  },
+  getAllMarketplaceItemsAdmin,
 );
-marketplaceRoutes.get("/:id", (req, res, next) => {
-  getMarketplaceItemById(req, res).catch(next);
-});
+marketplaceRoutes.get("/:id", getMarketplaceItemById);
 
-marketplaceRoutes.post("/", ProtectRoute, (req, res, next) => {
-  createMarketplaceItem(req, res).catch(next);
-});
+marketplaceRoutes.post(
+  "/",
+  ProtectRoute,
+  validateRequest(createMarketplaceItemSchema),
+  createMarketplaceItem,
+);
 
-marketplaceRoutes.patch("/:id", ProtectRoute, (req, res, next) => {
-  updateMarketplaceItem(req, res).catch(next);
-});
+marketplaceRoutes.patch(
+  "/:id",
+  ProtectRoute,
+  validateRequest(createMarketplaceItemSchema),
+  updateMarketplaceItem,
+);
 
-marketplaceRoutes.delete("/:id", ProtectRoute, (req, res, next) => {
-  deleteMarketplaceItem(req, res).catch(next);
-});
+marketplaceRoutes.delete("/:id", ProtectRoute, deleteMarketplaceItem);
 
 export default marketplaceRoutes;

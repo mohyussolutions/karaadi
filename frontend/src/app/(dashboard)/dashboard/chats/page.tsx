@@ -16,6 +16,7 @@ import {
   SOCKET_EVENTS,
   SOCKET_URL,
 } from "@/actions/constant/communicationEndpoints";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import {
   getAllChats,
   getChatMessages,
@@ -240,32 +241,8 @@ export default function AdminMonitor() {
 
   if (loading && chats.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4 md:p-8">
-        <div className="relative w-full max-w-md">
-          <div className="absolute -inset-4 md:-inset-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full blur-xl opacity-30 animate-pulse"></div>
-          <div className="relative bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full flex items-center justify-center animate-spin">
-                  <MdSecurity className="text-white text-lg md:text-xl" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-emerald-500 rounded-full animate-ping"></div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-2 w-32 md:w-48 bg-slate-700 rounded animate-pulse"></div>
-                <div className="h-2 w-24 md:w-32 bg-slate-700 rounded animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="mt-6 md:mt-8 text-center space-y-2">
-          <div className="text-sm text-slate-400 font-mono animate-pulse">
-            INITIALIZING_SECURE_ADMIN_FEED...
-          </div>
-          <div className="text-xs text-slate-500">
-            Establishing encrypted connection to chat servers
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loading />
       </div>
     );
   }

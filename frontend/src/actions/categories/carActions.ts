@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export type Car = {
   _id: string;
@@ -69,13 +69,12 @@ export async function getCarById(id: string): Promise<Car | null> {
   } as Car;
 }
 
-export async function createCar(data: CreateCarData, token: string) {
+export async function createCar(data: CreateCarData, token?: string) {
+  const headers = await getAuthHeaders(token);
+
   const response = await fetch(apiUrlsForCategoryTotals.Cars, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: headers as HeadersInit,
     body: JSON.stringify(data),
     cache: "no-store",
   });
@@ -94,14 +93,13 @@ export async function createCar(data: CreateCarData, token: string) {
 export async function updateCar(
   id: string,
   data: Partial<CreateCarData>,
-  token: string,
+  token?: string,
 ) {
+  const headers = await getAuthHeaders(token);
+
   const response = await fetch(`${apiUrlsForCategoryTotals.Cars}/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: headers as HeadersInit,
     body: JSON.stringify(data),
     cache: "no-store",
   });
@@ -117,10 +115,12 @@ export async function updateCar(
   };
 }
 
-export async function deleteCar(id: string, token: string) {
+export async function deleteCar(id: string, token?: string) {
+  const headers = await getAuthHeaders(token);
+
   const response = await fetch(`${apiUrlsForCategoryTotals.Cars}/${id}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: headers as HeadersInit,
     cache: "no-store",
   });
 
@@ -131,13 +131,14 @@ export async function deleteCar(id: string, token: string) {
 
 export async function getAllCarsAdmin(accessToken?: string): Promise<Car[]> {
   try {
-    const headers: HeadersInit = {};
-    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+    const headers = await getAuthHeaders(accessToken);
+
     const response = await fetch(apiUrlsForCategoryTotals.CarsAdmin, {
       method: "GET",
       cache: "no-store",
-      headers,
+      headers: headers as HeadersInit,
     });
+
     if (!response.ok) return [];
     const data = await response.json();
     const list = Array.isArray(data) ? data : data.data || [];
@@ -157,17 +158,11 @@ export async function toggleCarPayment(
   token?: string,
 ) {
   try {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    const headers = await getAuthHeaders(token);
 
     const response = await fetch(`${apiUrlsForCategoryTotals.Cars}/${id}`, {
       method: "PUT",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ isPaid: !currentStatus }),
       cache: "no-store",
     });
@@ -183,14 +178,11 @@ export async function toggleCarPayment(
 
 export async function deleteCarAction(id: string, token?: string) {
   try {
-    const headers: HeadersInit = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    const headers = await getAuthHeaders(token);
 
     const response = await fetch(`${apiUrlsForCategoryTotals.Cars}/${id}`, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -203,14 +195,13 @@ export async function deleteCarAction(id: string, token?: string) {
   }
 }
 
-export async function createCarAction(data: any, token: string) {
+export async function createCarAction(data: any, token?: string) {
   try {
+    const headers = await getAuthHeaders(token);
+
     const response = await fetch(apiUrlsForCategoryTotals.Cars, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: headers as HeadersInit,
       body: JSON.stringify(data),
       cache: "no-store",
     });
@@ -242,25 +233,11 @@ export async function getCarByIdAction(id: string): Promise<Car | null> {
 
 export async function getTotalCars(): Promise<number> {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("idToken")?.value ||
-      cookieStore.get("accessToken")?.value;
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    const headers = await getAuthHeaders();
 
     const res = await fetch(apiUrlsForCategoryTotals.TotalCars, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       credentials: "include",
       cache: "no-store",
     });

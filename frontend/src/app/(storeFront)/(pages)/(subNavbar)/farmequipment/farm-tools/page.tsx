@@ -8,18 +8,20 @@ import {
   FarmToolsNestedSub,
   TraktorSubCategoryItem,
 } from "@/app/(links)/storeFrontLinks/nestedsubcategoryfortractors";
+import { useTranslation } from "react-i18next";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import {
   getFarmequipment,
   FarmEquipment,
 } from "@/actions/categories/FarmequipmentAction";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function Farmtools() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const subCategoryLinks = FarmToolsNestedSub as TraktorSubCategoryItem[];
+  const { t } = useTranslation();
 
   const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +41,6 @@ export default function Farmtools() {
     async function loadData() {
       try {
         setIsLoading(true);
-
         const data = await getFarmequipment();
         setItems(data || []);
       } catch (err) {
@@ -56,10 +57,10 @@ export default function Farmtools() {
     return items.filter((item: FarmEquipment) => {
       const cat = Array.isArray(item.category)
         ? item.category.join(" ").toLowerCase()
-        : "";
+        : String(item.category || "").toLowerCase();
       const sub = Array.isArray(item.subcategory)
         ? item.subcategory.join(" ").toLowerCase()
-        : "";
+        : String(item.subcategory || "").toLowerCase();
 
       return (
         cat.includes("farm") ||
@@ -77,7 +78,7 @@ export default function Farmtools() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) => {
+      const filtered = (results as any[]).filter((item) => {
         const cat = String(item.category || "").toLowerCase();
         const sub = String(item.subcategory || "").toLowerCase();
         return (
@@ -86,7 +87,8 @@ export default function Farmtools() {
           sub.includes("farm") ||
           sub.includes("qalabka beeraha")
         );
-      });
+      }) as FarmEquipment[];
+
       setSearchResults(filtered);
     }, 400);
     return () => clearTimeout(delayDebounce);
@@ -147,7 +149,6 @@ export default function Farmtools() {
       );
     }
 
-    // Deduplicate by ID
     return Array.from(new Map(list.map((item) => [item._id, item])).values());
   }, [
     query,
@@ -204,7 +205,12 @@ export default function Farmtools() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${selectedSubcategory === category.title ? "text-green-100" : "text-gray-500"}`}
                 >

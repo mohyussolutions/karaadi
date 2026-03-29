@@ -13,6 +13,8 @@ import {
 } from "../../controllers/userController/notificationController.ts";
 
 import express from "express";
+import { validateRequest } from "src/core/middelware/validateRequest.ts";
+import { createNotificationSchema } from "../../validation/notification.validation.ts";
 const notificationRoutes = express.Router();
 notificationRoutes.get("/user/:userId", ProtectRoute, getUserNotifications);
 notificationRoutes.get("/all", ProtectRoute, getAllNotifications);
@@ -26,7 +28,12 @@ notificationRoutes.patch(
   ProtectRoute,
   markAllNotificationsAsRead,
 );
-notificationRoutes.post("/", ProtectRoute, createNotification);
+notificationRoutes.post(
+  "/",
+  ProtectRoute,
+  validateRequest(createNotificationSchema),
+  createNotification,
+);
 notificationRoutes.delete("/:notificationId", ProtectRoute, deleteNotification);
 notificationRoutes.delete(
   "/user/:userId/clear-all",

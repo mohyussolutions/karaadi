@@ -88,7 +88,10 @@ export const getAllMotorcycles = async (req: Request, res: Response) => {
     const motorcycles = await cacheManager.withCache(
       cacheKey,
       async () => {
-        const filter: Prisma.MotorcycleWhereInput = { isPaid: true };
+        const filter: Prisma.MotorcycleWhereInput = {
+          isPaid: true,
+          OR: [{ expiryDate: null }, { expiryDate: { gt: new Date() } }],
+        };
         if (type) filter.type = { contains: String(type), mode: "insensitive" };
         if (region) filter.region = String(region);
         if (city) filter.city = String(city);
@@ -172,7 +175,6 @@ export const createMotorcycle = async (req: Request, res: Response) => {
       city,
       images,
       so,
-      isPaid,
       planId,
       planAmount,
       ...extra
@@ -180,8 +182,11 @@ export const createMotorcycle = async (req: Request, res: Response) => {
 
     if (!userId) return res.status(400).json({ message: "userId is required" });
 
-    const expiryDate =
-      planId && planAmount ? calculateExpiryDate(planId, planAmount) : null;
+    let expiryDate = null;
+    if (planId && planAmount) {
+      const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
+      expiryDate = plan ? calculateExpiryDate(plan, planAmount) : null;
+    }
 
     const newAd = await prisma.motorcycle.create({
       data: {
@@ -200,7 +205,8 @@ export const createMotorcycle = async (req: Request, res: Response) => {
         city,
         images: Array.isArray(images) ? images : [],
         so,
-        isPaid: isPaid === true || isPaid === "true",
+        isPaid: false,
+        maGaday: false,
         planId: planId || null,
         planAmount: planAmount || 0,
         expiryDate,
@@ -230,15 +236,75 @@ export const createMotorcycle = async (req: Request, res: Response) => {
   }
 };
 
+export const updateMotorcyclePayment = async (req: Request, res: Response) => {
+  try {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { paymentId, planId } = req.body;
+
+    const motorcycle = await prisma.motorcycle.findUnique({ where: { id } });
+    if (!motorcycle) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Motorcycle not found" });
+    }
+
+    const subPlan = await prisma.subPlan.findFirst({
+      where: { isActive: true },
+    });
+    const expiryDate =
+      planId && subPlan && motorcycle.planAmount
+        ? calculateExpiryDate(subPlan, motorcycle.planAmount)
+        : null;
+
+    const updatedMotorcycle = await prisma.motorcycle.update({
+      where: { id },
+      data: {
+        isPaid: true,
+        expiryDate,
+        planId: planId || motorcycle.planId,
+      },
+    });
+
+    if (paymentId) {
+      await prisma.payment.updateMany({
+        where: { id: paymentId },
+        data: { motorcycleId: id, status: "COMPLETED", paidAt: new Date() },
+      });
+    }
+
+    await Promise.all([
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
+      cacheManager.deletePattern("motorcycles:all:*"),
+    ]);
+
+    return res.json({ success: true, data: updatedMotorcycle });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const updateMotorcycle = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { planId, planAmount, extra, ...rest } = req.body;
+    const { planId, planAmount, category, subcategory, extra, ...rest } =
+      req.body;
 
     const updateData: any = { ...rest };
 
+    if (category) {
+      updateData.category = Array.isArray(category) ? category[0] : category;
+    }
+    if (subcategory) {
+      updateData.subcategory = Array.isArray(subcategory)
+        ? subcategory[0]
+        : subcategory;
+    }
+
     if (planId && planAmount) {
-      updateData.expiryDate = calculateExpiryDate(planId, planAmount);
+      const plan = await prisma.subPlan.findUnique({ where: { id: planId } });
+      updateData.expiryDate = plan
+        ? calculateExpiryDate(plan, planAmount)
+        : null;
       updateData.planId = planId;
       updateData.planAmount = planAmount;
     }
@@ -253,19 +319,6 @@ export const updateMotorcycle = async (req: Request, res: Response) => {
       if (extra.fuelType) updateData.fuelType = extra.fuelType;
       if (extra.color) updateData.color = extra.color;
       if (extra.transmission) updateData.transmission = extra.transmission;
-    }
-
-    let expiryDateToCheck = updateData.expiryDate;
-    if (!expiryDateToCheck) {
-      const current = await prisma.motorcycle.findUnique({
-        where: { id },
-        select: { expiryDate: true },
-      });
-      expiryDateToCheck = current?.expiryDate;
-    }
-
-    if (expiryDateToCheck && isExpired(expiryDateToCheck)) {
-      updateData.isPaid = false;
     }
 
     const updated = await prisma.motorcycle.update({

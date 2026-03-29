@@ -1,5 +1,3 @@
-"use server";
-
 import { fetchAgencies } from "@/actions/categories/actionsAgency";
 import { getBoats } from "@/actions/categories/boatActions";
 import { getCars } from "@/actions/categories/carActions";
@@ -9,11 +7,10 @@ import { getMotorcycles } from "@/actions/categories/motorcycleActions";
 import { getRealEstateListings } from "@/actions/categories/realEstateActions";
 import { getAllFarmEquipment } from "@/actions/categories/FarmequipmentAction";
 import { getAllSubscriptionPaid } from "@/actions/categories/subscriptionsActions";
-import { verifySession } from "@/actions/core/authAction";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import HomeContent from "../Filters/HomeContent";
 import Agencies from "@/app/(agencies)/agencies/page";
-import { FeedItem } from "../hooks/useRandomFeed";
+import { FeedItem } from "@/app/utils/types/feed";
 
 export interface InitialData {
   boats: FeedItem[] | null;
@@ -35,12 +32,17 @@ const mapToFeedItem = (items: any[] | null): FeedItem[] | null => {
   }));
 };
 
-async function fetchWithFallback<T>(
+async function safeFetch<T>(
   fetcher: () => Promise<T>,
   fallback: T,
+  timeoutMs = 3000,
 ): Promise<T> {
+  const timeout = new Promise<T>((resolve) =>
+    setTimeout(() => resolve(fallback), timeoutMs),
+  );
+
   try {
-    return await fetcher();
+    return await Promise.race([fetcher(), timeout]);
   } catch {
     return fallback;
   }
@@ -48,7 +50,6 @@ async function fetchWithFallback<T>(
 
 export async function DataFeed({ query }: { query: string }) {
   const [
-    user,
     searchResultsRaw,
     boatsRaw,
     carsRaw,
@@ -60,17 +61,16 @@ export async function DataFeed({ query }: { query: string }) {
     subscriptionsRaw,
     agencies,
   ] = await Promise.all([
-    verifySession(),
-    query ? fetchWithFallback(() => getGlobalSearchResults(query), null) : null,
-    fetchWithFallback(() => getBoats(), null),
-    fetchWithFallback(() => getCars(), null),
-    fetchWithFallback(() => getJobs(), null),
-    fetchWithFallback(() => getMarketplaceItems(), null),
-    fetchWithFallback(() => getMotorcycles(), null),
-    fetchWithFallback(() => getRealEstateListings(), null),
-    fetchWithFallback(() => getAllFarmEquipment(), null),
-    fetchWithFallback(() => getAllSubscriptionPaid(), null),
-    fetchWithFallback(() => fetchAgencies(), []),
+    query ? safeFetch(() => getGlobalSearchResults(query), null) : null,
+    safeFetch(() => getBoats(), null),
+    safeFetch(() => getCars(), null),
+    safeFetch(() => getJobs(), null),
+    safeFetch(() => getMarketplaceItems(), null),
+    safeFetch(() => getMotorcycles(), null),
+    safeFetch(() => getRealEstateListings(), null),
+    safeFetch(() => getAllFarmEquipment(), null),
+    safeFetch(() => getAllSubscriptionPaid(), null),
+    safeFetch(() => fetchAgencies(), []),
   ]);
 
   const initialData: InitialData = {
@@ -84,12 +84,13 @@ export async function DataFeed({ query }: { query: string }) {
     subscriptions: mapToFeedItem(subscriptionsRaw),
   };
 
-  const searchResults = mapToFeedItem(searchResultsRaw as any[] | null);
+  const searchResults = mapToFeedItem(searchResultsRaw as any[]);
 
   return (
     <HomeContent
+      key={query}
       initialData={initialData}
-      userId={user?._id || null}
+      userId={null}
       serverSearchResults={searchResults}
       isSearching={!!query}
     >

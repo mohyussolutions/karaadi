@@ -6,13 +6,13 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import { ElectronicsNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import {
   getMarketplaceItems,
   MarketplaceItem,
 } from "@/actions/categories/marketplaceActions";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function ElectronicsLinks() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,21 @@ export default function ElectronicsLinks() {
           ? item.category.includes("Electronics & Home Goods")
           : item.category === "Electronics & Home Goods",
       );
-      setSearchResults(filtered);
+      const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
+        _id: item._id ?? item.id ?? "",
+        id: item.id ?? item._id ?? "",
+        user: item.user ?? null,
+        title: item.title ?? "",
+        description: item.description ?? "",
+        city: item.city ?? "",
+        price: item.price ?? 0,
+        images: item.images ?? [],
+        category: item.category ?? "",
+        subcategory: item.subcategory ?? "",
+        region: item.region ?? "",
+        mainCategory: item.mainCategory ?? "Electronics & Home Goods",
+      }));
+      setSearchResults(mappedResults);
     }, 400);
 
     return () => clearTimeout(delayDebounce);

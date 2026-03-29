@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { getMotorcycles } from "@/actions/categories/motorcycleActions";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
@@ -12,6 +13,7 @@ import SearchInput from "@/app/(search)/SearchInput";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 
 export default function SpareParts() {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -170,7 +172,10 @@ export default function SpareParts() {
                 }`}
               >
                 <span className="text-xs font-bold leading-tight">
-                  {category.so}
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
                 </span>
                 <span
                   className={`text-[9px] uppercase mt-1 ${selectedCategory === category.title ? "text-blue-100" : "text-gray-400"}`}

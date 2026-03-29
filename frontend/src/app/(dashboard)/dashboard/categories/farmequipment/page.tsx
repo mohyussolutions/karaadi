@@ -137,7 +137,6 @@ export default function TraktorsPage() {
     }
   };
 
-  // Filter Logic
   const filtered = useMemo(() => {
     let filtered = items;
 

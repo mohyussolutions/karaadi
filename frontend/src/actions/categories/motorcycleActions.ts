@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
-import { cookies } from "next/headers";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export type Motorcycle = {
   _id: string;
@@ -31,32 +31,12 @@ export type Motorcycle = {
 
 type CreateMotorcycleData = Omit<Motorcycle, "_id" | "user">;
 
-async function getAuthHeaders(token?: string) {
-  const cookieStore = await cookies();
-  const cookieToken =
-    cookieStore.get("idToken")?.value || cookieStore.get("accessToken")?.value;
-  const authToken = token || cookieToken;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-  }
-
-  return headers;
-}
-
 export async function getMotorcycles(): Promise<Motorcycle[]> {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(apiUrlsForCategoryTotals.Motorcycles, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -70,7 +50,6 @@ export async function getMotorcycles(): Promise<Motorcycle[]> {
       _id: item._id || item.id,
     })) as Motorcycle[];
   } catch (error) {
-    console.error("Error fetching motorcycles:", error);
     return [];
   }
 }
@@ -84,7 +63,7 @@ export async function getMotorcycleById(
       `${apiUrlsForCategoryTotals.Motorcycles}/${id}`,
       {
         method: "GET",
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -97,17 +76,16 @@ export async function getMotorcycleById(
       _id: item._id || item.id,
     } as Motorcycle;
   } catch (error) {
-    console.error("Error fetching motorcycle by id:", error);
     return null;
   }
 }
 
-export async function createMotorcycle(data: any, token: string) {
+export async function createMotorcycle(data: any, token?: string) {
   try {
     const headers = await getAuthHeaders(token);
     const response = await fetch(apiUrlsForCategoryTotals.Motorcycles, {
       method: "POST",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify(data),
       cache: "no-store",
     });
@@ -118,7 +96,6 @@ export async function createMotorcycle(data: any, token: string) {
     revalidatePath("/motorcycles");
     return { success: true, motorcycleId: result.id || result._id };
   } catch (error) {
-    console.error("Error creating motorcycle:", error);
     return { success: false, message: "Network error" };
   }
 }
@@ -126,7 +103,7 @@ export async function createMotorcycle(data: any, token: string) {
 export async function updateMotorcycle(
   id: string,
   data: Partial<CreateMotorcycleData>,
-  token: string,
+  token?: string,
 ) {
   try {
     const headers = await getAuthHeaders(token);
@@ -134,7 +111,7 @@ export async function updateMotorcycle(
       `${apiUrlsForCategoryTotals.Motorcycles}/${id}`,
       {
         method: "PUT",
-        headers,
+        headers: headers as HeadersInit,
         body: JSON.stringify(data),
         cache: "no-store",
       },
@@ -152,19 +129,18 @@ export async function updateMotorcycle(
       motorcycleId: id,
     };
   } catch (error) {
-    console.error("Error updating motorcycle:", error);
     return { success: false, message: "Network error." };
   }
 }
 
-export async function deleteMotorcycle(id: string, token: string) {
+export async function deleteMotorcycle(id: string, token?: string) {
   try {
     const headers = await getAuthHeaders(token);
     const response = await fetch(
       `${apiUrlsForCategoryTotals.Motorcycles}/${id}`,
       {
         method: "DELETE",
-        headers,
+        headers: headers as HeadersInit,
         cache: "no-store",
       },
     );
@@ -174,7 +150,6 @@ export async function deleteMotorcycle(id: string, token: string) {
     revalidatePath("/motorcycles");
     return { success: true, message: "Listing deleted successfully." };
   } catch (error) {
-    console.error("Error deleting motorcycle:", error);
     return { success: false, message: "Network error." };
   }
 }
@@ -184,19 +159,17 @@ export async function getTotalMotorcyclesAction(): Promise<number> {
     const headers = await getAuthHeaders();
     const res = await fetch(apiUrlsForCategoryTotals.TotalMotorcycles, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
     if (!res.ok) {
-      console.error(`Failed to fetch total motorcycles: ${res.status}`);
       return 0;
     }
 
     const data = await res.json();
     return data.totalMotorcycles ?? data.count ?? data.total ?? 0;
   } catch (error) {
-    console.error("Error fetching total motorcycles:", error);
     return 0;
   }
 }
@@ -206,7 +179,7 @@ export async function getAllMotorcyclesAdminAction() {
     const headers = await getAuthHeaders();
     const res = await fetch(apiUrlsForCategoryTotals.MotorcyclesAdmin, {
       method: "GET",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 
@@ -214,7 +187,6 @@ export async function getAllMotorcyclesAdminAction() {
     const data = await res.json();
     return Array.isArray(data) ? data : data.data || [];
   } catch (error) {
-    console.error("Error fetching admin motorcycles:", error);
     return [];
   }
 }
@@ -227,7 +199,7 @@ export async function toggleMotorcyclePaidAction(
     const headers = await getAuthHeaders();
     const res = await fetch(`${apiUrlsForCategoryTotals.Motorcycles}/${id}`, {
       method: "PATCH",
-      headers,
+      headers: headers as HeadersInit,
       body: JSON.stringify({ isPaid: !currentStatus }),
       cache: "no-store",
     });
@@ -246,7 +218,7 @@ export async function deleteMotorcycleAction(id: string) {
     const headers = await getAuthHeaders();
     const res = await fetch(`${apiUrlsForCategoryTotals.Motorcycles}/${id}`, {
       method: "DELETE",
-      headers,
+      headers: headers as HeadersInit,
       cache: "no-store",
     });
 

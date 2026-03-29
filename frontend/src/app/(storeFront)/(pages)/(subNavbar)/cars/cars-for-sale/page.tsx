@@ -6,12 +6,14 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SearchInput from "@/app/(search)/SearchInput";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
 import { getCars, Car } from "@/actions/categories/carActions";
 import { carsNestedData } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import SearchInput from "@/app/ui/search/SearchInput";
+import { useTranslation } from "react-i18next";
 
 export default function CarsForSale() {
+  const { t } = useTranslation();
   const subCategoryLinks = useMemo(() => {
     const cars = carsNestedData?.CarsForSaleNestedSub || [];
     const trucks = carsNestedData?.TruckNestedSub || [];
@@ -66,10 +68,10 @@ export default function CarsForSale() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter(
+      const filtered = (results as any[]).filter(
         (item: any) =>
           item.mainCategory === "Cars" || item.mainCategory === "Trucks",
-      );
+      ) as Car[];
       setSearchResults(filtered);
     }, 400);
     return () => clearTimeout(delayDebounce);
@@ -189,7 +191,10 @@ export default function CarsForSale() {
                   {category.icon}
                 </div>
                 <span className="text-[10px] sm:text-[11px] font-medium leading-tight truncate w-full px-1">
-                  {category.so}
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
                 </span>
                 <span
                   className={`text-[8px] uppercase tracking-tighter ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-400"}`}

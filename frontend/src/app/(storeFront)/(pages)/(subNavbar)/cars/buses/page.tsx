@@ -6,14 +6,16 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import VehicleCard from "@/app/(storeFront)/components/Cards/VehicleCard";
 import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
-import SearchInput from "@/app/(search)/SearchInput";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
 import { getCars, Car } from "@/actions/categories/carActions";
 import { BusSubLinks } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForCars";
+import { useTranslation } from "react-i18next";
+import SearchInput from "@/app/ui/search/SearchInput";
 
 export default function Buses() {
   const subCategoryLinks = BusSubLinks;
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<Car[]>([]);
@@ -149,7 +151,7 @@ export default function Buses() {
       (cat) =>
         cat.so === selectedSubcategory || cat.title === selectedSubcategory,
     );
-    return found ? `${found.so} (${found.title})` : selectedSubcategory;
+    return found ? t(found.labelKey ?? "") : selectedSubcategory;
   }, [query, selectedSubcategory, subCategoryLinks]);
 
   const scroll = (direction: "left" | "right") => {
@@ -198,7 +200,12 @@ export default function Buses() {
                 >
                   {category.icon}
                 </div>
-                <span className="text-sm font-bold">{category.so}</span>
+                <span className="text-sm font-bold">
+                  {t(category.labelKey ?? "", {
+                    defaultValue:
+                      category.so ?? category.title ?? category.labelKey,
+                  })}
+                </span>
                 <span
                   className={`text-[10px] uppercase ${selectedSubcategory === category.so ? "text-blue-100" : "text-gray-500"}`}
                 >
