@@ -16,11 +16,8 @@ export default function Regions() {
     try {
       const data = await getAllRegions();
       setRegions(data || []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    } catch {}
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -40,27 +37,25 @@ export default function Regions() {
   };
 
   return (
-    <div className="w-full p-8 space-y-12 bg-gray-50/30 min-h-screen">
-      <header className="space-y-4">
+    <div className="w-full p-4 min-h-screen">
+      <header className="mb-6">
         <button
           onClick={() => router.push("/dashboard/settings")}
-          className="group text-indigo-600 text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all"
+          className="text-indigo-600 text-sm font-semibold flex items-center gap-2 hover:underline"
         >
           <span className="text-lg">←</span> Back to Settings
         </button>
-        <div className="flex justify-between items-end border-l-4 border-indigo-600 pl-4">
+        <div className="flex justify-between items-end mt-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Regions
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
+            <h1 className="text-2xl font-bold text-gray-900">Regions</h1>
+            <p className="text-gray-500 text-xs mt-1">
               Manage geographical areas and their linked city counts.
             </p>
           </div>
           <button
             onClick={fetchRegions}
             disabled={loading}
-            className="px-4 py-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Refreshing..." : "Refresh"}
           </button>
@@ -68,60 +63,59 @@ export default function Regions() {
       </header>
 
       {loading && regions.length === 0 ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="flex justify-center items-center py-10">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {regions.map((region) => (
             <div
               key={region.id}
-              className="group bg-white p-6 rounded-3xl border border-white shadow-xl shadow-gray-200/50 hover:shadow-indigo-100 hover:border-indigo-100 transition-all duration-300 flex flex-col justify-between min-h-[140px]"
+              className="p-4 rounded-xl border border-gray-100 shadow hover:shadow-indigo-100 transition flex flex-col justify-between min-h-[120px]"
             >
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <span className="text-[10px] text-gray-300 font-mono tracking-tighter uppercase">
-                    #{region.id.slice(0, 8)}
-                  </span>
-                  <button
-                    onClick={() => handleDelete(region.id)}
-                    disabled={deletingId === region.id}
-                    className="text-gray-300 hover:text-red-500 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
-                    aria-label="Delete region"
-                  >
-                    {deletingId === region.id ? (
-                      <div className="w-3 h-3 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin" />
-                    ) : (
-                      "Delete"
-                    )}
-                  </button>
-                </div>
-
-                <h3 className="text-xl font-bold text-gray-800 tracking-tight">
-                  {region.name}
-                </h3>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] text-gray-300 font-mono uppercase">
+                  #{region.id.slice(0, 8)}
+                </span>
+                <button
+                  onClick={() => handleDelete(region.id)}
+                  disabled={deletingId === region.id}
+                  className="text-gray-300 hover:text-red-500 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                  aria-label="Delete region"
+                >
+                  {deletingId === region.id ? (
+                    <div className="w-3 h-3 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin" />
+                  ) : (
+                    "Delete"
+                  )}
+                </button>
               </div>
-
-              <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-50">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-wider">
-                    {region.cities?.length || 0} Cities Linked
-                  </span>
-                </div>
-                {region.cities?.length ? (
-                  <ul className="text-xs text-gray-500 mt-2">
-                    {region.cities.map((city) => (
-                      <li key={city.id}>{city.name}</li>
-                    ))}
-                  </ul>
-                ) : null}
+              <h3 className="text-lg font-bold text-gray-800 mb-2">
+                {region.name}
+              </h3>
+              <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-50">
+                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-wider">
+                  {region.cities?.length || 0} Cities Linked
+                </span>
                 <button
                   onClick={() => router.push(`/dashboard/settings/cities`)}
-                  className="text-[10px] font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                  className="text-[10px] font-bold text-gray-400 hover:text-indigo-600 transition-colors ml-2"
                 >
                   View Cities →
                 </button>
               </div>
+              {region.cities?.length ? (
+                <ul className="text-base mt-2">
+                  {region.cities.map((city) => (
+                    <li
+                      key={city.id}
+                      className="text-green-600 font-semibold text-lg"
+                    >
+                      {city.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ))}
         </div>

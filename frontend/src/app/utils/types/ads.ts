@@ -1,10 +1,15 @@
 export interface AdImageData {
   url: string;
-  title: string;
-  description: string;
-  link: string;
+  alt?: string;
 }
 
-export interface AdvertisementCardProps {
-  images: AdImageData[];
+export interface Ad {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  maGaday: boolean;
+  isPaid: boolean;
+  image: string;
+  type: string;
 }

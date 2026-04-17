@@ -2,265 +2,153 @@
 
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
-import { revalidatePath } from "next/cache";
+import type { FarmEquipment } from "@/app/utils/types/farmequipment.types";
 
-export type FarmEquipment = {
-  _id: string;
-  userId: string;
-  title: string;
-  description: string;
-  price: number;
-  mainCategory: string;
-  category: string[];
-  subcategory: string[];
-  so?: string;
-  type: string;
-  make: string;
-  traktortModel: string;
-  year: number;
-  condition: string;
-  hours: number;
-  enginePower: string;
-  fuelType: string;
-  region: string;
-  city: string;
-  images: string[];
-  maGaday?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  isPaid?: boolean;
-  extra?: Record<string, unknown>;
-  user?: {
-    username?: string;
-    phone?: string;
-    email?: string;
-    [key: string]: unknown;
-  };
-};
-
-type ApiResponse<T> = {
-  data?: T;
-  items?: T[];
-  total?: number;
-  count?: number;
-  totalFarmEquipment?: number;
-  message?: string;
-};
-
-export async function getAllFarmEquipment(): Promise<FarmEquipment[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(apiUrlsForCategoryTotals.TraktorsAdmin, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    if (!response.ok) return [];
-
-    const result: ApiResponse<FarmEquipment[]> = await response.json();
-    const list = Array.isArray(result)
-      ? result
-      : result?.data || result?.items || [];
-
-    return list.map((item) => ({
-      ...item,
-      _id: item._id || item.id,
-    }));
-  } catch (error) {
-    return [];
-  }
+interface PaginatedResponse {
+  data: FarmEquipment[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
 }
 
-export async function getFarmequipment(): Promise<FarmEquipment[]> {
-  try {
-    const response = await fetch(apiUrlsForCategoryTotals.Traktors, {
-      method: "GET",
+export async function getAllFarmEquipment(
+  page: number = 1,
+  limit: number = 20,
+): Promise<PaginatedResponse> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${apiUrlsForCategoryTotals.TraktorsAdmin}?page=${page}&limit=${limit}`,
+    {
+      headers: headers as HeadersInit,
       cache: "no-store",
-    });
+    },
+  );
 
-    if (!response.ok) return [];
-
-    const result: ApiResponse<FarmEquipment[]> = await response.json();
-    const list = Array.isArray(result)
-      ? result
-      : result?.data || result?.items || [];
-
-    return list.map((item) => ({
-      ...item,
-      _id: item._id || item.id,
-    }));
-  } catch (error) {
-    return [];
+  if (!res.ok) {
+    return { data: [], total: 0, page: 1, limit, hasMore: false };
   }
+
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : data?.data || [];
+  const total = data?.total || list.length;
+
+  return {
+    data: list.map((item: any) => ({
+      ...item,
+      _id: item._id || item.id || "",
+    })),
+    total,
+    page,
+    limit,
+    hasMore: page * limit < total,
+  };
+}
+
+export async function getFarmequipment(page = 1, pageSize = 20): Promise<FarmEquipment[]> {
+  const res = await fetch(`${apiUrlsForCategoryTotals.Traktors}?page=${page}&pageSize=${pageSize}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : data?.data || [];
+  return list.map((item: any) => ({ ...item, _id: item._id || item.id || "" }));
 }
 
 export async function getFarmEquipmentById(
   id: string,
 ): Promise<FarmEquipment | null> {
-  try {
-    const response = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
-      method: "GET",
-      cache: "no-store",
-    });
-
-    if (!response.ok) return null;
-
-    const item = (await response.json()) as FarmEquipment;
-    return {
-      ...item,
-      _id: item._id || (item as any).id,
-    };
-  } catch (error) {
-    return null;
-  }
+  const res = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const item = await res.json();
+  return { ...item, _id: item._id || item.id || "" };
 }
 
 export async function createTraktor(
   data: Partial<FarmEquipment>,
   token?: string,
-) {
-  try {
-    const headers = await getAuthHeaders(token);
-
-    if (!headers.Authorization) {
-      return { success: false, message: "Fadlan soo gal nidaamka" };
-    }
-
-    const response = await fetch(apiUrlsForCategoryTotals.Traktors, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(data),
-      cache: "no-store",
-    });
-
-    const result = (await response.json()) as {
-      id?: string;
-      _id?: string;
-      message?: string;
-    };
-
-    if (!response.ok)
-      return { success: false, message: result.message || "Failed to create" };
-
-    revalidatePath("/farm-equipment");
-    revalidatePath("/admin/farm-equipment");
-    return { success: true, _id: result.id || result._id || "" };
-  } catch (error) {
-    return { success: false, message: "Cilad ayaa dhacday" };
+): Promise<{ success: boolean; _id?: string; message?: string }> {
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(apiUrlsForCategoryTotals.Traktors, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  const result = await res.json();
+  if (!res.ok) {
+    return { success: false, message: result.message || "Failed to create" };
   }
+  return { success: true, _id: result.id || result._id || "" };
 }
 
 export async function updateTraktor(
   id: string,
   data: Partial<FarmEquipment>,
   token?: string,
-) {
-  try {
-    const headers = await getAuthHeaders(token);
-
-    if (!headers.Authorization) {
-      return { success: false, message: "Fadlan soo gal nidaamka" };
-    }
-
-    const response = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
-      method: "PATCH",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(data),
-      cache: "no-store",
-    });
-
-    const result = (await response.json()) as { message?: string };
-
-    if (!response.ok)
-      return { success: false, message: result.message || "Failed to update" };
-
-    revalidatePath(`/farm-equipment/${id}`);
-    revalidatePath("/farm-equipment");
-    revalidatePath("/admin/farm-equipment");
-    return { success: true, traktorId: id };
-  } catch (error) {
-    return { success: false, message: "Cilad ayaa dhacday" };
+): Promise<{ success: boolean; message?: string }> {
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
+    method: "PATCH",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    return { success: false, message: error.message || "Update failed" };
   }
+  return { success: true };
 }
 
-export async function deleteTraktor(id: string, token?: string) {
-  try {
-    const headers = await getAuthHeaders(token);
-
-    if (!headers.Authorization) {
-      return { success: false, message: "Fadlan soo gal nidaamka" };
-    }
-
-    const response = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
-      method: "DELETE",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    if (!response.ok) return { success: false };
-
-    revalidatePath("/farm-equipment");
-    revalidatePath("/admin/farm-equipment");
-    return { success: true, message: "Xayeysiiskii waa la tirtiray." };
-  } catch (error) {
-    return { success: false };
+export async function deleteTraktor(
+  id: string,
+  token?: string,
+): Promise<{ success: boolean; message?: string }> {
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
+    method: "DELETE",
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    return { success: false, message: error.message || "Delete failed" };
   }
+  return { success: true };
 }
 
 export async function getFarmEquipmentTotal(): Promise<number> {
-  try {
-    const headers = await getAuthHeaders();
-
-    const res = await fetch(apiUrlsForCategoryTotals.TotalFarmEquipment, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      credentials: "include",
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      return 0;
-    }
-
-    const data = await res.json();
-    return (
-      data.totalTractors ??
-      data.totalFarmEquipment ??
-      data.count ??
-      data.total ??
-      0
-    );
-  } catch (err) {
-    return 0;
-  }
+  const headers = await getAuthHeaders();
+  const res = await fetch(apiUrlsForCategoryTotals.TotalFarmEquipment, {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.totalFarmEquipment || 0;
 }
 
 export async function toggleFarmEquipmentPaymentAction(
   id: string,
   currentStatus: boolean,
   token?: string,
-) {
-  try {
-    const headers = await getAuthHeaders(token);
-
-    if (!headers.Authorization) {
-      return { success: false, message: "Fadlan soo gal nidaamka" };
-    }
-
-    const response = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
+): Promise<{ success: boolean; message?: string }> {
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(
+    `${apiUrlsForCategoryTotals.Traktors}/${id}/payment`,
+    {
       method: "PATCH",
       headers: headers as HeadersInit,
       body: JSON.stringify({ isPaid: !currentStatus }),
       cache: "no-store",
-    });
-
-    if (!response.ok) return { success: false };
-
-    revalidatePath("/admin/farm-equipment");
-    return { success: true };
-  } catch (error) {
-    console.error("Error toggling payment status:", error);
-    return { success: false };
+    },
+  );
+  if (!res.ok) {
+    const error = await res.json();
+    return { success: false, message: error.message || "Update failed" };
   }
+  return { success: true };
 }

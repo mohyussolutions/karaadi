@@ -1,9 +1,12 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { CHECKOUT_STEPS_CONFIG } from "@/app/(links)/storeFrontLinks/checkoutConstants";
+import { useTranslation } from "react-i18next";
+import { useSearchParams } from "next/navigation";
+import { steps } from "@/app/(links)/storeFrontLinks/checkoutConstants";
 
 interface CheckoutStepsProps {
   step1?: boolean;
@@ -13,9 +16,10 @@ interface CheckoutStepsProps {
 }
 
 const CheckoutSteps = (props: CheckoutStepsProps) => {
-  const activeSteps = CHECKOUT_STEPS_CONFIG.map((step) => ({
+  const { t } = useTranslation();
+  const activeSteps = steps.map((step) => ({
     ...step,
-    active: !!props[step.id as keyof CheckoutStepsProps],
+    active: !!props[step.id as unknown as keyof CheckoutStepsProps],
   }));
 
   return (
@@ -25,12 +29,14 @@ const CheckoutSteps = (props: CheckoutStepsProps) => {
           <div className="absolute top-5 left-0 w-full h-[1px] bg-slate-100 -z-10" />
 
           {activeSteps.map((step, index) => {
-            const Icon = step.icon;
+            const Icon = (step as any).icon || Check;
             const isCurrent =
               step.active &&
               !activeSteps.slice(index + 1).some((s) => s.active);
             const isPast =
               step.active && activeSteps.slice(index + 1).some((s) => s.active);
+
+            const stepLabel = t(step.name, step.defaultLabel || step.name);
 
             return (
               <div
@@ -60,7 +66,7 @@ const CheckoutSteps = (props: CheckoutStepsProps) => {
                         isCurrent ? "text-slate-900" : "text-green-600"
                       }`}
                     >
-                      {step.name}
+                      {stepLabel}
                     </span>
                   </Link>
                 ) : (
@@ -69,7 +75,7 @@ const CheckoutSteps = (props: CheckoutStepsProps) => {
                       <Icon size={16} />
                     </div>
                     <span className="mt-3 text-[9px] font-black uppercase tracking-[0.2em] text-slate-200">
-                      {step.name}
+                      {stepLabel}
                     </span>
                   </div>
                 )}
@@ -82,4 +88,34 @@ const CheckoutSteps = (props: CheckoutStepsProps) => {
   );
 };
 
-export default CheckoutSteps;
+function CheckoutContent() {
+  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+
+  const step1 = searchParams.get("step1") === "true";
+  const step2 = searchParams.get("step2") === "true";
+  const step3 = searchParams.get("step3") === "true";
+  const step4 = searchParams.get("step4") === "true";
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <CheckoutSteps step1={step1} step2={step2} step3={step3} step4={step4} />
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold">
+          {t("checkout.title", "Checkout")}
+        </h1>
+        <p className="text-gray-600 mt-2">
+          {t("checkout.description", "Complete your checkout process")}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}

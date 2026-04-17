@@ -1,149 +1,148 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import Pagination from "@/app/ui/invoices/pagination";
-import { GRID_CONFIG } from "@/actions/constant/constant";
-import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
-import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
-import { boatsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import { useSearchParams } from "next/navigation";
 import { getBoats } from "@/actions/categories/boatActions";
+import { boatSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import SearchInput from "@/app/ui/search/SearchInput";
 import WantSell from "@/app/(storeFront)/components/shared/WantToSell/page";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
+import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
+import { useError } from "@/app/(storeFront)/components/hooks/useError";
+import SubCategoryList from "@/app/(storeFront)/components/navbar/categories/SubCategoryList";
+import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
+import { BoatItem } from "@/app/utils/types/boats.types";
+import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
+import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
+import Pagination from "@/app/(storeFront)/components/shared/Pagination";
 
-function BoatLinks() {
+const PAGE_SIZE = 12;
+
+function BoatsLinks() {
   const { t } = useTranslation();
-  const [items, setItems] = useState<any[]>([]);
+  const { renderError } = useError();
+  const [items, setItems] = useState<BoatItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [query, setQuery] = useState("");
-  const [visibleCount, setVisibleCount] = useState(GRID_CONFIG.INITIAL_LOAD);
-  const [loadCount, setLoadCount] = useState(0);
-  const ITEMS_PER_LOAD = GRID_CONFIG.ITEMS_PER_LOAD;
-  const MAX_LOADS = GRID_CONFIG.MAX_LOADS;
+  const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
+  const filteredItems = useListingFeed(items, query, "Boats");
+  const shuffledItems = useRandomizedItems(filteredItems);
+  const { getRoute } = useGetRoute();
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const data = await getBoats();
-        if (data) setItems(data);
-      } catch {
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchItems();
+  const loadData = useCallback(async () => {
+    setIsError(false);
+    setIsLoading(true);
+    try {
+      const data = await getBoats();
+      setItems(data || []);
+    } catch {
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const filteredItems = (() => {
-    if (!query.trim()) return items;
-    const lowerQuery = query.toLowerCase();
-    return items.filter((item) => {
-      const descText = Array.isArray(item.description)
-        ? item.description.join(" ")
-        : item.description;
-      return [item.title, item.city, descText]
-        .filter(Boolean)
-        .some((val) => val.toLowerCase().includes(lowerQuery));
-    });
-  })();
+  useEffect(() => {
+    setMounted(true);
+    loadData();
+  }, [loadData]);
 
-  const itemsToShow = filteredItems.slice(0, visibleCount);
+  const displayItems = mounted ? shuffledItems : filteredItems;
+  const visibleItems = displayItems.slice(0, visibleCount);
+  const hasMore = displayItems.length > visibleCount;
 
-  const hasMore = visibleCount < filteredItems.length && loadCount < MAX_LOADS;
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + PAGE_SIZE);
+      setLoadingMore(false);
+    }, 300);
+  }, []);
 
-  const handleSeeMore = () => {
-    setVisibleCount((prev) =>
-      Math.min(prev + ITEMS_PER_LOAD, filteredItems.length),
-    );
-    setLoadCount((prev) => prev + 1);
-  };
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query]);
+
+  if (isError) return renderError(isError);
 
   return (
-    <div className="container mx-auto px-2 py-2">
-      <SearchInput onSearch={setQuery} />
+    <div className="container mx-auto px-2 py-2 space-y-4">
+      <ContainerLinks>
+        <SearchInput defaultValue={query} />
+      </ContainerLinks>
       <div className="pt-1">
         <PathSegmentsDisplay />
       </div>
-
-      <div className="grid grid-cols-2 gap-1 px-1 py-1 sm:grid-cols-2 lg:grid-cols-2">
-        {boatsSubCategories.map((category) => (
-          <Link
-            key={category.title}
-            prefetch
-            href={`/boats/${category.title.toLowerCase().replace(/\s/g, "-")}`}
-            className="flex flex-col items-center text-center group p-0.5 rounded-lg border border-gray-100 bg-white hover:border-blue-200 transition-all active:scale-95"
-            aria-label={
-              category.labelKey
-                ? t(category.labelKey)
-                : category.so || category.title
-            }
-          >
-            <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 text-lg text-[#0063fb] group-hover:text-black">
-              {(category as any).logo ? (
-                <div className="relative w-5 h-5">
-                  <Image
-                    src={(category as any).logo}
-                    alt={category.title}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              ) : (
-                category.icon
-              )}
-            </div>
-            <div className="flex flex-col pt-0.5">
-              <span className="text-[12px] font-bold text-gray-900 leading-tight truncate w-full px-0.5">
-                {category.labelKey
-                  ? t(category.labelKey)
-                  : category.so || category.title}
+      <ContainerLinks>
+        <SubCategoryList data={boatSubCategories} />
+      </ContainerLinks>
+      <ContainerLinks>
+        <WantSell />
+      </ContainerLinks>
+      {isLoading || !mounted ? (
+        <Loading />
+      ) : (
+        <div className="space-y-4">
+          <ContainerLinks>
+            <div className="text-sm font-medium text-gray-600 px-3 py-1 flex justify-between items-center">
+              <span>
+                {t("resultsFound", { defaultValue: "Natiijada la helay:" })}
+              </span>
+              <span className="text-blue-700 font-bold">
+                {displayItems.length}{" "}
+                {t("boats", { defaultValue: "doonyo" })}
               </span>
             </div>
-          </Link>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-center my-4">
-        <WantSell />
-      </div>
-
-      {isError ? (
-        <div className="text-center py-10 text-red-500 font-medium">
-          Cilad baa ku timid soo dejinta doonyaha. Fadlan dib u tijaabi.
-        </div>
-      ) : isLoading ? (
-        <div className="py-10">
-          <Loading />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
-          {itemsToShow.length > 0 ? (
-            itemsToShow.map((item, index) => (
-              <UniversalCard
-                key={`boat-${item._id || index}`}
-                id={item._id}
-                title={item.title}
-                description={item.description}
-                city={item.city}
-                images={item.images}
-                price={item.price}
-                category="Boats"
-              />
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-sm">
-              Ma jiraan doonyo waafaqsan raadintaada.
+          </ContainerLinks>
+          <ContainerLinks>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {visibleItems.length > 0 ? (
+                visibleItems.map((item: any, index: number) => {
+                  const itemId = item._id || item.id;
+                  const routePrefix = getRoute("boats");
+                  const linkHref = itemId
+                    ? `${routePrefix}/${encodeURIComponent(itemId)}`
+                    : "/";
+                  return (
+                    <UniversalCard
+                      key={itemId || index}
+                      id={itemId}
+                      title={item.title}
+                      description={item.description || ""}
+                      city={item.city}
+                      images={item.images}
+                      price={item.price}
+                      category="boats"
+                      isBasic30={item.isBasic30}
+                      isStandard60={item.isStandard60}
+                      isPremium90={item.isPremium90}
+                      type={item.type}
+                      linkHref={linkHref}
+                    />
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-12 text-gray-400 text-sm">
+                  {t("noResults", {
+                    defaultValue:
+                      "Lama helin wax doonyo ah oo waafaqsan raadintaada.",
+                  })}
+                </div>
+              )}
             </div>
-          )}
+          </ContainerLinks>
           <Pagination
             hasMore={hasMore}
-            onSeeMore={handleSeeMore}
-            loading={false}
+            loading={loadingMore}
+            onSeeMore={handleLoadMore}
           />
         </div>
       )}
@@ -151,4 +150,4 @@ function BoatLinks() {
   );
 }
 
-export default BoatLinks;
+export default BoatsLinks;

@@ -1,8 +1,7 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
 import { FILTERING_ENDPOINTS, geoEndpoints } from "../constant/constant";
-import { GeoStats, Region } from "@/app/utils/types/geoTypes";
+import { Region } from "@/app/utils/types/geoTypes";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export const getTotalOfCities = async (): Promise<number> => {
@@ -16,207 +15,99 @@ export const getTotalOfRegions = async (): Promise<number> => {
 };
 
 export const getAllRegions = async (): Promise<Region[]> => {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(geoEndpoints.GET_ALL_REGIONS, {
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-    return res.ok ? await res.json() : [];
-  } catch {
-    return [];
-  }
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.GET_ALL_REGIONS, {
+    headers: headers as HeadersInit,
+    next: { revalidate: 300 },
+  });
+  return res.ok ? await res.json() : [];
 };
 
 export const addRegion = async (data: { id: string; name: string }) => {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(geoEndpoints.ADD_REGION, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(data),
-      cache: "no-store",
-    });
-    if (res.ok) {
-      revalidateTag("geo-regions");
-      revalidateTag("geo-stats");
-      revalidatePath("/");
-    }
-    return { success: res.ok, data: await res.json() };
-  } catch {
-    return { success: false };
-  }
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.ADD_REGION, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  return { success: res.ok, data: await res.json() };
 };
 
 export const updateRegion = async (id: string, name: string) => {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(geoEndpoints.UPDATE_REGION(id), {
-      method: "PUT",
-      headers: headers as HeadersInit,
-      body: JSON.stringify({ name }),
-      cache: "no-store",
-    });
-    if (res.ok) {
-      revalidateTag("geo-regions");
-      revalidatePath("/");
-    }
-    return { success: res.ok, data: await res.json() };
-  } catch {
-    return { success: false };
-  }
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.UPDATE_REGION(id), {
+    method: "PUT",
+    headers: headers as HeadersInit,
+    body: JSON.stringify({ name }),
+    cache: "no-store",
+  });
+  return { success: res.ok, data: await res.json() };
 };
 
 export const deleteRegion = async (id: string) => {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(geoEndpoints.DELETE_REGION(id), {
-      method: "DELETE",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-    if (res.ok) {
-      revalidateTag("geo-regions");
-      revalidateTag("geo-stats");
-      revalidatePath("/");
-    }
-    return { success: res.ok };
-  } catch {
-    return { success: false };
-  }
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.DELETE_REGION(id), {
+    method: "DELETE",
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  return { success: res.ok };
 };
 
 export const getAllCities = async (regionId?: string) => {
-  try {
-    const headers = await getAuthHeaders();
-    const url = regionId
-      ? `${geoEndpoints.GET_ALL_CITIES}?regionId=${regionId}`
-      : geoEndpoints.GET_ALL_CITIES;
-
-    const res = await fetch(url, {
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-    return res.ok ? await res.json() : [];
-  } catch {
-    return [];
-  }
+  const headers = await getAuthHeaders();
+  const url = regionId
+    ? `${geoEndpoints.GET_ALL_CITIES}?regionId=${regionId}`
+    : geoEndpoints.GET_ALL_CITIES;
+  const res = await fetch(url, {
+    headers: headers as HeadersInit,
+    next: { revalidate: 300 },
+  });
+  return res.ok ? await res.json() : [];
 };
 
-export const addCity = async (
-  newCityNameOrData:
-    | string
-    | {
-        id: string;
-        name: string;
-        regionId: string;
-        isActive: boolean;
-      },
-  newCitySo?: string,
-  region?: string,
-  data?: {
-    id: string;
-    name: string;
-    regionId: string;
-    isActive: boolean;
-  },
-) => {
-  try {
-    const headers = await getAuthHeaders();
-
-    let payload: {
-      id: string;
-      name: string;
-      regionId: string;
-      isActive: boolean;
-    };
-
-    if (typeof newCityNameOrData === "string") {
-
-      payload = data
-        ? data
-        : {
-            id: newCityNameOrData.toLowerCase().replace(/\s+/g, "-"),
-            name: newCitySo || newCityNameOrData,
-            regionId: region || "",
-            isActive: true,
-          };
-    } else {
-      payload = newCityNameOrData;
-    }
-
-    const res = await fetch(geoEndpoints.ADD_CITY, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(payload),
-      cache: "no-store",
-    });
-
-    const result = await res.json();
-
-    if (res.ok) {
-      revalidateTag("geo-cities");
-      revalidateTag("geo-stats");
-      return { success: true, data: result };
-    }
-
-    return { success: false, message: result.error || "Lama darid karo" };
-  } catch {
-    return { success: false, message: "Cillad ayaa dhacday" };
-  }
+export const addCity = async (data: { name: string; regionId: string }) => {
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.ADD_CITY, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  return { success: res.ok, data: await res.json() };
 };
 
 export const deleteCity = async (id: string) => {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(geoEndpoints.DELETE_CITY(id), {
-      method: "DELETE",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-    if (res.ok) {
-      revalidateTag("geo-cities");
-      revalidateTag("geo-stats");
-      revalidatePath("/");
-    }
-    return { success: res.ok };
-  } catch {
-    return { success: false };
-  }
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.DELETE_CITY(id), {
+    method: "DELETE",
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  return { success: res.ok };
 };
 
-export const getGeoStats = async (): Promise<GeoStats> => {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(geoEndpoints.GET_GEO_STATS, {
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-    return res.ok ? await res.json() : { totalRegions: 0, totalCities: 0 };
-  } catch {
-    return { totalRegions: 0, totalCities: 0 };
-  }
+export const getGeoStats = async () => {
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.GET_GEO_STATS, {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  return res.ok
+    ? await res.json()
+    : { totalRegions: 0, totalCities: 0, totalDistricts: 0 };
 };
 
-export const syncGeoData = async (payload: any) => {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(geoEndpoints.SYNC_DATA, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(payload),
-      cache: "no-store",
-    });
-    if (res.ok) {
-      revalidateTag("geo-regions");
-      revalidateTag("geo-cities");
-      revalidateTag("geo-stats");
-      revalidatePath("/");
-    }
-    return { success: res.ok, data: await res.json() };
-  } catch {
-    return { success: false };
-  }
+export const syncGeoData = async (payload: Record<string, unknown>) => {
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.SYNC_DATA, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  return { success: res.ok, data: await res.json() };
 };
 
 export const filterByPriceAndRooms = async (filters: {
@@ -227,27 +118,19 @@ export const filterByPriceAndRooms = async (filters: {
   minRooms?: string | number;
   maxRooms?: string | number;
 }) => {
-  try {
-    const headers = await getAuthHeaders();
-    const params = new URLSearchParams();
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== "") {
-        params.append(key, value.toString());
-      }
-    });
-
-    const url = `${FILTERING_ENDPOINTS.RANGE_PRICE_ROOMS}?${params.toString()}`;
-
-    const res = await fetch(url, {
-      method: "GET",
+  const headers = await getAuthHeaders();
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") {
+      params.append(key, value.toString());
+    }
+  });
+  const res = await fetch(
+    `${FILTERING_ENDPOINTS.RANGE_PRICE_ROOMS}?${params.toString()}`,
+    {
       headers: headers as HeadersInit,
       cache: "no-store",
-    });
-
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (error) {
-    return [];
-  }
+    },
+  );
+  return res.ok ? await res.json() : [];
 };

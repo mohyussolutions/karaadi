@@ -1,3 +1,8 @@
+import {
+  citiesWithMostItemListings,
+  regionsWithMostItemListings,
+} from "../../controllers/categoryController/IocController.ts";
+
 import { Router } from "express";
 import {
   getAllRegions,
@@ -19,6 +24,15 @@ import {
 } from "../../validation/region.validation.ts";
 
 const locRoutes = Router();
+
+locRoutes.get(
+  "/analytics/regions-with-most-item-listings",
+  regionsWithMostItemListings,
+);
+locRoutes.get(
+  "/analytics/cities-with-most-item-listings",
+  citiesWithMostItemListings,
+);
 
 locRoutes.get("/stats", getLocationStats);
 locRoutes.post("/sync", ProtectRoute, syncAllLocations);

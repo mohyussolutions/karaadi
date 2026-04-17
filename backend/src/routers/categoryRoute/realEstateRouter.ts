@@ -1,3 +1,4 @@
+import { Router } from "express";
 import {
   adminAndManager,
   ProtectRoute,
@@ -10,8 +11,8 @@ import {
   getRealEstateById,
   getTotalRealEstates,
   updateRealEstate,
+  updateRealEstatePayment,
 } from "../../controllers/categoryController/realEstateController.ts";
-import { Router } from "express";
 import {
   createRealEstateSchema,
   updateRealEstateSchema,
@@ -19,6 +20,13 @@ import {
 import { validateRequest } from "src/core/middelware/validateRequest.ts";
 
 const realEstateRouter = Router();
+
+realEstateRouter.patch(
+  "/:id/payment",
+  ProtectRoute,
+  adminAndManager,
+  updateRealEstatePayment,
+);
 
 realEstateRouter.get("/", getAllRealEstates);
 

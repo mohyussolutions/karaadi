@@ -1,59 +1,29 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import Loading from "../../components/shared/Loading/Loading";
-import { verifySession } from "@/actions/core/authAction";
-
-interface IUser {
-  _id: string;
-  username: string;
-  email: string;
-  profileImage?: string;
-  phone?: string;
-  isAdmin?: boolean;
-}
+import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
 
 function Karaadi() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [user, setUser] = useState<IUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const getCookie = (name: string) => {
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; ${name}=`);
-          if (parts.length === 2) return parts.pop()?.split(";").shift();
-          return null;
-        };
-
-        const token = getCookie("accessToken") || getCookie("idToken");
-        const profile = await verifySession(token || undefined);
-
-        if (profile) {
-          setUser(profile as IUser);
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const { user, loading } = useAuth();
 
   const handleJoinBusiness = () => {
     router.push("/business-customer");
   };
 
-  if (loading) return;
-  <div className="flex items-center justify-center min-h-[400px] w-full">
-    <Loading />
-  </div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] w-full">
+        <Loading />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -94,21 +64,23 @@ function Karaadi() {
         </h2>
         <div className="flex items-center space-x-4">
           {user.profileImage ? (
-            <img
-              src={user.profileImage}
-              alt={user.username}
+            <Image
+              src={String(user.profileImage)}
+              alt={String(user.username || "User")}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-sm"
             />
           ) : (
             <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold shadow-sm">
-              {user.username?.charAt(0).toUpperCase()}
+              {user.username?.charAt(0).toUpperCase() || "U"}
             </div>
           )}
           <div>
             <p className="font-bold text-xl">{user.username}</p>
             <p className="text-gray-500">{user.email}</p>
             <p className="text-xs text-gray-400 mt-1">
-              {t("mine.businesses.id", "ID:")} {user._id}
+              {t("mine.businesses.id", "ID:")} {user._id || user._id}
             </p>
           </div>
         </div>

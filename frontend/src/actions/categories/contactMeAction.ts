@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { CONTACT_ENDPOINTS } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
@@ -21,20 +20,14 @@ interface MessageData {
 export async function createTicket(data: TicketData) {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
       method: "POST",
       headers: headers as HeadersInit,
       body: JSON.stringify(data),
       cache: "no-store",
     });
-
-    if (res.ok) {
-      revalidatePath("/mine/TicketHistory");
-    }
-
     return { success: res.ok, status: res.status };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Network error" };
   }
 }
@@ -42,19 +35,17 @@ export async function createTicket(data: TicketData) {
 export async function getTicketHistory(email: string) {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
     if (!res.ok) return [];
-
     const data = await res.json();
-    return data
-      .filter((t: any) => t.senderEmail === email)
-      .sort((a: any, b: any) => b.id - a.id);
-  } catch (error) {
+    const list = Array.isArray(data) ? data : [];
+    return list
+      .filter((t: any) => t?.senderEmail === email)
+      .sort((a: any, b: any) => Number(b.id ?? 0) - Number(a.id ?? 0));
+  } catch {
     return [];
   }
 }
@@ -62,13 +53,12 @@ export async function getTicketHistory(email: string) {
 export async function getTicketDetails(id: string | number) {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(id), {
       headers: headers as HeadersInit,
       cache: "no-store",
     });
     return res.ok ? await res.json() : null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -79,20 +69,14 @@ export async function addTicketMessage(
 ) {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.MESSAGES(ticketId), {
       method: "POST",
       headers: headers as HeadersInit,
       body: JSON.stringify(messageData),
       cache: "no-store",
     });
-
-    if (res.ok) {
-      revalidatePath("/mine/TicketHistory");
-    }
-
     return { success: res.ok };
-  } catch (error) {
+  } catch {
     return { success: false };
   }
 }
@@ -103,20 +87,14 @@ export async function updateTicketStatus(
 ) {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(ticketId), {
       method: "PATCH",
       headers: headers as HeadersInit,
       body: JSON.stringify({ status }),
       cache: "no-store",
     });
-
-    if (res.ok) {
-      revalidatePath("/admin/tickets");
-    }
-
     return { success: res.ok };
-  } catch (error) {
+  } catch {
     return { success: false };
   }
 }
@@ -124,19 +102,13 @@ export async function updateTicketStatus(
 export async function deleteTicket(ticketId: string | number) {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.TICKET_BY_ID(ticketId), {
       method: "DELETE",
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
-    if (res.ok) {
-      revalidatePath("/admin/tickets");
-    }
-
     return { success: res.ok };
-  } catch (error) {
+  } catch {
     return { success: false };
   }
 }
@@ -144,7 +116,6 @@ export async function deleteTicket(ticketId: string | number) {
 export async function deleteMessage(messageId: string | number) {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(
       `${CONTACT_ENDPOINTS.TICKETS}/messages/${messageId}`,
       {
@@ -153,9 +124,8 @@ export async function deleteMessage(messageId: string | number) {
         cache: "no-store",
       },
     );
-
     return { success: res.ok };
-  } catch (error) {
+  } catch {
     return { success: false };
   }
 }
@@ -163,15 +133,12 @@ export async function deleteMessage(messageId: string | number) {
 export async function getAllTickets() {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.TICKETS, {
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (error) {
+    return res.ok ? await res.json() : [];
+  } catch {
     return [];
   }
 }
@@ -179,15 +146,12 @@ export async function getAllTickets() {
 export async function getTicketStats() {
   try {
     const headers = await getAuthHeaders();
-
     const res = await fetch(CONTACT_ENDPOINTS.STATS, {
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
-    if (!res.ok) return { total: 0, today: 0 };
-    return await res.json();
-  } catch (error) {
+    return res.ok ? await res.json() : { total: 0, today: 0 };
+  } catch {
     return { total: 0, today: 0 };
   }
 }

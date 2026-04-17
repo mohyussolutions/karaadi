@@ -12,8 +12,8 @@ export default async function AdFetcher({
     getAdvertisements("sidebar", 1),
   ]);
 
-  const backgroundAd = bgAds?.[0] || null;
-  const sidebarAd = sideAds?.[0] || null;
+  const backgroundAd = bgAds?.[0] ?? null;
+  const sidebarAd = sideAds?.[0] ?? null;
 
   return (
     <BackgroundAdWrapper ad={backgroundAd}>

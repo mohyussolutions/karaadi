@@ -1,65 +1,42 @@
-import {
-  FaBell,
-  FaBuilding,
-  FaBullhorn,
-  FaCog,
-  FaCreditCard,
-  FaHeart,
-  FaHistory,
-  FaLock,
-  FaSearch,
-  FaShieldAlt,
-  FaUserCircle,
-} from "react-icons/fa";
-import { FiHeart, FiList, FiSearch, FiSettings, FiClock } from "react-icons/fi";
-import { IconType } from "react-icons";
-
-interface NavLink {
-  name: string;
-  href: string;
-  icon: IconType;
-  labelKey?: string;
-}
-
-interface OptionLink {
-  title: string;
-  description: string;
-  href: string;
-  icon: IconType;
-  colorClass: string;
-  labelKey?: string;
-}
-
+import { ACCOUNT_ICONS } from "@/app/utils/icons/MainLinksIcons";
+import { NavLink, OptionLink } from "@/app/utils/types/MainLinks";
 export const navLinks: NavLink[] = [
   {
     name: "My Ads",
     href: "/mine/my-ads",
-    icon: FiList,
+    icon: ACCOUNT_ICONS.fiList,
     labelKey: "mine.nav.myAds",
   },
   {
     name: "Favorites",
     href: "/mine/favorites",
-    icon: FiHeart,
+    icon: ACCOUNT_ICONS.fiHeart,
     labelKey: "mine.nav.favorites",
   },
   {
     name: "Saved",
     href: "/mine/saved-searches",
-    icon: FiSearch,
+    icon: ACCOUNT_ICONS.fiSearch,
     labelKey: "mine.nav.saved",
   },
   {
     name: "Tickets",
     href: "/mine/TicketHistory",
-    icon: FiClock,
+    icon: ACCOUNT_ICONS.fiClock,
     labelKey: "mine.nav.tickets",
   },
   {
     name: "Settings",
     href: "/mine/settings",
-    icon: FiSettings,
+    icon: ACCOUNT_ICONS.fiSettings,
     labelKey: "mine.nav.settings",
+  },
+
+  {
+    name: "Badge",
+    href: "/mine/StatsBadge",
+    icon: ACCOUNT_ICONS.faBullhorn,
+    labelKey: "mine.nav.badge",
   },
 ];
 
@@ -68,7 +45,7 @@ export const settingsOptions: OptionLink[] = [
     title: "Privacy",
     description: "Maamul xogtaada iyo dejinta asturnaanta.",
     href: "/mine/settings/privacy",
-    icon: FaShieldAlt,
+    icon: ACCOUNT_ICONS.faShieldAlt,
     colorClass: "text-blue-600",
     labelKey: "mine.settings.privacy",
   },
@@ -76,7 +53,7 @@ export const settingsOptions: OptionLink[] = [
     title: "Security",
     description: "Hagaaji ilaalinta akoonkaaga iyo qalabkaaga.",
     href: "/mine/settings/security",
-    icon: FaLock,
+    icon: ACCOUNT_ICONS.faLock,
     colorClass: "text-green-600",
     labelKey: "mine.settings.security",
   },
@@ -84,7 +61,7 @@ export const settingsOptions: OptionLink[] = [
     title: "Payment",
     description: "Maamul hababka bixinta iyo taariikhda lacag bixinta.",
     href: "/mine/settings/payment",
-    icon: FaCreditCard,
+    icon: ACCOUNT_ICONS.faCreditCard,
     colorClass: "text-gray-700",
     labelKey: "mine.settings.payment",
   },
@@ -92,7 +69,7 @@ export const settingsOptions: OptionLink[] = [
     title: "Subscription",
     description: "Maamul xogta is-qorista iyo lacag bixinta.",
     href: "/mine/settings/subscription",
-    icon: FaBell,
+    icon: ACCOUNT_ICONS.faBell,
     colorClass: "text-gray-700",
     labelKey: "mine.settings.subscription",
   },
@@ -103,7 +80,7 @@ export const accountOptions: OptionLink[] = [
     title: "My Ads",
     description: "See all your ads and track statistics",
     href: "/mine/my-ads",
-    icon: FaBullhorn,
+    icon: ACCOUNT_ICONS.faBullhorn,
     colorClass: "text-green-600",
     labelKey: "mine.account.myAds",
   },
@@ -111,7 +88,7 @@ export const accountOptions: OptionLink[] = [
     title: "My Account",
     description: "View your details on KARAADI and Smartsuuq",
     href: "/mine/account",
-    icon: FaUserCircle,
+    icon: ACCOUNT_ICONS.faUserCircle,
     colorClass: "text-blue-600",
     labelKey: "mine.account.myAccount",
   },
@@ -119,7 +96,7 @@ export const accountOptions: OptionLink[] = [
     title: "Settings",
     description: "Manage your account settings on KARAADI",
     href: "/mine/settings",
-    icon: FaCog,
+    icon: ACCOUNT_ICONS.faCog,
     colorClass: "text-gray-700",
     labelKey: "mine.account.settings",
   },
@@ -127,7 +104,7 @@ export const accountOptions: OptionLink[] = [
     title: "Favorites",
     description: "View all ads you like and have saved on KARAADI",
     href: "/mine/favorites",
-    icon: FaHeart,
+    icon: ACCOUNT_ICONS.faHeart,
     colorClass: "text-red-500",
     labelKey: "mine.account.favorites",
   },
@@ -135,7 +112,7 @@ export const accountOptions: OptionLink[] = [
     title: "Saved Searches",
     description: "Manage and customize your saved searches",
     href: "/mine/saved-searches",
-    icon: FaSearch,
+    icon: ACCOUNT_ICONS.faSearch,
     colorClass: "text-orange-500",
     labelKey: "mine.account.savedSearches",
   },
@@ -143,7 +120,7 @@ export const accountOptions: OptionLink[] = [
     title: "For Businesses",
     description: "View companies you have access to",
     href: "/mine/businesses",
-    icon: FaBuilding,
+    icon: ACCOUNT_ICONS.faBuilding,
     colorClass: "text-pink-600",
     labelKey: "mine.account.forBusinesses",
   },
@@ -151,7 +128,7 @@ export const accountOptions: OptionLink[] = [
     title: "Contact History",
     description: "Track your support requests and messages",
     href: "/mine/TicketHistory",
-    icon: FaHistory,
+    icon: ACCOUNT_ICONS.faHistory,
     colorClass: "text-pink-600",
     labelKey: "mine.account.contactHistory",
   },
@@ -159,8 +136,18 @@ export const accountOptions: OptionLink[] = [
     title: "My Subscriptions",
     description: "Manage your subscriptions and payment plans",
     href: "/mine/my-subscription",
-    icon: FaBell,
+    icon: ACCOUNT_ICONS.faBell,
     colorClass: "text-yellow-500",
     labelKey: "mine.account.mySubscriptions",
   },
+  {
+    title: "Badge",
+    description: "View your badge and stats",
+    href: "/mine/StatsBadge",
+    icon: ACCOUNT_ICONS.faBullhorn,
+    colorClass: "text-indigo-600",
+    labelKey: "mine.account.badge",
+  },
 ];
+
+export const accountIcons = ACCOUNT_ICONS;

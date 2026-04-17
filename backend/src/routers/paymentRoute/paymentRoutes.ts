@@ -1,6 +1,4 @@
 import { Router } from "express";
-import { validateRequest } from "src/core/middelware/validateRequest.ts";
-import { paymentValidation } from "../../validation/payment.validation.ts";
 import paymentController from "../../controllers/paymentController/PaymentController.ts";
 import {
   adminAndManager,
@@ -9,33 +7,16 @@ import {
 
 const paymentRoutes = Router();
 
+paymentRoutes.get(
+  "/analytics/revenue-by-month",
+  ProtectRoute,
+  adminAndManager,
+  paymentController.revenueByMonth,
+);
 paymentRoutes.get("/item/:id", paymentController.getItemDetail);
 paymentRoutes.get("/me", ProtectRoute, paymentController.getMyPayments);
 paymentRoutes.get("/stats", ProtectRoute, paymentController.getPaymentStats);
 paymentRoutes.get("/search", ProtectRoute, paymentController.searchPayments);
-paymentRoutes.post(
-  "/",
-  ProtectRoute,
-  validateRequest(paymentValidation),
-  paymentController.createPayment,
-);
-paymentRoutes.post(
-  "/card/create-intent",
-  ProtectRoute,
-  validateRequest(paymentValidation),
-  paymentController.createCardPaymentIntent,
-);
-paymentRoutes.post(
-  "/card/confirm",
-  ProtectRoute,
-  paymentController.confirmCardPayment,
-);
-paymentRoutes.post(
-  "/card/refund",
-  ProtectRoute,
-  adminAndManager,
-  paymentController.refundCardPayment,
-);
 paymentRoutes.get(
   "/",
   ProtectRoute,
@@ -48,6 +29,7 @@ paymentRoutes.get(
   adminAndManager,
   paymentController.getPaymentById,
 );
+paymentRoutes.post("/", ProtectRoute, paymentController.createPayment);
 paymentRoutes.put(
   "/:id/status",
   ProtectRoute,

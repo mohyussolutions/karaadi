@@ -4,14 +4,13 @@ import {
   deleteSearchQuery,
   getPopularSearches,
 } from "@/actions/categories/searchActions";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   FiTrendingUp,
   FiTrash2,
   FiBarChart2,
   FiRefreshCw,
 } from "react-icons/fi";
-import { verifySession } from "@/actions/core/authAction";
 
 interface SearchItem {
   query: string;
@@ -22,38 +21,21 @@ interface ApiResponse {
   data?: SearchItem[];
   items?: SearchItem[];
   results?: SearchItem[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const MostSavedSearch = () => {
   const [popularSearches, setPopularSearches] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | undefined>();
-  const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const init = async () => {
-      const session = await verifySession();
-      setAccessToken(session?.accessToken);
-      setIsInitialized(true);
-    };
-    init();
-  }, []);
-
-  useEffect(() => {
-    if (isInitialized) {
-      fetchPopularData();
-    }
-  }, [isInitialized]);
-
-  const fetchPopularData = async () => {
+  const fetchPopularData = useCallback(async () => {
     setRefreshing(true);
     setLoading(true);
     setError(null);
     try {
-      const data = await getPopularSearches(accessToken);
+      const data = await getPopularSearches();
 
       if (Array.isArray(data)) {
         setPopularSearches(data);
@@ -85,14 +67,18 @@ const MostSavedSearch = () => {
       setRefreshing(false);
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchPopularData();
+  }, [fetchPopularData]);
 
   const handleDeleteTrending = async (query: string) => {
     if (!confirm(`Remove all instances of "${query}" from global trends?`))
       return;
 
     try {
-      await deleteSearchQuery(query, accessToken);
+      await deleteSearchQuery(query);
       setPopularSearches((prev) => prev.filter((item) => item.query !== query));
     } catch (error) {
       console.error("Delete failed:", error);

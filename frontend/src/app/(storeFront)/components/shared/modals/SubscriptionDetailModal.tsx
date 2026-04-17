@@ -1,5 +1,6 @@
 "use client";
 
+import { Subscription } from "@/app/utils/types/subscription";
 import React from "react";
 import {
   FiUser,
@@ -18,7 +19,6 @@ import {
   FiTag,
   FiMap,
 } from "react-icons/fi";
-import { Subscription } from "@/app/utils/types/subscription";
 
 interface SubscriptionDetailModalProps {
   subscription: Subscription;
@@ -33,9 +33,9 @@ const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = ({
   onDelete,
   onUpdateStatus,
 }) => {
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = (dateString?: string) => {
     try {
-      return new Date(dateString).toLocaleString("en-US", {
+      return new Date(dateString || "1970-01-01").toLocaleString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -284,7 +284,7 @@ const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = ({
                     Created
                   </span>
                   <span className="text-xs font-black text-gray-900">
-                    {formatDateTime(subscription.createdAt)}
+                    {formatDateTime(subscription.createdAt ?? "1970-01-01")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
@@ -294,7 +294,9 @@ const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = ({
                   </span>
                   <span className="text-xs font-black text-blue-900">
                     {subscription.lastNotified
-                      ? formatDateTime(subscription.lastNotified)
+                      ? formatDateTime(
+                          subscription.lastNotified ?? "1970-01-01",
+                        )
                       : "NO ALERTS YET"}
                   </span>
                 </div>
@@ -333,7 +335,10 @@ const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = ({
           <div className="flex items-center bg-white border border-gray-200 p-1 rounded-2xl shadow-sm">
             <button
               onClick={() =>
-                onUpdateStatus(subscription.id || subscription._id, "active")
+                onUpdateStatus(
+                  subscription.id || subscription._id || "",
+                  "active",
+                )
               }
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
                 subscription.isActive
@@ -345,7 +350,10 @@ const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = ({
             </button>
             <button
               onClick={() =>
-                onUpdateStatus(subscription.id || subscription._id, "inactive")
+                onUpdateStatus(
+                  subscription.id || subscription._id || "",
+                  "inactive",
+                )
               }
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
                 !subscription.isActive
@@ -359,7 +367,9 @@ const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = ({
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
-              onClick={() => onDelete(subscription.id || subscription._id)}
+              onClick={() =>
+                onDelete(subscription.id || subscription._id || "")
+              }
               className="flex-1 sm:flex-none px-6 py-2.5 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
             >
               <FiTrash2 className="h-3.5 w-3.5" /> Delete Permanently

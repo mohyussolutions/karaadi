@@ -12,9 +12,9 @@ import {
 
 const visitorRoute = Router();
 
-visitorRoute.post("/track-user", ProtectRoute, trackVisitor);
+visitorRoute.post("/track-user", trackVisitor);
 visitorRoute.get("/all", ProtectRoute, adminAndManager, getAllVisitors);
 visitorRoute.patch("/:userId", ProtectRoute, updateVisitor);
-visitorRoute.delete("/:userId", ProtectRoute, adminAndManager, deleteVisitor);
+visitorRoute.delete("/:userId", ProtectRoute, deleteVisitor);
 
 export default visitorRoute;

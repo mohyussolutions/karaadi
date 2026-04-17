@@ -10,9 +10,7 @@ import {
   FiAlertTriangle,
   FiShield,
   FiEdit,
-  FiPieChart,
 } from "react-icons/fi";
-import { IoCreate } from "react-icons/io5";
 
 export const SUPPORT_LINKS = [
   {

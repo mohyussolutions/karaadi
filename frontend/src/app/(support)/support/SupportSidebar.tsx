@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
+import Link from "next/link";
 import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 import { useRouter, usePathname } from "next/navigation";
 import { FiSearch, FiHeadphones, FiLogOut, FiX } from "react-icons/fi";
-import { verifySession, logout } from "@/actions/core/authAction";
+import { logout, clearAuthCookies } from "@/actions/core/authAction";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/context/AuthContext";
 
 interface SupportSidebarProps {
   open: boolean;
@@ -15,30 +17,19 @@ interface SupportSidebarProps {
 export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [hasMounted, setHasMounted] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const { user, setUser } = useAuth();
   const { t } = useTranslation();
-
-  useEffect(() => {
-    setHasMounted(true);
-    const getSession = async () => {
-      try {
-        const session = await verifySession();
-        setUser(session);
-      } catch (err) {
-        console.error("Session verification failed", err);
-      }
-    };
-    getSession();
-  }, []);
-
-  if (!hasMounted) return null;
 
   const isActive = (href: string) => pathname === href;
 
-  const handleLogout = () => {
-    logout();
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {}
+    clearAuthCookies();
+    sessionStorage.removeItem("user");
+    setUser(null);
+    router.push("/login");
   };
 
   return (
@@ -70,7 +61,9 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
           <div className="flex flex-col gap-3 p-4 bg-zinc-900/40 rounded-3xl border border-zinc-800/50 shadow-inner">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold text-sm border border-indigo-500/20">
-                {user.username?.[0]?.toUpperCase() || "U"}
+                {user.username?.[0]?.toUpperCase() ||
+                  user.email?.[0]?.toUpperCase() ||
+                  "U"}
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-black text-indigo-500/80 uppercase tracking-widest">
@@ -108,14 +101,14 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
         {SUPPORT_LINKS.map((item: any) => {
           const title = item.labelKey
             ? t(item.labelKey)
-            : item.label || item.name;
-          const Icon = item.icon;
-          const active = isActive(item.href);
+            : item.label || item.name || "";
+          const Icon = item.dashboardIcon || item.icon;
+          const active = isActive(item.href || "");
 
           return (
-            <button
+            <Link
               key={title}
-              onClick={() => router.push(item.href)}
+              href={item.href || "/"}
               className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-200 group mb-1 ${
                 active
                   ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 translate-x-1"
@@ -126,7 +119,7 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
                 <span
                   className={`${active ? "text-white" : "text-zinc-500 group-hover:text-indigo-400"}`}
                 >
-                  {typeof Icon === "function" ? <Icon size={20} /> : Icon}
+                  {typeof Icon === "function" ? Icon({ size: 20 }) : Icon}
                 </span>
                 <span className="text-sm font-bold tracking-wide">{title}</span>
               </div>
@@ -136,7 +129,7 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
                   12
                 </span>
               )}
-            </button>
+            </Link>
           );
         })}
       </nav>

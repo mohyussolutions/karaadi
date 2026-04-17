@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { verifySession } from "@/actions/core/authAction";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import {
   getAllReports,
@@ -57,6 +56,16 @@ interface DailyReport {
   reports: Report[];
 }
 
+interface ReportParams {
+  page: number;
+  limit: number;
+  status?: string;
+  itemType?: string;
+  search?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
 export default function AdminReportsPage() {
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
@@ -79,29 +88,20 @@ export default function AdminReportsPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
-    checkAdminAndFetchData();
-  }, [page, filters]);
-
-  const checkAdminAndFetchData = async () => {
-    try {
-      const session = await verifySession();
-      if (!session || !session.isAdmin) {
-        router.push("/login");
-        return;
+    (async () => {
+      try {
+        await Promise.all([fetchReports(), fetchStats(), fetchTotalReports()]);
+      } catch {
+        router.back();
+      } finally {
+        setLoading(false);
       }
-      await fetchReports();
-      await fetchStats();
-      await fetchTotalReports();
-    } catch (error) {
-      router.push("/login");
-    } finally {
-      setLoading(false);
-    }
-  };
+    })();
+  }, [page, filters, router]);
 
   const fetchReports = async () => {
     try {
-      const params: any = {
+      const params: ReportParams = {
         page,
         limit: 10,
         status: filters.status || undefined,
@@ -138,9 +138,7 @@ export default function AdminReportsPage() {
   const fetchTotalReports = async () => {
     try {
       const result = await getTotalReports();
-      if (result.success) {
-        setTotalReports(result.data);
-      }
+      setTotalReports(result.data);
     } catch (error) {
       console.error("Failed to fetch total reports:", error);
     }
@@ -376,7 +374,6 @@ export default function AdminReportsPage() {
             </>
           )}
 
-          
           <div className="hidden sm:block bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
               <select
@@ -432,7 +429,6 @@ export default function AdminReportsPage() {
             </div>
           </div>
 
-          
           {mobileFiltersOpen && (
             <div className="sm:hidden bg-white rounded-xl p-4 border border-gray-100 mb-5">
               <div className="space-y-3">
@@ -534,7 +530,6 @@ export default function AdminReportsPage() {
             </div>
           )}
 
-          
           <div className="hidden md:block bg-white rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -667,7 +662,6 @@ export default function AdminReportsPage() {
             </div>
           </div>
 
-          
           <div className="md:hidden space-y-3">
             {reports.length === 0 ? (
               <div className="bg-white rounded-xl p-8 text-center text-gray-400 font-medium text-sm">

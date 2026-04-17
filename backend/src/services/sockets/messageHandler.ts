@@ -105,22 +105,18 @@ export const messageHandler = (io: Server, socket: Socket, userId: string) => {
 
   socket.on("markAsRead", async (data: { chatId: number }) => {
     try {
+      const chatId = parseInt(data.chatId.toString())
       await prisma.message.updateMany({
-        where: {
-          chatId: parseInt(data.chatId.toString()),
-          receiverId: userId,
-          read: false,
-        },
-        data: {
-          read: true,
-          readAt: new Date(),
-        },
+        where: { chatId, receiverId: userId, read: false },
+        data: { read: true, readAt: new Date() },
       });
 
-      io.to(`chat_${data.chatId}`).emit("messagesMarkedAsRead", {
-        chatId: data.chatId,
-        userId,
+      const unreadCount = await prisma.message.count({
+        where: { receiverId: userId, read: false },
       });
+
+      io.to(`chat_${chatId}`).emit("messagesMarkedAsRead", { chatId, userId });
+      io.to(`user_${userId}`).emit("unreadCountUpdate", { count: unreadCount });
     } catch (error) {}
   });
 

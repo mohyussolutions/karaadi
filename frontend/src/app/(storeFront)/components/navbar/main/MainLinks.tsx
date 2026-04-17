@@ -1,79 +1,139 @@
-"use client";
+"use client"
 
-import { useRouter, usePathname } from "next/navigation";
-import { User } from "@/app/utils/types/user";
-import { getNavItems } from "@/app/(links)/storeFrontLinks/MainLinks";
-import { useEffect, useState, useTransition } from "react";
-import { fetchNotifications } from "@/actions/core/notificationsAction";
-import Lang from "@/i18n/Lang";
-import { useTranslation } from "react-i18next";
-import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { getNavItems } from "@/app/(links)/storeFrontLinks/MainLinks"
+import { useEffect, useState } from "react"
+import { fetchNotifications } from "@/actions/core/notificationsAction"
+import Lang from "@/i18n/Lang"
+import { useTranslation } from "react-i18next"
+import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage"
+import { User } from "@/actions/core/chatActions"
+import { getUnreadMessageCount } from "@/services/chatService"
+import useNotificationSocket from "@/hooks/useNotificationSocket"
+import { socketService } from "@/actions/sockets/socketService"
 
-const NavItems = ({ user }: { user: User | null }) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
-  const [notificationCount, setNotificationCount] = useState(0);
-  const { t } = useTranslation();
-  const { activeLanguage } = useLanguage();
-
-  const isUserValid = Boolean(user?._id);
+const NavItems = ({ user, authLoading }: { user: User | null; authLoading?: boolean }) => {
+  const pathname = usePathname()
+  const [notificationCount, setNotificationCount] = useState(0)
+  const [messageCount, setMessageCount] = useState(0)
+  const [mounted, setMounted] = useState(false)
+  const { t } = useTranslation()
+  useLanguage()
+  useNotificationSocket()
 
   useEffect(() => {
-    if (isUserValid && user?._id) {
-      fetchNotifications(user._id).then((data) => {
-        const unread = Array.isArray(data)
-          ? data.filter((n: any) => !n.isRead).length
-          : 0;
-        setNotificationCount(unread);
-      });
+    setMounted(true)
+  }, [])
+
+  const userId = user?.id || (user as any)?._id
+  const isUserValid = Boolean(userId)
+
+  useEffect(() => {
+    if (!mounted || !isUserValid || !userId) return
+
+    let active = true
+
+    const loadNotifications = async () => {
+      try {
+        const data = await fetchNotifications(userId)
+        if (active && Array.isArray(data)) {
+          setNotificationCount(data.filter((n: any) => !n.isRead).length)
+        }
+      } catch {
+        if (active) setNotificationCount(0)
+      }
     }
-  }, [user?._id, isUserValid]);
 
-  const navItems = getNavItems(isUserValid, notificationCount);
+    const loadMessages = async () => {
+      try {
+        const count = await getUnreadMessageCount(userId)
+        if (active) setMessageCount(count)
+      } catch {
+        if (active) setMessageCount(0)
+      }
+    }
 
-  const handleClick = (href: string) => {
-    if (pathname === href) return;
-    const target =
-      !isUserValid && href !== "/login" && href !== "/" ? "/login" : href;
-    startTransition(() => router.push(target));
-  };
+    loadNotifications()
+    loadMessages()
+
+    socketService.connect(userId)
+
+    const offUnread = socketService.on("unreadCountUpdate", (data: unknown) => {
+      const { count } = data as { count: number }
+      if (typeof count === "number") setMessageCount(count)
+    })
+
+    const offNewMessage = socketService.on("newMessage", () => {
+      setMessageCount((prev) => prev + 1)
+    })
+
+    const offMarkedRead = socketService.on("messagesMarkedAsRead", () => {
+      getUnreadMessageCount(userId).then((count) => {
+        if (active) setMessageCount(count)
+      }).catch(() => {})
+    })
+
+    return () => {
+      active = false
+      offUnread()
+      offNewMessage()
+      offMarkedRead()
+    }
+  }, [userId, isUserValid, mounted])
+
+  const navItems = getNavItems(authLoading ? false : isUserValid, notificationCount)
+  const isNewAd = (href: string) => href === "/new-ad"
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2">
+    <div className="flex items-center gap-1">
       <Lang />
-      <ul className="flex items-center gap-x-0.5 sm:gap-x-2">
+      <ul className="flex items-center gap-0.5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href
+          const label = t(item.labelKey)
+          const isMessages = item.href === "/messages"
+
+          if (isNewAd(item.href)) {
+            return (
+              <li key={item.href} className="flex items-center px-1 sm:px-2">
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-1.5 px-2 sm:px-4 py-2 rounded-full text-gray-700 hover:text-[#0063FB] hover:bg-gray-100 text-sm font-medium transition-colors duration-150 whitespace-nowrap"
+                  aria-label={label}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <span className="text-[20px] leading-none">{item.icon}</span>
+                  <span className="hidden sm:inline" suppressHydrationWarning>{label}</span>
+                </Link>
+              </li>
+            )
+          }
 
           return (
-            <li
-              key={item.href}
-              className="relative h-12 sm:h-14 flex items-center"
-            >
-              <button
-                disabled={isPending}
-                onClick={() => handleClick(item.href)}
-                className={`flex items-center justify-center transition-colors duration-200 px-2 sm:px-3 h-full gap-1 sm:gap-2
-                  ${isActive ? "text-blue-600 font-bold" : "text-gray-600 hover:text-blue-600 font-semibold"}`}
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={`relative flex items-center gap-1.5 px-2 sm:px-4 py-2 rounded-full transition-colors duration-150 outline-none whitespace-nowrap
+                  ${isActive ? "text-[#0063FB]" : "text-gray-700 hover:text-[#0063FB] hover:bg-gray-100"}`}
+                aria-current={isActive ? "page" : undefined}
               >
-                <span className="text-xl sm:text-[22px] flex items-center">
+                <span className="text-[20px] sm:text-[22px] flex items-center leading-none shrink-0 relative">
                   {item.icon}
+                  {isMessages && messageCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-white">
+                      {messageCount > 9 ? "9+" : messageCount}
+                    </span>
+                  )}
                 </span>
-                <span className="hidden md:inline text-xs sm:text-[13px] lowercase">
-                  {item.labelKey ? t(item.labelKey) : item.label}
-                </span>
-
-                {isActive && (
-                  <span className="absolute bottom-0 left-0 w-full h-[2px] sm:h-[3px] bg-blue-600 rounded-t-md" />
-                )}
-              </button>
+                <span className="hidden sm:inline text-sm font-medium" suppressHydrationWarning>{label}</span>
+              </Link>
             </li>
-          );
+          )
         })}
       </ul>
     </div>
-  );
-};
+  )
+}
 
-export default NavItems;
+export default NavItems

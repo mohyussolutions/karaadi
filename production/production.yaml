@@ -1,112 +1,520 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Karaadi Full Production Stack - Managed API, Scaling, and DBs
+Description: Karaadi full stack — VPC, EC2, RDS, ElastiCache, S3, CloudFront, Cognito
+
+Parameters:
+  AppName:
+    Type: String
+    Default: karaadi
+
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging]
+
+  EC2InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues: [t3.micro, t3.small, t3.medium, t3.large]
+
+  EC2KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Key Pair for SSH access
+
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    AllowedValues: [db.t3.micro, db.t3.small, db.t3.medium]
+
+  DBName:
+    Type: String
+    Default: karaadi
+
+  DBUsername:
+    Type: String
+    Default: karaadi_admin
+    NoEcho: true
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 12
+    Description: RDS master password (min 12 chars)
+
+  CacheNodeType:
+    Type: String
+    Default: cache.t3.micro
+    AllowedValues: [cache.t3.micro, cache.t3.small, cache.t3.medium]
+
+  EC2AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Mappings:
+  SubnetConfig:
+    VPC:
+      CIDR: 10.0.0.0/16
+    PublicA:
+      CIDR: 10.0.1.0/24
+    PublicB:
+      CIDR: 10.0.2.0/24
+    PrivateA:
+      CIDR: 10.0.3.0/24
+    PrivateB:
+      CIDR: 10.0.4.0/24
 
 Resources:
-  # --- COGNITO ---
-  UserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      UserPoolName: karaadi-users
-      AutoVerifiedAttributes: [email]
+  # ─── VPC ────────────────────────────────────────────────────────────────────
 
-  UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
+  VPC:
+    Type: AWS::EC2::VPC
     Properties:
-      UserPoolId: !Ref UserPool
-      ClientName: karaadi-web-client
+      CidrBlock: !FindInMap [SubnetConfig, VPC, CIDR]
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-vpc
 
-  # --- SECRETS MANAGER ---
-  DBSecret:
-    Type: AWS::SecretsManager::Secret
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
     Properties:
-      Name: karaadi/prod/db-pass
-      GenerateSecretString: { PasswordLength: 16, ExcludePunctuation: true }
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-igw
 
-  # --- IAM ROLES ---
-  EBInstanceRole:
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [SubnetConfig, PublicA, CIDR]
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-public-a
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [SubnetConfig, PublicB, CIDR]
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-public-b
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [SubnetConfig, PrivateA, CIDR]
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-private-a
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [SubnetConfig, PrivateB, CIDR]
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-private-b
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-public-rt
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  # ─── SECURITY GROUPS ────────────────────────────────────────────────────────
+
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 backend — HTTP, HTTPS, SSH
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-ec2-sg
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS — allow from EC2 only
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-rds-sg
+
+  ElastiCacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ElastiCache — allow from EC2 only
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-redis-sg
+
+  # ─── EC2 ─────────────────────────────────────────────────────────────────────
+
+  EC2IAMRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub ${AppName}-ec2-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          [
-            {
-              Effect: Allow,
-              Principal: { Service: ec2.amazonaws.com },
-              Action: "sts:AssumeRole",
-            },
-          ]
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - arn:aws:iam::aws:policy/SecretsManagerReadWrite
 
-  EBInstanceProfile:
+  EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
-    Properties: { Roles: [!Ref EBInstanceRole] }
-
-  # --- BACKEND + LOAD BALANCER + AUTO SCALING ---
-  EBApp:
-    Type: AWS::ElasticBeanstalk::Application
-    Properties: { ApplicationName: karaadi-backend }
-
-  EBEnv:
-    Type: AWS::ElasticBeanstalk::Environment
     Properties:
-      ApplicationName: !Ref EBApp
-      EnvironmentName: karaadi-prod
-      SolutionStackName: "64bit Amazon Linux 2023 v6.1.2 running Node.js 20"
-      OptionSettings:
-        - Namespace: aws:autoscaling:launchconfiguration
-          OptionName: IamInstanceProfile
-          Value: !Ref EBInstanceProfile
-        - Namespace: aws:elasticbeanstalk:environment
-          OptionName: EnvironmentType
-          Value: LoadBalanced
-        - Namespace: aws:elasticbeanstalk:environment:process:default
-          OptionName: HealthCheckPath
-          Value: /api/health
-        - Namespace: aws:autoscaling:asg
-          OptionName: MinSize
-          Value: "2"
-        - Namespace: aws:autoscaling:asg
-          OptionName: MaxSize
-          Value: "6"
-        - Namespace: aws:elasticbeanstalk:application:environment
-          OptionName: DATABASE_URL
-          Value: !Sub "postgresql://postgres:{{resolve:secretsmanager:${DBSecret}:SecretString}}@${PostgresDB.Endpoint.Address}:${PostgresDB.Endpoint.Port}/postgres"
-        - Namespace: aws:elasticbeanstalk:application:environment
-          OptionName: REDIS_URL
-          Value: !Sub "redis://${RedisCache.ConfigurationEndpoint.Address}:${RedisCache.ConfigurationEndpoint.Port}"
+      Roles:
+        - !Ref EC2IAMRole
 
-  # --- API GATEWAY (Proxy to Load Balancer) ---
-  ApiGateway:
-    Type: AWS::ApiGateway::RestApi
-    Properties: { Name: KaraadiAPI }
+  EC2ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-eip
 
-  # --- DATABASES ---
-  PostgresDB:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      InstanceType: !Ref EC2InstanceType
+      KeyName: !Ref EC2KeyName
+      ImageId: !Ref EC2AmiId
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SubnetId: !Ref PublicSubnetA
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+          yum install -y nodejs git
+          npm install -g pm2
+          pm2 startup systemd -u ec2-user --hp /home/ec2-user
+          systemctl enable pm2-ec2-user
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-backend
+
+  EC2EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref EC2Instance
+      EIP: !Ref EC2ElasticIP
+
+  # ─── RDS ─────────────────────────────────────────────────────────────────────
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub ${AppName} RDS subnet group
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-rds-subnet-group
+
+  RDSInstance:
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
     Properties:
-      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: !Sub ${AppName}-db
+      DBInstanceClass: !Ref DBInstanceClass
       Engine: postgres
-      AllocatedStorage: "20"
-      MasterUsername: postgres
-      MasterUserPassword:
-        !Join [
-          "",
-          ["{{resolve:secretsmanager:", !Ref DBSecret, ":SecretString}}"],
-        ]
+      EngineVersion: "15.4"
+      DBName: !Ref DBName
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      AllocatedStorage: 20
+      StorageType: gp3
+      StorageEncrypted: true
+      MultiAZ: false
+      PubliclyAccessible: false
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-db
 
-  RedisCache:
+  # ─── ELASTICACHE (REDIS) ─────────────────────────────────────────────────────
+
+  ElastiCacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: !Sub ${AppName} Redis subnet group
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  ElastiCacheCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
-      { CacheNodeType: cache.t3.micro, Engine: redis, NumCacheNodes: 1 }
+      ClusterName: !Sub ${AppName}-redis
+      Engine: redis
+      CacheNodeType: !Ref CacheNodeType
+      NumCacheNodes: 1
+      CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref ElastiCacheSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-redis
 
-  # --- FRONTEND ---
-  AmplifyApp:
-    Type: AWS::Amplify::App
+  # ─── S3 + CLOUDFRONT ─────────────────────────────────────────────────────────
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
     Properties:
-      Name: karaadi-frontend
-      Repository: !Sub "https://github.com/${AWS::AccountId}/karaadi"
-      Platform: WEB
+      BucketName: !Sub ${AppName}-assets-${AWS::AccountId}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET, PUT, POST, DELETE]
+            AllowedOrigins: [!Sub "https://${DomainName}"]
+            MaxAge: 3600
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-assets
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${S3Bucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AppName}-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub ${AppName} assets CDN
+        DefaultRootObject: index.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt S3Bucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+        PriceClass: PriceClass_100
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-cdn
+
+  # ─── COGNITO ─────────────────────────────────────────────────────────────────
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AppName}-users
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      PasswordPolicy:
+        MinimumLength: 8
+        RequireUppercase: true
+        RequireLowercase: true
+        RequireNumbers: true
+        RequireSymbols: false
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: name
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-userpool
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${AppName}-client
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # ─── ROUTE 53 ────────────────────────────────────────────────────────────────
+
+  APIRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub api.${DomainName}
+      Type: A
+      TTL: 300
+      ResourceRecords:
+        - !Ref EC2ElasticIP
+
+  AssetsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub assets.${DomainName}
+      Type: CNAME
+      TTL: 300
+      ResourceRecords:
+        - !GetAtt CloudFrontDistribution.DomainName
+
+# ─── OUTPUTS ──────────────────────────────────────────────────────────────────
+
+Outputs:
+  VPCId:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${AppName}-vpc-id
+
+  EC2PublicIP:
+    Value: !Ref EC2ElasticIP
+    Description: Backend server public IP
+
+  EC2InstanceId:
+    Value: !Ref EC2Instance
+
+  RDSEndpoint:
+    Value: !GetAtt RDSInstance.Endpoint.Address
+    Description: Postgres connection host
+
+  RedisEndpoint:
+    Value: !GetAtt ElastiCacheCluster.RedisEndpoint.Address
+    Description: Redis connection host
+
+  S3BucketName:
+    Value: !Ref S3Bucket
+
+  CloudFrontURL:
+    Value: !Sub https://${CloudFrontDistribution.DomainName}
+
+  CognitoUserPoolId:
+    Value: !Ref CognitoUserPool
+
+  CognitoClientId:
+    Value: !Ref CognitoUserPoolClient
+
+  APIURL:
+    Value: !Sub https://api.${DomainName}

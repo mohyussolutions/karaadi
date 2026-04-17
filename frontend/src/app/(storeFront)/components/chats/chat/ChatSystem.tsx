@@ -7,9 +7,8 @@ import SocketManager from "./ServerClientsSocket";
 import ChatMessagesDisplay from "./ChatMessagesDisplay";
 import ChatInputArea from "./InputTextarea";
 import { Trash2 } from "lucide-react";
+import { API_ENDPOINTS, SOCKET_EVENTS } from "@/actions/constant/sockets";
 import { ChatSystemProps } from "@/app/utils/types/chat";
-import { API_ENDPOINTS } from "@/actions/constant/sockets";
-import { SOCKET_EVENTS } from "@/actions/constant/communicationEndpoints";
 
 export default function ChatSystem({
   currentUserId,
@@ -45,7 +44,9 @@ export default function ChatSystem({
     };
   }, []);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(
+    null,
+  ) as React.RefObject<HTMLDivElement>;
   const messageIdsRef = useRef<Set<number>>(new Set());
   const recentlySentRef = useRef<Set<number>>(new Set());
 
@@ -394,9 +395,7 @@ export default function ChatSystem({
         }
         try {
           alert(t("chats.deletedSuccess", { defaultValue: "Chat deleted" }));
-        } catch (e) {
-
-        }
+        } catch (e) {}
       } else {
         try {
           const errorData = await response.json().catch(() => ({}));
@@ -596,18 +595,8 @@ export default function ChatSystem({
                           height={48}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            const target = e.currentTarget as HTMLImageElement;
-                            if (target && !target.dataset.fallback) {
-                              target.dataset.fallback = "1";
-                              const initial =
-                                chat.otherUser?.username
-                                  ?.charAt(0)
-                                  ?.toUpperCase() || "U";
-                              const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='transparent' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black' font-size='16' font-family='Arial, Helvetica, sans-serif'>${initial}</text></svg>`;
-                              target.src = `data:image/svg+xml;utf8,${encodeURIComponent(
-                                svg,
-                              )}`;
-                            }
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.style.display = "none";
                           }}
                         />
                       ) : (

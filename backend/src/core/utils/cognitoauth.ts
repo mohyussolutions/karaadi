@@ -1,53 +1,56 @@
-import AWS from "aws-sdk";
+import {
+  CognitoIdentityProviderClient,
+  AdminDeleteUserCommand,
+  SignUpCommand,
+  InitiateAuthCommand,
+  GlobalSignOutCommand,
+  ConfirmSignUpCommand,
+  ResendConfirmationCodeCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
+  UpdateUserAttributesCommand,
+  AdminUpdateUserAttributesCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
 import jwt from "jsonwebtoken";
-import type { Request, Response } from "express";
+import jwksClient from "jwks-rsa";
+import { Request, Response } from "express";
 import prisma from "./db.ts";
-import bcrypt from "bcrypt";
+import {
+  VerifiedTokenData,
+  RoleUpdateData,
+  UserAttributes,
+} from "../../types/index.ts";
 
-interface VerifiedTokenData {
-  _id?: string;
-  sub: string;
-  "custom:isAdmin": string;
-  "custom:isManager": string;
-  email: string;
-  "custom:isSupport"?: string;
-  preferred_username?: string;
-  username: string;
-  token?: string;
-}
+const jwksUri = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.TOORTO_AWS_COGNITO_USER_POOL_ID}/.well-known/jwks.json`;
 
-interface RoleUpdateData {
-  isAdmin?: string;
-  isManager?: string;
-  isSupport?: string;
-}
+const jwksClientInstance = jwksClient({
+  jwksUri,
+  cache: true,
+  cacheMaxAge: 600000,
+  rateLimit: true,
+  jwksRequestsPerMinute: 20,
+});
 
-interface UserAttributes {
-  email?: string;
-  preferred_username?: string;
-  phone_number?: string;
-  profile?: string;
-  phone_number_verified?: string;
-  "custom:isAdmin"?: string;
-  "custom:isManager"?: string;
-  "custom:isSupport"?: string;
-  "custom:phone_number"?: string;
-  "custom:profile"?: string;
-}
+const getKey = (header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) => {
+  if (!header.kid) return callback(new Error("Missing kid"));
+  jwksClientInstance.getSigningKey(header.kid, (err, key) => {
+    if (err) return callback(err);
+    callback(null, key?.getPublicKey());
+  });
+};
 
-export const cognitoClient = new AWS.CognitoIdentityServiceProvider({
+export const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
 export const deleteFromCognito = async (cognitoId: string): Promise<void> => {
-  const params = {
-    UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
-    Username: cognitoId,
-  };
   try {
-    await cognitoClient.adminDeleteUser(params).promise();
+    await cognitoClient.send(
+      new AdminDeleteUserCommand({
+        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        Username: cognitoId,
+      }),
+    );
   } catch (error: any) {
     throw new Error(error.message || "Cognito deletion failed");
   }
@@ -59,19 +62,13 @@ export const deleteMyAccount = async (
 ): Promise<Response> => {
   const user = (req as any).user;
   const authHeader = req.headers.authorization;
-  const accessToken = authHeader?.split(" ")[1];
 
   const rawId = req.body.id || user?.id || user?.sub;
   const userId = Array.isArray(rawId)
     ? (rawId[0] as string)
     : (rawId as string);
 
-  console.log("--- DELETION PROCESS STARTED ---");
-  console.log("Target User ID (DB):", userId);
-  console.log("Request Token:", accessToken ? "Present" : "Missing");
-
   if (!userId) {
-    console.error("Deletion Aborted: No User ID found");
     return res.status(400).json({ error: "User ID is required" });
   }
 
@@ -87,30 +84,34 @@ export const deleteMyAccount = async (
     });
 
     if (!dbUser) {
-      console.error(`Deletion Aborted: User ${userId} not found in database`);
       return res.status(404).json({ error: "User not found" });
     }
-
-    console.log("Deleting User Record:", {
-      id: dbUser.id,
-      email: dbUser.email,
-      username: dbUser.username,
-      cognitoId: dbUser.cognitoId,
-    });
 
     const targetCognitoId = dbUser.cognitoId;
 
     await prisma.user.delete({
       where: { id: userId },
     });
-    console.log("Database record successfully removed");
 
     if (targetCognitoId) {
       try {
         await deleteFromCognito(targetCognitoId);
-        console.log(`AWS Cognito User ${targetCognitoId} successfully removed`);
       } catch (err: any) {
-        console.error("AWS Cognito Deletion Error:", err.message);
+        if (err && err.message && err.message.includes("security token")) {
+          console.error(
+            "AWS Cognito deletion failed due to invalid credentials.",
+          );
+          console.error(
+            "Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and TOORTO_AWS_COGNITO_USER_POOL_ID environment variables.",
+          );
+        }
+        console.error(
+          `Failed to delete user from Cognito: ${targetCognitoId}`,
+          err,
+        );
+        return res.status(500).json({
+          error: "Failed to delete user from Cognito. Please contact support.",
+        });
       }
     }
 
@@ -118,13 +119,12 @@ export const deleteMyAccount = async (
       res.clearCookie(c),
     );
 
-    console.log("--- DELETION PROCESS COMPLETE ---");
     return res.status(200).json({ success: true, message: "Account deleted" });
   } catch (error: any) {
-    console.error("Fatal Deletion Error:", error.message);
     return res.status(500).json({ error: error.message || "Deletion failed" });
   }
 };
+
 export const signUp = async (
   email: string,
   password: string,
@@ -142,14 +142,14 @@ export const signUp = async (
       { Name: "custom:isSupport", Value: "false" },
     ];
 
-    const response = await cognitoClient
-      .signUp({
+    const response = await cognitoClient.send(
+      new SignUpCommand({
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
         Password: password,
         UserAttributes: userAttributes,
-      })
-      .promise();
+      }),
+    );
     return response;
   } catch (error: any) {
     throw new Error(error.message);
@@ -163,13 +163,13 @@ export const signIn = async (
   res?: Response,
 ) => {
   try {
-    const response = await cognitoClient
-      .initiateAuth({
+    const response = await cognitoClient.send(
+      new InitiateAuthCommand({
         AuthFlow: "USER_PASSWORD_AUTH",
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         AuthParameters: { USERNAME: email, PASSWORD: password },
-      })
-      .promise();
+      }),
+    );
 
     const authResult = response.AuthenticationResult;
     const idToken = authResult?.IdToken;
@@ -180,9 +180,7 @@ export const signIn = async (
       throw new Error("Failed to retrieve ID or refresh token");
     }
 
-    const decodedToken = JSON.parse(
-      Buffer.from(idToken.split(".")[1], "base64").toString("utf-8"),
-    );
+    const decodedToken = jwt.decode(idToken) as any;
 
     const isAdmin = decodedToken["custom:isAdmin"] === "true";
     const isManager = decodedToken["custom:isManager"] === "true";
@@ -193,44 +191,32 @@ export const signIn = async (
     const preferredUsername =
       decodedToken.preferred_username || email.split("@")[0];
 
-    let userRecord = await prisma.user.findUnique({
+    const userRecord = await prisma.user.upsert({
       where: { cognitoId: decodedToken.sub },
+      update: {
+        email: decodedToken.email,
+        username: preferredUsername,
+      },
+      create: {
+        cognitoId: decodedToken.sub,
+        email: decodedToken.email,
+        username: preferredUsername,
+        phone: cognitoPhone !== "false" ? cognitoPhone : "",
+        profileImage:
+          cognitoProfileImage !== "false" ? cognitoProfileImage : null,
+        password: "",
+        isAdmin: false,
+        isManager: false,
+        isSupport: false,
+      },
+      select: {
+        id: true,
+        username: true,
+        phone: true,
+        profileImage: true,
+        cognitoId: true,
+      },
     });
-
-    if (userRecord) {
-      userRecord = await prisma.user.update({
-        where: { cognitoId: decodedToken.sub },
-        data: {
-          email: decodedToken.email,
-          username: preferredUsername,
-          phone:
-            userRecord.phone && userRecord.phone !== "false"
-              ? userRecord.phone
-              : cognitoPhone,
-          profileImage:
-            userRecord.profileImage && userRecord.profileImage !== "false"
-              ? userRecord.profileImage
-              : cognitoProfileImage !== "false"
-                ? cognitoProfileImage
-                : null,
-        },
-      });
-    } else {
-      userRecord = await prisma.user.create({
-        data: {
-          cognitoId: decodedToken.sub,
-          email: decodedToken.email,
-          username: preferredUsername,
-          phone: cognitoPhone !== "false" ? cognitoPhone : "",
-          profileImage:
-            cognitoProfileImage !== "false" ? cognitoProfileImage : null,
-          password: await bcrypt.hash(password, 10),
-          isAdmin: false,
-          isManager: false,
-          isSupport: false,
-        },
-      });
-    }
 
     if (req?.session) {
       req.session.idToken = idToken;
@@ -265,11 +251,11 @@ export const signIn = async (
       },
     };
   } catch (error: unknown) {
-    console.error("Error during sign-in:", error);
     if (error instanceof Error) throw new Error(error.message);
     throw new Error("An unknown error occurred");
   }
 };
+
 export const verifySession = async (
   req: Request & { accessToken?: string },
   res: Response,
@@ -279,66 +265,97 @@ export const verifySession = async (
 
   if (!token) return res.status(401).json({ message: "Not authenticated" });
 
-  try {
-    const decoded: any = jwt.decode(token);
-    if (!decoded?.sub) throw new Error();
-
-    const userRecord = await prisma.user.findUnique({
-      where: { cognitoId: decoded.sub },
-    });
-
-    if (!userRecord) return res.status(404).json({ message: "User not found" });
-
-    const session = await prisma.cookie.findUnique({
-      where: { userId: userRecord.id },
-    });
-
-    if (!session || session.expiresAt < new Date()) {
-      if (session) await prisma.cookie.delete({ where: { id: session.id } });
-      res.clearCookie("idToken");
-      res.clearCookie("refreshToken");
-      res.clearCookie("accessToken");
-      return res.status(401).json({ message: "Session expired" });
-    }
-
-    const cleanField = (val: any) =>
-      val === "false" || val == null || val === "" ? null : val;
-    const responseUser = {
-      id: userRecord.id,
-      email: userRecord.email,
-      username: userRecord.username,
-      phone: cleanField(userRecord.phone),
-      profileImage: cleanField(userRecord.profileImage),
-      isAdmin: userRecord.isAdmin || decoded["custom:isAdmin"] === "true",
-      isManager: userRecord.isManager || decoded["custom:isManager"] === "true",
-      isSupport: userRecord.isSupport || decoded["custom:isSupport"] === "true",
-      token: token,
-      accessToken: accessToken,
-    };
-
-    return res.status(200).json({
-      message: "Session valid",
-      user: responseUser,
+  return new Promise<Response>((resolve) => {
+    jwt.verify(
       token,
-      accessToken,
-    });
-  } catch (err) {
-    res.clearCookie("idToken");
-    res.clearCookie("refreshToken");
-    res.clearCookie("accessToken");
-    return res.status(401).json({ message: "Authentication failed" });
-  }
+      getKey,
+      {
+        issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.TOORTO_AWS_COGNITO_USER_POOL_ID}`,
+        ignoreExpiration: false,
+      },
+      async (err, decoded) => {
+        if (err || !decoded) {
+          res.clearCookie("idToken");
+          res.clearCookie("refreshToken");
+          res.clearCookie("accessToken");
+          return resolve(
+            res.status(401).json({ message: "Authentication failed" }),
+          );
+        }
+
+        try {
+          const payload = decoded as any;
+          const userRecord = await prisma.user.findUnique({
+            where: { cognitoId: payload.sub },
+          });
+
+          if (!userRecord) {
+            return resolve(res.status(404).json({ message: "User not found" }));
+          }
+
+          const session = await prisma.cookie.findUnique({
+            where: { userId: userRecord.id },
+          });
+
+          if (!session || session.expiresAt < new Date()) {
+            if (session)
+              await prisma.cookie.delete({ where: { id: session.id } });
+            res.clearCookie("idToken");
+            res.clearCookie("refreshToken");
+            res.clearCookie("accessToken");
+            return resolve(
+              res.status(401).json({ message: "Session expired" }),
+            );
+          }
+
+          const cleanField = (val: any) =>
+            val === "false" || val == null || val === "" ? null : val;
+
+          const responseUser = {
+            id: userRecord.id,
+            email: userRecord.email,
+            username: userRecord.username,
+            phone: cleanField(userRecord.phone),
+            profileImage: cleanField(userRecord.profileImage),
+            isAdmin: userRecord.isAdmin || payload["custom:isAdmin"] === "true",
+            isManager:
+              userRecord.isManager || payload["custom:isManager"] === "true",
+            isSupport:
+              userRecord.isSupport || payload["custom:isSupport"] === "true",
+            token: token,
+            accessToken: accessToken,
+          };
+
+          return resolve(
+            res.status(200).json({
+              message: "Session valid",
+              user: responseUser,
+              token,
+              accessToken,
+            }),
+          );
+        } catch {
+          res.clearCookie("idToken");
+          res.clearCookie("refreshToken");
+          res.clearCookie("accessToken");
+          return resolve(
+            res.status(401).json({ message: "Authentication failed" }),
+          );
+        }
+      },
+    );
+  });
 };
 
 export const confirmSignUp = async (email: string, code: string) => {
   try {
-    await cognitoClient
-      .confirmSignUp({
+    await cognitoClient.send(
+      new ConfirmSignUpCommand({
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
         ConfirmationCode: code,
-      })
-      .promise();
+      }),
+    );
   } catch (error: any) {
     throw new Error(error.message);
   }
@@ -350,7 +367,7 @@ export const updateUserAttributes = async (
 ): Promise<void> => {
   if (!accessToken) throw new Error("No access token");
 
-  const userAttributes: AWS.CognitoIdentityServiceProvider.AttributeType[] = [];
+  const userAttributes: { Name: string; Value: string }[] = [];
 
   if (attributes.preferred_username) {
     userAttributes.push({
@@ -401,12 +418,12 @@ export const updateUserAttributes = async (
 
   if (userAttributes.length === 0) return;
 
-  await cognitoClient
-    .updateUserAttributes({
+  await cognitoClient.send(
+    new UpdateUserAttributesCommand({
       AccessToken: accessToken,
       UserAttributes: userAttributes,
-    })
-    .promise();
+    }),
+  );
 };
 
 export const updateUserRole = async (
@@ -439,16 +456,16 @@ export const updateUserRole = async (
       throw new Error("No role attributes provided for update.");
     }
 
-    await cognitoClient
-      .adminUpdateUserAttributes({
+    await cognitoClient.send(
+      new AdminUpdateUserAttributesCommand({
         UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
         Username: targetEmail,
         UserAttributes: Object.entries(attributes).map(([key, value]) => ({
           Name: key,
-          Value: value!,
+          Value: String(value!),
         })),
-      })
-      .promise();
+      }),
+    );
 
     return { message: "User roles updated successfully." };
   } catch (error: any) {
@@ -463,17 +480,17 @@ export const adminUpdateUser = async (
   try {
     const userAttributes = Object.entries(attributesToUpdate)
       .filter(([_, value]) => value !== undefined)
-      .map(([key, value]) => ({ Name: key, Value: value! }));
+      .map(([key, value]) => ({ Name: key, Value: String(value!) }));
 
     if (userAttributes.length === 0) return;
 
-    await cognitoClient
-      .adminUpdateUserAttributes({
+    await cognitoClient.send(
+      new AdminUpdateUserAttributesCommand({
         UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
         Username: username,
         UserAttributes: userAttributes,
-      })
-      .promise();
+      }),
+    );
   } catch (error: any) {
     throw new Error(error.message || "Failed to update user attributes.");
   }
@@ -481,12 +498,12 @@ export const adminUpdateUser = async (
 
 export const resendVerificationCode = async (email: string) => {
   try {
-    await cognitoClient
-      .resendConfirmationCode({
+    await cognitoClient.send(
+      new ResendConfirmationCodeCommand({
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
-      })
-      .promise();
+      }),
+    );
   } catch (error: any) {
     throw new Error(error.message);
   }
@@ -494,12 +511,12 @@ export const resendVerificationCode = async (email: string) => {
 
 export const forgotPassword = async (email: string) => {
   try {
-    await cognitoClient
-      .forgotPassword({
+    await cognitoClient.send(
+      new ForgotPasswordCommand({
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
-      })
-      .promise();
+      }),
+    );
   } catch (error: any) {
     throw new Error(error.message || "Failed to send password reset code.");
   }
@@ -511,14 +528,14 @@ export const resetPassword = async (
   resetCode: string,
 ): Promise<void> => {
   try {
-    await cognitoClient
-      .confirmForgotPassword({
+    await cognitoClient.send(
+      new ConfirmForgotPasswordCommand({
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
         ConfirmationCode: resetCode,
         Password: newPassword,
-      })
-      .promise();
+      }),
+    );
   } catch (error: any) {
     throw new Error(error.message || "Failed to reset password.");
   }
@@ -531,7 +548,9 @@ export const signOut = async (accessToken: string) => {
     const decoded = jwt.decode(accessToken) as { sub?: string };
     if (!decoded?.sub) throw new Error("Invalid token: missing user ID");
 
-    await cognitoClient.globalSignOut({ AccessToken: accessToken }).promise();
+    await cognitoClient.send(
+      new GlobalSignOutCommand({ AccessToken: accessToken }),
+    );
 
     const user = await prisma.user.findUnique({
       where: { cognitoId: decoded.sub },
@@ -579,13 +598,13 @@ export const verifyToken = async (
 export const refreshTokenLogic = async (
   refreshToken: string,
 ): Promise<string> => {
-  const response = await cognitoClient
-    .initiateAuth({
+  const response = await cognitoClient.send(
+    new InitiateAuthCommand({
       AuthFlow: "REFRESH_TOKEN_AUTH",
       ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID!,
       AuthParameters: { REFRESH_TOKEN: refreshToken },
-    })
-    .promise();
+    }),
+  );
 
   const accessToken = response.AuthenticationResult?.AccessToken;
   if (!accessToken) throw new Error("No access token in response");
@@ -601,13 +620,13 @@ export const refreshTokenLogicV2 = async (
   tokenType: string;
 }> => {
   try {
-    const response = await cognitoClient
-      .initiateAuth({
+    const response = await cognitoClient.send(
+      new InitiateAuthCommand({
         AuthFlow: "REFRESH_TOKEN_AUTH",
         ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
         AuthParameters: { REFRESH_TOKEN: refreshToken },
-      })
-      .promise();
+      }),
+    );
 
     if (!response.AuthenticationResult)
       throw new Error("Failed to refresh token");
@@ -619,7 +638,6 @@ export const refreshTokenLogicV2 = async (
       tokenType: response.AuthenticationResult.TokenType!,
     };
   } catch (error: any) {
-    console.error("Error refreshing token in Cognito:", error.message);
     throw new Error("Error refreshing token");
   }
 };

@@ -1,0 +1,59 @@
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import languageReducer from "./slices/reducers/languageSlice";
+import listingDraftReducer from "./slices/reducers/listingDraftSlice";
+import notificationsReducer from "./slices/reducers/notificationsSlice";
+import wantedReducer from "./slices/reducers/wantedSlice";
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from "redux-persist";
+import createWebStorage from "redux-persist/lib/storage/createWebStorage";
+
+function createNoopStorage() {
+  return {
+    getItem: () => Promise.resolve(null),
+    setItem: (_key: string, value: unknown) => Promise.resolve(value),
+    removeItem: () => Promise.resolve(),
+  };
+}
+
+const storage =
+  typeof window !== "undefined"
+    ? createWebStorage("local")
+    : createNoopStorage();
+
+const persistConfig = {
+  key: "karaadi-root-v3",
+  storage,
+  whitelist: ["listingDraft", "language"],
+};
+
+const rootReducer = combineReducers({
+  language: languageReducer,
+  listingDraft: listingDraftReducer,
+  notifications: notificationsReducer,
+  wanted: wantedReducer,
+});
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+});
+
+export const persistor = persistStore(store);
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

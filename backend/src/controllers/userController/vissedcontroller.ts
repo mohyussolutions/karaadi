@@ -17,16 +17,20 @@ export const trackVisitor = async (req: Request, res: Response) => {
       });
     }
 
+    const userAgent = req.headers["user-agent"] || "Unknown";
+
     const visitor = await prisma.visitor.upsert({
       where: { userId: visitorId },
       update: {
         visitedAt: new Date(),
         ipAddress: ipAddress,
+        userAgent: userAgent,
       },
       create: {
         userId: visitorId,
         visitedAt: new Date(),
         ipAddress: ipAddress,
+        userAgent: userAgent,
       },
     });
 

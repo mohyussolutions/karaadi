@@ -5,18 +5,33 @@ export function useCardUtils() {
     if (!images) return "/placeholder.png";
 
     if (Array.isArray(images)) {
-      const first = images.find(
-        (img) => typeof img === "string" && img.trim() !== "",
-      );
-      return first || "/placeholder.png";
+      for (const img of images) {
+        if (typeof img === "string" && img.trim() !== "") return img;
+        if (img && typeof img === "object") {
+          if (typeof img.url === "string" && img.url.trim() !== "")
+            return img.url;
+          if (typeof img.src === "string" && img.src.trim() !== "")
+            return img.src;
+        }
+      }
+      return "/placeholder.png";
     }
 
     if (typeof images === "string" && images.trim() !== "") {
       return images;
     }
 
-    if (typeof images === "object" && images.url) {
-      return images.url;
+    if (typeof images === "object" && images !== null) {
+      if (
+        typeof (images as any).url === "string" &&
+        (images as any).url.trim() !== ""
+      )
+        return (images as any).url;
+      if (
+        typeof (images as any).src === "string" &&
+        (images as any).src.trim() !== ""
+      )
+        return (images as any).src;
     }
 
     return "/placeholder.png";
@@ -42,16 +57,21 @@ export function useCardUtils() {
   const getHref = (id: string, category: string): string => {
     if (!id) return "#";
 
-    switch (category) {
-      case "vehicle":
-        return `/vehicles/${id}`;
-      case "property":
-        return `/properties/${id}`;
-      case "job":
-        return `/jobs/${id}`;
-      default:
-        return `/${category}/${id}`;
-    }
+    const cat = String(category || "").toLowerCase();
+
+    const vehicleMatch =
+      /^(car|cars|boat|boats|motorcycle|motorcycles|bike|bikes|motor|vehicle|vehicles|farmequipment)$/i;
+    if (vehicleMatch.test(cat)) return `/vehicles/${id}`;
+
+    const propertyMatch =
+      /^(property|properties|real[-_ ]?estate|realestate)$/i;
+    if (propertyMatch.test(cat)) return `/real-estate/${id}`;
+
+    const jobMatch = /^(job|jobs|jib|jibs)$/i;
+    if (jobMatch.test(cat)) return `/jobs/${id}`;
+
+    const cleaned = cat.replace(/^\/+|\/+$/g, "") || "items";
+    return `/${cleaned}/${id}`;
   };
 
   return {

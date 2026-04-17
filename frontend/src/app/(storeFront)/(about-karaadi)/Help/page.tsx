@@ -1,5 +1,9 @@
+"use client";
+export const dynamic = "force-dynamic";
+
 import React from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import {
   FaEnvelope,
   FaComment,
@@ -9,17 +13,19 @@ import {
   FaDollarSign,
   FaTruck,
   FaWhatsapp,
-} from "react-icons/fa";
+} from "@/app/utils/icons";
 
 function Help() {
+  const { t } = useTranslation();
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
       <div className="text-center mb-12 sm:mb-20">
         <h1 className="text-3xl sm:text-4xl font-semibold mb-4 sm:mb-6 text-gray-800">
-          Caawimaad Karaadi
+          {t("helpPage.hero.title")}
         </h1>
         <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-          Noo soo dir fariin, waxaan halkanoo joognaa 24/7 si aan ku caawino
+          {t("helpPage.hero.lead")}
         </p>
       </div>
 
@@ -31,17 +37,19 @@ function Help() {
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-medium text-gray-800">
-                Email
+                {t("helpPage.contactMethods.email.title")}
               </h2>
-              <p className="text-gray-600 text-sm">Noo soo dir email</p>
+              <p className="text-gray-600 text-sm">
+                {t("helpPage.contactMethods.email.desc")}
+              </p>
             </div>
           </div>
           <a
-            href="mailto:help@karaadi.so"
+            href={t("helpPage.contactMethods.email.address")}
             className="inline-flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 font-medium text-base w-full text-center shadow-md"
           >
             <FaEnvelope className="mr-2" />
-            help@karaadi.so
+            {t("helpPage.contactMethods.email.address")}
           </a>
         </div>
 
@@ -52,19 +60,19 @@ function Help() {
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-medium text-gray-800">
-                Fariin Toos ah
+                {t("helpPage.contactMethods.directMessage.title")}
               </h2>
               <p className="text-gray-600 text-sm">
-                Noo soo dir fariin toos ah
+                {t("helpPage.contactMethods.directMessage.desc")}
               </p>
             </div>
           </div>
           <Link
-            href="/contact"
+            href={t("helpPage.contactMethods.directMessage.link")}
             className="inline-flex items-center justify-center bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-700 font-medium text-base w-full text-center shadow-md"
           >
             <FaComment className="mr-2" />
-            Dir Fariin Toos ah
+            {t("helpPage.contactMethods.directMessage.cta")}
           </Link>
         </div>
 
@@ -75,78 +83,68 @@ function Help() {
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-medium text-gray-800">
-                WhatsApp
+                {t("helpPage.contactMethods.whatsapp.title")}
               </h2>
-              <p className="text-gray-600 text-sm">Nala hadal WhatsApp</p>
+              <p className="text-gray-600 text-sm">
+                {t("helpPage.contactMethods.whatsapp.desc")}
+              </p>
             </div>
           </div>
           <a
-            href="https://wa.me/252611234567"
+            href={t("helpPage.contactMethods.whatsapp.link")}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-700 font-medium text-base w-full text-center shadow-md"
           >
             <FaWhatsapp className="mr-2" />
-            Nala hadal WhatsApp
+            {t("helpPage.contactMethods.whatsapp.cta")}
           </a>
         </div>
       </div>
 
       <div className="mb-16 sm:mb-24">
         <h2 className="text-2xl sm:text-3xl font-medium mb-8 sm:mb-12 text-center text-gray-800">
-          Su'aalaha Badanaa La Is Weydiiyo
+          {t("helpPage.faqsTitle")}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
           <div className="bg-white p-6 sm:p-7 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center mb-3">
               <FaShoppingCart className="text-xl text-blue-500 mr-3" />
               <h3 className="text-lg sm:text-xl font-medium text-gray-800">
-                Sidee baan ku iibiyaa alaabta?
+                {t("helpPage.faqs.0.q")}
               </h3>
             </div>
-            <p className="text-gray-600">
-              Diiwaan gal akoon cusub ama geli akoonkaaga, guji 'Ku iibiy' oo
-              raac tilmaamaha.
-            </p>
+            <p className="text-gray-600">{t("helpPage.faqs.0.a")}</p>
           </div>
 
           <div className="bg-white p-6 sm:p-7 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center mb-3">
               <FaQuestionCircle className="text-xl text-blue-500 mr-3" />
               <h3 className="text-lg sm:text-xl font-medium text-gray-800">
-                Sidee baan soo dejin karaa alaab?
+                {t("helpPage.faqs.1.q")}
               </h3>
             </div>
-            <p className="text-gray-600">
-              Login garee akoonkaaga, guji 'Soo deji alaab' oo buuxi
-              macluumaadka alaabta.
-            </p>
+            <p className="text-gray-600">{t("helpPage.faqs.1.a")}</p>
           </div>
 
           <div className="bg-white p-6 sm:p-7 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center mb-3">
               <FaDollarSign className="text-xl text-blue-500 mr-3" />
               <h3 className="text-lg sm:text-xl font-medium text-gray-800">
-                Muxuu yahay qiimaha isticmaalka?
+                {t("helpPage.faqs.2.q")}
               </h3>
             </div>
-            <p className="text-gray-600">
-              Soo dejinta alaabta waa bilaash, kaliya waxaa jira kirayso yar
-              marka alaabta lagu iibiyo.
-            </p>
+            <p className="text-gray-600">{t("helpPage.faqs.2.a")}</p>
           </div>
 
           <div className="bg-white p-6 sm:p-7 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center mb-3">
               <FaTruck className="text-xl text-blue-500 mr-3" />
               <h3 className="text-lg sm:text-xl font-medium text-gray-800">
-                Sidee baan helaa alaabtayda?
+                {t("helpPage.faqs.3.q")}
               </h3>
             </div>
-            <p className="text-gray-600">
-              Alaabta aad iibisay waxaa laguu keeni doonaa goobta aad dooratay
-              ama aad noo sheegtay.
-            </p>
+            <p className="text-gray-600">{t("helpPage.faqs.3.a")}</p>
           </div>
         </div>
       </div>
@@ -157,26 +155,26 @@ function Help() {
             <FaPhone className="text-3xl text-blue-500" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-medium mb-4">
-            Caawimaad Degdeg ah
+            {t("helpPage.urgent.title")}
           </h2>
           <p className="text-lg mb-5 opacity-90">
-            Haddii aad u baahan tahay caawimaad degdeg ah ama aad heshay
-            dhibaato
+            {t(
+              "helpPage.urgent.lead",
+              "If you need quick help or found an issue",
+            )}
           </p>
           <div className="inline-flex items-center bg-white text-blue-500 px-6 py-3 rounded-xl mb-4">
             <FaPhone className="mr-2 text-xl" />
             <span className="text-2xl sm:text-3xl font-medium">
-              +252 61 123 4567
+              {t("helpPage.urgent.phone")}
             </span>
           </div>
-          <p className="text-gray-200">9:00 AM - 12:00 AM, Maalinta kasta</p>
+          <p className="text-gray-200">{t("helpPage.urgent.hours")}</p>
         </div>
       </div>
 
       <div className="mt-12 sm:mt-20 text-center">
-        <p className="text-gray-500">
-          Karaadi SmartSuuq - Suuqa internetka ee ugu horreeya ee Soomaaliya
-        </p>
+        <p className="text-gray-500">{t("helpPage.footerNote")}</p>
       </div>
     </div>
   );

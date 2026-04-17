@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { EncryptionController } from "../encryptionController/encryptionController.ts";
+import cacheManager from "../../services/redisserver/cacheManager.ts";
+
+const USER_CHATS_TTL = 20
+const chatCacheKey = (userId: string) => `chats:user:${userId}`
 
 export const createChat = async (req: Request, res: Response) => {
   try {
@@ -40,6 +44,32 @@ export const createChat = async (req: Request, res: Response) => {
       case "Traktor":
         chatData.traktorId = itemId;
         break;
+      case "Job": {
+        const includeOpts = {
+          sender: { select: { id: true, username: true, profileImage: true, email: true } },
+          receiver: { select: { id: true, username: true, profileImage: true, email: true } },
+          messages: { orderBy: { timestamp: "desc" as const }, take: 1 },
+        };
+        const existingJobChat = await prisma.chat.findFirst({
+          where: { senderId, receiverId, jobs: { some: { id: itemId } } },
+          include: includeOpts,
+        });
+        if (existingJobChat) {
+          const decrypted = {
+            ...existingJobChat,
+            messages: existingJobChat.messages.map((m) => ({
+              ...m,
+              content: EncryptionController.decrypt(m.content),
+            })),
+          };
+          return res.status(200).json({ chat: decrypted, isNew: false });
+        }
+        const newJobChat = await prisma.chat.create({
+          data: { senderId, receiverId, jobs: { connect: { id: itemId } } },
+          include: { ...includeOpts, messages: true },
+        });
+        return res.status(201).json({ chat: newJobChat, isNew: true });
+      }
       default:
         return res.status(400).json({ error: "Invalid model" });
     }
@@ -68,20 +98,34 @@ export const createChat = async (req: Request, res: Response) => {
       return res.status(200).json({ chat: decryptedChat, isNew: false });
     }
 
-    const newChat = await prisma.chat.create({
-      data: chatData,
-      include: {
-        sender: {
-          select: { id: true, username: true, profileImage: true, email: true },
-        },
-        receiver: {
-          select: { id: true, username: true, profileImage: true, email: true },
-        },
-        messages: true,
-      },
-    });
+    const chatInclude = {
+      sender: { select: { id: true, username: true, profileImage: true, email: true } },
+      receiver: { select: { id: true, username: true, profileImage: true, email: true } },
+      messages: true,
+    };
 
-    res.status(201).json({ chat: newChat, isNew: true });
+    const bustCache = () => Promise.all([
+      cacheManager.delete(chatCacheKey(senderId)),
+      cacheManager.delete(chatCacheKey(receiverId)),
+    ])
+
+    try {
+      const newChat = await prisma.chat.create({ data: chatData, include: chatInclude });
+      await bustCache()
+      return res.status(201).json({ chat: newChat, isNew: true });
+    } catch (err: any) {
+      if (err?.code === "P2003") {
+        const fallbackData = { senderId, receiverId };
+        const existing = await prisma.chat.findFirst({ where: fallbackData, include: chatInclude });
+        if (existing) {
+          return res.status(200).json({ chat: existing, isNew: false });
+        }
+        const fallbackChat = await prisma.chat.create({ data: fallbackData, include: chatInclude });
+        await bustCache()
+        return res.status(201).json({ chat: fallbackChat, isNew: true });
+      }
+      throw err;
+    }
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
@@ -92,28 +136,39 @@ export const getUserChats = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const userIdValue = Array.isArray(userId) ? userId[0] : userId;
 
+    const cacheKey = chatCacheKey(userIdValue)
+    const cached = await cacheManager.get<any[]>(cacheKey)
+    if (cached) return res.json(cached)
+
     const chats = await prisma.chat.findMany({
       where: { OR: [{ senderId: userIdValue }, { receiverId: userIdValue }] },
       include: {
-        sender: {
-          select: { id: true, username: true, profileImage: true, email: true },
-        },
-        receiver: {
-          select: { id: true, username: true, profileImage: true, email: true },
-        },
+        sender: { select: { id: true, username: true, profileImage: true, email: true } },
+        receiver: { select: { id: true, username: true, profileImage: true, email: true } },
         messages: { orderBy: { timestamp: "desc" }, take: 1 },
+        marketplace: { select: { id: true, title: true, price: true, images: true } },
+        car: { select: { id: true, title: true, price: true, images: true } },
+        boat: { select: { id: true, title: true, price: true, images: true } },
+        motorcycle: { select: { id: true, title: true, price: true, images: true } },
+        realEstate: { select: { id: true, title: true, price: true, images: true } },
+        farmequipment: { select: { id: true, title: true, price: true, images: true } },
       },
       orderBy: { updatedAt: "desc" },
     });
 
-    const decryptedChats = chats.map((chat) => ({
-      ...chat,
-      messages: chat.messages.map((m) => ({
-        ...m,
-        content: EncryptionController.decrypt(m.content),
-      })),
-    }));
+    const decryptedChats = chats.map((chat) => {
+      const item = chat.marketplace || chat.car || chat.boat || chat.motorcycle || chat.realEstate || chat.farmequipment || null;
+      return {
+        ...chat,
+        item,
+        messages: chat.messages.map((m) => ({
+          ...m,
+          content: EncryptionController.decrypt(m.content),
+        })),
+      };
+    });
 
+    await cacheManager.set(cacheKey, decryptedChats, USER_CHATS_TTL)
     res.json(decryptedChats);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -191,6 +246,11 @@ export const deleteChat = async (req: Request, res: Response) => {
 
     await prisma.message.deleteMany({ where: { chatId: chatIdNum } });
     await prisma.chat.delete({ where: { id: chatIdNum } });
+
+    await Promise.all([
+      cacheManager.delete(chatCacheKey(chat.senderId)),
+      cacheManager.delete(chatCacheKey(chat.receiverId)),
+    ])
 
     res.json({ success: true });
   } catch (error) {

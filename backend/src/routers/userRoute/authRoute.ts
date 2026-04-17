@@ -24,6 +24,7 @@ import {
   updateProfileImage,
   updatePhoneInDb,
   deleteUserByAdmin,
+  userSignupsByMonth,
 } from "../../controllers/userController/authController.ts";
 import {
   adminAndManager,
@@ -38,6 +39,12 @@ import { createMulterUpload } from "../../hooks/createMulterUpload.ts";
 const authRouters = express.Router();
 const upload = createMulterUpload();
 
+authRouters.get(
+  "/analytics/user-signups-by-month",
+  ProtectRoute,
+  adminAndManager,
+  userSignupsByMonth,
+);
 authRouters.post(
   "/auth",
   loginLimiter,
@@ -45,11 +52,21 @@ authRouters.post(
   async (req: Request, res: Response) => {
     const { email, password } = req.body;
     try {
-      const { token, refreshToken, userData } = await signIn(email, password);
-      await setAuthCookies(res, { idToken: token, refreshToken });
-      return res.json({ token, user: userData });
-    } catch (err) {
-      return res.status(401).json({ error: "Login failed" });
+      const { token, refreshToken, userData } = await signIn(
+        email,
+        password,
+        req,
+        res,
+      );
+      await setAuthCookies(
+        res,
+        { idToken: token, refreshToken },
+        undefined,
+        userData.id,
+      );
+      res.json({ token, user: userData });
+    } catch {
+      res.status(401).json({ error: "Login failed" });
     }
   },
 );

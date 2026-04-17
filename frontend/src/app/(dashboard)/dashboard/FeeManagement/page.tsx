@@ -30,8 +30,10 @@ import {
   updateSystemConfig,
 } from "@/actions/categories/feeAction";
 import { FEE_CATEGORIES } from "@/actions/common/FEE_CATEGORIES";
+
 import FeeModal from "@/app/(storeFront)/components/shared/modals/feeModel";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { fieldMappings } from "../feeTypes";
 
 interface FeeIds {
   m: string;
@@ -44,44 +46,8 @@ interface FeeIds {
   sys: string;
 }
 
-interface FieldMappings {
-  marketplace: string[];
-  realEstate: string[];
-  cars: string[];
-  motorcycles: string[];
-  boats: string[];
-  equipment: string[];
-  subPlans: string[];
-  system: string[];
-}
-
-const fieldMappings: FieldMappings = {
-  marketplace: [
-    "art",
-    "electronics",
-    "animal",
-    "sports",
-    "furniture",
-    "fashion",
-  ],
-  realEstate: ["rent", "sale", "land", "farm", "business"],
-  cars: ["carSale", "carRent", "trailer", "carParts", "truck", "electricCar"],
-  motorcycles: ["motoSale", "motoRent", "motoParts"],
-  boats: ["boatSale", "boatRent", "boatEngine", "boatParts"],
-  equipment: [
-    "tractorSale",
-    "agriTool",
-    "harvester",
-    "fullTime",
-    "partTime",
-    "freelance",
-  ],
-  subPlans: ["basic30", "standard60", "premium90"],
-  system: ["taxRate", "platformFee", "waafiFee", "currency"],
-};
-
 const FeeManagement = () => {
-  const [data, setData] = useState<any>({});
+  const [data, setData] = useState<Record<string, unknown>>({});
   const [ids, setIds] = useState<FeeIds>({
     m: "",
     r: "",
@@ -94,94 +60,99 @@ const FeeManagement = () => {
   });
   const [loading, setLoading] = useState({ fetch: true, action: false });
   const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
 
-  const getLatestConfig = (data: any[] | any) => {
+  const getLatestConfig = (data: unknown): Record<string, unknown> => {
     if (Array.isArray(data)) {
-      const active = data.find((item) => item.isActive !== false);
-      return active || data[0] || {};
+      const arr = data as Record<string, unknown>[];
+      const active = arr.find((item: Record<string, unknown>) =>
+        item && typeof item === "object" && "isActive" in item
+          ? (item as Record<string, unknown>).isActive !== false
+          : false,
+      );
+      return (active as Record<string, unknown>) || arr[0] || {};
     }
-    return data || {};
+    return (data as Record<string, unknown>) || {};
   };
 
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     setLoading((p) => ({ ...p, fetch: true }));
-    try {
-      const [
-        marketplace,
-        realEstate,
-        cars,
-        motorcycles,
-        boats,
-        equipment,
-        subPlans,
-        system,
-      ] = await Promise.all([
-        getMarketplaceFees(),
-        getRealEstateFees(),
-        getCarFees(),
-        getMotorcycleFees(),
-        getBoatFees(),
-        getEquipmentFees(),
-        getSubPlans(),
-        getSystemConfig(),
-      ]);
+    const [
+      marketplace,
+      realEstate,
+      cars,
+      motorcycles,
+      boats,
+      equipment,
+      subPlans,
+      system,
+    ] = await Promise.all([
+      getMarketplaceFees(),
+      getRealEstateFees(),
+      getCarFees(),
+      getMotorcycleFees(),
+      getBoatFees(),
+      getEquipmentFees(),
+      getSubPlans(),
+      getSystemConfig(),
+    ]);
 
-      const marketplaceConfig = getLatestConfig(marketplace);
-      const realEstateConfig = getLatestConfig(realEstate);
-      const carsConfig = getLatestConfig(cars);
-      const motorcyclesConfig = getLatestConfig(motorcycles);
-      const boatsConfig = getLatestConfig(boats);
-      const equipmentConfig = getLatestConfig(equipment);
-      const subPlansConfig = getLatestConfig(subPlans);
-      const systemConfig = getLatestConfig(system);
+    const marketplaceConfig = getLatestConfig(marketplace);
+    const realEstateConfig = getLatestConfig(realEstate);
+    const carsConfig = getLatestConfig(cars);
+    const motorcyclesConfig = getLatestConfig(motorcycles);
+    const boatsConfig = getLatestConfig(boats);
+    const equipmentConfig = getLatestConfig(equipment);
+    const subPlansConfig = getLatestConfig(subPlans);
+    const systemConfig = getLatestConfig(system);
 
-      setIds({
-        m: marketplaceConfig?.id || marketplaceConfig?._id || "",
-        r: realEstateConfig?.id || realEstateConfig?._id || "",
-        c: carsConfig?.id || carsConfig?._id || "",
-        mc: motorcyclesConfig?.id || motorcyclesConfig?._id || "",
-        b: boatsConfig?.id || boatsConfig?._id || "",
-        e: equipmentConfig?.id || equipmentConfig?._id || "",
-        s: subPlansConfig?.id || subPlansConfig?._id || "",
-        sys: systemConfig?.id || systemConfig?._id || "",
-      });
+    setIds({
+      m: String(marketplaceConfig?.id ?? marketplaceConfig?._id ?? ""),
+      r: String(realEstateConfig?.id ?? realEstateConfig?._id ?? ""),
+      c: String(carsConfig?.id ?? carsConfig?._id ?? ""),
+      mc: String(motorcyclesConfig?.id ?? motorcyclesConfig?._id ?? ""),
+      b: String(boatsConfig?.id ?? boatsConfig?._id ?? ""),
+      e: String(equipmentConfig?.id ?? equipmentConfig?._id ?? ""),
+      s: String(subPlansConfig?.id ?? subPlansConfig?._id ?? ""),
+      sys: String(systemConfig?.id ?? systemConfig?._id ?? ""),
+    });
 
-      const combined = {
-        ...marketplaceConfig,
-        ...realEstateConfig,
-        ...carsConfig,
-        ...motorcyclesConfig,
-        ...boatsConfig,
-        ...equipmentConfig,
-        ...subPlansConfig,
-        ...systemConfig,
-      };
+    const combined = {
+      ...marketplaceConfig,
+      ...realEstateConfig,
+      ...carsConfig,
+      ...motorcyclesConfig,
+      ...boatsConfig,
+      ...equipmentConfig,
+      ...subPlansConfig,
+      ...systemConfig,
+    };
 
-      setData(combined);
-      setFormData(combined);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch fee data");
-    } finally {
-      setLoading((p) => ({ ...p, fetch: false }));
-    }
-  };
+    setData(combined);
+    setFormData(combined);
+    setLoading((p) => ({ ...p, fetch: false }));
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  const createTypePayload = (fields: string[], rawPayload: any) => {
-    const payload: any = {};
+  const createTypePayload = (
+    fields: string[],
+    rawPayload: Record<string, unknown>,
+  ): Record<string, number | boolean> => {
+    const payload: Record<string, number | boolean> = {};
     fields.forEach((field) => {
       if (field === "isActive") {
-        payload[field] =
-          typeof rawPayload[field] === "boolean" ? rawPayload[field] : true;
+        const v = rawPayload[field];
+        payload[field] = typeof v === "boolean" ? v : true;
       } else if (field in rawPayload) {
         const val = rawPayload[field];
-        payload[field] =
-          val === "" || val === null || val === undefined ? 0 : parseFloat(val);
+        if (val === "" || val === null || val === undefined) {
+          payload[field] = 0;
+        } else {
+          payload[field] = Number(String(val)) || 0;
+        }
       }
     });
     return payload;
@@ -189,112 +160,109 @@ const FeeManagement = () => {
 
   const handleGlobalSave = async () => {
     setLoading((p) => ({ ...p, action: true }));
-    try {
-      const { _id, id, createdAt, updatedAt, __v, ...rawPayload } = formData;
+    const rawPayload = { ...(formData || {}) } as Record<string, unknown>;
+    ["_id", "id", "createdAt", "updatedAt", "__v"].forEach(
+      (k) => delete rawPayload[k],
+    );
 
-      const marketplacePayload = createTypePayload(
-        fieldMappings.marketplace,
-        rawPayload,
+    const marketplacePayload = createTypePayload(
+      fieldMappings.marketplace,
+      rawPayload,
+    );
+    const realEstatePayload = createTypePayload(
+      fieldMappings.realEstate,
+      rawPayload,
+    );
+    const carsPayload = createTypePayload(fieldMappings.cars, rawPayload);
+    const motorcyclesPayload = createTypePayload(
+      fieldMappings.motorcycles,
+      rawPayload,
+    );
+    const boatsPayload = createTypePayload(fieldMappings.boats, rawPayload);
+    const equipmentPayload = createTypePayload(
+      fieldMappings.equipment,
+      rawPayload,
+    );
+    const subPlansPayload = createTypePayload(
+      fieldMappings.subPlans,
+      rawPayload,
+    );
+    const systemPayload = createTypePayload(fieldMappings.system, rawPayload);
+
+    const operations = [];
+
+    if (Object.keys(marketplacePayload).length > 0) {
+      operations.push(
+        ids.m
+          ? updateMarketplaceFee(ids.m, marketplacePayload)
+          : createMarketplaceFee(marketplacePayload),
       );
-      const realEstatePayload = createTypePayload(
-        fieldMappings.realEstate,
-        rawPayload,
-      );
-      const carsPayload = createTypePayload(fieldMappings.cars, rawPayload);
-      const motorcyclesPayload = createTypePayload(
-        fieldMappings.motorcycles,
-        rawPayload,
-      );
-      const boatsPayload = createTypePayload(fieldMappings.boats, rawPayload);
-      const equipmentPayload = createTypePayload(
-        fieldMappings.equipment,
-        rawPayload,
-      );
-      const subPlansPayload = createTypePayload(
-        fieldMappings.subPlans,
-        rawPayload,
-      );
-      const systemPayload = createTypePayload(fieldMappings.system, rawPayload);
-
-      const operations = [];
-
-      if (Object.keys(marketplacePayload).length > 0) {
-        operations.push(
-          ids.m
-            ? updateMarketplaceFee(ids.m, marketplacePayload)
-            : createMarketplaceFee(marketplacePayload),
-        );
-      }
-
-      if (Object.keys(realEstatePayload).length > 0) {
-        operations.push(
-          ids.r
-            ? updateRealEstateFee(ids.r, realEstatePayload)
-            : createRealEstateFee(realEstatePayload),
-        );
-      }
-
-      if (Object.keys(carsPayload).length > 0) {
-        operations.push(
-          ids.c ? updateCarFee(ids.c, carsPayload) : createCarFee(carsPayload),
-        );
-      }
-
-      if (Object.keys(motorcyclesPayload).length > 0) {
-        operations.push(
-          ids.mc
-            ? updateMotorcycleFee(ids.mc, motorcyclesPayload)
-            : createMotorcycleFee(motorcyclesPayload),
-        );
-      }
-
-      if (Object.keys(boatsPayload).length > 0) {
-        operations.push(
-          ids.b
-            ? updateBoatFee(ids.b, boatsPayload)
-            : createBoatFee(boatsPayload),
-        );
-      }
-
-      if (Object.keys(equipmentPayload).length > 0) {
-        operations.push(
-          ids.e
-            ? updateEquipmentFee(ids.e, equipmentPayload)
-            : createEquipmentFee(equipmentPayload),
-        );
-      }
-
-      if (Object.keys(subPlansPayload).length > 0) {
-        operations.push(
-          ids.s
-            ? updateSubPlan(ids.s, subPlansPayload)
-            : createSubPlan(subPlansPayload),
-        );
-      }
-
-      if (Object.keys(systemPayload).length > 0) {
-        operations.push(
-          ids.sys
-            ? updateSystemConfig(ids.sys, systemPayload)
-            : createSystemConfig(systemPayload),
-        );
-      }
-
-      if (operations.length > 0) {
-        await Promise.all(operations);
-        toast.success("Fees updated successfully!");
-      } else {
-        toast.info("No changes to save");
-      }
-
-      setIsOpen(false);
-      await fetchData();
-    } catch (err) {
-      console.error(err);
-      toast.error("Error deploying configuration.");
-    } finally {
-      setLoading((p) => ({ ...p, action: false }));
     }
+
+    if (Object.keys(realEstatePayload).length > 0) {
+      operations.push(
+        ids.r
+          ? updateRealEstateFee(ids.r, realEstatePayload)
+          : createRealEstateFee(realEstatePayload),
+      );
+    }
+
+    if (Object.keys(carsPayload).length > 0) {
+      operations.push(
+        ids.c ? updateCarFee(ids.c, carsPayload) : createCarFee(carsPayload),
+      );
+    }
+
+    if (Object.keys(motorcyclesPayload).length > 0) {
+      operations.push(
+        ids.mc
+          ? updateMotorcycleFee(ids.mc, motorcyclesPayload)
+          : createMotorcycleFee(motorcyclesPayload),
+      );
+    }
+
+    if (Object.keys(boatsPayload).length > 0) {
+      operations.push(
+        ids.b
+          ? updateBoatFee(ids.b, boatsPayload)
+          : createBoatFee(boatsPayload),
+      );
+    }
+
+    if (Object.keys(equipmentPayload).length > 0) {
+      operations.push(
+        ids.e
+          ? updateEquipmentFee(ids.e, equipmentPayload)
+          : createEquipmentFee(equipmentPayload),
+      );
+    }
+
+    if (Object.keys(subPlansPayload).length > 0) {
+      operations.push(
+        ids.s
+          ? updateSubPlan(ids.s, subPlansPayload)
+          : createSubPlan(subPlansPayload),
+      );
+    }
+
+    if (Object.keys(systemPayload).length > 0) {
+      operations.push(
+        ids.sys
+          ? updateSystemConfig(ids.sys, systemPayload)
+          : createSystemConfig(systemPayload),
+      );
+    }
+
+    if (operations.length > 0) {
+      await Promise.all(operations);
+      toast.success("Fees updated successfully!");
+    } else {
+      toast.info("No changes to save");
+    }
+
+    setIsOpen(false);
+    setLoading((p) => ({ ...p, action: false }));
+    await fetchData();
   };
 
   if (loading.fetch) {
@@ -319,9 +287,10 @@ const FeeManagement = () => {
         </div>
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+          className={`bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 ${loading.action ? "opacity-60 cursor-not-allowed" : ""}`}
+          disabled={loading.action}
         >
-          Update All Prices
+          {loading.action ? "Updating..." : "Update All Prices"}
         </button>
       </header>
 
@@ -335,9 +304,9 @@ const FeeManagement = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {FEE_CATEGORIES.map((cat) => (
+        {FEE_CATEGORIES.map((cat, idx) => (
           <section
-            key={cat.title}
+            key={cat.title || idx}
             className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all group"
           >
             <div className="flex justify-between items-start mb-4">
@@ -353,7 +322,8 @@ const FeeManagement = () => {
             </div>
             <div className="space-y-3">
               {cat.fees.map((fee) => {
-                const val = parseFloat(data[fee.key] || 0);
+                const rawValue = data[fee.key];
+                const val = parseFloat(String(rawValue ?? 0)) || 0;
                 return (
                   <div
                     key={fee.key}

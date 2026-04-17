@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import VisitorManager from "./deleteVisitors";
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { useRouter } from "next/navigation";
-import { settingLinks } from "@/app/(links)/storeFrontLinks/categories";
+import { settingLinks } from "@/app/(links)/dashboardLinks/dashboardLinks";
 import { SettingLink } from "@/app/utils/types/categoriestype";
+import { useAuth } from "@/context/AuthContext";
 
 interface SettingCardProps {
   title: string;
@@ -53,8 +55,15 @@ function SettingCard({
   );
 }
 
+const VisitorManager = dynamic(() => import("./deleteVisitors"), {
+  ssr: false,
+  loading: () => <Loading />,
+});
+
 export default function Settings() {
   const [view, setView] = useState<"main" | "visitors">("main");
+  const { user } = useAuth();
+  const initializing = !user;
   const router = useRouter();
 
   const handleAction = (type: "visitors") => {
@@ -64,6 +73,13 @@ export default function Settings() {
   const handleNavigate = (href: string) => {
     router.push(href);
   };
+
+  if (initializing)
+    return (
+      <div className="w-full min-h-[60vh] flex items-center justify-center">
+        <Loading />
+      </div>
+    );
 
   if (view === "visitors") {
     return <VisitorManager onBack={() => setView("main")} />;

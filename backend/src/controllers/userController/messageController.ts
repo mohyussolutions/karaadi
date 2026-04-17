@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import { EncryptionController } from "../encryptionController/encryptionController.ts";
 import { getIO } from "../../services/sockets/socketServer.ts";
+import cacheManager from "../../services/redisserver/cacheManager.ts";
+
+const chatCacheKey = (userId: string) => `chats:user:${userId}`
 
 export const getChatMessages = async (req: Request, res: Response) => {
   try {
@@ -61,7 +64,6 @@ export const getChatMessages = async (req: Request, res: Response) => {
 
     res.json(decryptedMessages);
   } catch (error: any) {
-    console.error("Error getting chat messages:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -69,8 +71,6 @@ export const getChatMessages = async (req: Request, res: Response) => {
 export const sendMessage = async (req: Request, res: Response) => {
   try {
     let { chatId, senderId, receiverId, content, imageUrl } = req.body;
-
-    // received message request
 
     if (!chatId || !senderId || !content) {
       return res.status(400).json({
@@ -92,7 +92,6 @@ export const sendMessage = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // If receiverId is not provided, determine it from the chat
     if (!receiverId) {
       receiverId = chat.senderId === senderId ? chat.receiverId : chat.senderId;
     }
@@ -126,6 +125,11 @@ export const sendMessage = async (req: Request, res: Response) => {
       },
     });
 
+    await Promise.all([
+      cacheManager.delete(chatCacheKey(senderId)),
+      cacheManager.delete(chatCacheKey(receiverId)),
+    ])
+
     const decryptedMessage = {
       ...message,
       content: EncryptionController.decrypt(message.content),
@@ -139,7 +143,6 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     res.status(201).json(decryptedMessage);
   } catch (error: any) {
-    console.error("Error sending message:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -162,7 +165,6 @@ export const getUnreadCount = async (req: Request, res: Response) => {
 
     res.json({ count });
   } catch (error: any) {
-    console.error("Error getting unread count:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -202,7 +204,6 @@ export const markAllAsRead = async (req: Request, res: Response) => {
       count: updated.count,
     });
   } catch (error: any) {
-    console.error("Error marking messages as read:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -364,7 +365,6 @@ export const replyToMessage = async (req: Request, res: Response) => {
 
     res.status(201).json(decryptedReply);
   } catch (error: any) {
-    console.error("Error replying to message:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -431,7 +431,6 @@ export const getMessageReplies = async (req: Request, res: Response) => {
 
     res.json(decryptedReplies);
   } catch (error: any) {
-    console.error("Error getting message replies:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

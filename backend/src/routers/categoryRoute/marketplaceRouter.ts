@@ -13,6 +13,7 @@ import {
 } from "../../controllers/categoryController/marketplaceController.ts";
 import { Router } from "express";
 import { createMarketplaceItemSchema } from "../../validation/marketplace.validation.ts";
+import { z } from "zod";
 import { validateRequest } from "src/core/middelware/validateRequest.ts";
 
 const marketplaceRoutes = Router();
@@ -39,10 +40,11 @@ marketplaceRoutes.post(
   createMarketplaceItem,
 );
 
+const updateMarketplaceItemSchema = createMarketplaceItemSchema.partial();
 marketplaceRoutes.patch(
   "/:id",
   ProtectRoute,
-  validateRequest(createMarketplaceItemSchema),
+  validateRequest(updateMarketplaceItemSchema),
   updateMarketplaceItem,
 );
 

@@ -1,7 +1,13 @@
 import { GridConfiguration } from "@/app/utils/types/GridConfiguration";
 import { BASE_API_URL } from "./BASE_API_URL";
+
 export const AUTH_TOKEN_KEY = "auth_token";
+export const PLACEHOLDER_IMAGE =
+  "https://placehold.co/80x80/9ca3af/ffffff?text=No+Image";
+export const PLACEHOLDER = "/placeholder.png";
+
 export const SEARCH_ENDPOINT = `${BASE_API_URL}/api/search`;
+
 export const GRID_CONFIG: GridConfiguration = {
   PAGE_SIZE: 20,
   INITIAL_PAGE: 1,
@@ -11,55 +17,323 @@ export const GRID_CONFIG: GridConfiguration = {
   MAX_LOADS: 2,
 };
 
-export const RECOMMENDATION_ENDPOINTS = {
-  RECOMMENDATIONS: `${BASE_API_URL}/api/recommendations`,
-  TRACK_VIEW: `${BASE_API_URL}/api/recommendations/track-view`,
-  MOST_VIEWED_CATEGORIES: `${BASE_API_URL}/api/recommendations/categories/most-viewed`,
-  USER_TOP_CATEGORIES: `${BASE_API_URL}/api/recommendations/categories/user-top`,
-  TRENDING_CATEGORIES: `${BASE_API_URL}/api/recommendations/categories/trending`,
-  MOST_CLICKED_ITEMS: `${BASE_API_URL}/api/recommendations/items/most-clicked`,
-  CATEGORY_CTR: (cat: string) =>
-    `${BASE_API_URL}/api/recommendations/categories/${encodeURIComponent(cat)}/ctr`,
-  RECOMMENDATION_BY_ID: (id: number) =>
-    `${BASE_API_URL}/api/recommendations/${id}`,
-  RECOMMENDATION_BY_EXTERNAL_ID: (eid: string) =>
-    `${BASE_API_URL}/api/recommendations/external/${eid}`,
-};
+const createEndpoint = (path: string): string => `${BASE_API_URL}${path}`;
+const createIdEndpoint = (base: string, id: string | number): string =>
+  `${BASE_API_URL}${base}/${id}`;
+const createUserEndpoint = (base: string, userId: string): string =>
+  `${BASE_API_URL}${base}/${userId}`;
+
+const API_PATHS = {
+  USERS: "/api/users",
+  ADS: "/api/ads",
+  CARS: "/api/cars",
+  BOATS: "/api/boats",
+  MOTORCYCLES: "/api/motorcycles",
+  REAL_ESTATE: "/api/real-estate",
+  TRAKTOR: "/api/traktor",
+  MARKETPLACE: "/api/marketplace",
+  FAVORITES: "/api/favorites",
+  JOBS: "/api/jobs",
+  SUBSCRIPTION: "/api/subscription",
+  PAYMENTS: "/api/payments",
+  AGENCIES: "/api/agencies",
+  FILTERING: "/api/filtering",
+  SUPPORT: "/api/support",
+  LOCATIONS: "/api/locations",
+  HISTORY_SEARCH: "/api/history-search",
+  REPORTS: "/api/reports",
+  FEE: "/api/Fee",
+  RECOMMENDATIONS: "/api/recommendations",
+  ADVERTISEMENTS: "/api/advertisements",
+  CONTACT_US: "/api/contactUs",
+} as const;
+
 export const AUTH_ENDPOINTS = {
-  USERS_BASE: `${BASE_API_URL}/api/users`,
-  LOGIN: `${BASE_API_URL}/api/users/auth`,
-  REGISTER: `${BASE_API_URL}/api/users/register`,
-  LOGOUT: `${BASE_API_URL}/api/users/logout`,
-  CONFIRM: `${BASE_API_URL}/api/users/confirm`,
-  RESEND_CODE: `${BASE_API_URL}/api/users/resend-code`,
-  VERIFY_SESSION: `${BASE_API_URL}/api/users/verify-session`,
-  VERIFY_TOKEN: `${BASE_API_URL}/api/users/verify-token`,
-  REFRESH_TOKEN: `${BASE_API_URL}/api/users/refreshtoken`,
-  FORGOT_PASSWORD: `${BASE_API_URL}/api/users/forgot-password`,
-  RESET_PASSWORD: `${BASE_API_URL}/api/users/reset-password`,
+  USERS_BASE: createEndpoint(API_PATHS.USERS),
+  LOGIN: createEndpoint(`${API_PATHS.USERS}/auth`),
+  REGISTER: createEndpoint(`${API_PATHS.USERS}/register`),
+  LOGOUT: createEndpoint(`${API_PATHS.USERS}/logout`),
+  CONFIRM: createEndpoint(`${API_PATHS.USERS}/confirm`),
+  RESEND_CODE: createEndpoint(`${API_PATHS.USERS}/resend-code`),
+  VERIFY_SESSION: createEndpoint(`${API_PATHS.USERS}/verify-session`),
+  VERIFY_TOKEN: createEndpoint(`${API_PATHS.USERS}/verify-token`),
+  REFRESH_TOKEN: createEndpoint(`${API_PATHS.USERS}/refreshtoken`),
+  FORGOT_PASSWORD: createEndpoint(`${API_PATHS.USERS}/forgot-password`),
+  RESET_PASSWORD: createEndpoint(`${API_PATHS.USERS}/reset-password`),
 };
 
 export const USER_ENDPOINTS = {
-  PROFILE: `${AUTH_ENDPOINTS.USERS_BASE}/profile`,
-  UPDATE_PHONE: `${AUTH_ENDPOINTS.USERS_BASE}/profile/phone`,
-  UPDATE_PROFILE: `${AUTH_ENDPOINTS.USERS_BASE}/profile/image`,
-  DELETE_ACCOUNT: `${AUTH_ENDPOINTS.USERS_BASE}/delete-account`,
+  PROFILE: createEndpoint(`${API_PATHS.USERS}/profile`),
+  UPDATE_PHONE: createEndpoint(`${API_PATHS.USERS}/profile/phone`),
+  UPDATE_PROFILE: createEndpoint(`${API_PATHS.USERS}/profile/image`),
+  DELETE_ACCOUNT: createEndpoint(`${API_PATHS.USERS}/delete-account`),
   VERIFY_SESSION: AUTH_ENDPOINTS.VERIFY_SESSION,
-  GET_USER_BY_ID: (id: string) => `${AUTH_ENDPOINTS.USERS_BASE}/${id}`,
+  GET_USER_BY_ID: (id: string) => createUserEndpoint(API_PATHS.USERS, id),
 };
+
+export const ADS_ENDPOINTS = {
+  ADS_BASE: createEndpoint(API_PATHS.ADS),
+  MY_ADS: createEndpoint(`${API_PATHS.ADS}/my-ads`),
+  UPDATE: createEndpoint(`${API_PATHS.ADS}/update`),
+  DELETE: createEndpoint(`${API_PATHS.ADS}/delete`),
+};
+
+export const CATEGORY_ENDPOINTS = {
+  CARS: createEndpoint(API_PATHS.CARS),
+  BOATS: createEndpoint(API_PATHS.BOATS),
+  MOTORCYCLES: createEndpoint(API_PATHS.MOTORCYCLES),
+  REAL_ESTATE: createEndpoint(API_PATHS.REAL_ESTATE),
+  TRAKTOR: createEndpoint(API_PATHS.TRAKTOR),
+  MARKETPLACE: createEndpoint(API_PATHS.MARKETPLACE),
+
+  CARS_ADMIN: createEndpoint(`${API_PATHS.CARS}/all-including-unpaid`),
+  BOATS_ADMIN: createEndpoint(`${API_PATHS.BOATS}/all-including-unpaid`),
+  MOTORCYCLES_ADMIN: createEndpoint(
+    `${API_PATHS.MOTORCYCLES}/all-including-unpaid`,
+  ),
+  REAL_ESTATE_ADMIN: createEndpoint(
+    `${API_PATHS.REAL_ESTATE}/all-including-unpaid`,
+  ),
+  TRAKTOR_ADMIN: createEndpoint(`${API_PATHS.TRAKTOR}/all-including-unpaid`),
+  MARKETPLACE_ADMIN: createEndpoint(
+    `${API_PATHS.MARKETPLACE}/all-including-unpaid`,
+  ),
+
+  DELETE_ITEM: (id: string) => createIdEndpoint(API_PATHS.MARKETPLACE, id),
+  UPDATE_ITEM: (id: string) => createIdEndpoint(API_PATHS.MARKETPLACE, id),
+
+  TOTAL_CARS: createEndpoint(`${API_PATHS.CARS}/total`),
+  TOTAL_BOATS: createEndpoint(`${API_PATHS.BOATS}/total`),
+  TOTAL_MOTORCYCLES: createEndpoint(`${API_PATHS.MOTORCYCLES}/total`),
+  TOTAL_REAL_ESTATE: createEndpoint(`${API_PATHS.REAL_ESTATE}/total`),
+  TOTAL_FARM_EQUIPMENT: createEndpoint(`${API_PATHS.TRAKTOR}/total`),
+  TOTAL_MARKETPLACE: createEndpoint(`${API_PATHS.MARKETPLACE}/total`),
+};
+
+export const FAVORITE_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.FAVORITES),
+  MY_FAVORITES: createEndpoint(`${API_PATHS.FAVORITES}/my`),
+  COUNT: createEndpoint(`${API_PATHS.FAVORITES}/count`),
+  ADD: createEndpoint(API_PATHS.FAVORITES),
+  GET_BY_ID: (id: string) => createIdEndpoint(API_PATHS.FAVORITES, id),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.FAVORITES, id),
+  UPDATE: (id: string) => createIdEndpoint(API_PATHS.FAVORITES, id),
+};
+
+export const JOBS_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.JOBS),
+  CREATE: createEndpoint(API_PATHS.JOBS),
+  GET_ALL: createEndpoint(API_PATHS.JOBS),
+  TOTAL: createEndpoint(`${API_PATHS.JOBS}/total`),
+  UPDATE: (id: string) => createIdEndpoint(API_PATHS.JOBS, id),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.JOBS, id),
+  GET_BY_ID: (id: string) => createIdEndpoint(API_PATHS.JOBS, id),
+};
+
+export const SUBSCRIPTION_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.SUBSCRIPTION),
+  CREATE: createEndpoint(API_PATHS.SUBSCRIPTION),
+  GET_ALL: createEndpoint(API_PATHS.SUBSCRIPTION),
+  ADMIN_ALL: createEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/all`),
+  STATS: createEndpoint(`${API_PATHS.SUBSCRIPTION}/stats`),
+  TOTAL: createEndpoint(`${API_PATHS.SUBSCRIPTION}/total`),
+  GET_SUBSCRIPTION: createEndpoint(`${API_PATHS.SUBSCRIPTION}/allpaid`),
+  GET_MY_SUBSCRIPTIONS: createEndpoint(`${API_PATHS.SUBSCRIPTION}/my`),
+  SEARCH: createEndpoint(`${API_PATHS.SUBSCRIPTION}/search`),
+  GET_USER_SUBSCRIPTIONS: (userId: string) =>
+    createUserEndpoint(`${API_PATHS.SUBSCRIPTION}/user`, userId),
+  ADMIN_DELETE: (id: string) =>
+    createIdEndpoint(`${API_PATHS.SUBSCRIPTION}/admin`, id),
+  ADMIN_UPDATE_STATUS: (id: string) =>
+    createIdEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/${id}/status`, id),
+  ADMIN_NOTIFY: createEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/notify`),
+};
+
+export const PAYMENT_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.PAYMENTS),
+  CREATE: createEndpoint(API_PATHS.PAYMENTS),
+  GET_ALL: createEndpoint(API_PATHS.PAYMENTS),
+  STATS: createEndpoint(`${API_PATHS.PAYMENTS}/stats`),
+  SEARCH: createEndpoint(`${API_PATHS.PAYMENTS}/search`),
+  GET_MY_PAYMENTS: createEndpoint(`${API_PATHS.PAYMENTS}/me`),
+  TRANSACTIONS: createEndpoint("/api/finance/transactions"),
+  GET_BY_ID: (id: string) => createIdEndpoint(API_PATHS.PAYMENTS, id),
+  UPDATE_STATUS: (id: string) =>
+    createIdEndpoint(`${API_PATHS.PAYMENTS}/${id}/status`, id),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.PAYMENTS, id),
+  GET_ITEM_DETAIL: (id: string) =>
+    createIdEndpoint(`${API_PATHS.PAYMENTS}/item`, id),
+};
+
+export const AGENCY_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.AGENCIES),
+  STATS: createEndpoint(`${API_PATHS.AGENCIES}/stats`),
+  ADD_MEMBER: createEndpoint(`${API_PATHS.AGENCIES}/add-user`),
+  BY_ID: (id: string) => createIdEndpoint(API_PATHS.AGENCIES, id),
+};
+
+export const FILTERING_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.FILTERING),
+  GLOBAL: createEndpoint(`${API_PATHS.FILTERING}/global-filter`),
+  METADATA: createEndpoint(`${API_PATHS.FILTERING}/metadata`),
+  RANGE_PRICE_ROOMS: createEndpoint(`${API_PATHS.FILTERING}/range-price-rooms`),
+};
+
+export const SUPPORT_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.SUPPORT),
+  CREATE_TICKET: createEndpoint(`${API_PATHS.SUPPORT}/tickets`),
+  GET_TICKETS: createEndpoint(`${API_PATHS.SUPPORT}/tickets`),
+  GET_TICKET_BY_ID: (id: string) =>
+    createIdEndpoint(`${API_PATHS.SUPPORT}/tickets`, id),
+  ADD_MESSAGE: (id: string) =>
+    createIdEndpoint(`${API_PATHS.SUPPORT}/tickets/${id}/messages`, id),
+  CLOSE_TICKET: (id: string) =>
+    createIdEndpoint(`${API_PATHS.SUPPORT}/tickets/${id}/close`, id),
+};
+
+export const REAL_ESTATE_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.REAL_ESTATE),
+  ADMIN_ALL: createEndpoint(`${API_PATHS.REAL_ESTATE}/all-including-unpaid`),
+  TOTAL: createEndpoint(`${API_PATHS.REAL_ESTATE}/total`),
+  BY_ID: (id: string) => createIdEndpoint(API_PATHS.REAL_ESTATE, id),
+};
+
+export const GEO_ENDPOINTS = {
+  GET_ALL_REGIONS: createEndpoint(`${API_PATHS.LOCATIONS}/regions`),
+  GET_ALL_CITIES: createEndpoint(`${API_PATHS.LOCATIONS}/cities`),
+  GET_GEO_STATS: createEndpoint(`${API_PATHS.LOCATIONS}/stats`),
+  TOTAL_STATS: createEndpoint(`${API_PATHS.LOCATIONS}/stats`),
+  SYNC_DATA: createEndpoint("/sync"),
+  GET_REGION_BY_ID: (id: string) =>
+    createIdEndpoint(`${API_PATHS.LOCATIONS}/regions`, id),
+  ADD_REGION: createEndpoint(`${API_PATHS.LOCATIONS}/regions`),
+  UPDATE_REGION: (id: string) =>
+    createIdEndpoint(`${API_PATHS.LOCATIONS}/regions`, id),
+  DELETE_REGION: (id: string) =>
+    createIdEndpoint(`${API_PATHS.LOCATIONS}/regions`, id),
+  GET_CITY_BY_ID: (id: string) =>
+    createIdEndpoint(`${API_PATHS.LOCATIONS}/cities`, id),
+  ADD_CITY: createEndpoint(`${API_PATHS.LOCATIONS}/cities`),
+  UPDATE_CITY: (id: string) =>
+    createIdEndpoint(`${API_PATHS.LOCATIONS}/cities`, id),
+  DELETE_CITY: (id: string) =>
+    createIdEndpoint(`${API_PATHS.LOCATIONS}/cities`, id),
+};
+
+export const SEARCH_HISTORY_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.HISTORY_SEARCH),
+  LOG_SEARCH: createEndpoint(`${API_PATHS.HISTORY_SEARCH}/log`),
+  POPULAR_SEARCHES: createEndpoint(`${API_PATHS.HISTORY_SEARCH}/admin/popular`),
+  DELETE_BY_QUERY: createEndpoint(
+    `${API_PATHS.HISTORY_SEARCH}/delete-by-query`,
+  ),
+  SEARCH_ITEMS: (query: string) =>
+    `${SEARCH_ENDPOINT}?q=${encodeURIComponent(query)}`,
+  DELETE_BY_ID: (id: string) =>
+    createIdEndpoint(`${API_PATHS.HISTORY_SEARCH}/delete`, id),
+};
+
+export const REPORT_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.REPORTS),
+  CREATE: createEndpoint(API_PATHS.REPORTS),
+  GET_ALL: createEndpoint(API_PATHS.REPORTS),
+  STATS: createEndpoint(`${API_PATHS.REPORTS}/stats`),
+  TOTAL: createEndpoint(`${API_PATHS.REPORTS}/total`),
+  USER_REPORTS: (userId: string) =>
+    createUserEndpoint(`${API_PATHS.REPORTS}/user`, userId),
+  GET_BY_ID: (id: string) => createIdEndpoint(API_PATHS.REPORTS, id),
+  UPDATE_STATUS: (id: string) => createIdEndpoint(API_PATHS.REPORTS, id),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.REPORTS, id),
+};
+
+export const RECOMMENDATION_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.RECOMMENDATIONS),
+  RECOMMENDATIONS: createEndpoint(API_PATHS.RECOMMENDATIONS),
+  TRACK_VIEW: createEndpoint(`${API_PATHS.RECOMMENDATIONS}/track-view`),
+  MOST_VIEWED_CATEGORIES: createEndpoint(
+    `${API_PATHS.RECOMMENDATIONS}/categories/most-viewed`,
+  ),
+  USER_TOP_CATEGORIES: createEndpoint(
+    `${API_PATHS.RECOMMENDATIONS}/categories/user-top`,
+  ),
+  TRENDING_CATEGORIES: createEndpoint(
+    `${API_PATHS.RECOMMENDATIONS}/categories/trending`,
+  ),
+  MOST_CLICKED_ITEMS: createEndpoint(
+    `${API_PATHS.RECOMMENDATIONS}/items/most-clicked`,
+  ),
+  CATEGORY_CTR: (cat: string) =>
+    createEndpoint(
+      `${API_PATHS.RECOMMENDATIONS}/categories/${encodeURIComponent(cat)}/ctr`,
+    ),
+  RECOMMENDATION_BY_ID: (id: number) =>
+    createIdEndpoint(API_PATHS.RECOMMENDATIONS, id),
+  RECOMMENDATION_BY_EXTERNAL_ID: (eid: string) =>
+    createEndpoint(`${API_PATHS.RECOMMENDATIONS}/external/${eid}`),
+};
+
+export const ADVERTISEMENT_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.ADVERTISEMENTS),
+  GET_ALL: createEndpoint(API_PATHS.ADVERTISEMENTS),
+  CREATE: createEndpoint(API_PATHS.ADVERTISEMENTS),
+  STATS: createEndpoint(`${API_PATHS.ADVERTISEMENTS}/stats`),
+  TODAY_STATS: createEndpoint(`${API_PATHS.ADVERTISEMENTS}/today-stats`),
+  GET_BY_ID: (id: string) => createIdEndpoint(API_PATHS.ADVERTISEMENTS, id),
+  UPDATE: (id: string) => createIdEndpoint(API_PATHS.ADVERTISEMENTS, id),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.ADVERTISEMENTS, id),
+  CLICK: (id: string) =>
+    createIdEndpoint(`${API_PATHS.ADVERTISEMENTS}/${id}/click`, id),
+  USER_ADS: (userId: string) =>
+    createUserEndpoint(`${API_PATHS.ADVERTISEMENTS}/user`, userId),
+};
+
+export const CONTACT_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.CONTACT_US),
+  TICKETS: createEndpoint(`${API_PATHS.CONTACT_US}/tickets`),
+  STATS: createEndpoint(`${API_PATHS.CONTACT_US}/stats`),
+  TICKET_BY_ID: (id: string | number) =>
+    createIdEndpoint(`${API_PATHS.CONTACT_US}/tickets`, id),
+  MESSAGES: (id: string | number) =>
+    createIdEndpoint(`${API_PATHS.CONTACT_US}/tickets/${id}/messages`, id),
+};
+
+const createFeeCategoryEndpoints = (category: string) => ({
+  GET_ALL: createEndpoint(`${API_PATHS.FEE}/${category}`),
+  GET_BY_ID: (id: string) =>
+    createIdEndpoint(`${API_PATHS.FEE}/${category}`, id),
+  CREATE: createEndpoint(`${API_PATHS.FEE}/${category}`),
+  UPDATE: (id: string) => createIdEndpoint(`${API_PATHS.FEE}/${category}`, id),
+  DELETE: (id: string) => createIdEndpoint(`${API_PATHS.FEE}/${category}`, id),
+});
+
+export const FEE_ENDPOINTS = {
+  MARKETPLACE: createFeeCategoryEndpoints("marketplace"),
+  REAL_ESTATE: createFeeCategoryEndpoints("real-estate"),
+  CARS: createFeeCategoryEndpoints("cars"),
+  MOTORCYCLES: createFeeCategoryEndpoints("motorcycles"),
+  BOATS: createFeeCategoryEndpoints("boats"),
+  EQUIPMENT: createFeeCategoryEndpoints("equipment"),
+  SYSTEM_CONFIG: {
+    GET: createEndpoint(`${API_PATHS.FEE}/system-config`),
+    CREATE: createEndpoint(`${API_PATHS.FEE}/system-config`),
+    UPDATE: (id: string) =>
+      createIdEndpoint(`${API_PATHS.FEE}/system-config`, id),
+    DELETE: (id: string) =>
+      createIdEndpoint(`${API_PATHS.FEE}/system-config`, id),
+  },
+  SUB_PLANS: {
+    GET_ALL: createEndpoint(`${API_PATHS.FEE}/sub-plans`),
+    GET_BY_ID: (id: string) =>
+      createIdEndpoint(`${API_PATHS.FEE}/sub-plans`, id),
+    CREATE: createEndpoint(`${API_PATHS.FEE}/sub-plans`),
+    UPDATE: (id: string) => createIdEndpoint(`${API_PATHS.FEE}/sub-plans`, id),
+    DELETE: (id: string) => createIdEndpoint(`${API_PATHS.FEE}/sub-plans`, id),
+  },
+} as const;
 
 export const apiUrls = {
   BASE: BASE_API_URL,
-  CONFIRM: AUTH_ENDPOINTS.CONFIRM,
-  RESEND_CODE: AUTH_ENDPOINTS.RESEND_CODE,
-  LOGIN: AUTH_ENDPOINTS.LOGIN,
-  REGISTER: AUTH_ENDPOINTS.REGISTER,
-  LOGOUT: AUTH_ENDPOINTS.LOGOUT,
-  VERIFY_SESSION: AUTH_ENDPOINTS.VERIFY_SESSION,
-  VERIFY_TOKEN: AUTH_ENDPOINTS.VERIFY_TOKEN,
-  REFRESH_TOKEN: AUTH_ENDPOINTS.REFRESH_TOKEN,
-  FORGOT_PASSWORD: AUTH_ENDPOINTS.FORGOT_PASSWORD,
-  RESET_PASSWORD: AUTH_ENDPOINTS.RESET_PASSWORD,
+  ...AUTH_ENDPOINTS,
   PROFILE: USER_ENDPOINTS.PROFILE,
   DELETE_ACCOUNT: USER_ENDPOINTS.DELETE_ACCOUNT,
   UPDATE_PROFILE: USER_ENDPOINTS.UPDATE_PROFILE,
@@ -72,246 +346,39 @@ export const apiUrls = {
   },
 };
 
-export const ADS_ENDPOINTS = {
-  ADS_BASE: `${BASE_API_URL}/api/ads`,
-  MY_ADS: `${BASE_API_URL}/api/ads/my-ads`,
-  UPDATE: `${BASE_API_URL}/api/ads/update`,
-  DELETE: `${BASE_API_URL}/api/ads/delete`,
-};
 export const apiUrlsForCategoryTotals = {
-  Cars: `${BASE_API_URL}/api/cars`,
-  Boats: `${BASE_API_URL}/api/boats`,
-  Motorcycles: `${BASE_API_URL}/api/motorcycles`,
-  RealEstate: `${BASE_API_URL}/api/real-estate`,
-  Traktors: `${BASE_API_URL}/api/traktor`,
-  Marketplace: `${BASE_API_URL}/api/marketplace`,
-
-  CarsAdmin: `${BASE_API_URL}/api/cars/all-including-unpaid`,
-  BoatsAdmin: `${BASE_API_URL}/api/boats/all-including-unpaid`,
-  MotorcyclesAdmin: `${BASE_API_URL}/api/motorcycles/all-including-unpaid`,
-  RealEstateAdmin: `${BASE_API_URL}/api/real-estate/all-including-unpaid`,
-  TraktorsAdmin: `${BASE_API_URL}/api/traktor/all-including-unpaid`,
-  MarketplaceAdmin: `${BASE_API_URL}/api/marketplace/all-including-unpaid`,
-  allIncludingUnpaid: `${BASE_API_URL}/api/marketplace/all-including-unpaid`,
-
-  DeleteItem: (id: string) => `${BASE_API_URL}/api/marketplace/${id}`,
-  UpdateItem: (id: string) => `${BASE_API_URL}/api/marketplace/${id}`,
-
-  TotalCars: `${BASE_API_URL}/api/cars/total`,
-  TotalBoats: `${BASE_API_URL}/api/boats/total`,
-  TotalMotorcycles: `${BASE_API_URL}/api/motorcycles/total`,
-  TotalRealEstate: `${BASE_API_URL}/api/real-estate/total`,
-  TotalFarmEquipment: `${BASE_API_URL}/api/traktor/total`,
-  TotalMarketplace: `${BASE_API_URL}/api/marketplace/total`,
-};
-export const apiUrlsForFavorites = {
-  FAVORITES_BASE: `${BASE_API_URL}/api/favorites`,
-  FAVORITES_COUNT: `${BASE_API_URL}/api/favorites/count`,
-  GET_FAVORITE_BY_ID: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
-  DELETE_FAVORITE: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
-  UPDATE_FAVORITE: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
-  ADD_FAVORITE: `${BASE_API_URL}/api/favorites`,
+  Cars: CATEGORY_ENDPOINTS.CARS,
+  Boats: CATEGORY_ENDPOINTS.BOATS,
+  Motorcycles: CATEGORY_ENDPOINTS.MOTORCYCLES,
+  RealEstate: CATEGORY_ENDPOINTS.REAL_ESTATE,
+  Traktors: CATEGORY_ENDPOINTS.TRAKTOR,
+  Marketplace: CATEGORY_ENDPOINTS.MARKETPLACE,
+  CarsAdmin: CATEGORY_ENDPOINTS.CARS_ADMIN,
+  BoatsAdmin: CATEGORY_ENDPOINTS.BOATS_ADMIN,
+  MotorcyclesAdmin: CATEGORY_ENDPOINTS.MOTORCYCLES_ADMIN,
+  RealEstateAdmin: CATEGORY_ENDPOINTS.REAL_ESTATE_ADMIN,
+  TraktorsAdmin: CATEGORY_ENDPOINTS.TRAKTOR_ADMIN,
+  MarketplaceAdmin: CATEGORY_ENDPOINTS.MARKETPLACE_ADMIN,
+  allIncludingUnpaid: CATEGORY_ENDPOINTS.MARKETPLACE_ADMIN,
+  DeleteItem: CATEGORY_ENDPOINTS.DELETE_ITEM,
+  UpdateItem: CATEGORY_ENDPOINTS.UPDATE_ITEM,
+  TotalCars: CATEGORY_ENDPOINTS.TOTAL_CARS,
+  TotalBoats: CATEGORY_ENDPOINTS.TOTAL_BOATS,
+  TotalMotorcycles: CATEGORY_ENDPOINTS.TOTAL_MOTORCYCLES,
+  TotalRealEstate: CATEGORY_ENDPOINTS.TOTAL_REAL_ESTATE,
+  TotalFarmEquipment: CATEGORY_ENDPOINTS.TOTAL_FARM_EQUIPMENT,
+  TotalMarketplace: CATEGORY_ENDPOINTS.TOTAL_MARKETPLACE,
 };
 
-export const apiUrlsForAds = {
-  MY_ADS: ADS_ENDPOINTS.MY_ADS,
-  DELETEAds: ADS_ENDPOINTS.DELETE,
-  UPDATEAds: ADS_ENDPOINTS.UPDATE,
-};
-export const jobsEndpoint = {
-  CREATE: `${BASE_API_URL}/api/jobs`,
-  UPDATE: (id: string) => `${BASE_API_URL}/api/jobs/${id}`,
-  DELETE: (id: string) => `${BASE_API_URL}/api/jobs/${id}`,
-  GET_ALL: `${BASE_API_URL}/api/jobs`,
-  GET_TOTAL: `${BASE_API_URL}/api/jobs/total`,
-  GET_BY_ID: (id: string) => `${BASE_API_URL}/api/jobs/${id}`,
-};
-
-export const ADVERTISEMENT_ENDPOINTS = {
-  BASE: `${BASE_API_URL}/api/advertisements`,
-  GET_ALL: `${BASE_API_URL}/api/advertisements`,
-  GET_BY_ID: (id: string) => `${BASE_API_URL}/api/advertisements/${id}`,
-  CREATE: `${BASE_API_URL}/api/advertisements`,
-  UPDATE: (id: string) => `${BASE_API_URL}/api/advertisements/${id}`,
-  DELETE: (id: string) => `${BASE_API_URL}/api/advertisements/${id}`,
-  CLICK: (id: string) => `${BASE_API_URL}/api/advertisements/${id}/click`,
-  STATS: `${BASE_API_URL}/api/advertisements/stats`,
-  TODAY_STATS: `${BASE_API_URL}/api/advertisements/today-stats`,
-  USER_ADS: (userId: string) =>
-    `${BASE_API_URL}/api/advertisements/user/${userId}`,
-};
-
-export const PAYMENT_ENDPOINTS = {
-  CREATE: `${BASE_API_URL}/api/payments`,
-  GET_ALL: `${BASE_API_URL}/api/payments`,
-  GET_BY_ID: (id: string) => `${BASE_API_URL}/api/payments/${id}`,
-  STATS: `${BASE_API_URL}/api/payments/stats`,
-  SEARCH: `${BASE_API_URL}/api/payments/search`,
-  GET_MY_PAYMENTS: `${BASE_API_URL}/api/payments/me`,
-  UPDATE_STATUS: (id: string) => `${BASE_API_URL}/api/payments/${id}/status`,
-  DELETE: (id: string) => `${BASE_API_URL}/api/payments/${id}`,
-  GET_ITEM_DETAIL: (id: string) => `${BASE_API_URL}/api/payments/item/${id}`,
-  TRANSACTIONS: `${BASE_API_URL}/api/finance/transactions`,
-};
-
-export const SUBS_ENDPOINTS = {
-  CREATE: `${BASE_API_URL}/api/subscription`,
-  GET_USER_SUBSCRIPTIONS: (userId: string) =>
-    `${BASE_API_URL}/api/subscription/user/${userId}`,
-  SEARCH: `${BASE_API_URL}/api/subscription/search`,
-  GET_ALL: `${BASE_API_URL}/api/subscription`,
-  ADMIN_ALL: `${BASE_API_URL}/api/subscription/admin/all`,
-  ADMIN_DELETE: (id: string) => `${BASE_API_URL}/api/subscription/admin/${id}`,
-  ADMIN_UPDATE_STATUS: (id: string) =>
-    `${BASE_API_URL}/api/subscription/admin/${id}/status`,
-  ADMIN_NOTIFY: `${BASE_API_URL}/api/subscription/admin/notify`,
-  STATS: `${BASE_API_URL}/api/subscription/stats`,
-  TOTAL: `${BASE_API_URL}/api/subscription/total`,
-  GET_SUBSCRIPTION: `${BASE_API_URL}/api/subscription/allpaid`,
-  GET_MY_SUBSCRIPTIONS: `${BASE_API_URL}/api/subscription/my`,
-} as const;
-
-export const AGENCY_ENDPOINTS = {
-  STATS: `${BASE_API_URL}/api/agencies/stats`,
-  BASE: `${BASE_API_URL}/api/agencies`,
-  ADD_MEMBER: `${BASE_API_URL}/api/agencies/add-user`,
-  BY_ID: (id: string) => `${BASE_API_URL}/api/agencies/${id}`,
-};
-
-export const FILTERING_ENDPOINTS = {
-  BASE: `${BASE_API_URL}/api/filtering`,
-  GLOBAL: `${BASE_API_URL}/api/filtering/global-filter`,
-  METADATA: `${BASE_API_URL}/api/filtering/metadata`,
-  RANGE_PRICE_ROOMS: `${BASE_API_URL}/api/filtering/range-price-rooms`,
-};
-
-export const SUPPORT_ENDPOINTS = {
-  CREATE_TICKET: `${BASE_API_URL}/api/support/tickets`,
-  GET_TICKETS: `${BASE_API_URL}/api/support/tickets`,
-  GET_TICKET_BY_ID: (id: string) => `${BASE_API_URL}/api/support/tickets/${id}`,
-  ADD_MESSAGE: (id: string) =>
-    `${BASE_API_URL}/api/support/tickets/${id}/messages`,
-  CLOSE_TICKET: (id: string) =>
-    `${BASE_API_URL}/api/support/tickets/${id}/close`,
-};
-export const REAL_ESTATE_ENDPOINTS = {
-  BASE: `${BASE_API_URL}/api/real-estate`,
-  ADMIN_ALL: `${BASE_API_URL}/api/real-estate/all-including-unpaid`,
-  BY_ID: (id: string) => `${BASE_API_URL}/api/real-estate/${id}`,
-  TOTAL: `${BASE_API_URL}/api/real-estate/total`,
-};
-export const geoEndpoints = {
-  GET_ALL_REGIONS: `${BASE_API_URL}/api/locations/regions`,
-  GET_REGION_BY_ID: (id: string) =>
-    `${BASE_API_URL}/api/locations/regions/${id}`,
-  ADD_REGION: `${BASE_API_URL}/api/locations/regions`,
-  UPDATE_REGION: (id: string) => `${BASE_API_URL}/api/locations/regions/${id}`,
-  DELETE_REGION: (id: string) => `${BASE_API_URL}/api/locations/regions/${id}`,
-  GET_GEO_STATS: `${BASE_API_URL}/api/locations/stats`,
-  GET_ALL_CITIES: `${BASE_API_URL}/api/locations/cities`,
-  GET_CITY_BY_ID: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
-  ADD_CITY: `${BASE_API_URL}/api/locations/cities`,
-  UPDATE_CITY: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
-  DELETE_CITY: (id: string) => `${BASE_API_URL}/api/locations/cities/${id}`,
-  TOTAL_STATS: `${BASE_API_URL}/api/locations/stats`,
-  SYNC_DATA: `${BASE_API_URL}/sync`,
-};
-
-export const FAVORITE_ROUTES = {
-  MY_FAVORITES: `${BASE_API_URL}/api/favorites/my`,
-  BASE: `${BASE_API_URL}/api/favorites`,
-  BY_ID: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
-  GET_FAVORITE_BY_ID: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
-  DELETE_FAVORITE: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
-  UPDATE_FAVORITE: (id: string) => `${BASE_API_URL}/api/favorites/${id}`,
-  ADD_FAVORITE: `${BASE_API_URL}/api/favorites`,
-  FAVORITES_COUNT: `${BASE_API_URL}/api/favorites/count`,
-};
-
-export const SEARCH_HISTORY_ENDPOINTS = {
-  SEARCH_HISTORY: `${BASE_API_URL}/api/history-search`,
-  LOG_SEARCH: `${BASE_API_URL}/api/history-search/log`,
-  POPULAR_SEARCHES: `${BASE_API_URL}/api/history-search/admin/popular`,
-  DELETE_BY_QUERY: `${BASE_API_URL}/api/history-search/delete-by-query`,
-  DELETE_BY_ID: (id: string) =>
-    `${BASE_API_URL}/api/history-search/delete/${id}`,
-  SEARCH_ITEMS: (query: string) => `${BASE_API_URL}/api/search?q=${query}`,
-};
-
-export const FEE_ENDPOINTS = {
-  MARKETPLACE: {
-    GET_ALL: `${BASE_API_URL}/api/Fee/marketplace`,
-    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/marketplace/${id}`,
-    CREATE: `${BASE_API_URL}/api/Fee/marketplace`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/marketplace/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/marketplace/${id}`,
-  },
-  REAL_ESTATE: {
-    GET_ALL: `${BASE_API_URL}/api/Fee/real-estate`,
-    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/real-estate/${id}`,
-    CREATE: `${BASE_API_URL}/api/Fee/real-estate`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/real-estate/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/real-estate/${id}`,
-  },
-  CARS: {
-    GET_ALL: `${BASE_API_URL}/api/Fee/cars`,
-    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/cars/${id}`,
-    CREATE: `${BASE_API_URL}/api/Fee/cars`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/cars/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/cars/${id}`,
-  },
-  MOTORCYCLES: {
-    GET_ALL: `${BASE_API_URL}/api/Fee/motorcycles`,
-    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/motorcycles/${id}`,
-    CREATE: `${BASE_API_URL}/api/Fee/motorcycles`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/motorcycles/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/motorcycles/${id}`,
-  },
-  BOATS: {
-    GET_ALL: `${BASE_API_URL}/api/Fee/boats`,
-    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/boats/${id}`,
-    CREATE: `${BASE_API_URL}/api/Fee/boats`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/boats/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/boats/${id}`,
-  },
-  EQUIPMENT: {
-    GET_ALL: `${BASE_API_URL}/api/Fee/equipment`,
-    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/equipment/${id}`,
-    CREATE: `${BASE_API_URL}/api/Fee/equipment`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/equipment/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/equipment/${id}`,
-  },
-  SYSTEM_CONFIG: {
-    GET: `${BASE_API_URL}/api/Fee/system-config`,
-    CREATE: `${BASE_API_URL}/api/Fee/system-config`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/system-config/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/system-config/${id}`,
-  },
-  SUB_PLANS: {
-    GET_ALL: `${BASE_API_URL}/api/Fee/sub-plans`,
-    GET_BY_ID: (id: string) => `${BASE_API_URL}/api/Fee/sub-plans/${id}`,
-    CREATE: `${BASE_API_URL}/api/Fee/sub-plans`,
-    UPDATE: (id: string) => `${BASE_API_URL}/api/Fee/sub-plans/${id}`,
-    DELETE: (id: string) => `${BASE_API_URL}/api/Fee/sub-plans/${id}`,
-  },
-} as const;
-
-export const CONTACT_ENDPOINTS = {
-  TICKETS: `${BASE_API_URL}/api/contactUs/tickets`,
-  TICKET_BY_ID: (id: string | number) =>
-    `${BASE_API_URL}/api/contactUs/tickets/${id}`,
-  MESSAGES: (id: string | number) =>
-    `${BASE_API_URL}/api/contactUs/tickets/${id}/messages`,
-  STATS: `${BASE_API_URL}/api/contactUs/stats`,
-};
-export const REPORT_ENDPOINTS = {
-  CREATE: `${BASE_API_URL}/api/reports`,
-  GET_ALL: `${BASE_API_URL}/api/reports`,
-  STATS: `${BASE_API_URL}/api/reports/stats`,
-  USER_REPORTS: (userId: string) =>
-    `${BASE_API_URL}/api/reports/user/${userId}`,
-  GET_BY_ID: (id: string) => `${BASE_API_URL}/api/reports/${id}`,
-  UPDATE_STATUS: (id: string) => `${BASE_API_URL}/api/reports/${id}`,
-  DELETE: (id: string) => `${BASE_API_URL}/api/reports/${id}`,
-  TOTAL: `${BASE_API_URL}/api/reports/total`,
+export const apiUrlsForFavorites = FAVORITE_ENDPOINTS;
+export const apiUrlsForAds = ADS_ENDPOINTS;
+export const jobsEndpoint = JOBS_ENDPOINTS;
+export const SUBS_ENDPOINTS = SUBSCRIPTION_ENDPOINTS;
+export const FAVORITE_ROUTES = FAVORITE_ENDPOINTS;
+export const geoEndpoints = GEO_ENDPOINTS;
+export const apiUrlsForCharts = {
+  GetRegionData: `${BASE_API_URL}/api/locations/analytics/regions-with-most-item-listings`,
+  GetCityData: `${BASE_API_URL}/api/locations/analytics/cities-with-most-item-listings`,
+  GetUserSignupData: `${BASE_API_URL}/api/users/analytics/user-signups-by-month`,
+  GetRevenueData: `${BASE_API_URL}/api/payments/analytics/revenue-by-month`,
 };

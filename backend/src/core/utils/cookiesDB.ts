@@ -1,72 +1,78 @@
 import jwt from "jsonwebtoken";
 import prisma from "./db.js";
-import { SESSION_TIME_MS } from "src/constants/session-time.ts";
+import { SESSION_TIME_MS } from "src/config/session-time.ts";
 
 export const setAuthCookies = async (
   res: any,
   tokens: { idToken: string; refreshToken: string; accessToken?: string },
   userInfo?: { username?: string; profileImage?: string; email?: string },
+  userId?: string,
 ) => {
   const { idToken, refreshToken, accessToken } = tokens;
 
-  const decoded = jwt.decode(idToken) as {
-    sub?: string;
-    email?: string;
-    name?: string;
-  };
+  let resolvedUserId = userId;
 
-  if (!decoded?.sub) throw new Error("Invalid token: missing user ID");
+  if (!resolvedUserId) {
+    const decoded = jwt.decode(idToken) as {
+      sub?: string;
+      email?: string;
+      name?: string;
+    };
 
-  const cognitoId = decoded.sub;
-  const email = decoded.email ?? userInfo?.email;
+    if (!decoded?.sub) throw new Error("Invalid token: missing user ID");
 
-  let user = await prisma.user.findUnique({ where: { cognitoId } });
+    const cognitoId = decoded.sub;
+    const email = decoded.email ?? userInfo?.email;
 
-  if (!user && email) {
-    const existingUserByEmail = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user = await prisma.user.findUnique({ where: { cognitoId } });
 
-    if (existingUserByEmail) {
-      user = await prisma.user.update({
+    if (!user && email) {
+      const existingUserByEmail = await prisma.user.findUnique({
         where: { email },
-        data: {
-          cognitoId: cognitoId,
-          username:
-            userInfo?.username ??
-            decoded.name ??
-            existingUserByEmail.username ??
-            "",
-          profileImage:
-            userInfo?.profileImage ?? existingUserByEmail.profileImage ?? "",
-        },
       });
-    } else {
-      user = await prisma.user.create({
-        data: {
-          cognitoId: cognitoId,
-          email: email,
-          username: userInfo?.username ?? decoded.name ?? "",
-          profileImage: userInfo?.profileImage ?? "",
-          password: "",
-        },
-      });
-    }
-  }
 
-  if (!user) throw new Error("User not found");
+      if (existingUserByEmail) {
+        user = await prisma.user.update({
+          where: { email },
+          data: {
+            cognitoId,
+            username:
+              userInfo?.username ??
+              decoded.name ??
+              existingUserByEmail.username ??
+              "",
+            profileImage:
+              userInfo?.profileImage ?? existingUserByEmail.profileImage ?? "",
+          },
+        });
+      } else {
+        user = await prisma.user.create({
+          data: {
+            cognitoId,
+            email,
+            username: userInfo?.username ?? decoded.name ?? "",
+            profileImage: userInfo?.profileImage ?? "",
+            password: "",
+          },
+        });
+      }
+    }
+
+    if (!user) throw new Error("User not found");
+    resolvedUserId = user.id;
+  }
 
   const expiresAt = new Date(Date.now() + SESSION_TIME_MS);
 
   const session = await prisma.cookie.upsert({
-    where: { userId: user.id },
+    where: { userId: resolvedUserId },
     update: {
       token: idToken,
       accessToken: accessToken || null,
       expiresAt,
     },
     create: {
-      userId: user.id,
+      userId: resolvedUserId,
       token: idToken,
       accessToken: accessToken || null,
       expiresAt,
@@ -96,5 +102,10 @@ export const setAuthCookies = async (
     });
   }
 
-  return { userId: user.id, idToken: session.token, refreshToken, accessToken };
+  return {
+    userId: resolvedUserId,
+    idToken: session.token,
+    refreshToken,
+    accessToken,
+  };
 };

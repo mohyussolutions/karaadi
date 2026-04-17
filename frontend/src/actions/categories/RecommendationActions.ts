@@ -16,96 +16,61 @@ export async function fetchRecommendations(
     ? `${RECOMMENDATION_ENDPOINTS.RECOMMENDATIONS}?limit=${limit}&userId=${userId}`
     : `${RECOMMENDATION_ENDPOINTS.RECOMMENDATIONS}?limit=${limit}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  if (!response.ok) return [];
-  const result = await response.json();
-  return result || [];
+  const res = await fetch(url, { cache: "no-store" });
+  return res.ok ? await res.json() : [];
 }
 
 export async function fetchMostViewedCategories(
   limit: number = 5,
 ): Promise<CategoryStats[]> {
-  const response = await fetch(
+  const res = await fetch(
     `${RECOMMENDATION_ENDPOINTS.MOST_VIEWED_CATEGORIES}?limit=${limit}`,
-    {
-      method: "GET",
-      cache: "no-store",
-    },
+    { cache: "no-store" },
   );
-
-  if (!response.ok) return [];
-  const result = await response.json();
-  return result || [];
+  return res.ok ? await res.json() : [];
 }
 
 export async function fetchUserTopCategories(
   userId: string,
   limit: number = 3,
 ): Promise<CategoryStats[]> {
-  const response = await fetch(
+  const res = await fetch(
     `${RECOMMENDATION_ENDPOINTS.USER_TOP_CATEGORIES}?limit=${limit}`,
     {
-      method: "GET",
       headers: userId ? { "X-User-Id": userId } : {},
       cache: "no-store",
     },
   );
-
-  if (!response.ok) return [];
-  const result = await response.json();
-  return result || [];
+  return res.ok ? await res.json() : [];
 }
 
 export async function fetchTrendingCategories(
   hours: number = 24,
 ): Promise<CategoryStats[]> {
-  const response = await fetch(
+  const res = await fetch(
     `${RECOMMENDATION_ENDPOINTS.TRENDING_CATEGORIES}?hours=${hours}`,
-    {
-      method: "GET",
-      cache: "no-store",
-    },
+    { cache: "no-store" },
   );
-
-  if (!response.ok) return [];
-  const result = await response.json();
-  return result || [];
+  return res.ok ? await res.json() : [];
 }
 
 export async function fetchMostClickedItems(
   limit: number = 10,
 ): Promise<RecommendationItem[]> {
-  const response = await fetch(
+  const res = await fetch(
     `${RECOMMENDATION_ENDPOINTS.MOST_CLICKED_ITEMS}?limit=${limit}`,
-    {
-      method: "GET",
-      cache: "no-store",
-    },
+    { cache: "no-store" },
   );
-
-  if (!response.ok) return [];
-  const result = await response.json();
-  return result || [];
+  return res.ok ? await res.json() : [];
 }
 
 export async function fetchCategoryClickThroughRate(
   category: string,
 ): Promise<CategoryCTR | null> {
-  const response = await fetch(
-    RECOMMENDATION_ENDPOINTS.CATEGORY_CTR(category),
-    {
-      method: "GET",
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) return null;
-  const result = await response.json();
-  return result || null;
+  const res = await fetch(RECOMMENDATION_ENDPOINTS.CATEGORY_CTR(category), {
+    cache: "no-store",
+  });
+  return res.ok ? await res.json() : null;
 }
 
 export async function trackItemView(
@@ -114,75 +79,47 @@ export async function trackItemView(
   userId?: string | null,
 ): Promise<boolean> {
   if (!userId) return false;
-
-  try {
-    const response = await fetch(RECOMMENDATION_ENDPOINTS.TRACK_VIEW, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ externalId, category, userId }),
-      cache: "no-store",
-    });
-
-    return response.ok;
-  } catch (error) {
-    console.error("Error tracking view:", error);
-    return false;
-  }
+  const res = await fetch(RECOMMENDATION_ENDPOINTS.TRACK_VIEW, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ externalId, category, userId }),
+    cache: "no-store",
+  });
+  return res.ok;
 }
 
 export async function createRecommendation(
   data: CreateRecommendationData,
 ): Promise<{ success: boolean; id?: number; error?: string }> {
-  const response = await fetch(RECOMMENDATION_ENDPOINTS.RECOMMENDATIONS, {
+  const res = await fetch(RECOMMENDATION_ENDPOINTS.RECOMMENDATIONS, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
     cache: "no-store",
   });
 
-  const result = await response.json();
-
-  if (!response.ok) {
-    return { success: false, error: result.error || "Failed to create" };
-  }
-
-  return { success: true, id: result.id };
+  const result = await res.json();
+  return res.ok
+    ? { success: true, id: result.id }
+    : { success: false, error: result.error || "Failed" };
 }
 
 export async function removeRecommendation(
   id: number,
 ): Promise<{ success: boolean; error?: string }> {
-  const response = await fetch(
-    RECOMMENDATION_ENDPOINTS.RECOMMENDATION_BY_ID(id),
-    {
-      method: "DELETE",
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) {
-    const result = await response.json();
-    return { success: false, error: result.error || "Failed to delete" };
-  }
-
-  return { success: true };
+  const res = await fetch(RECOMMENDATION_ENDPOINTS.RECOMMENDATION_BY_ID(id), {
+    method: "DELETE",
+    cache: "no-store",
+  });
+  return res.ok ? { success: true } : { success: false, error: "Failed" };
 }
 
 export async function removeRecommendationByExternalId(
   externalId: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const response = await fetch(
+  const res = await fetch(
     RECOMMENDATION_ENDPOINTS.RECOMMENDATION_BY_EXTERNAL_ID(externalId),
-    {
-      method: "DELETE",
-      cache: "no-store",
-    },
+    { method: "DELETE", cache: "no-store" },
   );
-
-  if (!response.ok) {
-    const result = await response.json();
-    return { success: false, error: result.error || "Failed to delete" };
-  }
-
-  return { success: true };
+  return res.ok ? { success: true } : { success: false, error: "Failed" };
 }

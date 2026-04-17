@@ -1,204 +1,151 @@
 "use server";
 
-import {
-  CreatePaymentData,
-  Payment,
-  PaginatedPayments,
-  UpdatePaymentStatusData,
-  PaymentStats,
-} from "../../app/utils/types/payment";
 import { PAYMENT_ENDPOINTS } from "../constant/constant";
-import { revalidatePath, revalidateTag } from "next/cache";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+import {
+  Payment,
+  PaymentStats,
+  CreatePaymentData,
+  UpdatePaymentStatusData,
+  PaginatedPayments,
+} from "@/app/utils/types/payment";
 
-const addCacheBuster = (url: string) => {
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}_t=${Date.now()}`;
-};
-
-export async function createPaymentAction(
-  data: CreatePaymentData,
-): Promise<Payment> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(PAYMENT_ENDPOINTS.CREATE);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      body: JSON.stringify({ payment: data }),
-      cache: "no-store",
-    });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Failed");
-
-    revalidateTag("payments");
-    revalidatePath("/admin/payments");
-    return result.data;
-  } catch (error) {
-    console.error("Create payment error:", error);
-    throw error;
-  }
+export async function createPayment(data: CreatePaymentData): Promise<Payment> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(PAYMENT_ENDPOINTS.CREATE, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify({ payment: data }),
+    cache: "no-store",
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Payment failed");
+  return result.data;
 }
 
-export async function getAllPaymentsAction(
-  params?: any,
-): Promise<PaginatedPayments> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = new URL(addCacheBuster(PAYMENT_ENDPOINTS.GET_ALL));
+export async function getAllPayments(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  paymentMethod?: string;
+}): Promise<PaginatedPayments> {
+  const headers = await getAuthHeaders();
+  const url = new URL(PAYMENT_ENDPOINTS.GET_ALL);
+  if (params?.page) url.searchParams.append("page", params.page.toString());
+  if (params?.limit) url.searchParams.append("limit", params.limit.toString());
+  if (params?.status) url.searchParams.append("status", params.status);
+  if (params?.paymentMethod)
+    url.searchParams.append("paymentMethod", params.paymentMethod);
 
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) url.searchParams.append(key, value.toString());
-      });
-    }
-
-    const response = await fetch(url.toString(), {
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    const result = await response.json();
-    if (!response.ok) {
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 10,
-      } as unknown as PaginatedPayments;
-    }
-
-    return result.data;
-  } catch (error) {
-    console.error("Get all payments error:", error);
-    return {
-      items: [],
-      total: 0,
-      page: 1,
-      limit: 10,
-    } as unknown as PaginatedPayments;
-  }
+  const response = await fetch(url.toString(), {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  const result = await response.json();
+  return response.ok
+    ? result.data
+    : { items: [], total: 0, page: 1, limit: 10 };
 }
 
-export async function getPaymentStatsAction(
-  params?: any,
+export async function getPaymentStats(
+  params?: Record<string, string | number | boolean>,
 ): Promise<PaymentStats> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = new URL(addCacheBuster(PAYMENT_ENDPOINTS.STATS));
-
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) url.searchParams.append(key, value.toString());
-      });
-    }
-
-    const response = await fetch(url.toString(), {
-      headers: headers as HeadersInit,
-      cache: "no-store",
+  const headers = await getAuthHeaders();
+  const url = new URL(PAYMENT_ENDPOINTS.STATS);
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, String(value));
     });
-
-    const result = await response.json();
-    if (!response.ok) {
-      return { totalRevenue: 0, paymentCount: 0 } as unknown as PaymentStats;
-    }
-
-    return result.data;
-  } catch (error) {
-    console.error("Get payment stats error:", error);
-    return { totalRevenue: 0, paymentCount: 0 } as unknown as PaymentStats;
   }
+  const response = await fetch(url.toString(), {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  const result = await response.json();
+  return response.ok ? result.data : { totalRevenue: 0, paymentCount: 0 };
 }
 
-export async function updatePaymentStatusAction(
+export async function getPaymentById(id: string): Promise<Payment | null> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(PAYMENT_ENDPOINTS.GET_BY_ID(id), {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+  const result = await response.json();
+  return result.data;
+}
+
+export async function updatePaymentStatus(
   id: string,
   data: UpdatePaymentStatusData,
 ): Promise<Payment> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(PAYMENT_ENDPOINTS.UPDATE_STATUS(id));
-
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(data),
-      cache: "no-store",
-    });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Failed to update");
-
-    revalidateTag("payments");
-    revalidateTag(`payment-${id}`);
-    revalidatePath("/admin/payments");
-    return result.data;
-  } catch (error) {
-    console.error("Update payment status error:", error);
-    throw error;
-  }
+  const headers = await getAuthHeaders();
+  const response = await fetch(PAYMENT_ENDPOINTS.UPDATE_STATUS(id), {
+    method: "PUT",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Update failed");
+  return result.data;
 }
 
-export async function deletePaymentAction(id: string) {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(PAYMENT_ENDPOINTS.DELETE(id));
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Delete failed");
-
-    revalidateTag("payments");
-    revalidatePath("/admin/payments");
-    return result;
-  } catch (error) {
-    console.error("Delete payment error:", error);
-    throw error;
-  }
+export async function deletePayment(
+  id: string,
+): Promise<{ success: boolean; message: string }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(PAYMENT_ENDPOINTS.DELETE(id), {
+    method: "DELETE",
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Delete failed");
+  return { success: true, message: result.message || "Payment deleted" };
 }
 
-export async function searchPaymentsAction(query: string): Promise<Payment[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = new URL(addCacheBuster(PAYMENT_ENDPOINTS.SEARCH));
-    url.searchParams.append("query", query);
-
-    const response = await fetch(url.toString(), {
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    const result = await response.json();
-    return result.data || [];
-  } catch (error) {
-    console.error("Search payments error:", error);
-    return [];
-  }
+export async function searchPayments(query: string): Promise<Payment[]> {
+  const headers = await getAuthHeaders();
+  const url = new URL(PAYMENT_ENDPOINTS.SEARCH);
+  url.searchParams.append("query", query);
+  const response = await fetch(url.toString(), {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  const result = await response.json();
+  return result.data || [];
 }
 
-export async function getItemDetailAction(id: string) {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id));
+export async function getItemDetail(
+  id: string,
+): Promise<Record<string, unknown>> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(PAYMENT_ENDPOINTS.GET_ITEM_DETAIL(id), {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Failed to fetch detail");
+  return result;
+}
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
+export async function getMyPayments(): Promise<Payment[]> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(PAYMENT_ENDPOINTS.GET_MY_PAYMENTS, {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
 
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Failed to fetch detail");
+  if (!response.ok) return [];
+  const result = await response.json();
 
-    return result;
-  } catch (error) {
-    console.error("Get item detail error:", error);
-    throw error;
+  if (result.success && Array.isArray(result.data)) {
+    return result.data.map((it: Payment) => ({
+      ...it,
+      id: String(it.id ?? it._id ?? ""),
+    }));
   }
+  return [];
 }

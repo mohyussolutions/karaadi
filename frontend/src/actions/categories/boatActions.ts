@@ -1,121 +1,120 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
 import { apiUrlsForCategoryTotals } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+import {
+  BoatItem,
+  CreateBoatPayload,
+  CreateBoatData,
+} from "../../app/utils/types/boats.types";
 
-export type Boat = {
-  _id: string;
-  user: string;
-  title: string;
-  so: string;
-  mainCategory: "Boats";
-  category: string[];
-  subcategory: string[];
-  region: string;
-  city: string;
-  district: string;
-  subDistrict: string | null;
-  description: string;
-  price: number;
-  images: string[];
-  type: string;
-  boatModel: string;
-  transmission: string;
-  color: string;
-  maGaday: boolean;
-  isPaid: boolean;
-  feeAmount?: number;
-  planId?: string;
-  expiryDate?: Date | null;
-};
+export async function getBoats(page = 1, pageSize = 20): Promise<BoatItem[] | null> {
+  const res = await fetch(`${apiUrlsForCategoryTotals.Boats}?page=${page}&pageSize=${pageSize}`, {
+    next: { revalidate: 60 },
+  });
 
-type CreateBoatData = Omit<Boat, "_id" | "user">;
+  if (!res.ok) return null;
+  const result = await res.json();
+  const list = Array.isArray(result) ? result : [];
 
-export async function getBoats(): Promise<Boat[] | null> {
-  try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(apiUrlsForCategoryTotals.Boats, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    if (!response.ok) return null;
-    const result: any[] = await response.json();
-    return result.map((item) => ({
-      ...item,
-      _id: item._id || item.id,
-    })) as Boat[];
-  } catch (error) {
-    return null;
-  }
+  return list.map((item: any) => ({
+    id: String(item.id ?? item._id ?? ""),
+    title: String(item.title ?? item.name ?? ""),
+    name: String(item.name ?? item.title ?? ""),
+    type: "boat",
+    category: Array.isArray(item.category)
+      ? item.category
+      : [String(item.category ?? "")],
+    subcategory: item.subcategory,
+    region: String(item.region ?? ""),
+    city: String(item.city ?? ""),
+    description: String(item.description ?? ""),
+    price: Number(item.price ?? 0),
+    images: Array.isArray(item.images) ? item.images : [],
+    image: item.images?.[0],
+    boatModel: String(item.boatModel ?? ""),
+    transmission: String(item.transmission ?? ""),
+    color: String(item.color ?? ""),
+    ownerId: String(item.userId ?? item.ownerId ?? ""),
+    userId: item.userId,
+    createdAt: String(item.createdAt ?? ""),
+    updatedAt: String(item.updatedAt ?? ""),
+    status: item.status,
+    length: item.length,
+    year: item.year,
+    priority: item.priority,
+    isPaid: Boolean(item.isPaid),
+    isBasic30: Boolean(item.isBasic30),
+    isStandard60: Boolean(item.isStandard60),
+    isPremium90: Boolean(item.isPremium90),
+    maGaday: Boolean(item.maGaday),
+    expiryDate: item.expiryDate ?? null,
+    feeId: item.feeId ?? null,
+    feeAmount: Number(item.feeAmount ?? 0),
+    planId: item.planId ?? null,
+    planAmount: Number(item.planAmount ?? 0),
+  }));
 }
 
-export async function getBoatById(id: string): Promise<Boat | null> {
-  try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
+export async function getBoatById(id: string): Promise<BoatItem | null> {
+  const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
+    cache: "no-store",
+  });
 
-    if (!response.ok) return null;
-    const item: any = await response.json();
-    return {
-      ...item,
-      _id: item._id || item.id,
-    } as Boat;
-  } catch (error) {
-    return null;
-  }
+  if (!res.ok) return null;
+  const item = await res.json();
+
+  return {
+    id: String(item.id ?? item._id ?? ""),
+    title: String(item.title ?? item.name ?? ""),
+    name: String(item.name ?? item.title ?? ""),
+    type: "boat",
+    category: Array.isArray(item.category)
+      ? item.category
+      : [String(item.category ?? "")],
+    subcategory: item.subcategory,
+    region: String(item.region ?? ""),
+    city: String(item.city ?? ""),
+    description: String(item.description ?? ""),
+    price: Number(item.price ?? 0),
+    images: Array.isArray(item.images) ? item.images : [],
+    image: item.images?.[0],
+    boatModel: String(item.boatModel ?? ""),
+    transmission: String(item.transmission ?? ""),
+    color: String(item.color ?? ""),
+    ownerId: String(item.userId ?? item.ownerId ?? ""),
+    userId: item.userId,
+    createdAt: String(item.createdAt ?? ""),
+    updatedAt: String(item.updatedAt ?? ""),
+    status: item.status,
+    length: item.length,
+    year: item.year,
+    priority: item.priority,
+    isPaid: Boolean(item.isPaid),
+    isBasic30: Boolean(item.isBasic30),
+    isStandard60: Boolean(item.isStandard60),
+    isPremium90: Boolean(item.isPremium90),
+    maGaday: Boolean(item.maGaday),
+    expiryDate: item.expiryDate ?? null,
+    feeId: item.feeId ?? null,
+    feeAmount: Number(item.feeAmount ?? 0),
+    planId: item.planId ?? null,
+    planAmount: Number(item.planAmount ?? 0),
+  };
 }
-
-export type CreateBoatPayload = {
-  userId: string;
-  title: string;
-  description: string;
-  price: number;
-  mainCategory: string;
-  category: string[];
-  subcategory: string[];
-  type: string;
-  boatModel: string;
-  year?: number;
-  mileage?: number;
-  transmission?: string;
-  fuelType?: string;
-  color: string;
-  region: string;
-  city: string;
-  images: string[];
-  isPaid?: boolean;
-  planId?: string;
-  planAmount?: number;
-  feeId?: string;
-  feeAmount?: number;
-};
 
 export async function createBoat(payload: CreateBoatPayload, token?: string) {
-  try {
-    const headers = await getAuthHeaders(token);
-    const response = await fetch(apiUrlsForCategoryTotals.Boats, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(payload),
-      cache: "no-store",
-    });
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(apiUrlsForCategoryTotals.Boats, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(payload),
+  });
 
-    const result = await response.json();
-    if (!response.ok) return { success: false, message: result.message };
-
-    revalidateTag("boats");
-    revalidatePath("/boats");
-    return { success: true, boatId: result._id || result.id };
-  } catch (error) {
-    return { success: false, message: "Network error" };
-  }
+  const result = await res.json();
+  return res.ok
+    ? { success: true, boatId: result._id || result.id }
+    : { success: false, message: result.message };
 }
 
 export async function updateBoat(
@@ -123,164 +122,107 @@ export async function updateBoat(
   data: Partial<CreateBoatData>,
   token?: string,
 ) {
-  try {
-    const headers = await getAuthHeaders(token);
-    const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
-      method: "PUT",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(data),
-      cache: "no-store",
-    });
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
+    method: "PUT",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+  });
 
-    const result = await response.json();
-    if (!response.ok) return { success: false, message: result.message };
-
-    revalidateTag(`boat-${id}`);
-    revalidateTag("boats");
-    revalidatePath(`/boats/${id}`);
-    revalidatePath("/boats");
-
-    return { success: true, message: "Updated successfully.", boatId: id };
-  } catch (error) {
-    return { success: false, message: "Network error." };
-  }
+  return res.ok ? { success: true, boatId: id } : { success: false };
 }
 
 export async function updateBoatPayment(
   boatId: string,
   paymentId: string,
   planId: string,
+  token?: string,
 ) {
-  try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${apiUrlsForCategoryTotals.Boats}/${boatId}/payment`,
-      {
-        method: "PUT",
-        headers: headers as HeadersInit,
-        body: JSON.stringify({ paymentId, planId }),
-        cache: "no-store",
-      },
-    );
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(
+    `${apiUrlsForCategoryTotals.Boats}/${boatId}/payment`,
+    {
+      method: "PUT",
+      headers: headers as HeadersInit,
+      body: JSON.stringify({ paymentId, planId }),
+    },
+  );
 
-    const data = await response.json();
-
-    if (response.ok) {
-      revalidateTag(`boat-${boatId}`);
-      revalidateTag("boats");
-      revalidatePath(`/boats/${boatId}`);
-      revalidatePath("/boats");
-      return { success: true, data };
-    }
-
-    return {
-      success: false,
-      message: data.message || "Update failed",
-      data: data,
-    };
-  } catch (error) {
-    return { success: false, message: "Network error" };
-  }
+  const data = await res.json();
+  return res.ok
+    ? { success: true, data }
+    : { success: false, message: data.message };
 }
 
 export async function deleteBoat(id: string, token?: string) {
-  try {
-    const headers = await getAuthHeaders(token);
-    const response = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
-      method: "DELETE",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
+    method: "DELETE",
+    headers: headers as HeadersInit,
+  });
 
-    if (!response.ok) return { success: false, message: "Delete failed." };
-
-    revalidateTag(`boat-${id}`);
-    revalidateTag("boats");
-    revalidatePath("/boats");
-
-    return { success: true, message: "Deleted successfully." };
-  } catch (error) {
-    return { success: false, message: "Network error." };
-  }
+  return res.ok ? { success: true } : { success: false };
 }
 
-export async function getTotalBoatsAction(): Promise<number> {
+export async function getTotalBoatsAction(token?: string): Promise<number> {
   try {
-    const headers = await getAuthHeaders();
+    const headers = await getAuthHeaders(token);
     const res = await fetch(apiUrlsForCategoryTotals.TotalBoats, {
-      method: "GET",
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
-    if (!res.ok) {
-      console.error(`Failed to fetch total boats: ${res.status}`);
-      return 0;
-    }
-
+    if (!res.ok) return 0;
     const data = await res.json();
-    return data.totalBoats ?? data.count ?? data.total ?? 0;
-  } catch (error) {
-    console.error("Error fetching total boats:", error);
+    return data.totalBoats || data.count || data.total || 0;
+  } catch {
     return 0;
   }
 }
 
-export async function getAllBoatsAdminAction() {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(apiUrlsForCategoryTotals.BoatsAdmin, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
+export async function getAllBoatsAdminAction(
+  token?: string,
+  pageNum = 1,
+  sizeNum = 20,
+) {
+  const headers = await getAuthHeaders(token);
+  const url = `${apiUrlsForCategoryTotals.BoatsAdmin}?pageNum=${pageNum}&sizeNum=${sizeNum}`;
+  const res = await fetch(url, {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
 
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data : data.data || [];
-  } catch (error) {
-    console.error("Error fetching admin boats:", error);
-    return [];
-  }
+  if (!res.ok) return [];
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : (data?.data ?? []);
+
+  return list.map((item: any) => ({
+    ...item,
+    _id: String(item._id ?? item.id ?? ""),
+    id: String(item._id ?? item.id ?? ""),
+  }));
 }
 
 export async function toggleBoatPaymentAction(
   id: string,
   currentStatus: boolean,
+  token?: string,
 ) {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
-      method: "PUT",
-      headers: headers as HeadersInit,
-      body: JSON.stringify({ isPaid: !currentStatus }),
-      cache: "no-store",
-    });
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}/payment`, {
+    method: "PATCH",
+    headers: headers as HeadersInit,
+    body: JSON.stringify({ isPaid: !currentStatus }),
+  });
 
-    if (!res.ok) return { success: false };
-    const updated = await res.json();
-    revalidatePath("/admin/boats");
-    return { success: true, data: updated };
-  } catch (error) {
-    console.error("Error toggling boat payment:", error);
-    return { success: false };
-  }
+  return { success: res.ok };
 }
 
-export async function deleteBoatAction(id: string) {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
-      method: "DELETE",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
+export async function deleteBoatAction(id: string, token?: string) {
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
+    method: "DELETE",
+    headers: headers as HeadersInit,
+  });
 
-    if (!res.ok) return { success: false };
-    revalidatePath("/admin/boats");
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting boat:", error);
-    return { success: false };
-  }
+  return { success: res.ok };
 }

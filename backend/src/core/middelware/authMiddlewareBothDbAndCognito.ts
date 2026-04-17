@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../utils/db.ts";
-import { AuthRequest, DecodedToken } from "../../types/authProtection.ts";
+import { AuthRequest, DecodedToken } from "../../types/index.ts";
 
 const extractToken = (authHeader?: string, cookies?: any): string | null => {
   const fromHeader = authHeader?.startsWith("Bearer ")

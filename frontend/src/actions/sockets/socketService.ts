@@ -1,37 +1,70 @@
 import { io, Socket } from "socket.io-client";
-import { SOCKET_EVENTS } from "../constant/communicationEndpoints";
+import { SOCKET_EVENTS } from "../constant/sockets";
+
+type EventCallback = (data?: unknown) => void;
+
 class SocketService {
+  private static instance: SocketService | null = null;
   private socket: Socket | null = null;
-  private eventListeners: Map<string, Function[]> = new Map();
+  private eventListeners: Map<string, Set<EventCallback>> = new Map();
+  private isConnecting = false;
+  private reconnectAttempts = 0;
+  private readonly maxReconnectAttempts = 5;
+  private readonly socketUrl: string;
 
-  connect(userId: string) {
-    if (this.socket?.connected) {
-      console.log("Socket already connected");
-      return;
-    }
-
-    const socketUrl =
+  private constructor() {
+    this.socketUrl =
       process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:9000";
+  }
 
-    this.socket = io(socketUrl, {
+  static getInstance(): SocketService {
+    if (!SocketService.instance) {
+      SocketService.instance = new SocketService();
+    }
+    return SocketService.instance;
+  }
+
+  connect(userId: string): void {
+    if (!userId) return;
+    if (this.socket?.connected) return;
+    if (this.isConnecting) return;
+
+    this.isConnecting = true;
+
+    this.socket = io(this.socketUrl, {
       auth: { userId },
       withCredentials: true,
       transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: this.maxReconnectAttempts,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
     });
 
+    this.setupEventHandlers();
+  }
+
+  private setupEventHandlers(): void {
+    if (!this.socket) return;
+
     this.socket.on("connect", () => {
-      console.log("Socket connected:", this.socket?.id);
+      this.isConnecting = false;
+      this.reconnectAttempts = 0;
       this.emitEvent("connect");
     });
 
-    this.socket.on("disconnect", () => {
-      console.log("Socket disconnected");
-      this.emitEvent("disconnect");
+    this.socket.on("disconnect", (reason: string) => {
+      this.emitEvent("disconnect", { reason });
     });
 
-    this.socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
+    this.socket.on("connect_error", (error: Error) => {
+      this.reconnectAttempts++;
       this.emitEvent("error", { error: error.message });
+    });
+
+    this.socket.on("reconnect_failed", () => {
+      this.isConnecting = false;
     });
 
     const events = [
@@ -48,73 +81,99 @@ class SocketService {
       SOCKET_EVENTS.ON.SEND_MESSAGE_ERROR,
       SOCKET_EVENTS.ON.CHAT_ERROR,
       SOCKET_EVENTS.ON.ERROR,
+      SOCKET_EVENTS.ON.MESSAGE_DELETED,
+      SOCKET_EVENTS.ON.MESSAGE_UPDATED,
+      "wanted_match",
+      "i_have_this",
+      "newNotification",
+      "subscription_match",
+      "notification",
     ];
 
     events.forEach((event) => {
-      this.socket?.on(event, (data: any) => {
+      this.socket?.on(event, (data?: unknown) => {
         this.emitEvent(event, data);
       });
     });
   }
 
-  on(event: string, callback: (data: any) => void) {
+  on(event: string, callback: EventCallback): () => void {
     if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, []);
+      this.eventListeners.set(event, new Set());
     }
-    this.eventListeners.get(event)?.push(callback);
+    this.eventListeners.get(event)?.add(callback);
+    return () => this.off(event, callback);
   }
 
-  off(event: string, callback: (data: any) => void) {
+  off(event: string, callback: EventCallback): void {
     const callbacks = this.eventListeners.get(event);
     if (callbacks) {
-      const index = callbacks.indexOf(callback);
-      if (index > -1) {
-        callbacks.splice(index, 1);
+      callbacks.delete(callback);
+      if (callbacks.size === 0) {
+        this.eventListeners.delete(event);
       }
     }
   }
 
-  private emitEvent(event: string, data?: any) {
+  private emitEvent(event: string, data?: unknown): void {
     const callbacks = this.eventListeners.get(event);
     if (callbacks) {
-      callbacks.forEach((callback) => callback(data));
+      callbacks.forEach((callback) => {
+        try {
+          callback(data);
+        } catch {}
+      });
     }
   }
 
-  joinChat(chatId: number) {
-    this.socket?.emit(SOCKET_EVENTS.EMIT.JOIN_CHAT, chatId);
+  private emit(event: string, data?: unknown): void {
+    if (!this.socket?.connected) return;
+    this.socket.emit(event, data);
   }
 
-  leaveChat(chatId: number) {
-    this.socket?.emit(SOCKET_EVENTS.EMIT.LEAVE_CHAT, chatId);
+  joinChat(chatId: number): void {
+    this.emit(SOCKET_EVENTS.EMIT.JOIN_CHAT, chatId);
   }
 
-  sendMessage(data: { chatId: number; content: string; imageUrl?: string }) {
-    this.socket?.emit(SOCKET_EVENTS.EMIT.SEND_MESSAGE, data);
+  leaveChat(chatId: number): void {
+    this.emit(SOCKET_EVENTS.EMIT.LEAVE_CHAT, chatId);
   }
 
-  sendTyping(chatId: number, isTyping: boolean) {
-    this.socket?.emit(SOCKET_EVENTS.EMIT.TYPING, { chatId, isTyping });
+  sendMessage(data: {
+    chatId: number;
+    content: string;
+    imageUrl?: string;
+  }): void {
+    if (!data.content?.trim() && !data.imageUrl) return;
+    this.emit(SOCKET_EVENTS.EMIT.SEND_MESSAGE, data);
   }
 
-  markAsRead(messageId: number) {
-    this.socket?.emit(SOCKET_EVENTS.EMIT.MARK_AS_READ, messageId);
+  sendTyping(chatId: number, isTyping: boolean): void {
+    this.emit(SOCKET_EVENTS.EMIT.TYPING, { chatId, isTyping });
   }
 
-  markMultipleAsRead(messageIds: number[]) {
-    this.socket?.emit(SOCKET_EVENTS.EMIT.MARK_MULTIPLE_AS_READ, { messageIds });
+  markAsRead(chatId: number): void {
+    this.emit(SOCKET_EVENTS.EMIT.MARK_AS_READ, { chatId });
   }
 
-  getOnlineStatus(chatId: number) {
-    this.socket?.emit(SOCKET_EVENTS.EMIT.GET_ONLINE_STATUS, chatId);
+  markMultipleAsRead(messageIds: number[]): void {
+    if (!messageIds.length) return;
+    this.emit(SOCKET_EVENTS.EMIT.MARK_MULTIPLE_AS_READ, { messageIds });
   }
 
-  disconnect() {
+  getOnlineStatus(chatId: number): void {
+    this.emit(SOCKET_EVENTS.EMIT.GET_ONLINE_STATUS, chatId);
+  }
+
+  disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      this.eventListeners.clear();
     }
+    this.isConnecting = false;
+    this.reconnectAttempts = 0;
+    this.eventListeners.clear();
+    SocketService.instance = null;
   }
 
   isConnected(): boolean {
@@ -126,4 +185,4 @@ class SocketService {
   }
 }
 
-export const socketService = new SocketService();
+export const socketService = SocketService.getInstance();

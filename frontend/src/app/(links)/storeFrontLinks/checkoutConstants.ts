@@ -1,32 +1,10 @@
-import { User, Ship, ShieldCheck, CreditCard } from "lucide-react";
-
-export const CHECKOUT_STEPS_CONFIG = [
+export const steps = [
+  { id: 1, name: "checkout.signIn", defaultLabel: "Sign In", href: "/login" },
+  { id: 2, name: "checkout.newAd", defaultLabel: "New Ad", href: "/new-ad" },
   {
-    id: "step1",
-    name: "Account",
-    href: "/login",
-    icon: User,
-    labelKey: "checkout.steps.account",
-  },
-  {
-    id: "step2",
-    name: "New Ad",
-    href: "/new-ad",
-    icon: Ship,
-    labelKey: "checkout.steps.newAd",
-  },
-  {
-    id: "step3",
-    name: "Summary",
-    href: "/summary",
-    icon: ShieldCheck,
-    labelKey: "checkout.steps.summary",
-  },
-  {
-    id: "step4",
-    name: "Payment",
+    id: 4,
+    name: "checkout.payment",
+    defaultLabel: "Payment",
     href: "/payment",
-    icon: CreditCard,
-    labelKey: "checkout.steps.payment",
   },
 ];

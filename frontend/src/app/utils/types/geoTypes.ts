@@ -1,20 +1,19 @@
-export interface Region {
-  id: string;
-  name: string;
-  so?: string;
-  isActive: boolean;
-  cities?: City[];
-}
-
 export interface City {
   id: string;
   name: string;
-  so?: string;
+  code?: string;
   regionId: string;
-  isActive: boolean;
+  isActive?: boolean;
+}
+export interface Region {
+  id: string;
+  name: string;
+  code?: string;
+  cities?: City[];
 }
 
 export interface GeoStats {
   totalRegions: number;
   totalCities: number;
+  totalDistricts: number;
 }

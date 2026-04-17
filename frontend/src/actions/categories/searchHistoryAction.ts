@@ -1,6 +1,5 @@
 "use client";
 
-import { verifySession } from "@/actions/core/authAction";
 import { SEARCH_HISTORY_ENDPOINTS } from "@/actions/constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
@@ -48,24 +47,25 @@ export const deleteLogEntry = async (logId: string) => {
   }
 };
 
-export const saveSearchToDb = async (query: string) => {
+export const saveSearchToDb = async (
+  query: string,
+  user?: { token?: string; _id?: string; id?: string },
+) => {
   if (!query.trim()) return false;
 
   try {
-    const session = await verifySession();
-    const headers = await getAuthHeaders();
-
-    const response = await fetch(SEARCH_HISTORY_ENDPOINTS.LOG_SEARCH, {
+    const headers = await getAuthHeaders(user?.token);
+    const res = await fetch(SEARCH_HISTORY_ENDPOINTS.LOG_SEARCH, {
       method: "POST",
       headers: headers as HeadersInit,
       body: JSON.stringify({
         query: query.trim(),
         category: "all",
-        userId: session?._id || null,
+        userId: user?._id || user?.id || null,
       }),
       cache: "no-store",
     });
-    return response.ok;
+    return res.ok;
   } catch {
     return false;
   }

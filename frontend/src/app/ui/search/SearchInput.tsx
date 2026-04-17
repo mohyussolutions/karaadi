@@ -1,61 +1,93 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect, ChangeEvent } from "react";
-import { FiSearch } from "react-icons/fi";
-import { saveSearchToDb } from "@/app/(storeFront)/components/home/SearchTracker";
+import React, { useState, useEffect, ChangeEvent, KeyboardEvent } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { FiSearch, FiX } from "react-icons/fi";
+import { saveSearchToDb } from "@/actions/categories/searchHistoryAction";
 
 interface SearchInputProps {
   defaultValue?: string;
   onSearch?: (value: string) => void;
+  placeholder?: string;
 }
 
 export default function SearchInput({
   defaultValue = "",
   onSearch,
+  placeholder,
 }: SearchInputProps) {
-  const [text, setText] = useState(defaultValue);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [text, setText] = useState(defaultValue);
 
   useEffect(() => {
-    if (onSearch) {
-      onSearch(text);
+    const query = searchParams.get("q");
+    if (query !== null) {
+      setText(query);
+    } else {
+      setText("");
     }
-    const delayDebounce = setTimeout(() => {
-      if (!onSearch) {
-        const params = new URLSearchParams(window.location.search);
-        if (text) {
-          if (params.get("q") === text) return;
-          params.set("q", text);
-          router.push(`${pathname}?${params.toString()}`, { scroll: false });
-          saveSearchToDb(text);
-        } else {
-          if (!params.has("q")) return;
-          params.delete("q");
-          router.push(pathname, { scroll: false });
-        }
-      }
-    }, 200);
-    return () => clearTimeout(delayDebounce);
-  }, [text, pathname, router, onSearch]);
+  }, [searchParams]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setText(e.target.value);
+  const executeSearch = (searchTerm: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (searchTerm.trim()) {
+      if (params.get("q") === searchTerm.trim()) return;
+
+      params.set("q", searchTerm.trim());
+      saveSearchToDb(searchTerm.trim());
+      if (onSearch) onSearch(searchTerm.trim());
+    } else {
+      if (!params.has("q")) return;
+      params.delete("q");
+      if (onSearch) onSearch("");
+    }
+
+    const queryString = params.toString();
+    const updatedPath = queryString ? `${pathname}?${queryString}` : pathname;
+
+    router.replace(updatedPath, { scroll: false });
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      executeSearch(text);
+    }
+  };
+
+  const handleClear = () => {
+    setText("");
+    executeSearch("");
   };
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full group">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors">
+        <FiSearch size={22} />
+      </div>
+
       <input
         type="text"
         value={text}
-        onChange={handleChange}
-        placeholder="karaadi baabuur, guri, qalab, doomo, beer iwm..."
-        className="w-full p-3 pl-10 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder || "Karaadi baabuur, guri, qalab, doomo..."}
+        className="w-full pl-12 pr-12 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-gray-800 text-base font-medium placeholder:text-gray-400 transition-all"
       />
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-        <FiSearch size={18} />
-      </div>
+
+      {text && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+          aria-label="Clear search"
+        >
+          <FiX size={18} />
+        </button>
+      )}
     </div>
   );
 }

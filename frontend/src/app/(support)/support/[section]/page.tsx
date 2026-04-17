@@ -7,7 +7,8 @@ import { useParams } from "next/navigation";
 export default function SupportSectionPage() {
   const params = useParams() as { section?: string };
   const section = params?.section || "unknown";
-  const [items, setItems] = useState<Array<any>>([]);
+  type SupportItem = { id: string; title?: string; [key: string]: unknown };
+  const [items, setItems] = useState<SupportItem[]>([]);
 
   useEffect(() => {
     setItems([]);
@@ -30,8 +31,11 @@ export default function SupportSectionPage() {
           <div className="text-gray-500">No items yet for {section}.</div>
         ) : (
           <ul className="space-y-2">
-            {items.map((it: any) => (
-              <li key={it.id} className="p-3 border rounded-md bg-white">
+            {items.map((it: SupportItem) => (
+              <li
+                key={String(it.id)}
+                className="p-3 border rounded-md bg-white"
+              >
                 {it.title || JSON.stringify(it)}
               </li>
             ))}

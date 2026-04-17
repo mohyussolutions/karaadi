@@ -1,36 +1,62 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
-import type { NormalizedUser } from "@/app/utils/types/user.types";
 import {
   getAllRegions,
   getAllCities,
   addCity,
 } from "@/actions/categories/geoAction";
-import { verifySession } from "@/actions/core/authAction";
-import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
-import {
-  applicationMethods,
-  educationLevels,
-  experienceLevels,
-} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForJobs";
+import { useAuth } from "@/context/AuthContext";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+
+import type { CreateJobData } from "@/actions/categories/jobActions";
 import { createJob } from "@/actions/categories/jobActions";
+
+type Region = {
+  id: string;
+  name: string;
+  so?: string;
+};
+
+type City = {
+  id: string;
+  name: string;
+  regionId: string;
+  so?: string;
+};
+
+type ExperienceLevel = {
+  key: string;
+  name: string;
+  labelKey: string;
+  icon: React.ReactNode;
+  href: string;
+};
+
+type EducationLevel = {
+  key: string;
+  name: string;
+  labelKey: string;
+  icon: React.ReactNode;
+  href: string;
+};
 
 const CreateAdForJobs = () => {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<NormalizedUser | null>(null);
-  const [token, setToken] = useState("");
-  const [regions, setRegions] = useState<any[]>([]);
-  const [allCities, setAllCities] = useState<any[]>([]);
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
+  const { t, i18n } = useTranslation();
+  const { user: currentUser } = useAuth();
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [allCities, setAllCities] = useState<City[]>([]);
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
-    mainCategory: "Jobs",
     jobType: "",
     region: "",
     city: "",
@@ -39,9 +65,6 @@ const CreateAdForJobs = () => {
     companyName: "",
     experienceLevel: "",
     educationLevel: "",
-    requiredSkills: "",
-    applicationMethod: "",
-    applicationContact: "",
     applicationDeadline: "",
     newCityName: "",
     newCitySo: "",
@@ -51,28 +74,24 @@ const CreateAdForJobs = () => {
 
   useEffect(() => {
     const initPage = async () => {
-      const session = await verifySession();
-      if (!session) {
+      if (!currentUser) {
         toast.info("Please log in.");
         router.push("/login");
         return;
       }
-      setCurrentUser(session);
-      setToken(localStorage.getItem("userToken") || "");
-
       const [regs, cts] = await Promise.all([getAllRegions(), getAllCities()]);
       setRegions(regs || []);
       setAllCities(cts || []);
     };
     initPage();
-  }, [router]);
+  }, [currentUser, router]);
 
   useEffect(() => {
     if (formData.region) {
-      const filtered = allCities
-        .filter((c) => c.regionId === formData.region)
-        .map((c) => c.name);
+      const filtered = allCities.filter((c) => c.regionId === formData.region);
       setFilteredCities(filtered);
+    } else {
+      setFilteredCities([]);
     }
   }, [formData.region, allCities]);
 
@@ -107,44 +126,40 @@ const CreateAdForJobs = () => {
     try {
       let finalCity = formData.city;
       if (showNewCityInputs) {
-        const newCityData = {
-          id: "",
+        const cityPayload = {
+          id: formData.newCityName.trim().toLowerCase().replace(/\s+/g, "-"),
           name: formData.newCityName,
           regionId: formData.region,
           isActive: true,
         };
-
-        await addCity(
-          formData.newCityName,
-          formData.newCitySo,
-          formData.region,
-          newCityData,
-        );
+        await addCity(cityPayload);
         finalCity = formData.newCityName;
       }
 
-      const jobData = {
+      const selectedRegion = regions.find((r) => r.id === formData.region);
+
+      const salaryAmount =
+        parseInt(formData.salaryRange.replace(/[^0-9]/g, "")) || 0;
+
+      const jobData: CreateJobData = {
         title: formData.title,
         description: formData.description,
-        location: `${formData.region}, ${finalCity}`,
         company: formData.companyName,
-        salary: parseInt(formData.salaryRange.replace(/[^0-9]/g, "")) || 0,
-        type: formData.jobType as any,
-        experienceLevel: formData.experienceLevel,
-        educationLevel: formData.educationLevel,
-        applicationMethod: formData.applicationMethod,
-        applicationContact: formData.applicationContact,
-        deadline: formData.applicationDeadline,
-        requiredSkills: formData.requiredSkills.split(",").map((s) => s.trim()),
+        location: `${selectedRegion?.name || formData.region}, ${finalCity}`,
+        salary: salaryAmount,
+        type: formData.jobType || "Full-time",
+        city: finalCity,
+        region: selectedRegion?.name || formData.region,
+        isPaid: true,
       };
 
-      const res = await createJob(jobData as any, token);
+      const res = await createJob(jobData);
 
       if (res.success) {
         toast.success("Job advertisement posted successfully!");
         router.push("/jobs");
       } else {
-        toast.error(res.message || "Failed to post job.");
+        toast.error(res.data?.message || "Failed to post job.");
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
@@ -155,18 +170,21 @@ const CreateAdForJobs = () => {
 
   if (!currentUser) return <div className="p-10 text-center">Loading...</div>;
 
+  const experienceLevels = nesCategories.experienceLevels || [];
+  const educationLevels = nesCategories.educationLevels || [];
+
   return (
     <div className="max-w-3xl mx-auto my-12 p-8 bg-white rounded-xl shadow-2xl border border-gray-100">
       <ToastContainer />
       <h1 className="text-3xl font-bold mb-8 text-blue-800 text-center">
-        Post a Job
+        {t("jobsPage.title", "Post a Job")}
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Company Name
+              {t("jobsPage.application.companyName", "Company Name")}
             </label>
             <input
               name="companyName"
@@ -174,16 +192,23 @@ const CreateAdForJobs = () => {
               onChange={handleChange}
               required
               className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder={t(
+                "jobsPage.application.companyName",
+                "Company Name",
+              )}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Job Title</label>
+            <label className="block text-sm font-medium mb-1">
+              {t("jobsPage.application.jobTitle", "Job Title")}
+            </label>
             <input
               name="title"
               value={formData.title}
               onChange={handleChange}
               required
               className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder={t("jobsPage.application.jobTitle", "Job Title")}
             />
           </div>
         </div>
@@ -191,7 +216,7 @@ const CreateAdForJobs = () => {
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Experience Level
+              {t("jobsPage.application.experienceLevel", "Experience Level")}
             </label>
             <select
               name="experienceLevel"
@@ -200,17 +225,22 @@ const CreateAdForJobs = () => {
               required
               className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="">Select Experience</option>
-              {experienceLevels.map((lvl) => (
-                <option key={lvl.value} value={lvl.value}>
-                  {lvl.title}
+              <option value="">
+                {t(
+                  "jobsPage.application.selectExperience",
+                  "Select Experience",
+                )}
+              </option>
+              {experienceLevels.map((level: ExperienceLevel) => (
+                <option key={level.key} value={level.key}>
+                  {t(level.labelKey, level.name)}
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Education Level
+              {t("jobsPage.application.educationLevel", "Education Level")}
             </label>
             <select
               name="educationLevel"
@@ -219,10 +249,12 @@ const CreateAdForJobs = () => {
               required
               className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="">Select Education</option>
-              {educationLevels.map((lvl) => (
-                <option key={lvl.value} value={lvl.value}>
-                  {lvl.title}
+              <option value="">
+                {t("jobsPage.application.selectEducation", "Select Education")}
+              </option>
+              {educationLevels.map((level: EducationLevel) => (
+                <option key={level.key} value={level.key}>
+                  {t(level.labelKey, level.name)}
                 </option>
               ))}
             </select>
@@ -231,7 +263,9 @@ const CreateAdForJobs = () => {
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium mb-1">Region</label>
+            <label className="block text-sm font-medium mb-1">
+              {t("createAd.selectRegion", "Region")}
+            </label>
             <select
               name="region"
               value={formData.region}
@@ -239,16 +273,20 @@ const CreateAdForJobs = () => {
               required
               className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="">Select Region</option>
+              <option value="">
+                {t("createAd.selectRegion", "Select Region")}
+              </option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name}
+                  {i18n.language === "so" ? r.so || r.name : r.name}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">City</label>
+            <label className="block text-sm font-medium mb-1">
+              {t("createAd.selectCity", "City")}
+            </label>
             <select
               value={formData.city}
               onChange={(e) => handleCityChange(e.target.value)}
@@ -256,14 +294,16 @@ const CreateAdForJobs = () => {
               disabled={!formData.region}
               className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
             >
-              <option value="">Select City</option>
+              <option value="">
+                {t("createAd.selectCity", "Select City")}
+              </option>
               {filteredCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+                <option key={c.id} value={c.name}>
+                  {i18n.language === "so" ? c.so || c.name : c.name}
                 </option>
               ))}
               <option value="custom" className="text-blue-600 font-bold">
-                Add New City +
+                {t("createAd.addCity", "+ Add New City")}
               </option>
             </select>
           </div>
@@ -273,7 +313,7 @@ const CreateAdForJobs = () => {
           <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-dashed border-blue-300">
             <input
               name="newCityName"
-              placeholder="City Name (EN)"
+              placeholder={t("createAd.newCityPlaceholder", "City Name (EN)")}
               value={formData.newCityName}
               onChange={handleChange}
               required
@@ -281,7 +321,7 @@ const CreateAdForJobs = () => {
             />
             <input
               name="newCitySo"
-              placeholder="City Name (SO)"
+              placeholder={t("createAd.newCitySoPlaceholder", "City Name (SO)")}
               value={formData.newCitySo}
               onChange={handleChange}
               className="border p-2 rounded outline-none focus:border-blue-500"
@@ -292,11 +332,14 @@ const CreateAdForJobs = () => {
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Salary Range
+              {t("jobsPage.application.salaryRange", "Salary Range")}
             </label>
             <input
               name="salaryRange"
-              placeholder="e.g. $500 - $1000"
+              placeholder={t(
+                "jobsPage.application.salaryPlaceholder",
+                "e.g. $500 - $1000",
+              )}
               value={formData.salaryRange}
               onChange={handleChange}
               className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
@@ -304,7 +347,10 @@ const CreateAdForJobs = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Application Deadline
+              {t(
+                "jobsPage.application.applicationDeadline",
+                "Application Deadline",
+              )}
             </label>
             <input
               type="date"
@@ -318,7 +364,9 @@ const CreateAdForJobs = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+          <label className="block text-sm font-medium mb-1">
+            {t("createFarmequipment.descriptionPlaceholder", "Description")}
+          </label>
           <textarea
             name="description"
             value={formData.description}
@@ -326,6 +374,10 @@ const CreateAdForJobs = () => {
             rows={5}
             className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             required
+            placeholder={t(
+              "jobsPage.application.descriptionPlaceholder",
+              "Job description...",
+            )}
           />
         </div>
 
@@ -334,7 +386,9 @@ const CreateAdForJobs = () => {
           disabled={isSubmitting}
           className="w-full bg-blue-600 text-white py-4 rounded-lg font-bold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed uppercase tracking-wide"
         >
-          {isSubmitting ? "Posting..." : "Post Job Advertisement"}
+          {isSubmitting
+            ? t("createAd.submitting", "Posting...")
+            : t("jobsPage.postJob", "Post Job Advertisement")}
         </button>
       </form>
     </div>

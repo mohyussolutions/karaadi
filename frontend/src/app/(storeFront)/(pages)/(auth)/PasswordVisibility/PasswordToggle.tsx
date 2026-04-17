@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, ChangeEvent } from "react";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FiEye, FiEyeOff } from "@/app/utils/icons";
 
 interface PasswordToggleProps {
   value: string;
@@ -40,7 +40,7 @@ const PasswordToggle: React.FC<PasswordToggleProps> = ({
   };
   const toggleOnEnterOrSpace = (
     e: React.KeyboardEvent,
-    toggleFunc: React.Dispatch<React.SetStateAction<boolean>>
+    toggleFunc: React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();

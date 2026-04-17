@@ -10,7 +10,7 @@ import type { NormalizedUser } from "@/app/utils/types/user.types";
 export default function AccountOptionsClient({
   user,
 }: {
-  user: NormalizedUser;
+  user?: NormalizedUser | null;
 }) {
   const { t } = useTranslation();
   const { activeLanguage } = useLanguage();
@@ -56,7 +56,7 @@ export default function AccountOptionsClient({
                     {description}
                   </p>
 
-                  {!user.emailVerified && isAccount && (
+                  {!(user?.emailVerified ?? true) && isAccount && (
                     <div className="mt-2 flex items-center gap-1.5">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>

@@ -12,25 +12,27 @@ const BackgroundAdWrapper = ({ children, ad }: AdProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (ad?.imageUrl) {
-      const img = new Image();
-      img.src = ad.imageUrl;
-      img.onload = () => setIsLoaded(true);
-    }
+    if (!ad?.imageUrl) return;
+    const img = new Image();
+    img.src = ad.imageUrl;
+    img.onload = () => setIsLoaded(true);
   }, [ad?.imageUrl]);
 
   const handleAdClick = () => {
     if (!ad?.link) return;
     trackAdClick(ad.id);
-    const link = ad.link.startsWith("http") ? ad.link : `https://${ad.link}`;
-    window.open(link, "_blank", "noopener,noreferrer");
+    window.open(
+      ad.link.startsWith("http") ? ad.link : `https://${ad.link}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   if (!ad?.imageUrl) return <>{children}</>;
 
   return (
     <div
-      className={`min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex transition-opacity duration-700 ${
+      className={`min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex transition-opacity duration-700 bg-red-400 ${
         isLoaded ? "opacity-100" : "opacity-0"
       }`}
       style={{ backgroundImage: isLoaded ? `url("${ad.imageUrl}")` : "none" }}

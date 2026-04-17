@@ -1,287 +1,304 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { MdInfo } from "react-icons/md";
-import { FaShip } from "react-icons/fa";
-import { toast, ToastContainer } from "react-toastify";
+import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { verifySession } from "@/actions/core/authAction";
+import { MdAttachMoney } from "@/app/utils/icons";
+import { useImageUpload } from "@/app/(storeFront)/components/shared/ImageUpload/useImageUpload";
+import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageUpload";
+import { FaShip } from "@/app/utils/icons";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { createBoat } from "@/actions/categories/boatActions";
 import {
   getAllRegions,
   getAllCities,
   addCity,
 } from "@/actions/categories/geoAction";
-import { useTranslation } from "react-i18next";
-import {
-  BoatsForSaleNestedSub,
-  BoatsForRentNestedSub,
-  BoatEnginesNestedSub,
-  BoatPartsNestedSub,
-} from "@/app/(links)/storeFrontLinks/nestedSubcategoryForBoats";
-import { boatsSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
-import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
-import { createBoat } from "@/actions/categories/boatActions";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { useAuth } from "@/context/AuthContext";
+import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
+import { updateItem } from "@/store/slices/reducers/listingDraftSlice";
+import { CreateBoatPayload } from "@/app/utils/types/boats.types";
 import { getBoatFees } from "@/actions/categories/feeAction";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps";
 
-type User = { _id?: string; id?: string; token?: string; accessToken?: string };
-type Region = { id: string; name: string };
-type City = {
-  id: string;
-  name: string;
-  regionId?: string;
-  so?: string;
-  nameSo?: string;
+const BOAT_CATEGORIES = [
+  { key: "boatsForSale", labelKey: "boatsForSale" },
+  { key: "boatsForRent", labelKey: "boatsForRent" },
+  { key: "boatEnginesForSale", labelKey: "boatEnginesForSale" },
+  { key: "boatParts", labelKey: "boatParts" },
+];
+
+const BOAT_FEE_MAPPING: Record<string, string> = {
+  boatsForSale: "boatSale",
+  boatsForRent: "boatRent",
+  boatEnginesForSale: "boatEngine",
+  boatParts: "boatParts",
 };
 
-type FormDataState = {
-  mainCategory: string;
-  category: string;
-  subCategory: string;
-  title: string;
-  type: string;
-  boatModel: string;
-  transmission: string;
-  color: string;
-  price: string;
-  region: string;
-  city: string;
-  description: string;
-  planId?: string;
+const CATEGORY_TO_NESTED_KEY: Record<
+  string,
+  keyof typeof nesCategories.boatsNestedMap
+> = {
+  boatsForSale: "forSale",
+  boatsForRent: "forRent",
+  boatEnginesForSale: "engines",
+  boatParts: "parts",
 };
 
-const boatsNestedCategoriesMap: Record<string, any[]> = {
-  "Boats for Sale": BoatsForSaleNestedSub,
-  "Boats for Rent": BoatsForRentNestedSub,
-  "Boat Engines for Sale": BoatEnginesNestedSub,
-  "Boat Parts": BoatPartsNestedSub,
-};
+const GEARBOX_OPTIONS = ["Manual", "Automatic"] as const;
 
-const BoatForSellAndBuy = () => {
+// Main page component that provides the onNext prop
+export default function CreateAdForBoatsPage() {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
-  const [user, setUser] = useState<User | null>(null);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [filteredCities, setFilteredCities] = useState<City[]>([]);
-  const [images, setImages] = useState<File[]>([]);
-  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const [newCity, setNewCity] = useState("");
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-  const [activeFeeConfig, setActiveFeeConfig] = useState<Record<
-    string,
-    string
-  > | null>(null);
-  const [selectedFee, setSelectedFee] = useState<string>("0");
-  const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState<FormDataState>({
+  return <BoatForSellAndBuyForm onNext={() => router.push("/plan")} />;
+}
+
+// The actual form component
+function BoatForSellAndBuyForm({ onNext }: { onNext: () => void }) {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { t, i18n } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
+  const savedItem = useAppSelector((state) => state.listingDraft.item);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [allCities, setAllCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+  const { images, addImages, removeImage, toBase64 } = useImageUpload();
+  const [newCity, setNewCity] = useState("");
+  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
+
+  const [formData, setFormData] = useState({
     mainCategory: "Boats",
-    category: "",
-    subCategory: "",
-    title: "",
-    type: "",
-    boatModel: "",
-    transmission: "",
-    color: "",
-    price: "",
-    region: "",
-    city: "",
-    description: "",
+    category:
+      typeof savedItem.category === "string"
+        ? savedItem.category
+        : Array.isArray(savedItem.category) && savedItem.category.length > 0
+          ? savedItem.category[0]
+          : "",
+    subCategory:
+      typeof savedItem.subCategory === "string"
+        ? savedItem.subCategory
+        : Array.isArray(savedItem.subCategory) &&
+            savedItem.subCategory.length > 0
+          ? savedItem.subCategory[0]
+          : "",
+    title: savedItem.title || "",
+    description: savedItem.description || "",
+    price: savedItem.price || "",
+    region: savedItem.region || "",
+    city: savedItem.city || "",
+    type: savedItem.type || "",
+    boatModel: savedItem.boatModel || "",
+    transmission: savedItem.transmission || "",
+    color: savedItem.color || "",
   });
 
   useEffect(() => {
-    async function init() {
-      const sessionUser = await verifySession();
-      if (!sessionUser) return router.push("/login");
-      setUser(sessionUser);
-
-      const [regs, cits, feeRes] = await Promise.all([
-        getAllRegions(),
-        getAllCities(),
-        getBoatFees(),
-      ]);
-      setRegions(regs || []);
-      setCities(cits || []);
-      setActiveFeeConfig(feeRes);
-    }
-    init();
-  }, [router]);
+    if (!authLoading && !user) router.push("/login");
+  }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (formData.region)
-      setFilteredCities(cities.filter((c) => c.regionId === formData.region));
-  }, [formData.region, cities]);
+    const loadData = async () => {
+      try {
+        const [regs, cits, feeRes] = await Promise.all([
+          getAllRegions(),
+          getAllCities(),
+          getBoatFees(),
+        ]);
+        setRegions(regs || []);
+        setAllCities(cits || []);
+        setActiveFeeConfig(feeRes);
+      } catch (err) {
+        console.error("Failed to load geo data", err);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   useEffect(() => {
-    if (formData.category && formData.subCategory) {
-      const nested = boatsNestedCategoriesMap[formData.category] || [];
-      const selected = nested.find((s) => s.title === formData.subCategory);
-      if (selected)
-        setFormData((prev) => ({
-          ...prev,
-          title:
-            i18n.language === "so"
-              ? selected.so || selected.title
-              : selected.title,
-        }));
-
-      let feeKey = "";
-      if (formData.category === "Boats for Rent") feeKey = "boatRent";
-      else if (formData.category === "Boats for Sale") feeKey = "boatSale";
-      else if (formData.category === "Boat Engines for Sale")
-        feeKey = "boatEngine";
-      else if (formData.category === "Boat Parts") feeKey = "boatParts";
-
-      if (feeKey && activeFeeConfig)
-        setSelectedFee(activeFeeConfig[feeKey] || "0");
-      else setSelectedFee("0");
+    if (formData.region) {
+      setFilteredCities(
+        allCities.filter((c) => c.regionId === formData.region),
+      );
+    } else {
+      setFilteredCities([]);
     }
-  }, [formData.category, formData.subCategory, activeFeeConfig, i18n.language]);
+  }, [formData.region, allCities]);
+
+  const getFeeForCategory = useCallback(
+    (categoryKey: string): number => {
+      if (!activeFeeConfig) return 0;
+      const feeKey = BOAT_FEE_MAPPING[categoryKey];
+      return Number(activeFeeConfig[feeKey] || 0);
+    },
+    [activeFeeConfig],
+  );
+
+  const getNestedSubcategories = () => {
+    if (!formData.category) return [];
+    const nestedKey = CATEGORY_TO_NESTED_KEY[formData.category];
+    return nestedKey && nesCategories.boatsNestedMap
+      ? nesCategories.boatsNestedMap[nestedKey] || []
+      : [];
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || loading) return;
-    const requiredFields: Array<keyof FormDataState> = [
+    if (!user || isLoading) return;
+
+    const requiredFields = [
       "category",
       "subCategory",
       "price",
-      "region",
+      "title",
+      "description",
       "type",
       "boatModel",
       "color",
+      "region",
       "city",
-      "title",
-      "description",
     ];
-    const missing = requiredFields.filter(
-      (key) =>
-        !formData[key] ||
-        (typeof formData[key] === "string" && formData[key].trim() === ""),
-    );
-    if (missing.length > 0) {
-      return toast.error(
-        `Fadlan buuxi banaanada muhiimka ah: ${missing.join(", ")}.`,
-      );
+    const isMissing =
+      requiredFields.some((key) => !(formData as any)[key]) ||
+      images.length === 0;
+
+    if (isMissing) {
+      return toast.error(t("createMotorcycle.fillRequired"));
     }
 
-    const authToken = user.token || user.accessToken;
-    if (!authToken) {
-      toast.error("Session error. Please log in again.");
-      router.push("/login");
-      return;
-    }
+    setIsLoading(true);
+    const toastId = toast.loading(t("createMotorcycle.registering"));
 
-    setLoading(true);
     try {
       let finalCity = formData.city;
       if (showNewCityInputs && newCity.trim()) {
-        const res: any = await addCity(
-          newCity.trim(),
-          newCity.trim(),
-          formData.region,
-          {
-            id: `city-${Date.now()}`,
-            name: newCity.trim(),
-            regionId: formData.region,
-            isActive: true,
-          },
-        );
-        if (res.success) finalCity = res.data.name;
+        const res: any = await addCity({
+          name: newCity.trim(),
+          regionId: formData.region,
+        });
+        if (res?.success) finalCity = res.data.name;
       }
 
-      const base64Images = await Promise.all(
-        images.map(
-          (img) =>
-            new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.readAsDataURL(img);
-            }),
-        ),
-      );
+      const imagesBase64 = await toBase64();
 
-      const userId = user._id ?? user.id ?? "";
-      if (!userId) {
-        toast.error("Session error: missing user id.");
-        setLoading(false);
-        return;
-      }
+      const fee = getFeeForCategory(formData.category);
 
       const payload = {
-        userId,
-        mainCategory: "Boats",
-        category: [formData.category],
-        subcategory: [formData.subCategory],
+        userId: user._id || user.id,
+        name: formData.title,
         title: formData.title,
-        region: formData.region,
-        city: finalCity,
         description: formData.description,
         price: Number(formData.price),
+        so: formData.title,
+        mainCategory: "Boats",
+        category: formData.category ? [formData.category] : [],
+        subcategory: formData.subCategory ? [formData.subCategory] : [],
         type: formData.type,
         boatModel: formData.boatModel,
         transmission: formData.transmission,
         color: formData.color,
-        images: base64Images,
+        region: formData.region,
+        city: finalCity,
+        images: imagesBase64,
         isPaid: false,
-        feeAmount: Number(selectedFee),
-        ...(formData.planId ? { planId: formData.planId } : {}),
-      } satisfies import("@/actions/categories/boatActions").CreateBoatPayload;
+        feeAmount: fee,
+      };
 
-      const result = await createBoat(payload as any, authToken);
+      const result: any = await createBoat(
+        payload as CreateBoatPayload,
+        user.token || (user as any).accessToken,
+      );
+
       if (result.success) {
-        toast.success("Waa la xayeysiiyey!");
-        router.push(`/payment/plan?id=${result.boatId}`);
+        toast.update(toastId, {
+          render: t("createMotorcycle.successMessage"),
+          type: "success",
+          isLoading: false,
+          autoClose: 2000,
+        });
+
+        const createdId = result.boatId || result.id || result._id;
+        dispatch(updateItem({ ...payload, id: String(createdId) }));
+        setTimeout(() => {
+          onNext(); // Now onNext is properly defined!
+        }, 1200);
       } else {
-        toast.error(result.message);
+        toast.update(toastId, {
+          render: result.message || t("createMotorcycle.errorMessage"),
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
       }
-    } catch {
-      toast.error("Cillad dhinaca network-ka ah.");
+    } catch (err) {
+      toast.update(toastId, {
+        render: t("createMotorcycle.errorMessage"),
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="w-full mx-auto mt-6 p-4 md:p-8 bg-white rounded-2xl border border-gray-100">
-      <ToastContainer position="top-center" />
-      <h1 className="text-3xl font-black text-center mb-10 text-gray-800 flex items-center justify-center gap-2">
-        {t("createBoats.title", { defaultValue: "Boats Listing" })}
-        <FaShip className="text-blue-600" />
-      </h1>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="mainCategory"
-              className="text-xs font-bold text-gray-400 ml-2 uppercase"
-            >
-              {t("createBoats.mainCategory", { defaultValue: "Main Category" })}
-            </label>
-            <select
-              id="mainCategory"
-              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none cursor-not-allowed"
-              disabled
-            >
-              <option>
-                {i18n?.language?.startsWith("so")
-                  ? allCategories.find((c) => c.key === "Boats")?.so ||
-                    t("categories.Boats", { defaultValue: "Boats" })
-                  : t("categories.Boats", { defaultValue: "Boats" })}
-              </option>
-            </select>
-          </div>
+  if (authLoading || dataLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="category"
-              className="text-xs font-bold text-gray-400 ml-2 uppercase"
-            >
-              {t("createBoats.category", { defaultValue: "Category" })}
+  return (
+    <div className="rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
+
+
+      <CheckoutSteps step1 step2 />
+
+      <div className="text-center mb-10">
+        <div className="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <FaShip className="text-4xl text-blue-600" />
+        </div>
+        <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
+          {t("createBoats.title")}
+        </h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            Main Category
+          </label>
+          <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
+            <FaShip className="text-blue-500" />
+            <input
+              type="text"
+              readOnly
+              value={formData.mainCategory}
+              className="bg-transparent outline-none font-black text-blue-700 w-full"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Category
             </label>
             <select
-              id="category"
               value={formData.category}
               onChange={(e) =>
                 setFormData({
@@ -290,410 +307,254 @@ const BoatForSellAndBuy = () => {
                   subCategory: "",
                 })
               }
-              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+              required
             >
-              <option value="">
-                {t("createBoats.selectCategory", {
-                  defaultValue: "Dooro Qaybta",
-                })}
-              </option>
-              {boatsSubCategories.map((cat) => (
-                <option key={cat.title} value={cat.title}>
-                  {i18n.language === "so" ? cat.so || cat.title : cat.title}
+              <option value="">Select Category</option>
+              {BOAT_CATEGORIES.map((cat) => (
+                <option key={cat.key} value={cat.key}>
+                  {t(cat.labelKey)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Subcategory
+            </label>
+            <select
+              value={formData.subCategory}
+              onChange={(e) =>
+                setFormData({ ...formData, subCategory: e.target.value })
+              }
+              disabled={!formData.category}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
+              required
+            >
+              <option value="">Select Subcategory</option>
+              {getNestedSubcategories().map((sub: any, idx: number) => (
+                <option key={idx} value={sub.labelKey || sub}>
+                  {t(sub.labelKey || sub)}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="subCategory"
-            className="text-xs font-bold text-gray-400 ml-2 uppercase"
-          >
-            {t("createBoats.subcategory", { defaultValue: "Subcategory" })}
-          </label>
-          <select
-            id="subCategory"
-            value={formData.subCategory}
-            onChange={(e) =>
-              setFormData({ ...formData, subCategory: e.target.value })
-            }
-            className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
-            disabled={!formData.category}
-          >
-            <option value="">
-              {t("createBoats.selectSubcategory", {
-                defaultValue: "Dooro Nooca",
-              })}
-            </option>
-            {(boatsNestedCategoriesMap[formData.category] || []).map((sub) => (
-              <option key={sub.title} value={sub.title}>
-                {i18n.language === "so" ? sub.so || sub.title : sub.title}
-              </option>
-            ))}
-          </select>
-
-          {formData.category && (
-            <div className="mt-2 flex items-center gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
-              <MdInfo className="text-blue-500" />
-              <label className="text-sm font-bold text-blue-700">
-                {t("createBoats.feeLabel", { defaultValue: "Lacagta Adeegga" })}{" "}
-                ({formData.category}):{" "}
-                <span className="text-lg font-black ml-1">${selectedFee}</span>
-              </label>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="title"
-            className="text-xs font-bold text-gray-400 ml-2"
-          >
-            {t("createBoats.titlePlaceholder", { defaultValue: "Title" })}
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            Title
           </label>
           <input
-            id="title"
-            placeholder={t("createBoats.titlePlaceholder", {
-              defaultValue: "Title",
-            })}
+            placeholder="e.g. Yamaha Speedboat 2023"
             value={formData.title}
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none font-bold focus:border-blue-400"
+            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+            required
           />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="type"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createBoats.typePlaceholder", {
-                defaultValue: "Type (waa lama huraan)",
-              })}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              Type
             </label>
             <input
-              id="type"
-              placeholder={t("createBoats.typePlaceholder", {
-                defaultValue: "Type (waa lama huraan)",
-              })}
+              placeholder="e.g. Speedboat"
               value={formData.type}
               onChange={(e) =>
                 setFormData({ ...formData, type: e.target.value })
               }
-              className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold"
               required
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="model"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createBoats.modelPlaceholder", { defaultValue: "Model" })}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              Model
             </label>
             <input
-              id="model"
-              placeholder={t("createBoats.modelPlaceholder", {
-                defaultValue: "Model",
-              })}
+              placeholder="e.g. 2023"
               value={formData.boatModel}
               onChange={(e) =>
                 setFormData({ ...formData, boatModel: e.target.value })
               }
-              className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold"
+              required
             />
           </div>
-          <input
-            placeholder={t("createBoats.modelPlaceholder", {
-              defaultValue: "Model",
-            })}
-            value={formData.boatModel}
-            onChange={(e) =>
-              setFormData({ ...formData, boatModel: e.target.value })
-            }
-            className="border-2 border-gray-100 p-3 rounded-xl outline-none"
-          />
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="transmission"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createBoats.gearboxPlaceholder", { defaultValue: "Gearbox" })}
-            </label>
-            <select
-              id="transmission"
-              value={formData.transmission}
-              onChange={(e) =>
-                setFormData({ ...formData, transmission: e.target.value })
-              }
-              className="border-2 border-gray-100 p-3 rounded-xl outline-none"
-            >
-              <option value="">
-                {t("createBoats.gearboxPlaceholder", {
-                  defaultValue: "Gearbox",
-                })}
-              </option>
-              <option value="Manual">Manual</option>
-              <option value="Automatic">Automatic</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="color"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createBoats.colorPlaceholder", { defaultValue: "Color" })}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              Color
             </label>
             <input
-              id="color"
-              placeholder={t("createBoats.colorPlaceholder", {
-                defaultValue: "Color",
-              })}
+              placeholder="e.g. Blue"
               value={formData.color}
               onChange={(e) =>
                 setFormData({ ...formData, color: e.target.value })
               }
-              className="border-2 border-gray-100 p-3 rounded-xl outline-none"
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold"
+              required
             />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              Gearbox
+            </label>
+            <select
+              value={formData.transmission}
+              onChange={(e) =>
+                setFormData({ ...formData, transmission: e.target.value })
+              }
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold"
+            >
+              <option value="">Select</option>
+              {GEARBOX_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="region"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createBoats.region", { defaultValue: "Gobol / Region" })}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Description
+            </label>
+            <textarea
+              placeholder="Describe your boat..."
+              rows={5}
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Region
             </label>
             <select
               value={formData.region}
               onChange={(e) =>
                 setFormData({ ...formData, region: e.target.value, city: "" })
               }
-              id="region"
-              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none"
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
+              required
             >
-              <option value="">
-                {t("createBoats.selectRegion", { defaultValue: "Dooro Gobol" })}
-              </option>
+              <option value="">Select Region</option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {i18n.language === "so" ? (r as any).so || r.name : r.name}
+                  {i18n.language === "so" ? r.so || r.name : r.name}
                 </option>
               ))}
             </select>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="city"
-              className="text-xs font-bold text-gray-400 ml-2"
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+            City
+          </label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowCityDropdown(!showCityDropdown)}
+              disabled={!formData.region}
+              className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
             >
-              {t("createBoats.city", { defaultValue: "Magaalo / City" })}
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                id="city"
-                onClick={() => setShowCityDropdown((s) => !s)}
-                disabled={!formData.region}
-                className="w-full text-left border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none flex items-center justify-between"
-              >
-                <span>
-                  {showNewCityInputs
-                    ? t("createBoats.addingCity", {
-                        defaultValue: "Adding city...",
-                      })
-                    : formData.city ||
-                      t("createBoats.selectCity", {
-                        defaultValue: "Dooro Magaalo",
-                      })}
-                </span>
-                <span className="text-gray-400">▾</span>
-              </button>
-
-              {showCityDropdown && (
-                <div
-                  className={`absolute z-30 left-0 right-0 mt-2 bg-white border rounded-xl shadow max-h-56 overflow-auto ${!formData.region ? "hidden" : ""}`}
+              {showNewCityInputs
+                ? "Adding city..."
+                : formData.city || "Select City"}
+              <span>▾</span>
+            </button>
+            {showCityDropdown && (
+              <div className="absolute z-30 left-0 right-0 mt-2 bg-white border rounded-2xl shadow-xl max-h-56 overflow-auto">
+                {filteredCities.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, city: c.name });
+                      setShowCityDropdown(false);
+                      setShowNewCityInputs(false);
+                    }}
+                    className="w-full text-left p-4 hover:bg-blue-50 font-bold border-b last:border-0"
+                  >
+                    {i18n.language === "so" ? c.so || c.name : c.name}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewCityInputs(true);
+                    setShowCityDropdown(false);
+                  }}
+                  className="w-full text-left p-4 text-blue-600 font-black text-xs"
                 >
-                  {filteredCities.length === 0 ? (
-                    <div className="p-3 text-sm text-gray-500">
-                      {t("createBoats.noCities", {
-                        defaultValue: "Ma jiraan magaalooyin",
-                      })}
-                    </div>
-                  ) : (
-                    filteredCities.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, city: c.name });
-                          setShowCityDropdown(false);
-                        }}
-                        className="w-full text-left p-3 hover:bg-gray-50 flex flex-col"
-                      >
-                        <span className="font-medium text-gray-800">
-                          {i18n.language === "so"
-                            ? (c as any).so || (c as any).nameSo || c.name
-                            : c.name}
-                        </span>
-                        {i18n.language !== "so" &&
-                        ((c as any).so || (c as any).nameSo) ? (
-                          <span className="text-xs text-gray-500">
-                            {(c as any).so || (c as any).nameSo}
-                          </span>
-                        ) : null}
-                      </button>
-                    ))
-                  )}
-
-                  <div className="p-2 border-t">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowNewCityInputs(true);
-                        setShowCityDropdown(false);
-                      }}
-                      className="w-full text-left p-3 text-blue-600 font-bold"
-                    >
-                      {t("createBoats.addAnotherCity", {
-                        defaultValue: "+ Magaalo kale",
-                      })}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                  + ADD NEW CITY
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {showNewCityInputs && (
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="newCity"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createBoats.newCityPlaceholder", {
-                defaultValue: "Enter new city name",
-              })}
-            </label>
-            <input
-              id="newCity"
-              placeholder={t("createBoats.newCityPlaceholder", {
-                defaultValue: "Enter new city name",
-              })}
-              value={newCity}
-              onChange={(e) => setNewCity(e.target.value)}
-              className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl animate-pulse outline-none"
-            />
-          </div>
+          <input
+            placeholder="Enter new city name"
+            value={newCity}
+            onChange={(e) => setNewCity(e.target.value)}
+            className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
+          />
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="price"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createBoats.price", { defaultValue: "Price ($)" })}
-            </label>
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+            Price ($)
+          </label>
+          <div className="relative">
+            <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
             <input
-              id="price"
               type="number"
-              placeholder={t("createBoats.pricePlaceholder", {
-                defaultValue: "Price ($)",
-              })}
               value={formData.price}
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              className="border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none font-bold text-blue-600 focus:border-blue-400"
+              className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500"
+              required
             />
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="description"
-            className="text-xs font-bold text-gray-400 ml-2"
-          >
-            {t("createBoats.descriptionLabel", { defaultValue: "Description" })}
-          </label>
-          <textarea
-            id="description"
-            placeholder={t("createBoats.descriptionPlaceholder", {
-              defaultValue: "More details...",
-            })}
-            rows={4}
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            className="w-full border-2 border-gray-100 bg-gray-50 p-3 rounded-xl outline-none focus:border-blue-400"
+        <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
+          <ImageUpload
+            images={images}
+            onAdd={addImages}
+            onRemove={removeImage}
+            label={t("createMotorcycle.upload")}
           />
-        </div>
-
-        <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl">
-          <div className="flex flex-wrap gap-4">
-            <label className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
-              <FaShip className="text-2xl text-gray-300" />
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                className="hidden"
-                onChange={(e) =>
-                  e.target.files &&
-                  setImages([...images, ...Array.from(e.target.files)])
-                }
-              />
-            </label>
-            {images.map((img, i) => (
-              <div
-                key={i}
-                className="relative w-20 h-20 flex items-center justify-center"
-              >
-                <div className="w-full h-full flex items-center justify-center rounded-2xl bg-gray-50 text-blue-600">
-                  <FaShip size={28} />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setImages(images.filter((_, idx) => idx !== i))
-                  }
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
 
         <button
           type="submit"
-          disabled={loading}
-          className={`relative w-full py-4 rounded-2xl text-white font-black text-lg transition-all ${loading ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:scale-95"}`}
+          disabled={isLoading}
+          className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-gray-200 flex items-center justify-center"
         >
-          <span className={loading ? "invisible block" : "block"}>
-            {t("createBoats.submit", { defaultValue: "Gudbi Xayeysiiska" })}
-          </span>
-          {loading && (
-            <span className="absolute inset-0 flex items-center justify-center">
-              <Loading />
-            </span>
+          {isLoading ? (
+            <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" />
+          ) : (
+            t("createMotorcycle.submit")
           )}
         </button>
       </form>
     </div>
   );
-};
-
-export default BoatForSellAndBuy;
+}

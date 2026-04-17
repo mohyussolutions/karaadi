@@ -12,16 +12,15 @@ export default function Pagination({
   onSeeMore,
   loading,
 }: SeeMorePaginationProps) {
-  if (!hasMore) return null;
+  if (!hasMore || loading) return null;
 
   return (
     <div className="flex justify-center mt-8">
       <button
         onClick={onSeeMore}
-        disabled={loading}
-        className="flex items-center justify-center h-12 min-w-[140px] px-6 rounded-lg border bg-blue-600 text-white font-bold hover:bg-blue-700 transition disabled:opacity-50"
+        className="flex items-center justify-center h-12 min-w-[140px] px-6 rounded-lg border bg-[#06069c] text-white font-bold hover:bg-[#06069c] transition"
       >
-        {loading ? <LoginLoading /> : "See more"}
+        See more
       </button>
     </div>
   );

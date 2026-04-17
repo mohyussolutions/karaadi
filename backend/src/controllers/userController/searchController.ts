@@ -1,41 +1,40 @@
 import prisma from "../../core/utils/db.ts";
 import cacheManager from "../../services/redisserver/cacheManager.ts";
 import { Request, Response } from "express";
-import { CACHE_TTL, CACHE_KEYS } from "../../constants/config.constants.ts";
-
-interface SearchResultItem {
-  id: string;
-  title: string;
-  description: string;
-  city: string;
-  region: string;
-  createdAt: Date;
-  price?: number;
-  salary?: number;
-  [key: string]: any;
-}
+import { CACHE_TTL, CACHE_KEYS } from "../../config/config.constants.ts";
+import { SearchResultItem } from "../../types/index.ts";
 
 export const globalSearch = async (req: Request, res: Response) => {
   const { q } = req.query;
   if (!q || typeof q !== "string") return res.json([]);
 
-  const queryStr = q.trim();
+  const queryStr = String(q).trim();
   if (!queryStr) return res.json([]);
 
+  const rawKeywords = queryStr.split(/[\s,]+/).map((w) =>
+    String(w)
+      .trim()
+      .replace(/[^\w\u00C0-\u024f-]/g, ""),
+  );
+  const keywords = Array.from(new Set(rawKeywords.filter(Boolean))).slice(0, 8);
+
   const cacheKey = CACHE_KEYS.SEARCH_RESULTS
-    ? CACHE_KEYS.SEARCH_RESULTS(queryStr.toLowerCase())
-    : `search:${queryStr.toLowerCase()}`;
+    ? CACHE_KEYS.SEARCH_RESULTS(keywords.join("+"))
+    : `search:${keywords.join("+")}`;
   const searchTTL = CACHE_TTL.SEARCH || 120;
 
+  const RESULTS_PER_TABLE = 20;
+
   try {
-    await cacheManager.connect?.();
+    const cached = await cacheManager.get<SearchResultItem[]>(cacheKey);
+    if (cached) return res.json(cached);
 
-    const cachedResults = await cacheManager.get(cacheKey);
-    if (cachedResults) return res.json(cachedResults);
-
-    const keywords = queryStr.split(" ").filter(Boolean);
-    const searchPrice = keywords.find((word) => !isNaN(Number(word)));
-    const priceValue = searchPrice ? Number(searchPrice) : null;
+    const searchPriceWord = keywords.find(
+      (word) => !isNaN(Number(String(word).replace(/,/g, ""))),
+    );
+    const priceValue = searchPriceWord
+      ? Number(String(searchPriceWord).replace(/,/g, ""))
+      : null;
     const mode = "insensitive";
 
     const [market, real, cars, boats, motos, farmequipments, jobs] =
@@ -58,6 +57,8 @@ export const globalSearch = async (req: Request, res: Response) => {
               ],
             })),
           },
+          take: RESULTS_PER_TABLE,
+          orderBy: { createdAt: "desc" },
         }),
         prisma.realEstate.findMany({
           where: {
@@ -77,6 +78,8 @@ export const globalSearch = async (req: Request, res: Response) => {
               ],
             })),
           },
+          take: RESULTS_PER_TABLE,
+          orderBy: { createdAt: "desc" },
         }),
         prisma.car.findMany({
           where: {
@@ -97,6 +100,8 @@ export const globalSearch = async (req: Request, res: Response) => {
               ],
             })),
           },
+          take: RESULTS_PER_TABLE,
+          orderBy: { createdAt: "desc" },
         }),
         prisma.boat.findMany({
           where: {
@@ -117,6 +122,8 @@ export const globalSearch = async (req: Request, res: Response) => {
               ],
             })),
           },
+          take: RESULTS_PER_TABLE,
+          orderBy: { createdAt: "desc" },
         }),
         prisma.motorcycle.findMany({
           where: {
@@ -137,6 +144,8 @@ export const globalSearch = async (req: Request, res: Response) => {
               ],
             })),
           },
+          take: RESULTS_PER_TABLE,
+          orderBy: { createdAt: "desc" },
         }),
         prisma.farmequipment.findMany({
           where: {
@@ -157,6 +166,8 @@ export const globalSearch = async (req: Request, res: Response) => {
               ],
             })),
           },
+          take: RESULTS_PER_TABLE,
+          orderBy: { createdAt: "desc" },
         }),
         prisma.job.findMany({
           where: {
@@ -170,6 +181,8 @@ export const globalSearch = async (req: Request, res: Response) => {
               ],
             })),
           },
+          take: RESULTS_PER_TABLE,
+          orderBy: { createdAt: "desc" },
         }),
       ]);
 
@@ -186,7 +199,11 @@ export const globalSearch = async (req: Request, res: Response) => {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-    await cacheManager.set(cacheKey, results, searchTTL);
+    try {
+      await cacheManager.set(cacheKey, results, searchTTL);
+    } catch (cacheErr) {
+      console.warn("Search cache set failed:", cacheErr);
+    }
     res.json(results);
   } catch (error) {
     console.error("Search API Error:", error);

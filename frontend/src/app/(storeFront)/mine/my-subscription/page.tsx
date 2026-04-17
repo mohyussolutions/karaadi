@@ -1,16 +1,17 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getMySubscriptions,
   deleteSubscriptionAdmin,
 } from "@/actions/categories/subscriptionsActions";
 import { useRouter } from "next/navigation";
-import { verifySession } from "@/actions/core/authAction";
+import { useAuth } from "@/context/AuthContext";
 
 interface Subscription {
-  id: string;
+  id?: string;
   title: string;
   category: string;
   region: string;
@@ -25,35 +26,33 @@ interface Subscription {
 
 function Mysubscription() {
   const { t } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const router = useRouter();
 
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptions = useCallback(async () => {
     try {
-      const user = await verifySession();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
       const result = await getMySubscriptions();
-      setSubscriptions(result || []);
+      setSubscriptions((result as Subscription[]) || []);
       setError(null);
     } catch (err) {
-      if (err instanceof Error && err.message.includes("401")) {
-        router.push("/login");
-      } else {
-        setError(
-          t("mine.subscriptions.errorLoading", "Error loading subscriptions"),
-        );
-      }
+      setError(
+        t("mine.subscriptions.errorLoading", "Error loading subscriptions"),
+      );
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+    if (!authLoading) {
+      if (!user) {
+        router.push("/login");
+      } else {
+        fetchSubscriptions();
+      }
+    }
+  }, [user, authLoading, router, fetchSubscriptions]);
 
   const handlePayment = (subscriptionId: string) => {
     setProcessingId(subscriptionId);
@@ -77,7 +76,6 @@ function Mysubscription() {
       await deleteSubscriptionAdmin(subscriptionId);
       await fetchSubscriptions();
     } catch (error) {
-      console.error("Delete failed:", error);
       alert(
         t("mine.subscriptions.deleteFailed", "Failed to delete subscription"),
       );
@@ -90,6 +88,8 @@ function Mysubscription() {
     if (!expiryDate) return false;
     return new Date(expiryDate) < new Date();
   };
+
+  if (authLoading) return null;
 
   return (
     <div className="container mx-auto p-4">
@@ -112,13 +112,14 @@ function Mysubscription() {
         </p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {subscriptions.map((sub) => {
+          {subscriptions.map((sub, index) => {
             const expired = isExpired(sub.expiryDate);
             const needsPayment = !sub.isPaid || expired;
+            const subId = sub.id || `temp-${index}`;
 
             return (
               <div
-                key={sub.id}
+                key={subId}
                 className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white"
               >
                 <div className="flex justify-between items-start mb-3">
@@ -181,9 +182,9 @@ function Mysubscription() {
                   </div>
 
                   <div className="flex gap-2">
-                    {needsPayment && (
+                    {needsPayment && sub.id && (
                       <button
-                        onClick={() => handlePayment(sub.id)}
+                        onClick={() => handlePayment(sub.id!)}
                         disabled={processingId === sub.id}
                         className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm transition font-medium disabled:opacity-50"
                       >
@@ -193,13 +194,15 @@ function Mysubscription() {
                       </button>
                     )}
 
-                    <button
-                      onClick={() => handleDelete(sub.id)}
-                      disabled={processingId === sub.id}
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md text-sm transition font-medium disabled:opacity-50"
-                    >
-                      {t("mine.subscriptions.delete", "Delete")}
-                    </button>
+                    {sub.id && (
+                      <button
+                        onClick={() => handleDelete(sub.id!)}
+                        disabled={processingId === sub.id}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md text-sm transition font-medium disabled:opacity-50"
+                      >
+                        {t("mine.subscriptions.delete", "Delete")}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import dotenv from "dotenv";
-dotenv.config();
 
 export const handleHageChat = async (req: Request, res: Response) => {
   const { message, city, maxPrice, category } = req.body;

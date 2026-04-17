@@ -21,6 +21,7 @@ export const createFarmequipmentSchema = z.object({
   userId: z.string().optional(),
   planId: z.string().optional(),
   planAmount: z.number().optional(),
+  isPaid: z.boolean().optional(),
 });
 
 export const updateFarmequipmentSchema = createFarmequipmentSchema.partial();

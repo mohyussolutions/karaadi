@@ -1,9 +1,9 @@
 "use client";
 
-import { verifySession } from "@/actions/core/authAction";
 import { sendChatMessage } from "@/actions/sockets/hageAction";
 import { useState, useRef, useEffect } from "react";
 import { IoChatbubbles } from "react-icons/io5";
+import { useAuth } from "@/context/AuthContext";
 
 interface AIChatMessage {
   id: number;
@@ -12,11 +12,11 @@ interface AIChatMessage {
 }
 
 export default function AIChatPopup() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -24,13 +24,7 @@ export default function AIChatPopup() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const session = await verifySession();
-      setIsLoggedIn(!!session?._id);
-    };
-    checkSession();
-  }, []);
+  const isLoggedIn = !!user?._id;
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target instanceof HTMLElement && e.target.closest("button, input")) {
@@ -80,26 +74,35 @@ export default function AIChatPopup() {
   const handleSend = async () => {
     if (!input.trim() || loading || !isLoggedIn) return;
 
-    const userMsg = { id: Date.now(), content: input, fromAI: false };
+    const userMsg: AIChatMessage = {
+      id: Date.now(),
+      content: input,
+      fromAI: false,
+    };
     setMessages((prev) => [...prev, userMsg]);
     const currentInput = input;
     setInput("");
     setLoading(true);
 
-    const result = await sendChatMessage(currentInput);
+    try {
+      const result = await sendChatMessage(currentInput);
 
-    if (result.reply) {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, content: result.reply, fromAI: true },
+        {
+          id: Date.now() + 1,
+          content: result.reply || result.error || "Error occurred",
+          fromAI: true,
+        },
       ]);
-    } else {
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, content: result.error, fromAI: true },
+        { id: Date.now() + 1, content: "Service unavailable", fromAI: true },
       ]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

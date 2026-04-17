@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -9,23 +10,8 @@ import {
   getFavoriteById,
   removeFavorite,
 } from "@/actions/categories/favoriteAction";
-import { FavoriteItem } from "@/app/utils/types/favorite";
-
-const ROUTE_MAP: Record<string, string> = {
-  cars: "vehicles",
-  boats: "vehicles",
-  motorcycles: "vehicles",
-  farmequipment: "farmequipment",
-  traktor: "farmequipment",
-  tractor: "farmequipment",
-  vehicle: "vehicles",
-  "real-estate": "real-estate",
-  property: "real-estate",
-  jobs: "jobs",
-  careers: "jobs",
-  marketplace: "item-details",
-  "item-details": "item-details",
-};
+import { FavoriteItem } from "../types/favorite.types";
+import { getCategoryRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
 
 const FavoriteDetailPage = () => {
   const params = useParams();
@@ -44,8 +30,12 @@ const FavoriteDetailPage = () => {
         if (!id) return;
         const data = await getFavoriteById(id);
         setFavorite(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to load favorite");
+      } catch (err) {
+        const msg =
+          err && typeof err === "object" && "message" in err
+            ? String((err as { message?: unknown }).message)
+            : String(err);
+        setError(msg || "Failed to load favorite");
       } finally {
         setLoading(false);
       }
@@ -53,38 +43,8 @@ const FavoriteDetailPage = () => {
     fetchFavorite();
   }, [id]);
 
-  const getCommonLink = (category: string, itemId: string) => {
-    const cat = category.toLowerCase().trim();
-
-    if (
-      cat.includes("real") ||
-      cat.includes("estate") ||
-      cat.includes("property")
-    ) {
-      return `/real-estate/${itemId}`;
-    }
-    if (
-      cat.includes("car") ||
-      cat.includes("veh") ||
-      cat.includes("boat") ||
-      cat.includes("motor")
-    ) {
-      return `/vehicles/${itemId}`;
-    }
-    if (cat.includes("job") || cat.includes("career")) {
-      return `/jobs/${itemId}`;
-    }
-    if (
-      cat.includes("farm") ||
-      cat.includes("traktor") ||
-      cat.includes("tractor")
-    ) {
-      return `/vehicles/${itemId}`;
-    }
-
-    const segment = ROUTE_MAP[cat] || "item-details";
-    return `/${segment}/${itemId}`;
-  };
+  const getLink = (category: string, itemId: string) =>
+    `/${getCategoryRoute(category)}/${itemId}`;
 
   const handleDelete = async () => {
     if (!confirm("Ma hubtaa inaad tirtirto alaabtan?")) return;
@@ -92,8 +52,12 @@ const FavoriteDetailPage = () => {
       setDeleting(true);
       await removeFavorite(id);
       router.push("/mine/favorites");
-    } catch (err: any) {
-      alert(err.message || "Cillad ayaa dhacday");
+    } catch (err) {
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: unknown }).message)
+          : String(err);
+      alert(msg || "Cillad ayaa dhacday");
       setDeleting(false);
     }
   };
@@ -162,9 +126,11 @@ const FavoriteDetailPage = () => {
               </h1>
 
               <div className="flex items-baseline gap-4 mb-8">
-                <span className="text-4xl font-bold text-gray-900">
-                  ${parseFloat(favorite.price || "0").toLocaleString()}
-                </span>
+                <p className="text-gray-900 font-bold">
+                  {favorite.createdAt
+                    ? new Date(favorite.createdAt).toLocaleDateString()
+                    : "Unknown date"}
+                </p>
                 <span className="text-gray-400 font-medium italic">
                   Available now
                 </span>
@@ -220,7 +186,7 @@ const FavoriteDetailPage = () => {
               <button
                 onClick={() => {
                   const path = favorite?.itemId
-                    ? getCommonLink(favorite.category ?? "", favorite.itemId)
+                    ? getLink(favorite.category ?? "", favorite.itemId)
                     : "/";
                   router.push(path);
                 }}

@@ -2,179 +2,196 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { FiRefreshCw } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 import {
   fetchNotifications,
   markNotificationAsRead,
   deleteNotification,
 } from "@/actions/core/notificationsAction";
-import { verifySession } from "@/actions/core/authAction";
-import NotificationCard from "../../components/Cards/NotificationCard";
+import NotificationCard from "@/app/(storeFront)/components/Cards/NormalCards/NotificationCard";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { useAuth } from "@/context/AuthContext";
+import { getCategoryRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
+import Pagination from "@/app/(storeFront)/components/shared/Pagination";
+
+const PAGE_SIZE = 20;
 
 const NotificationsComponent = () => {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"unread" | "all">("unread");
-  const [userId, setUserId] = useState<string | null>(null);
-
-  const formatTime = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    const { t } = i18nRef.current;
-    if (mins < 1)
-      return t("notifications.time.justNow", { defaultValue: "Just now" });
-    if (mins < 60)
-      return `${mins}${t("notifications.time.minutesSuffix", { defaultValue: "m ago" })}`;
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 24)
-      return `${hours}${t("notifications.time.hoursSuffix", { defaultValue: "h ago" })}`;
-    return `${Math.floor(diff / 86400000)}${t("notifications.time.daysSuffix", { defaultValue: "d ago" })}`;
-  };
-
-  const i18nRef = React.useRef<any>({ t: (k: string, o?: any) => k });
   const { t, i18n } = useTranslation();
-  React.useEffect(() => {
-    i18nRef.current = { t: i18n.t.bind(i18n) };
-  }, [i18n]);
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
-  const getItemLink = (n: any) => {
-    const type = n.itemType?.toLowerCase();
-    const links: Record<string, string> = {
-      marketplace: `/item-details/${n.itemId}`,
-      car: `/vehicles/${n.itemId}`,
-      realestate: `/real-estate/${n.itemId}`,
-      boat: `/vehicles/${n.itemId}`,
-      motorcycle: `/vehicles/${n.itemId}`,
-    };
-    return links[type] || `/listings/${n.itemId}`;
-  };
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
+  const [activeTab, setActiveTab] = useState<"unread" | "all">("unread");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const loadNotifications = useCallback(async (id: string) => {
-    setLoading(true);
+  const loadNotifications = useCallback(async (userId: string) => {
+    if (!userId) return;
+    setIsFetching(true);
     try {
-      const response = await fetchNotifications(id);
+      const response = await fetchNotifications(userId);
       const data = Array.isArray(response) ? response : [];
       setNotifications(
         data.map((n: any) => ({
           ...n,
-          id: n.id || n._id,
+          id: n.id || n._id || "",
           isSubscriptionAlert: n.category === "subscription_alert",
           isUrgent: n.category === "subscription_alert" && !n.isRead,
           priority: n.category === "subscription_alert" ? 1 : 0,
         })),
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setNotifications([]);
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
   }, []);
 
   useEffect(() => {
-    verifySession().then((user) => {
-      if (user?._id) {
-        setUserId(user._id);
-        loadNotifications(user._id);
+    if (!authLoading) {
+      if (!user) {
+        router.replace("/login?redirect=/notifications");
       } else {
-        setLoading(false);
+        loadNotifications(user._id || user._id);
       }
-    });
-  }, [loadNotifications]);
+    }
+  }, [user, authLoading, router, loadNotifications]);
+
+  const formatTime = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return i18n.t("notifications.time.justNow") || "Hadda";
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(diff / 3600000);
+    if (hours < 24) return `${hours}h`;
+    return `${Math.floor(diff / 86400000)}d`;
+  };
+
+  const getItemLink = (n: any) =>
+    `/${getCategoryRoute(n.itemType)}/${n.itemId}`;
 
   const handleMarkAsRead = async (id: string) => {
-    if (!id) return;
     try {
       await markNotificationAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === id || n._id === id
-            ? { ...n, isRead: true, isUrgent: false }
-            : n,
-        ),
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
-    } catch (err) {
-      console.error(err);
-    }
+    } catch {}
   };
 
   const handleDelete = async (id: string) => {
-    if (!id) return;
     try {
       await deleteNotification(id);
-      setNotifications((prev) =>
-        prev.filter((n) => n.id !== id && n._id !== id),
-      );
-    } catch (err) {
-      console.error(err);
-    }
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch {}
   };
 
   const filtered = notifications
     .filter((n) => (activeTab === "unread" ? !n.isRead : true))
     .sort(
       (a, b) =>
-        b.priority - a.priority ||
+        (b.priority ?? 0) - (a.priority ?? 0) ||
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
-  const allCount = notifications.length;
 
-  if (!userId && !loading) return null;
+  const visibleFiltered = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + PAGE_SIZE);
+      setLoadingMore(false);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeTab]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <header className="border-b px-6 py-5 shrink-0 flex justify-between items-center">
-        <h1 className="text-xl font-black uppercase tracking-tight">
-          {t("notifications.title", { defaultValue: "Notifications" })}
+    <div className="flex flex-col min-h-screen font-sans">
+      <header className="sticky top-0 z-20 border-b bg-white px-4 py-4 md:px-6 md:py-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+        <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-zinc-900">
+          Ogeysiisyo
         </h1>
-        <div className="flex gap-2">
+        <div className="flex w-full sm:w-auto gap-2">
           <button
             onClick={() => setActiveTab("unread")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1 ${activeTab === "unread" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"}`}
+            className={`flex-1 sm:flex-none px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full transition-all border ${
+              activeTab === "unread"
+                ? "shadow-md border-zinc-900 text-white bg-zinc-900"
+                : "border-zinc-200 text-zinc-500 bg-white hover:bg-zinc-50"
+            }`}
           >
-            {t("notifications.tabs.unread", { defaultValue: "Unread" })}{" "}
-            {unreadCount > 0 && `(${unreadCount})`}
+            Aan la akhriyin ({unreadCount})
           </button>
           <button
             onClick={() => setActiveTab("all")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1 ${activeTab === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"}`}
+            className={`flex-1 sm:flex-none px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full transition-all border ${
+              activeTab === "all"
+                ? "shadow-md border-zinc-900 text-white bg-zinc-900"
+                : "border-zinc-200 text-zinc-500 bg-white hover:bg-zinc-50"
+            }`}
           >
-            {t("notifications.tabs.all", { defaultValue: "All" })}{" "}
-            {allCount > 0 && `(${allCount})`}
+            Dhamaan
           </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
         <div className="max-w-4xl mx-auto">
-          {filtered.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-400 text-sm font-medium">
+          {isFetching ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loading />
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                Loading...
+              </p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-2xl border border-zinc-100 shadow-sm">
+              <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest px-4">
                 {activeTab === "unread"
-                  ? t("notifications.empty.unread", {
-                      defaultValue: "No unread notifications",
-                    })
-                  : t("notifications.empty.all", {
-                      defaultValue: "No notifications yet",
-                    })}
+                  ? "Ma jiraan ogeysiisyo cusub"
+                  : "Ma jiraan wax ogeysiisyo ah"}
               </p>
             </div>
           ) : (
-            <div className="grid gap-3">
-              {filtered.map((n) => (
-                <NotificationCard
-                  key={n.id || n._id}
-                  notification={n}
-                  formatTime={formatTime}
-                  getItemLink={getItemLink}
-                  onMarkRead={handleMarkAsRead}
-                  onDelete={handleDelete}
-                  isSubscriptionAlert={n.isSubscriptionAlert}
-                  isUrgent={n.isUrgent}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-3">
+                {visibleFiltered.map((n) => (
+                  <NotificationCard
+                    key={n.id || n._id}
+                    notification={n}
+                    formatTime={formatTime}
+                    getItemLink={getItemLink}
+                    onMarkRead={handleMarkAsRead}
+                    onDelete={handleDelete}
+                    isSubscriptionAlert={n.isSubscriptionAlert}
+                    isUrgent={n.isUrgent}
+                  />
+                ))}
+              </div>
+              <Pagination
+                hasMore={hasMore}
+                loading={loadingMore}
+                onSeeMore={handleLoadMore}
+              />
+            </>
           )}
         </div>
       </main>

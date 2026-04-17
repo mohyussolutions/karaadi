@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 interface SaveFavoriteModelProps {
-  onConfirm: () => Promise<void>; // Updated to handle the async call
+  onConfirm: () => Promise<void>;
   onCancel: () => void;
   backgroundImage?: any;
 }

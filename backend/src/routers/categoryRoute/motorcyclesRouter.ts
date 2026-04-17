@@ -1,3 +1,4 @@
+import { updateMotorcyclePayment } from "../../controllers/categoryController/motorcyclesController.ts";
 import { Router } from "express";
 import { validateRequest } from "src/core/middelware/validateRequest.ts";
 import { createMotorcycleSchema } from "../../validation/motorcycles.validation.ts";
@@ -42,13 +43,20 @@ motorcyclesRoutes.post(
   createMotorcycle,
 );
 
+motorcyclesRoutes.delete("/:id", ProtectRoute, deleteMotorcycle);
+
 motorcyclesRoutes.patch(
+  "/:id/payment",
+  ProtectRoute,
+  adminAndManager,
+  updateMotorcyclePayment,
+);
+
+motorcyclesRoutes.put(
   "/:id",
   ProtectRoute,
   validateRequest(createMotorcycleSchema),
   updateMotorcycle,
 );
-
-motorcyclesRoutes.delete("/:id", ProtectRoute, deleteMotorcycle);
 
 export default motorcyclesRoutes;

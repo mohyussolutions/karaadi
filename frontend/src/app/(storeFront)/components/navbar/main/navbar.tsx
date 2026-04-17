@@ -1,55 +1,33 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import NavItems from "./MainLinks";
-import { User } from "@/app/utils/types/user";
-import { verifySession } from "@/actions/core/authAction";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const pathname = usePathname();
-
-  const checkSession = useCallback(async () => {
-    try {
-      const userData = await verifySession();
-      if (userData) {
-        setUser({
-          ...userData,
-          profileImage:
-            userData.profileImage === null ? undefined : userData.profileImage,
-        });
-      } else {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkSession();
-  }, [checkSession]);
+  const { user, loading } = useAuth();
 
   return (
-    <nav className="border-b bg-white sticky top-0 z-50 border-gray-400">
-      <div className="flex justify-between items-center max-w-5xl mx-auto px-3 h-14">
-        <Link prefetch={false} href="/" className="flex items-center">
-          <div className="flex items-center justify-center w-auto h-14 overflow-hidden">
-            <Image
-              src="/logo.jpg"
-              alt="Karaadi Logo"
-              width={120}
-              height={50}
-              className="object-contain"
-              priority
-            />
-          </div>
+    <nav className="fixed top-0 left-0 w-full z-[9999] bg-white border-b border-gray-200 pointer-events-auto">
+      <div
+        className="flex justify-between items-center max-w-[64.5rem] w-full mx-auto px-4 md:px-6"
+        style={{ height: "48px" }}
+      >
+        <Link href="/" className="flex items-center shrink-0">
+          <Image
+            src="/logo.jpg"
+            alt="Logo"
+            width={110}
+            height={36}
+            className="object-contain w-auto h-8"
+            priority
+          />
         </Link>
 
-        <NavItems user={user} />
+        <div className="flex items-center gap-1">
+          <NavItems user={user as any} authLoading={loading} />
+        </div>
       </div>
     </nav>
   );

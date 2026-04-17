@@ -1,0 +1,38 @@
+model Advertisement {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  imageUrl    String
+  link        String
+  buttonText  String?   @default("Learn More")
+  isActive    Boolean   @default(true)
+  position    String    @default("general")
+  priority    Int       @default(1)
+  startDate   DateTime?
+  endDate     DateTime?
+  clicks      Int       @default(0)
+  views       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([position])
+  @@index([isActive])
+  @@index([priority])
+  @@index([userId])
+}
+
+model Agency {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String
+  location  String
+  specialty String
+  status    String   @default("Verified")
+  image     String
+  link      String?
+  createdAt DateTime @default(now())
+  users     User[]   @relation("UserAgencies")
+}

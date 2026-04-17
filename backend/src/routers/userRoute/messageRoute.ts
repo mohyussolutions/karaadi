@@ -12,6 +12,7 @@ import {
   getMessageReplies,
 } from "../../controllers/userController/messageController.ts";
 import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+ProtectRoute;
 
 const messageRoutes = express.Router();
 

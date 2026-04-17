@@ -1,81 +1,100 @@
-import { apiUrlsForAds } from "../constant/constant";
+"use server";
 
-export const getMyAds = async (accessToken?: string) => {
-  const headers: any = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
+import { Ad } from "@/app/utils/types/ads";
+import { ADS_ENDPOINTS } from "../constant/constant";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+const auth = (t?: string) => getAuthHeaders(t) as Promise<HeadersInit>;
 
-  const res = await fetch(apiUrlsForAds.MY_ADS, {
-    method: "GET",
-    headers,
-    credentials: "include",
-    cache: "no-store",
-    next: { revalidate: 0 },
-  });
-
-  if (res.status === 401) throw new Error("Unauthorized. Please login again.");
-  if (!res.ok) throw new Error("Failed to fetch ads");
-
-  const data = await res.json();
-  return data.map((ad: any) => ({
-    id: ad.id || ad._id,
-    title: ad.title,
-    description: ad.description,
-    price: ad.price,
-    maGaday: ad.maGaday,
-    isPaid: ad.isPaid,
-    image: ad.images?.[0] || ad.image,
-    type: ad.type || "marketplace",
-  }));
+export const getMyAds = async (accessToken?: string): Promise<Ad[]> => {
+  try {
+    const res = await fetch(ADS_ENDPOINTS.MY_ADS, {
+      method: "GET",
+      headers: await auth(accessToken),
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const raw = await res.json();
+    return (Array.isArray(raw) ? raw : (raw?.data ?? [])).map((a: any) => ({
+      id: String(a.id ?? a._id ?? ""),
+      title: String(a.title ?? ""),
+      description: String(a.description ?? ""),
+      price: Number(a.price ?? 0),
+      maGaday: !!a.maGaday,
+      isPaid: !!a.isPaid,
+      image: String(a.images?.[0] ?? a.image ?? ""),
+      type: String(a.type ?? "marketplace"),
+    }));
+  } catch {
+    return [];
+  }
 };
 
-export const updateAd = async (id: string, data: Record<string, any>) => {
-  const res = await fetch(`${apiUrlsForAds.UPDATEAds}/${id}`, {
+export const getMyAdById = async (
+  id: string,
+  accessToken?: string,
+): Promise<Ad | null> => {
+  try {
+    const res = await fetch(`${ADS_ENDPOINTS.ADS_BASE}/${id}`, {
+      method: "GET",
+      headers: await auth(accessToken),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const a = await res.json();
+    return {
+      id: String(a.id ?? a._id ?? ""),
+      title: String(a.title ?? ""),
+      description: String(a.description ?? ""),
+      price: Number(a.price ?? 0),
+      maGaday: !!a.maGaday,
+      isPaid: !!a.isPaid,
+      image: String(a.images?.[0] ?? a.image ?? ""),
+      type: String(a.type ?? "marketplace"),
+    } as Ad;
+  } catch {
+    return null;
+  }
+};
+
+export const updateAd = async (id: string, data: Partial<Ad>) => {
+  const res = await fetch(`${ADS_ENDPOINTS.UPDATE}/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    headers: await auth(),
     body: JSON.stringify({
       title: data.title,
       description: data.description,
       price: data.price,
       maGaday: data.maGaday,
     }),
-    cache: "no-store",
   });
-
   const result = await res.json();
-  if (!res.ok) throw new Error(result?.message || "Failed to update ad");
+  if (!res.ok) throw new Error(result?.message || "Error");
   return result;
 };
 
-export const deleteAd = async (id: string) => {
+export const deleteAd = async (id: string): Promise<boolean> => {
   try {
-    const res = await fetch(`${apiUrlsForAds.DELETEAds}/${id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      cache: "no-store",
-    });
-    return res.ok;
+    return (
+      await fetch(`${ADS_ENDPOINTS.DELETE}/${id}`, {
+        method: "DELETE",
+        headers: await auth(),
+      })
+    ).ok;
   } catch {
     return false;
   }
 };
 
-export async function payToRelist(adId: string) {
+export const payToRelist = async (adId: string): Promise<boolean> => {
   try {
-    const response = await fetch(`/api/ads/${adId}/pay-to-relist`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-    });
-    return response.ok;
+    return (
+      await fetch(`${ADS_ENDPOINTS.ADS_BASE}/${adId}/pay-to-relist`, {
+        method: "POST",
+        headers: await auth(),
+      })
+    ).ok;
   } catch {
     return false;
   }
-}
+};

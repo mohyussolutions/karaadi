@@ -1,25 +1,25 @@
-node_modules
-
-# Environment files (do NOT commit real secrets)
+production/
+node_modules/
+/node_modules
+.next/
+out/
+build/
 .env
-.env.*
-
-# Next/Next.js build outputs
-.next
-
-# Logs
+.env*.local
+.env.production
+.env.development
+.env.test
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# OS files
-.DS_Storenode_modules
-.env
-/.env.local
-/.env.development.local
-/.env.test.local
-/.env.production.local
-
-.env.local
-.env.production
-/.env.production
+pnpm-debug.log*
+.vercel
+.vscode/
+.idea/

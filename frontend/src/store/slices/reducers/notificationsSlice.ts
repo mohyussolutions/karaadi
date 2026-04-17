@@ -1,0 +1,45 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  message: string;
+  link: string;
+  read: boolean;
+  createdAt: string;
+}
+
+interface NotificationsState {
+  items: NotificationItem[];
+  unreadCount: number;
+}
+
+const initialState: NotificationsState = {
+  items: [],
+  unreadCount: 0,
+};
+
+const notificationsSlice = createSlice({
+  name: "notifications",
+  initialState,
+  reducers: {
+    addNotification: (state, action: PayloadAction<NotificationItem>) => {
+      state.items.unshift(action.payload);
+      if (!action.payload.read) {
+        state.unreadCount += 1;
+      }
+    },
+    markAllRead: (state) => {
+      state.items = state.items.map((item) => ({ ...item, read: true }));
+      state.unreadCount = 0;
+    },
+    clearNotifications: (state) => {
+      state.items = [];
+      state.unreadCount = 0;
+    },
+  },
+});
+
+export const { addNotification, markAllRead, clearNotifications } =
+  notificationsSlice.actions;
+export default notificationsSlice.reducer;

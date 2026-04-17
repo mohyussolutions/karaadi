@@ -1,21 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { IoIosArrowForward, IoIosArrowBack } from "@/app/utils/icons";
 import Image from "next/image";
-import { toast } from "react-toastify";
-
-import { ImageControls } from "@/app/(storeFront)/components/hooks/useRenderImageControls";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
-import UserCard from "@/app/(storeFront)/components/Cards/UserProfileCard";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
-
-import { verifySession } from "@/actions/core/authAction";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { getRealEstateById } from "@/actions/categories/realEstateActions";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
-import { API_ENDPOINTS } from "@/actions/constant/sockets";
+import { ImageControls } from "@/app/ui/invoices/ImageControls";
+import { useAuth } from "@/context/AuthContext";
+import { MessageSquare, Phone } from "lucide-react";
 
 interface RealEstateItem {
   id: string;
@@ -26,15 +23,7 @@ interface RealEstateItem {
   images: (string | File)[];
   region?: string;
   city?: string;
-  user?:
-    | {
-        id: string;
-        _id?: string;
-        username: string;
-        profileImage?: string;
-        phone?: string;
-      }
-    | string;
+  user?: any;
   bedrooms?: number;
   bathrooms?: number;
   squareFeet?: number;
@@ -43,229 +32,163 @@ interface RealEstateItem {
   userId?: string;
 }
 
-const isValidImageUrl = (url: string | null | undefined): url is string => {
+const isValidImageUrl = (url: any): url is string => {
   return (
     typeof url === "string" &&
-    url.length > 0 &&
     (url.startsWith("http") ||
       url.startsWith("/") ||
-      url.startsWith("data:image"))
+      url.startsWith("data:image") ||
+      url.startsWith("blob:"))
   );
 };
 
 function RealEstateDetails() {
   const router = useRouter();
+  const pathname = usePathname();
   const { id } = useParams<{ id: string }>();
+  const { user: currentUser, loading: authLoading } = useAuth();
 
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [realEstate, setRealEstate] = useState<RealEstateItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
-  const [showFullImage, setShowFullImage] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [messagingLoading, setMessagingLoading] = useState(false);
+  const [showPhone, setShowPhone] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    async function init() {
+      if (!id) return;
       try {
-        const [data, user] = await Promise.all([
-          getRealEstateById(id),
-          verifySession(),
-        ]);
-
-        if (mounted) {
-          if (data) {
-            setRealEstate({
-              ...data,
-              id: data._id || data.id,
-            });
-          }
-          setCurrentUser(user);
+        const data = await getRealEstateById(id);
+        if (data) {
+          setRealEstate({
+            ...data,
+            id:
+              typeof data._id === "string"
+                ? data._id
+                : typeof data.id === "string"
+                  ? data.id
+                  : "",
+            title: data.title ?? "",
+            description: data.description ?? "",
+            price: data.price ?? "",
+            images: data.images ?? [],
+          });
         }
-      } catch (error) {
-        console.error("Initialization failed", error);
+      } catch {
       } finally {
-        if (mounted) setIsLoading(false);
+        setIsLoading(false);
       }
-    })();
-    return () => {
-      mounted = false;
-    };
+    }
+    init();
   }, [id]);
 
-  const getItemUser = () => {
+  const itemUser = useMemo(() => {
     if (!realEstate) return null;
-
-    if (typeof realEstate.user === "object" && realEstate.user !== null) {
+    const u = realEstate.user;
+    if (u && typeof u === "object") {
       return {
-        id: realEstate.user._id || realEstate.user.id || "",
-        username: realEstate.user.username || "Seller",
-        profileImage: realEstate.user.profileImage || null,
-        phone: realEstate.user.phone || null,
+        id: String(u._id || u.id || ""),
+        username: u.username || u.name || "Seller",
+        profileImage: u.profileImage || u.profile_image || null,
+        phone: u.phone || u.phone_number || null,
       };
     }
-
     return {
-      id: realEstate.userId || realEstate.user || "",
+      id: String(realEstate.userId || ""),
       username: "Seller",
       profileImage: null,
       phone: null,
     };
-  };
+  }, [realEstate]);
 
-  const handleSendMessage = async () => {
+  const isOwnItem =
+    !!itemUser &&
+    !!currentUser &&
+    String(itemUser.id) === String(currentUser._id || currentUser.id);
+
+  const handleSendMessage = () => {
     if (!currentUser) {
-      router.push("/login");
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
-
-    const itemUser = getItemUser();
     const finalReceiverId = itemUser?.id || realEstate?.userId;
     const finalItemId = realEstate?.id;
-
-    if (!finalReceiverId || !finalItemId || realEstate?.maGadayn) {
-      if (realEstate?.maGadayn) {
-        toast.warning("This property has been sold");
-      }
-      return;
-    }
-
-    try {
-      const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderId: currentUser._id,
-          receiverId: finalReceiverId,
-          itemId: finalItemId,
-          itemModel: "RealEstate",
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        const chatId = result.chat?.id || result.id;
-        if (chatId) {
-          router.push(`/messages/${chatId}`);
-          return;
-        }
-      }
-      router.push(
-        `/messages?itemId=${finalItemId}&sellerId=${finalReceiverId}`,
-      );
-    } catch {
-      router.push(
-        `/messages?itemId=${finalItemId}&sellerId=${finalReceiverId}`,
-      );
-    }
-  };
-
-  const getThumbSrc = (thumb: string | File): string => {
-    if (typeof thumb === "string") {
-      if (isValidImageUrl(thumb)) return thumb;
-      return "/placeholder.png";
-    }
-    try {
-      return URL.createObjectURL(thumb);
-    } catch {
-      return "/placeholder.png";
-    }
-  };
-
-  const handleHeartClick = () => {
-    if (!currentUser) return router.push("/login");
-    if (realEstate?.maGadayn) return toast.warning("Alaabtan waa la gatay");
-    setShowModal(true);
+    if (!finalReceiverId || !finalItemId || realEstate?.maGadayn) return;
+    setMessagingLoading(true);
+    router.push(`/messages?sellerId=${finalReceiverId}&itemId=${finalItemId}&itemModel=RealEstate`);
   };
 
   const handleModalConfirm = async () => {
     if (!realEstate) return;
+    const firstImage = realEstate.images[0];
+    const imageToSend = typeof firstImage === "string" ? firstImage : "";
     try {
       const response: any = await addToFavorite({
         title: realEstate.title,
         description: realEstate.description,
         price: String(realEstate.price),
-        image:
-          typeof realEstate.images[0] === "string" &&
-          isValidImageUrl(realEstate.images[0] as string)
-            ? (realEstate.images[0] as string)
-            : "",
+        image: imageToSend,
         itemId: realEstate.id,
         category: "RealEstate",
       });
-
-      if (response?.message === "You have already saved this item") {
-        toast.info("Alaabtan mar horre ayaad kaydisay!");
-      } else {
-        toast.success(`"${realEstate.title}" waa la kaydiyay!`);
-        setTimeout(() => router.push("/mine/favorites"), 1200);
-      }
       setShowModal(false);
+      if (!response?.error) {
+        router.push("/mine/favorites");
+      }
     } catch {
-      toast.error("Wuu ku fashilmay kaydinta");
+      setShowModal(false);
     }
   };
 
   const images = useMemo(() => {
-    if (!realEstate?.images) return [];
-    return realEstate.images.filter((img) => {
-      if (typeof img === "string") return isValidImageUrl(img);
-      return true;
-    });
-  }, [realEstate]);
+    return (realEstate?.images || [])
+      .map((img) => (typeof img === "string" ? img : URL.createObjectURL(img)))
+      .filter(isValidImageUrl);
+  }, [realEstate?.images]);
 
-  const selectedImage = images[selectedImageIndex]
-    ? getThumbSrc(images[selectedImageIndex])
-    : "";
-  const itemUser = getItemUser();
-
-  const showPreviousImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === 0 ? images.length - 1 : prev - 1,
+  if (isLoading || authLoading)
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <Loading />
+      </div>
     );
-  };
-
-  const showNextImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === images.length - 1 ? 0 : prev + 1,
-    );
-  };
-
-  if (isLoading) return <div className="min-h-screen bg-white" />;
-
-  if (!realEstate) {
+  if (!realEstate)
     return (
       <div className="p-8 text-center text-red-600 font-bold">
         Listing not found
       </div>
     );
-  }
+
+  const sellerInitial = (itemUser?.username || "S").charAt(0).toUpperCase();
 
   return (
-    <div className="my-12 px-6 min-h-screen">
-      <div className="max-w-7xl mx-auto mb-6 font-mono text-blue-600 text-sm h-5">
+    <div className="my-12 px-6 min-h-screen pb-24 md:pb-0">
+      <div className="max-w-7xl mx-auto mb-6 font-mono text-blue-600 text-sm">
         <p>
-          {realEstate.region ?? ""}, {realEstate.city}
+          {realEstate.region}, {realEstate.city}
         </p>
       </div>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
         <div className="space-y-6">
-          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[700px]">
-            {selectedImage && (
+          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[500px] md:h-[700px]">
+            {images[selectedImageIndex] && (
               <>
                 <Image
-                  src={selectedImage}
+                  src={images[selectedImageIndex]}
                   alt={realEstate.title}
                   fill
                   className={`object-cover cursor-pointer ${realEstate.maGadayn ? "opacity-70" : ""}`}
                   priority
-                  onClick={() => setShowFullImage(true)}
                 />
                 <ImageControls
-                  onHeartClick={handleHeartClick}
-                  onZoomClick={() => setShowFullImage(true)}
+                  onHeartClick={() =>
+                    currentUser ? setShowModal(true) : router.push("/login")
+                  }
+                  onZoomClick={() => {}}
                 />
               </>
             )}
@@ -273,13 +196,21 @@ function RealEstateDetails() {
             {images.length > 1 && (
               <>
                 <button
-                  onClick={showPreviousImage}
+                  onClick={() =>
+                    setSelectedImageIndex((prev) =>
+                      prev === 0 ? images.length - 1 : prev - 1,
+                    )
+                  }
                   className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
                 >
                   <IoIosArrowBack className="w-6 h-6 text-white" />
                 </button>
                 <button
-                  onClick={showNextImage}
+                  onClick={() =>
+                    setSelectedImageIndex((prev) =>
+                      prev === images.length - 1 ? 0 : prev + 1,
+                    )
+                  }
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
                 >
                   <IoIosArrowForward className="w-6 h-6 text-white" />
@@ -289,19 +220,14 @@ function RealEstateDetails() {
           </div>
 
           <div className="flex gap-3 overflow-x-auto py-2 scrollbar-hide">
-            {images.map((thumb, i) => (
+            {images.map((src, i) => (
               <button
                 key={i}
-                type="button"
                 onClick={() => setSelectedImageIndex(i)}
-                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${
-                  selectedImageIndex === i
-                    ? "border-blue-500 scale-105"
-                    : "border-transparent opacity-70 hover:opacity-100"
-                }`}
+                className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all ${selectedImageIndex === i ? "border-blue-500 scale-105" : "opacity-70"}`}
               >
                 <Image
-                  src={getThumbSrc(thumb)}
+                  src={src}
                   alt=""
                   fill
                   className="object-cover"
@@ -313,7 +239,7 @@ function RealEstateDetails() {
         </div>
 
         <div className="space-y-8 pr-4">
-          <div className="space-y-4">
+          <div className="space-y-3">
             <GoBackBtn />
             <h1 className="text-4xl font-extrabold text-gray-900 leading-tight">
               {realEstate.title}
@@ -323,11 +249,65 @@ function RealEstateDetails() {
             </p>
           </div>
 
+          {!isOwnItem && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {itemUser?.profileImage && !avatarError ? (
+                    <img
+                      src={itemUser.profileImage}
+                      alt={itemUser.username || "Seller"}
+                      className="w-full h-full object-cover"
+                      onError={() => setAvatarError(true)}
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-lg leading-none">
+                      {sellerInitial}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 text-base leading-tight">
+                    {itemUser?.username || "Seller"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">Active seller</p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSendMessage}
+                disabled={realEstate.maGadayn || messagingLoading}
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all active:scale-[0.99] ${
+                  realEstate.maGadayn
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : messagingLoading
+                    ? "bg-blue-400 text-white cursor-wait"
+                    : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-100"
+                }`}
+              >
+                <MessageSquare size={17} />
+                {realEstate.maGadayn
+                  ? "Item sold"
+                  : messagingLoading
+                  ? "Opening…"
+                  : "Send Message"}
+              </button>
+
+              {itemUser?.phone && (
+                <button
+                  onClick={() => setShowPhone((p) => !p)}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.99]"
+                >
+                  <Phone size={15} />
+                  {showPhone ? itemUser.phone : "Show phone number"}
+                </button>
+              )}
+            </div>
+          )}
+
           {realEstate.maGadayn && (
-            <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm">
-              <span className="text-xl uppercase tracking-widest">
-                waa la gatay
-              </span>
+            <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm uppercase tracking-widest">
+              waa la gatay
             </div>
           )}
 
@@ -365,7 +345,7 @@ function RealEstateDetails() {
               {realEstate.subCategory && (
                 <div>
                   <span className="text-gray-400 font-bold uppercase text-xs block">
-                    Property Type
+                    Type
                   </span>
                   <span className="font-bold uppercase">
                     {realEstate.subCategory}
@@ -375,29 +355,15 @@ function RealEstateDetails() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[100px]">
-            {itemUser && (
-              <UserCard
-                user={itemUser}
-                isLoggedIn={!!currentUser}
-                itemId={realEstate.id}
-                itemTitle={realEstate.title}
-                itemName="RealEstate"
-                maGaday={realEstate.maGadayn || false}
-                onSendMessage={handleSendMessage}
-              />
-            )}
-          </div>
-
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-gray-900 border-b pb-2">
               Description
             </h2>
-            <div className="text-gray-700 leading-relaxed text-base">
+            <div className="text-gray-700 leading-relaxed">
               <p className="whitespace-pre-line">
                 {isExpanded
                   ? realEstate.description
-                  : `${realEstate.description?.slice(0, 300)}${realEstate.description?.length > 300 ? "..." : ""}`}
+                  : `${realEstate.description?.slice(0, 300)}...`}
               </p>
               {realEstate.description?.length > 300 && (
                 <button
@@ -410,10 +376,10 @@ function RealEstateDetails() {
             </div>
           </div>
 
-          <div className="mt-8 p-6 border-2 border-gray-200 shadow-sm bg-white hover:border-red-200 transition-all duration-300">
+          <div className="mt-8 p-6 border-2 border-gray-200 shadow-sm bg-white">
             <Link
               href={`/components/Report/${realEstate.id}`}
-              className="text-red-500 text-xs font-bold uppercase tracking-widest hover:text-red-700 transition-colors"
+              className="text-red-500 text-xs font-bold uppercase tracking-widest"
             >
               Report this item
             </Link>
@@ -421,11 +387,45 @@ function RealEstateDetails() {
         </div>
       </div>
 
+      {!isOwnItem && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-lg">
+          <div className="flex-1 min-w-0">
+            <p className="text-xl font-extrabold text-blue-700 truncate">
+              ${Number(realEstate.price).toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500 truncate">{realEstate.title}</p>
+          </div>
+          {itemUser?.phone && (
+            <button
+              onClick={() => setShowPhone((p) => !p)}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
+            >
+              <Phone size={15} />
+              <span className="text-xs">{showPhone ? itemUser.phone : "Phone"}</span>
+            </button>
+          )}
+          <button
+            onClick={handleSendMessage}
+            disabled={realEstate.maGadayn || messagingLoading}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97] flex-shrink-0 ${
+              realEstate.maGadayn
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : messagingLoading
+                ? "bg-blue-400 text-white cursor-wait"
+                : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-200"
+            }`}
+          >
+            <MessageSquare size={16} />
+            {realEstate.maGadayn ? "Sold" : messagingLoading ? "Opening…" : "Message Seller"}
+          </button>
+        </div>
+      )}
+
       {showModal && (
         <SaveFavoriteModel
           onConfirm={handleModalConfirm}
           onCancel={() => setShowModal(false)}
-          backgroundImage={typeof images[0] === "string" ? images[0] : ""}
+          backgroundImage={images[0]}
         />
       )}
     </div>

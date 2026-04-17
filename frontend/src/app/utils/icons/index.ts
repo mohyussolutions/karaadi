@@ -1,0 +1,81 @@
+export {
+  FiFileText,
+  FiHome,
+  FiX,
+  FiUser,
+  FiMail,
+  FiClock,
+  FiSearch,
+  FiTrash2,
+  FiTrendingUp,
+  FiCheckCircle,
+  FiPhone,
+  FiPhoneCall,
+  FiAlertTriangle,
+  FiEdit2,
+  FiLogOut,
+  FiInbox,
+  FiShoppingBag,
+  FiArrowRight,
+  FiBarChart2,
+  FiEye,
+  FiEyeOff,
+  FiBriefcase,
+  FiChevronLeft,
+  FiChevronRight,
+  FiExternalLink,
+} from "react-icons/fi";
+export { LuSofa } from "react-icons/lu";
+export { GrLanguage } from "react-icons/gr";
+export { RiAdvertisementFill } from "react-icons/ri";
+export {
+  MdOutlineSubscriptions,
+  MdWork,
+  MdCloudUpload,
+  MdOutlinePlaylistRemove,
+  MdCategory,
+  MdInfo,
+  MdSettings,
+  MdAttachMoney,
+  MdAddPhotoAlternate,
+  MdClose,
+  MdLocationCity,
+  MdDirectionsBike,
+} from "react-icons/md";
+export { CiMoneyBill } from "react-icons/ci";
+export { HiSearchCircle, HiOutlineTag } from "react-icons/hi";
+export {
+  IoIosBoat,
+  IoIosArrowBack,
+  IoIosArrowForward,
+  IoMdArrowDropdown,
+} from "react-icons/io";
+export {
+  FaEnvelope,
+  FaComment,
+  FaWhatsapp,
+  FaShoppingCart,
+  FaQuestionCircle,
+  FaDollarSign,
+  FaTruck,
+  FaPhone,
+  FaChevronLeft,
+  FaChevronRight,
+  FaBriefcase,
+  FaArrowLeft,
+  FaBuilding,
+  FaMapMarkerAlt,
+  FaMoneyBillWave,
+  FaPaperPlane,
+  FaEdit,
+  FaPlus,
+  FaTimes,
+  FaCar,
+  FaShip,
+  FaAnchor,
+  FaHome,
+  FaMotorcycle,
+  FaSearch,
+} from "react-icons/fa";
+export { GiFarmTractor } from "react-icons/gi";
+export { TiArrowSortedUp } from "react-icons/ti";

@@ -29,6 +29,7 @@ model Payment {
   carFeeId        String?
   motorcycleFeeId String?
   equipmentFeeId  String?
+  jobFeeId        String?
   planConfigId    String?
 
   user            User           @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
@@ -47,6 +48,7 @@ model Payment {
   carFee          CarFee?           @relation("PaymentCarFee", fields: [carFeeId], references: [id])
   motorcycleFee   MotorcycleFee?    @relation("PaymentMotorcycleFee", fields: [motorcycleFeeId], references: [id])
   equipmentFee    EquipmentFeeConfig? @relation("PaymentEquipmentFee", fields: [equipmentFeeId], references: [id])
+  jobFee          JobFeeConfig?     @relation("PaymentJobFee", fields: [jobFeeId], references: [id])
   planConfig      SubPlan?          @relation("PaymentSubPlan", fields: [planConfigId], references: [id])
 
   @@index([status])
@@ -65,6 +67,7 @@ model Payment {
   @@index([carFeeId])
   @@index([motorcycleFeeId])
   @@index([equipmentFeeId])
+  @@index([jobFeeId])
   @@index([planConfigId])
 }
 
@@ -127,6 +130,7 @@ model MotorcycleFee {
   payments    Payment[] @relation("PaymentMotorcycleFee")
   changeLogs  FeeChangeLog[]
 }
+
 model BoatFee {
   id         String   @id @default(cuid())
   boatSale   Float    @default(0.0)
@@ -146,16 +150,25 @@ model EquipmentFeeConfig {
   tractorSale Float    @default(0.0)
   agriTool    Float    @default(0.0)
   harvester   Float    @default(0.0)
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  
+  farmequipments Farmequipment[]
+  payments       Payment[] @relation("PaymentEquipmentFee")
+  changeLogs     FeeChangeLog[]
+}
+
+model JobFeeConfig {
+  id          String   @id @default(cuid())
   fullTime    Float    @default(0.0)
   partTime    Float    @default(0.0)
   freelance   Float    @default(0.0)
   isActive    Boolean  @default(true)
   updatedAt   DateTime @updatedAt
   
-  farmequipments Farmequipment[]
-  jobs           Job[]
-  payments       Payment[] @relation("PaymentEquipmentFee")
-  changeLogs     FeeChangeLog[]
+  jobs        Job[]    @relation("JobToJobFee")
+  payments    Payment[] @relation("PaymentJobFee")
+  changeLogs  FeeChangeLog[]
 }
 
 model SystemConfig {
@@ -167,7 +180,6 @@ model SystemConfig {
   updatedAt   DateTime @updatedAt
   changeLogs  FeeChangeLog[]
 }
-
 model SubPlan {
   id             String   @id @default(cuid())
   basic30        Float    @default(0.0)
@@ -182,10 +194,11 @@ model SubPlan {
   cars           Car[]
   motorcycles    Motorcycle[]
   farmequipments Farmequipment[]
-  jobs           Job[]
+  jobs           Job[]     @relation("JobToSubPlan")
   payments       Payment[] @relation("PaymentSubPlan")
   changeLogs     FeeChangeLog[]
 }
+
 model FeeChangeLog {
   id             String    @id @default(cuid())
   feeConfigId    String
@@ -206,6 +219,7 @@ model FeeChangeLog {
   motorcycleFee  MotorcycleFee?  @relation(fields: [feeConfigId], references: [id], map: "log_motorcycle_fee")
   boatFee        BoatFee?        @relation(fields: [feeConfigId], references: [id], map: "log_boat_fee")
   equipmentFee   EquipmentFeeConfig? @relation(fields: [feeConfigId], references: [id], map: "log_equip_fee")
+  jobFee         JobFeeConfig?   @relation(fields: [feeConfigId], references: [id], map: "log_job_fee")
 
   @@index([feeConfigId])
 }

@@ -1,11 +1,11 @@
 import { createClient, RedisClientType } from "redis";
+import chalk from "chalk";
 import {
   REDIS_CONFIG,
   ERROR_MESSAGES,
   LOG_MESSAGES,
   CACHE_TTL,
-} from "src/constants/config.constants.ts";
-import chalk from "chalk";
+} from "src/config/fee.ts";
 
 class CacheManager {
   private client: RedisClientType;
@@ -97,13 +97,11 @@ class CacheManager {
   ): Promise<void> {
     if (!this.isReady()) return;
     await this.client.setEx(key, ttl, JSON.stringify(value));
-    // ...existing code...
   }
 
   public async delete(key: string): Promise<void> {
     if (!this.isReady()) return;
     await this.client.del(key);
-    // ...existing code...
   }
 
   public async deletePattern(pattern: string): Promise<void> {

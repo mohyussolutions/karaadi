@@ -1,12 +1,10 @@
 export interface FeedItem {
-  id: string | number;
-  _id?: string | number;
-  title?: string;
-  price?: number;
+  id?: string;
+  _id?: string;
+  title: string;
+  description?: string;
   images?: string[];
-  category?: string;
-  priority?: "premium90" | "standard60" | "basic30";
-  description?: string | string[];
+  price?: number;
   city?: string;
-  [key: string]: unknown;
+  category?: string | string[];
 }

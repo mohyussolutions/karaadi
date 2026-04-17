@@ -1,7 +1,7 @@
 import {
   DAYS_FOR_UPLOADING_AGAIN,
   MS_PER_DAY,
-} from "src/constants/config.constants.ts";
+} from "src/config/config.constants.ts";
 
 export const useResetOldPaidItems = () => {
   const thresholdDate = new Date(

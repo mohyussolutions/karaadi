@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import React from "react";
 
 const Privacy: React.FC = () => {
@@ -48,7 +49,7 @@ const Privacy: React.FC = () => {
         </h2>
         <p>
           Xogtaada waxaa loo isticmaalaa in lagu habeeyo xayeysiiska aad aragto.
-          Waxaad dooran kartaa in xayeysiiska lagu habeeyo da'da, jinsiga,
+          Waxaad dooran kartaa in xayeysiiska lagu habeeyo da&apos;da, jinsiga,
           danaha ama goobta aad ku sugan tahay.
         </p>
       </section>
@@ -56,7 +57,7 @@ const Privacy: React.FC = () => {
       <section className="text-sm text-gray-500 mt-8">
         <p>
           © 1996–2025 Karaadi AS. Karaadi waa qayb ka mid ah Vend. Vend ayaa
-          mas’uul ka ah xogtaada boggan. Akhri wax badan.
+          mas&rsquo;uul ka ah xogtaada boggan. Akhri wax badan.
         </p>
         <p>
           Suuqa Fursadaha, Ganacsi, Noqo Macaamiil, Macluumaad iyo dhiirrigelin,

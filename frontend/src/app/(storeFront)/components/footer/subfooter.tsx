@@ -1,6 +1,6 @@
 "use client";
 
-import { FaFacebookF, FaTiktok, FaInstagram } from "react-icons/fa";
+import { FaFacebookF, FaTiktok } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 export default function SubFooter() {
@@ -22,7 +22,7 @@ export default function SubFooter() {
               <FaFacebookF />
             </a>
             <a
-              href="https://tiktok.com"
+              href="https://www.tiktok.com/@karaadi_"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"
@@ -30,15 +30,7 @@ export default function SubFooter() {
             >
               <FaTiktok />
             </a>
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="hover:text-pink-600"
-            >
-              <FaInstagram />
-            </a>
+            {/* Instagram removed as requested */}
           </div>
         </div>
 

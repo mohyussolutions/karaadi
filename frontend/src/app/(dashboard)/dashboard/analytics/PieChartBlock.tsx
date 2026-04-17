@@ -3,9 +3,15 @@ import { ResponsiveContainer, PieChart, Pie, Tooltip, Cell } from "recharts";
 
 export interface PieChartBlockProps {
   title: string;
-  data: any[];
+  data: PieChartData[];
   colors: string[];
 }
+
+export type PieChartData = {
+  name: string;
+  value: number;
+  [key: string]: string | number | undefined;
+};
 
 export const PieChartBlock: React.FC<PieChartBlockProps> = ({
   title,

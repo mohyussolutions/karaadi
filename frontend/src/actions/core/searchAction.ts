@@ -2,7 +2,10 @@ const BASE_URL = "/api/saved-searches";
 
 export const apiService = {
   getSavedSearches: async (userId: string) => {
-    const res = await fetch(`${BASE_URL}?userId=${userId}`);
+    const res = await fetch(`${BASE_URL}?userId=${userId}`, {
+      cache: "no-store",
+      next: { revalidate: 0 },
+    });
     if (!res.ok) throw new Error("Failed to fetch saved searches");
     return res.json();
   },

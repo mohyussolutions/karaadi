@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import ClientI18nProvider from "./Guard/ClientI18nProvider";
+import Providers from "./ui/Providers/Providers";
+import { AuthProvider } from "@/context/AuthContext";
+import ErrorBoundary from "./ui/Providers/ErrorBoundary";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   display: "swap",
 });
@@ -20,26 +14,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Karaadi",
   description: "iska gad ama soo gado alaabo",
-  icons: {
-    icon: "/logo.jpg",
-  },
+  icons: { icon: "/logo.jpg" },
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable}`}
-    >
+    <html lang="en" className={`${dmSans.variable}`}>
       <body
-        className="antialiased min-h-screen flex flex-col bg-[#f6f8fb] text-gray-900"
+        className="antialiased min-h-screen flex flex-col text-[#1A1A1A]"
         suppressHydrationWarning
       >
-        <ClientI18nProvider>{children}</ClientI18nProvider>
-        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+        <ErrorBoundary>
+          <Providers>
+            <AuthProvider>{children}</AuthProvider>
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );

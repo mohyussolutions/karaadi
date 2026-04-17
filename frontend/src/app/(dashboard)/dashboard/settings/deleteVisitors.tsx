@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect, JSX } from "react";
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+import { useAuth } from "@/context/AuthContext";
 
 interface Visitor {
   userId: string;
@@ -7,7 +9,7 @@ interface Visitor {
   visitedAt: string;
 }
 
-const API_BASE_URL: string = "http://localhost:8080/api/visitors";
+const API_BASE_URL: string = `${BASE_API_URL}/api/visitors`;
 
 interface VisitorManagerProps {
   onBack: () => void;
@@ -17,6 +19,7 @@ function VisitorManager({ onBack }: VisitorManagerProps): JSX.Element {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const fetchVisitors = async (): Promise<void> => {
     setLoading(true);
@@ -48,20 +51,25 @@ function VisitorManager({ onBack }: VisitorManagerProps): JSX.Element {
   }, []);
 
   const handleDelete = async (userId: string): Promise<void> => {
+    if (!user || !user.accessToken) {
+      setError("You must be logged in to delete visitors.");
+      return;
+    }
     if (
       !window.confirm(`Are you sure you want to delete visitor ID: ${userId}?`)
     )
       return;
-
     try {
       const response = await fetch(`${API_BASE_URL}/${userId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.accessToken}`,
+        },
+        credentials: "include",
       });
-
       if (!response.ok)
         throw new Error(`Deletion failed with status: ${response.status}`);
-
       console.log(`Visitor ${userId} deleted successfully.`);
       fetchVisitors();
     } catch (err: any) {

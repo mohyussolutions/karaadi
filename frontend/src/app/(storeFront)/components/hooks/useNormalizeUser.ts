@@ -4,16 +4,17 @@ import { toBool } from "./helpers";
 export function normalizeUser(u: RawUserData): NormalizedUser | null {
   if (!u) return null;
 
-  let profileImage: string | null = u.profileImage || null;
+  let profileImage: string | undefined = u.profileImage;
   if (
     typeof profileImage === "string" &&
     (profileImage === "false" || profileImage.trim() === "")
   ) {
-    profileImage = null;
+    profileImage = undefined;
   }
 
   return {
     _id: u.id || u._id || u.sub || "",
+    id: u.id || u._id || u.sub || "",
     username:
       u.username || u.preferred_username || u.email?.split("@")[0] || "",
     email: u.email || "",
@@ -26,5 +27,6 @@ export function normalizeUser(u: RawUserData): NormalizedUser | null {
     isAdmin: toBool(u.isAdmin) || toBool(u["custom:isAdmin"]),
     isManager: toBool(u.isManager) || toBool(u["custom:isManager"]),
     isSupport: toBool(u.isSupport) || toBool(u["custom:isSupport"]),
+    expiresIn: u.expiresIn,
   };
 }

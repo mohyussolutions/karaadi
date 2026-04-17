@@ -5,12 +5,14 @@ import { updateAdSchema } from "../../validation/myAd.validation.ts";
 import {
   deleteAd,
   getAds,
+  getAdById,
   updateAd,
 } from "../../controllers/categoryController/myAdController.ts";
 
 const myAdsRouter = express.Router();
 
 myAdsRouter.get("/my-ads", ProtectRoute, getAds);
+myAdsRouter.get("/:id", ProtectRoute, getAdById);
 
 myAdsRouter.put(
   "/update/:id",

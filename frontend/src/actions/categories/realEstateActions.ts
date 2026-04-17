@@ -1,175 +1,146 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { REAL_ESTATE_ENDPOINTS } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
-
-export type RealEstate = {
-  id: string;
-  _id: string;
-  user: any;
-  title: string;
-  description: string;
-  price: number;
-  subCategory: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  squareFeet?: number;
-  address: string;
-  region: string;
-  city: string;
-  images: string[];
-  isPaid: boolean;
-  maGadayn?: boolean;
-};
-
-const addCacheBuster = (url: string) => {
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}_t=${Date.now()}`;
-};
+import { RealEstate } from "@/app/utils/types/realestate.types";
 
 export async function getTotalRealEstateCount(): Promise<number> {
   try {
     const headers = await getAuthHeaders();
-    const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.TOTAL);
-
-    const response = await fetch(url, {
-      method: "GET",
+    const res = await fetch(REAL_ESTATE_ENDPOINTS.TOTAL, {
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
-    if (!response.ok) return 0;
-    const result = await response.json();
-    return result.totalRealEstates ?? result.count ?? 0;
+    if (!res.ok) return 0;
+    const result = await res.json();
+    return result.totalRealEstates || result.count || result.total || 0;
   } catch {
     return 0;
   }
 }
-
 export async function getRealEstateById(
   id: string,
 ): Promise<RealEstate | null> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.BY_ID(id));
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    if (!response.ok) return null;
-    const result = await response.json();
-    return result || null;
-  } catch {
-    return null;
-  }
+  const headers = await getAuthHeaders();
+  const res = await fetch(REAL_ESTATE_ENDPOINTS.BY_ID(id), {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const result = await res.json();
+  return result
+    ? { ...result, _id: result._id || result.id, id: result.id || result._id }
+    : null;
 }
 
-export async function getRealEstateListings(): Promise<RealEstate[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.BASE);
+export async function getRealEstateListings(page = 1, pageSize = 20): Promise<RealEstate[]> {
+  const res = await fetch(`${REAL_ESTATE_ENDPOINTS.BASE}?page=${page}&pageSize=${pageSize}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  const result = await res.json();
+  const data = Array.isArray(result) ? result : (result?.data ?? []);
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    if (!response.ok) return [];
-    const result = await response.json();
-    const data = Array.isArray(result) ? result : (result?.data ?? []);
-
-    return data.map((item: any) => ({
-      ...item,
-      _id: item._id || item.id,
-      id: item.id || item._id,
-    }));
-  } catch {
-    return [];
-  }
+  return data.map((it: RealEstate) => {
+    const resolvedId = String(it._id ?? it.id ?? "");
+    return { ...it, _id: resolvedId, id: resolvedId };
+  });
 }
 
-export async function fetchAdminRealEstate() {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.ADMIN_ALL);
-
-    const res = await fetch(url, {
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    return await res.json();
-  } catch {
-    return [];
-  }
+export async function fetchAdminRealEstate(): Promise<RealEstate[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(REAL_ESTATE_ENDPOINTS.ADMIN_ALL, {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data?.data ?? []);
 }
 
-export async function updatePaidStatus(id: string, newStatus: boolean) {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.BY_ID(id));
-
-    const res = await fetch(url, {
-      method: "PATCH",
-      headers: headers as HeadersInit,
-      body: JSON.stringify({ isPaid: newStatus }),
-      cache: "no-store",
-    });
-
-    if (res.ok) {
-      revalidatePath("/admin/real-estate");
-    }
-
-    return { success: res.ok };
-  } catch {
-    return { success: false };
-  }
+export async function getAllRealEstatesAdmin(
+  page = 1,
+  pageSize = 20,
+): Promise<{ data: RealEstate[]; hasMore: boolean; page: number }> {
+  const headers = await getAuthHeaders();
+  const url = `${REAL_ESTATE_ENDPOINTS.ADMIN_ALL}?page=${page}&pageSize=${pageSize}`;
+  const res = await fetch(url, {
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  if (!res.ok) return { data: [], hasMore: false, page };
+  const data = await res.json();
+  const arr = Array.isArray(data) ? data : (data?.data ?? []);
+  const hasMore = arr.length === pageSize;
+  return { data: arr, hasMore, page };
 }
 
-export async function deleteRealEstate(id: string) {
-  try {
-    const headers = await getAuthHeaders();
-    const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.BY_ID(id));
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: headers as HeadersInit,
-      cache: "no-store",
-    });
-
-    if (response.ok) {
-      revalidatePath("/admin/real-estate");
-    }
-
-    return { success: response.ok };
-  } catch {
-    return { success: false };
-  }
+export async function toggleRealEstatePaidAction(
+  id: string,
+  currentStatus: boolean,
+): Promise<{ success: boolean }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${REAL_ESTATE_ENDPOINTS.BASE}/${id}/payment`, {
+    method: "PATCH",
+    headers: headers as HeadersInit,
+    body: JSON.stringify({ isPaid: !currentStatus }),
+    cache: "no-store",
+  });
+  return { success: res.ok };
 }
 
-export async function createRealEstate(data: any, token?: string) {
+export async function updatePaidStatus(
+  id: string,
+  isPaid: boolean,
+): Promise<{ message: string; success: boolean }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${REAL_ESTATE_ENDPOINTS.BASE}/${id}/payment`, {
+    method: "PATCH",
+    headers: headers as HeadersInit,
+    body: JSON.stringify({ isPaid }),
+    cache: "no-store",
+  });
+  let message = "";
   try {
-    const headers = await getAuthHeaders(token);
-    const url = addCacheBuster(REAL_ESTATE_ENDPOINTS.BASE);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      body: JSON.stringify(data),
-      cache: "no-store",
-    });
-
-    const result = await response.json();
-    if (!response.ok) return { success: false, message: result.message };
-
-    revalidatePath("/real-estate");
-    return { success: true, id: result.id || result._id };
+    const result = await res.json();
+    message = result?.message || (res.ok ? "Success" : "Failed");
   } catch {
-    return { success: false, message: "Network error" };
+    message = res.ok ? "Success" : "Failed";
   }
+  return { success: res.ok, message };
+}
+
+export async function deleteRealEstate(
+  id: string,
+): Promise<{ message: string; success: boolean }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(REAL_ESTATE_ENDPOINTS.BY_ID(id), {
+    method: "DELETE",
+    headers: headers as HeadersInit,
+    cache: "no-store",
+  });
+  let message = "";
+  try {
+    const result = await res.json();
+    message = result?.message || (res.ok ? "Deleted" : "Delete failed");
+  } catch {
+    message = res.ok ? "Deleted" : "Delete failed";
+  }
+  return { success: res.ok, message };
+}
+
+export async function createRealEstate(
+  data: Partial<RealEstate>,
+  token?: string,
+): Promise<{ success: boolean; id?: string; message?: string }> {
+  const headers = await getAuthHeaders(token);
+  const res = await fetch(REAL_ESTATE_ENDPOINTS.BASE, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  const result = await res.json();
+  if (!res.ok) return { success: false, message: result.message };
+  return { success: true, id: result.id || result._id };
 }

@@ -1,12 +1,9 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import { User } from "@prisma/client";
+import { User, Prisma } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { CACHE_TTL } from "src/constants/config.constants.ts";
-
-interface AuthRequest extends Request {
-  user?: User & { _id?: string; sub?: string };
-}
+import { CACHE_TTL } from "src/config/config.constants.ts";
+import { AuthRequest } from "src/types/index.ts";
 
 const getUserId = (req: AuthRequest): string | undefined =>
   req.user?.id || req.user?._id || req.user?.sub;
@@ -34,35 +31,44 @@ export const createFavorite = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Item ID is required" });
     }
 
-    const existingFavorite = await prisma.favorite.findFirst({
-      where: { userId, itemId },
-      select: { id: true },
-    });
-
-    if (existingFavorite) {
-      return res.status(400).json({
-        message: "You have already saved this item",
+    try {
+      const createStart = Date.now();
+      const favorite = await prisma.favorite.create({
+        data: {
+          userId,
+          itemId,
+          title: title || "Untitled",
+          description: description || "",
+          price: price ? String(price) : null,
+          image: image || null,
+          category: Array.isArray(category)
+            ? category[0]
+            : category || "General",
+        },
       });
+      const createDuration = Date.now() - createStart;
+      if (process.env.DEBUG === "true")
+        console.debug(
+          `[createFavorite] prisma.create duration: ${createDuration}ms`,
+        );
+
+      res.status(201).json(favorite);
+
+      Promise.all([
+        cacheManager.delete(CACHE_KEYS.FAVORITES_LIST(userId)),
+        cacheManager.delete(CACHE_KEYS.FAVORITES_COUNT(userId)),
+      ]).catch(() => null);
+    } catch (err: any) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
+        return res
+          .status(400)
+          .json({ message: "You have already saved this item" });
+      }
+      throw err;
     }
-
-    const favorite = await prisma.favorite.create({
-      data: {
-        userId,
-        itemId,
-        title: title || "Untitled",
-        description: description || "",
-        price: price ? String(price) : null,
-        image: image || null,
-        category: Array.isArray(category) ? category[0] : category || "General",
-      },
-    });
-
-    res.status(201).json(favorite);
-
-    Promise.all([
-      cacheManager.delete(CACHE_KEYS.FAVORITES_LIST(userId)),
-      cacheManager.delete(CACHE_KEYS.FAVORITES_COUNT(userId)),
-    ]).catch(() => null);
   } catch (err) {
     res.status(500).json({ message: "Failed to save favorite" });
   }
@@ -81,6 +87,16 @@ export const getMyFavorites = async (req: AuthRequest, res: Response) => {
           where: { userId },
           orderBy: { createdAt: "desc" },
           take: 50,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            price: true,
+            image: true,
+            createdAt: true,
+            category: true,
+            itemId: true,
+          },
         });
       },
       CACHE_TTL.LIST,

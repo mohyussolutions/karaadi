@@ -10,7 +10,6 @@ interface City {
   name: string;
   regionId: string;
 }
-
 interface Region {
   id: string;
   name: string;

@@ -34,7 +34,6 @@ export const validate = {
     if (!errors.isEmpty()) {
       const sanitizedBody = { ...req.body };
       if (sanitizedBody.password) sanitizedBody.password = "***";
-      // ...existing code...
       return res.status(400).json({ errors: errors.array() });
     }
     next();

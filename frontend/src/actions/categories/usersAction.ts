@@ -1,102 +1,86 @@
 "use server";
 
 import { apiUrls } from "@/actions/constant/constant";
-import { revalidatePath } from "next/cache";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export interface User {
   id: string;
-  email: string;
   username: string;
+  email: string;
+  phone?: string | null;
+  profileImage?: string | null;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  isAdmin?: boolean;
+  isManager?: boolean;
 }
-
-const addCacheBuster = (url: string) => {
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}_t=${Date.now()}`;
-};
 
 export async function fetchAllUsers() {
   try {
     const headers = await getAuthHeaders();
-    const url = addCacheBuster(`${apiUrls.USERS.BASE}/all-users`);
-
-    const res = await fetch(url, {
+    const res = await fetch(`${apiUrls.USERS.BASE}/all-users`, {
       headers: headers as HeadersInit,
-      credentials: "include",
       cache: "no-store",
     });
 
-    if (!res.ok) throw new Error("Failed to fetch users");
+    if (!res.ok)
+      return { success: false, users: [], error: "Failed to fetch users" };
     const data = await res.json();
-    return { success: true, users: data.users || [] };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to fetch users" };
+    return { success: true, users: data.users || data || [], error: null };
+  } catch (error) {
+    return { success: false, users: [], error: "Network error" };
   }
 }
 
 export async function deleteUserAction(id: string) {
   try {
     const headers = await getAuthHeaders();
-    const url = addCacheBuster(apiUrls.USERS.BY_ID(id));
-
-    const res = await fetch(url, {
+    const res = await fetch(`${apiUrls.USERS.BASE}/admin-deletetion/${id}`, {
       method: "DELETE",
       headers: headers as HeadersInit,
-      credentials: "include",
       cache: "no-store",
     });
-
-    if (!res.ok) throw new Error("Failed to delete user");
-
-    revalidatePath("/admin/users");
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to delete user" };
+    if (!res.ok) return { success: false, error: "Failed to delete user" };
+    return { success: true, error: null };
+  } catch {
+    return { success: false, error: "Network error" };
   }
 }
 
 export async function updateUserAction(id: string, username: string) {
   try {
     const headers = await getAuthHeaders();
-    const url = addCacheBuster(apiUrls.USERS.BY_ID(id));
-
-    const res = await fetch(url, {
+    const res = await fetch(`${apiUrls.USERS.BASE}/${id}`, {
       method: "PUT",
       headers: headers as HeadersInit,
       body: JSON.stringify({ username }),
-      credentials: "include",
       cache: "no-store",
     });
 
-    if (!res.ok) throw new Error("Failed to update user");
-    const updatedUser = await res.json();
-
-    revalidatePath("/admin/users");
-    return { success: true, user: updatedUser };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to update user" };
+    if (!res.ok)
+      return { success: false, error: "Failed to update user", user: null };
+    const user = await res.json();
+    return { success: true, user, error: null };
+  } catch {
+    return { success: false, error: "Network error", user: null };
   }
 }
 
 export async function getTotalUsersAction(accessToken?: string) {
   try {
     const headers = await getAuthHeaders(accessToken);
-
     const res = await fetch(`${apiUrls.USERS.BASE}/total-users`, {
-      method: "GET",
       headers: headers as HeadersInit,
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      throw new Error(`Error ${res.status}`);
-    }
-
+    if (!res.ok) return { data: 0, error: "Failed to fetch total" };
     const data = await res.json();
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+    return {
+      data: data.totalUsers ?? data.total ?? data.count ?? 0,
+      error: null,
+    };
+  } catch {
+    return { data: 0, error: "Network error" };
   }
 }

@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
 import { FILTERING_ENDPOINTS } from "../constant/constant";
 
 export interface FilterParams {
@@ -12,45 +11,34 @@ export interface FilterParams {
 }
 
 export async function getGlobalFilteredResults(params: FilterParams) {
-  try {
-    const queryParams = new URLSearchParams();
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== "" && value !== null) {
+      queryParams.append(key, value.toString());
+    }
+  });
 
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== "" && value !== null) {
-        queryParams.append(key, value.toString());
-      }
-    });
-
-    const url = `${FILTERING_ENDPOINTS.BASE}${FILTERING_ENDPOINTS.GLOBAL}?${queryParams.toString()}`;
-
-    const res = await fetch(url, {
-      method: "GET",
+  const res = await fetch(
+    `${FILTERING_ENDPOINTS.BASE}${FILTERING_ENDPOINTS.GLOBAL}?${queryParams.toString()}`,
+    {
       cache: "no-store",
-    });
+    },
+  );
 
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (error) {
-    return [];
-  }
+  return res.ok ? res.json() : [];
 }
 
 export async function getFilterMetadata() {
-  try {
-    const url = `${FILTERING_ENDPOINTS.BASE}${FILTERING_ENDPOINTS.METADATA}`;
-
-    const res = await fetch(url, {
-      method: "GET",
+  const res = await fetch(
+    `${FILTERING_ENDPOINTS.BASE}${FILTERING_ENDPOINTS.METADATA}`,
+    {
       cache: "no-store",
-    });
+    },
+  );
 
-    if (!res.ok) return { regions: [] };
-    return await res.json();
-  } catch (error) {
-    return { regions: [] };
-  }
+  return res.ok ? res.json() : { regions: [] };
 }
 
 export async function clearSearchCache() {
-  revalidateTag("global-search");
+  return;
 }

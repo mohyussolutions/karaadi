@@ -13,12 +13,6 @@ export default function CreateSupportItem() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const item = {
-      id: `${Date.now()}`,
-      title,
-      description,
-      createdAt: new Date().toISOString(),
-    };
     router.push(`/support/${section}`);
   }
 

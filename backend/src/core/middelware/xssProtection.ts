@@ -13,7 +13,6 @@ export const xssProtection = (
     });
   }
 
-  // Sanitize query
   if (req.query && typeof req.query === "object") {
     Object.keys(req.query).forEach((key) => {
       if (typeof req.query[key] === "string") {

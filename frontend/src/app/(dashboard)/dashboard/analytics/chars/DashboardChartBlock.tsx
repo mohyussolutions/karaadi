@@ -1,48 +1,54 @@
-"use client";
-
-import React, { FC } from "react";
+import React from "react";
 import { LineChartBlock } from "../LineChartBlock";
+import { BarChartBlock } from "../BarChartBlock";
+import {
+  getRevenueData,
+  getUserSignupData,
+} from "@/actions/categories/RegionsAndCityCharts";
 
-export const DashboardChartBlock: FC = () => {
-  const revenueData = [
-    { month: "Jan", revenue: 8000 },
-    { month: "Feb", revenue: 9500 },
-    { month: "Mar", revenue: 7200 },
-    { month: "Apr", revenue: 11200 },
-    { month: "May", revenue: 13000 },
-    { month: "Jun", revenue: 14500 },
-  ];
+function fmtMonth(monthStr: string) {
+  const [year, m] = monthStr.split("-");
+  return new Date(Number(year), Number(m) - 1).toLocaleString("default", {
+    month: "short",
+  });
+}
 
-  const userSignups = [
-    { month: "Jan", users: 800 },
-    { month: "Feb", users: 950 },
-    { month: "Mar", users: 1100 },
-    { month: "Apr", users: 1200 },
-    { month: "May", users: 1350 },
-    { month: "Jun", users: 1500 },
-  ];
+export default async function DashboardChartBlock() {
+  const [revenueData, userSignups] = await Promise.all([
+    getRevenueData(),
+    getUserSignupData(),
+  ]);
+
+  const safeRevenue = Array.isArray(revenueData) ? revenueData : [];
+  const safeSignups = Array.isArray(userSignups) ? userSignups : [];
+
+  const revenue = safeRevenue.map((d) => ({ ...d, month: fmtMonth(d.month) }));
+  const signups = safeSignups.map((d) => ({ ...d, month: fmtMonth(d.month) }));
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border p-2 shadow-sm pointer-events-none">
-          <LineChartBlock
-            title="REVENUE SCALING TRAJECTORY"
-            data={revenueData}
-            dataKey="revenue"
-            stroke="#6366F1"
-          />
-        </div>
-
-        <div className="bg-white rounded-xl border p-2 shadow-sm pointer-events-none">
-          <LineChartBlock
-            title="USER ACQUISITION VELOCITY"
-            data={userSignups}
-            dataKey="users"
-            stroke="#3B82F6"
-          />
-        </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <LineChartBlock
+          title="Revenue by Month"
+          subtitle="All time"
+          data={revenue}
+          dataKey="revenue"
+          stroke="#6366f1"
+          isCurrency
+        />
+      </div>
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <BarChartBlock
+          title="User Signups by Month"
+          subtitle="All time"
+          data={signups}
+          dataKey="users"
+          barColor="#0ea5e9"
+          secondaryDataKey="totalUsers"
+          secondaryLabel="Total Users"
+          secondaryColor="#f59e0b"
+        />
       </div>
     </div>
   );
-};
+}

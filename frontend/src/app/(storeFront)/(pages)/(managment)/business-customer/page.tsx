@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -132,11 +133,9 @@ const BusinessCourseForm = () => {
 
     try {
       if (showNewCityInputs && newCity.trim()) {
-        await addCity(newCity.trim(), newCity.trim(), region, {
-          id: `city-${Date.now()}`,
+        await addCity({
           name: newCity.trim(),
           regionId: region,
-          isActive: true,
         });
       }
 

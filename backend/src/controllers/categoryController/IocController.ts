@@ -1,28 +1,65 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 
-export const getAllRegions = async (req: Request, res: Response) => {
+export const regionsWithMostItemListings = async (
+  _req: Request,
+  res: Response,
+) => {
   try {
-    const pageParam = req.query.page;
-    const pageSizeParam = req.query.pageSize;
+    const regions = await prisma.marketplace.groupBy({
+      by: ["region"],
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+    });
+    const regionNames = await prisma.region.findMany({
+      where: { id: { in: regions.map((r) => r.region) } },
+      select: { id: true, name: true },
+    });
+    const result = regions.map((r) => ({
+      region: regionNames.find((n) => n.id === r.region)?.name || r.region,
+      listings: r._count.id,
+    }));
+    res.json(result);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to fetch regions with most item listings" });
+  }
+};
 
-    const page =
-      parseInt(typeof pageParam === "string" ? pageParam : "1", 10) || 1;
-    const pageSize =
-      parseInt(typeof pageSizeParam === "string" ? pageSizeParam : "20", 10) ||
-      20;
-    const skip = (page - 1) * pageSize;
-
-    const data = await prisma.region.findMany({
-      include: {
-        _count: { select: { cities: true } },
-        cities: true,
-      },
-      skip,
-      take: pageSize,
-      orderBy: { name: "asc" },
+export const citiesWithMostItemListings = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const cities = await prisma.marketplace.groupBy({
+      by: ["city"],
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+      take: 10,
     });
 
+    const cityNames = await prisma.city.findMany({
+      where: { id: { in: cities.map((c) => c.city) } },
+      select: { id: true, name: true },
+    });
+
+    const result = cities.map((c) => ({
+      name: cityNames.find((n) => n.id === c.city)?.name || c.city || "Unknown",
+      buyers: c._count.id,
+    }));
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+export const getAllRegions = async (req: Request, res: Response) => {
+  try {
+    const data = await prisma.region.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
@@ -87,10 +124,8 @@ export const deleteRegion = async (req: Request, res: Response) => {
 export const getAllCities = async (req: Request, res: Response) => {
   try {
     const data = await prisma.city.findMany({
-      include: {
-        region: { select: { name: true } },
-      },
-      orderBy: [{ region: { name: "asc" } }, { name: "asc" }],
+      select: { id: true, name: true, regionId: true, isActive: true },
+      orderBy: { name: "asc" },
     });
     res.status(200).json(data);
   } catch (error) {
@@ -101,20 +136,21 @@ export const getAllCities = async (req: Request, res: Response) => {
 export const createCity = async (req: Request, res: Response) => {
   try {
     const { id, name, regionId, isActive } = req.body;
-    const data = await prisma.city.upsert({
-      where: { id },
-      update: {
-        name,
-        regionId,
-        isActive: isActive !== undefined ? isActive : true,
-      },
-      create: {
-        id,
-        name,
-        regionId,
-        isActive: isActive !== undefined ? isActive : true,
-      },
-    });
+    const cityId = id || crypto.randomUUID();
+    const existing = id
+      ? await prisma.city.findFirst({ where: { id } })
+      : await prisma.city.findFirst({ where: { name, regionId } });
+    let data;
+    if (existing) {
+      data = await prisma.city.update({
+        where: { id: existing.id },
+        data: { name, regionId, isActive: isActive !== undefined ? isActive : true },
+      });
+    } else {
+      data = await prisma.city.create({
+        data: { id: cityId, name, regionId, isActive: isActive !== undefined ? isActive : true },
+      });
+    }
     res.status(201).json(data);
   } catch (error) {
     res.status(400).json({ error: "Operation failed" });

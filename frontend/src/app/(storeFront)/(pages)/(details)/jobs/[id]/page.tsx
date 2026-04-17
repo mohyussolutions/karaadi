@@ -1,21 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import {
   FaBuilding,
   FaArrowLeft,
   FaMoneyBillWave,
   FaBriefcase,
-} from "react-icons/fa6";
-import { FaMapMarkerAlt, FaPaperPlane } from "react-icons/fa";
+  FaPaperPlane,
+} from "@/app/utils/icons";
 import { getJobById, formatSalary } from "@/actions/categories/jobActions";
+import { FaMapMarkerAlt } from "@/app/utils/icons";
 
 interface Job {
   _id: string;
   id?: string;
-  user: string;
+  userId?: string;
+  user: any;
   title: string;
   description: string;
   salary?: number;
@@ -28,15 +31,15 @@ interface Job {
   isPaid?: boolean;
   createdAt?: string;
   companyLogo?: string;
+  images?: string[];
 }
 
-interface JobDetailsPageProps {
-  params: Promise<{ id: string }>;
-}
-
-const JobDetailsPage = ({ params }: JobDetailsPageProps) => {
+const JobDetailsPage = () => {
   const router = useRouter();
-  const { id } = use(params);
+  const params = useParams();
+  const id = params?.id as string;
+
+  const { t } = useTranslation();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [formattedSalary, setFormattedSalary] = useState<string>("");
@@ -49,18 +52,23 @@ const JobDetailsPage = ({ params }: JobDetailsPageProps) => {
   }, []);
 
   useEffect(() => {
+    if (!id) return;
+
     const fetchJob = async () => {
       setLoading(true);
       try {
         const jobData = await getJobById(id);
-        setJob(jobData as Job | null);
 
-        if (jobData?.salary) {
-          const formatted = await formatSalary(jobData.salary);
-          setFormattedSalary(formatted);
+        if (jobData) {
+          setJob(jobData as Job);
+          if (jobData.salary) {
+            const formatted = await formatSalary(jobData.salary);
+            setFormattedSalary(formatted);
+          }
+        } else {
+          setJob(null);
         }
       } catch (error) {
-        console.error("Error fetching job:", error);
         setJob(null);
       } finally {
         setLoading(false);
@@ -72,19 +80,21 @@ const JobDetailsPage = ({ params }: JobDetailsPageProps) => {
 
   const handleApplyClick = () => {
     const email = userEmail || localStorage.getItem("userEmail") || "";
-    if (email) {
-      router.push(`/jobs/application/${id}?email=${encodeURIComponent(email)}`);
-    } else {
-      router.push(`/jobs/application/${id}`);
-    }
+    const baseUrl = `/jobs/application/${id}`;
+    const url = email
+      ? `${baseUrl}?email=${encodeURIComponent(email)}`
+      : baseUrl;
+    router.push(url);
   };
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-gray-50 p-4 sm:p-8 font-sans flex items-center justify-center">
+      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading job details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mx-auto" />
+          <p className="mt-4 text-gray-600 font-medium">
+            {t("jobsPage.loading")}
+          </p>
         </div>
       </div>
     );
@@ -92,129 +102,149 @@ const JobDetailsPage = ({ params }: JobDetailsPageProps) => {
 
   if (!job) {
     return (
-      <div className="w-full min-h-screen bg-gray-50 p-4 sm:p-8 font-sans">
-        <div className="w-full max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl text-center">
-          <p className="text-gray-600">Job not found</p>
+      <div className="w-full min-h-screen flex items-center justify-center p-8">
+        <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-sm border border-gray-100 text-center">
+          <FaBriefcase className="mx-auto text-gray-300 mb-4" size={48} />
+          <p className="text-gray-600 mb-6">
+            {t("jobsPage.backLabel") || "Job not found"}
+          </p>
           <button
             onClick={() => router.push("/jobs")}
-            className="mt-4 text-indigo-600 hover:text-indigo-800"
+            className="text-indigo-600 hover:text-indigo-800 font-bold underline"
           >
-            Back to Job Listings
+            {t("jobsPage.backToAll")}
           </button>
         </div>
       </div>
     );
   }
 
+  const displayImage = job.companyLogo || job.images?.[0];
+
   return (
-    <div className="w-full bg-gray-50 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div className="w-full bg-gray-50/30 min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <button
           onClick={() => router.push("/jobs")}
-          className="text-indigo-600 hover:text-indigo-800 mb-6 transition duration-150 font-medium flex items-center bg-transparent border-none cursor-pointer"
+          className="group text-gray-600 hover:text-indigo-600 mb-8 transition-colors font-semibold flex items-center"
         >
-          <FaArrowLeft className="mr-2" size={14} />
-          Back to Job Listings
+          <FaArrowLeft
+            className="mr-2 group-hover:-translate-x-1 transition-transform"
+            size={14}
+          />
+          {t("jobsPage.backToAll")}
         </button>
 
-        <div className="w-full bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
-          <div className="relative w-full h-96 sm:h-[500px] lg:h-[600px] bg-gradient-to-r from-indigo-600 to-purple-600">
-            {job.companyLogo && !imageError ? (
+        <div className="bg-white rounded-[2.5rem] shadow-xl shadow-indigo-100/20 overflow-hidden border border-gray-100">
+          <div className="relative w-full h-64 sm:h-96 lg:h-[500px] bg-slate-900">
+            {displayImage && !imageError ? (
               <Image
-                src={job.companyLogo}
-                alt={`${job.company} header`}
+                src={displayImage}
+                alt={job.company}
                 fill
-                className="object-cover"
+                className="object-cover opacity-80"
                 onError={() => setImageError(true)}
                 priority
-                sizes="100vw"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <FaBuilding size={120} className="text-white/30" />
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                <FaBuilding size={80} className="text-white/20" />
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           </div>
 
-          <div className="relative px-6 sm:px-8 lg:px-10">
-            <div className="absolute -top-20 sm:-top-24 left-6 sm:left-8 lg:left-10 w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 bg-white rounded-2xl shadow-xl border-4 border-white overflow-hidden">
-              {job.companyLogo && !imageError ? (
+          <div className="relative px-6 sm:px-12">
+            <div className="absolute -top-20 sm:-top-24 w-32 h-32 sm:w-44 sm:h-44 rounded-3xl overflow-hidden border-4 border-white bg-white shadow-lg">
+              {displayImage && !imageError ? (
                 <Image
-                  src={job.companyLogo}
-                  alt={job.company || "Company logo"}
+                  src={displayImage}
+                  alt={job.company}
                   fill
                   className="object-cover"
-                  sizes="192px"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-indigo-50">
-                  <FaBuilding size={64} className="text-indigo-500" />
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <FaBuilding size={48} className="text-indigo-200" />
                 </div>
               )}
             </div>
           </div>
 
-          <div className="p-6 sm:p-8 lg:p-10 pt-28 sm:pt-32 lg:pt-36">
-            <div className="mb-8">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-800">
+          <div className="p-6 sm:p-12 pt-16 sm:pt-24">
+            <div className="mb-10">
+              <h1 className="text-4xl sm:text-6xl font-black text-gray-900 tracking-tight">
                 {job.title}
               </h1>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-indigo-600 mt-3">
-                {job.company || "Company Confidential"}
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10 text-gray-600">
-              <div className="flex items-center bg-gray-50 p-4 rounded-lg">
-                <FaMapMarkerAlt
-                  className="mr-3 text-indigo-500 flex-shrink-0"
-                  size={24}
-                />
-                <span className="font-medium text-lg sm:text-xl">
-                  {job.city}, {job.region}
+              <div className="flex items-center mt-4">
+                <span className="text-2xl sm:text-3xl font-bold text-indigo-600">
+                  {job.company || "Confidential"}
                 </span>
-              </div>
-              <div className="flex items-center bg-gray-50 p-4 rounded-lg">
-                <FaMoneyBillWave
-                  className="mr-3 text-green-500 flex-shrink-0"
-                  size={24}
-                />
-                <span className="font-medium text-lg sm:text-xl">
-                  {formattedSalary || "Not specified"}
-                </span>
-              </div>
-              <div className="flex items-center bg-gray-50 p-4 rounded-lg sm:col-span-2 lg:col-span-1">
-                <FaBriefcase
-                  className="mr-3 text-purple-500 flex-shrink-0"
-                  size={24}
-                />
-                <span className="font-medium text-lg sm:text-xl">
-                  {job.employmentType || job.type}
-                </span>
+                {job.isPaid && (
+                  <span className="ml-4 bg-green-100 text-green-700 text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                    Verified
+                  </span>
+                )}
               </div>
             </div>
 
-            <div className="prose max-w-none">
-              <h3 className="text-3xl sm:text-4xl font-bold text-gray-800 border-b pb-3">
-                Job Description
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+              <div className="flex items-center p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                <FaMapMarkerAlt className="mr-4 text-indigo-500" size={22} />
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-bold tracking-tighter">
+                    Location
+                  </p>
+                  <p className="font-bold text-gray-700">
+                    {job.city}, {job.region}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                <FaMoneyBillWave className="mr-4 text-emerald-500" size={22} />
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-bold tracking-tighter">
+                    Salary
+                  </p>
+                  <p className="font-bold text-gray-700">
+                    {formattedSalary || "Negotiable"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                <FaBriefcase className="mr-4 text-purple-500" size={22} />
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-bold tracking-tighter">
+                    Work Type
+                  </p>
+                  <p className="font-bold text-gray-700">
+                    {job.employmentType || job.type}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-4xl">
+              <h3 className="text-2xl font-black text-gray-900 mb-6 flex items-center">
+                <span className="w-8 h-1 bg-indigo-600 mr-3 rounded-full" />
+                {t("jobsPage.jobDescription")}
               </h3>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap mt-6 text-lg sm:text-xl">
+              <p className="text-gray-600 leading-relaxed whitespace-pre-wrap text-lg sm:text-xl">
                 {job.description}
               </p>
             </div>
 
-            <div className="mt-12 text-center">
+            <div className="mt-16 pt-10 border-t border-gray-100 flex flex-col items-center">
               <button
                 onClick={handleApplyClick}
-                className="w-full sm:w-auto min-w-[350px] flex items-center justify-center py-5 px-10 border border-transparent rounded-xl shadow-lg text-2xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150 transform hover:scale-[1.02] mx-auto"
+                className="w-full sm:w-auto min-w-[320px] flex items-center justify-center py-5 px-12 rounded-2xl text-xl font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-95"
               >
-                <FaPaperPlane className="mr-3" size={24} />
-                Apply Now
+                <FaPaperPlane className="mr-3" size={20} />
+                Apply for this position
               </button>
               {!userEmail && (
-                <p className="text-base text-gray-500 mt-3">
-                  You'll be prompted to enter your email during application
+                <p className="text-sm text-gray-400 mt-4 font-medium italic">
+                  Quick apply: No registration required
                 </p>
               )}
             </div>

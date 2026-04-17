@@ -31,12 +31,29 @@ function SupportCard({
   );
 }
 
+type SupportLink = {
+  label?: string;
+  name?: string;
+  labelKey?: string;
+  icon?: React.ReactElement<{ size?: number }>;
+  href?: string;
+  dashboardIcon?:
+    | React.ReactElement<{ size?: number }>
+    | ((props: { size?: number }) => React.ReactNode);
+};
+
+type SectionItem = {
+  id?: string | number;
+  title?: string;
+  createdAt?: string;
+  [key: string]: unknown;
+};
+
 export default function StreamlinedDashboard() {
   const router = useRouter();
-  const [sections, setSections] = useState<Record<string, any[]>>({});
+  const [sections, setSections] = useState<Record<string, SectionItem[]>>({});
 
   useEffect(() => {
-
     setSections({});
   }, []);
 
@@ -44,7 +61,6 @@ export default function StreamlinedDashboard() {
 
   return (
     <div className="flex flex-col gap-10 p-10 w-full">
-      
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-slate-900">
@@ -72,39 +88,39 @@ export default function StreamlinedDashboard() {
         </div>
       </div>
 
-      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {SUPPORT_LINKS.filter((link) => {
-          const title = link.label || link.name || "";
+          const title = (link.label || link.labelKey || "").toString();
           return title.toLowerCase() !== "home";
-        }).map((link: any) => {
-          const title = link.label || link.name;
+        }).map((link: SupportLink) => {
+          const title = (link.label || link.labelKey || "").toString();
           const IconContent = link.dashboardIcon || link.icon;
           const count = sections[title.toLowerCase()]?.length || 0;
+
+          let iconNode: React.ReactNode;
+          if (typeof IconContent === "function") {
+            iconNode = IconContent({ size: 28 });
+          } else if (React.isValidElement(IconContent)) {
+            iconNode = React.cloneElement(
+              IconContent as React.ReactElement<{ size?: number }>,
+              { size: 28 },
+            );
+          } else {
+            iconNode = IconContent;
+          }
 
           return (
             <SupportCard
               key={title}
               title={title}
               count={count}
-              onClick={() => router.push(link.href)}
-              icon={
-                typeof IconContent === "function" ? (
-                  <IconContent size={28} />
-                ) : React.isValidElement(IconContent) ? (
-                  React.cloneElement(IconContent as React.ReactElement<any>, {
-                    size: 28,
-                  })
-                ) : (
-                  IconContent
-                )
-              }
+              onClick={() => router.push(link.href || "/")}
+              icon={iconNode}
             />
           );
         })}
       </div>
 
-      
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
         <div className="xl:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
@@ -125,13 +141,13 @@ export default function StreamlinedDashboard() {
           <ul className="divide-y divide-slate-50">
             {Object.entries(sections)
               .flatMap(([section, arr]) =>
-                arr.map((it: any) => ({ ...it, section })),
+                arr.map((it: SectionItem) => ({ ...it, section })),
               )
               .sort((a, b) =>
                 (b.createdAt || "") > (a.createdAt || "") ? 1 : -1,
               )
               .slice(0, 6)
-              .map((item: any, idx) => (
+              .map((item: SectionItem, idx) => (
                 <li
                   key={item.id || idx}
                   className="py-6 flex justify-between items-center group"
@@ -144,7 +160,9 @@ export default function StreamlinedDashboard() {
                       </p>
                       <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">
                         Section:{" "}
-                        <span className="text-indigo-500">{item.section}</span>
+                        <span className="text-indigo-500">
+                          {String(item.section)}
+                        </span>
                       </p>
                     </div>
                   </div>

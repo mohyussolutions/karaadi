@@ -1,42 +1,10 @@
+export type { CategoryOption } from "./nesSubCategoryTypes";
 import { IconType } from "react-icons";
-import { JSX, ReactNode } from "react";
-
-export interface CategoryOption {
-  so?: string;
-  title: string;
-  description?: string;
-  icon?: JSX.Element;
-  href?: string;
-  labelKey?: string;
-}
-
-export interface MainCategory {
-  title: ReactNode;
-  key?: string;
-  name?: string | undefined;
-  labelKey?: string;
-  href: string;
-  icon: JSX.Element;
-  so?: string;
-  dashboardIcon: IconType;
-  dashboardLink: string;
-  logo?: string;
-  subCategories: CategoryOption[] | ReadonlyArray<CategoryOption>;
-}
-
-export interface AdminLink {
-  title: string;
-  href: string;
-}
-
 export interface SidebarLink {
   name: string;
   icon: IconType;
   link: string;
 }
-
-export type CategoryList = string[];
-
 export interface SettingLink {
   title: string;
   items: string[];
@@ -46,10 +14,18 @@ export interface SettingLink {
     href?: string;
   };
 }
-export interface SubCategory {
+import { ReactNode } from "react";
+
+export interface MainCategory {
   key: string;
-  title: string;
+  name?: string;
+  logo?: string;
   href: string;
-  so: string;
+  icon: ReactNode;
+  so?: string;
+  dashboardIcon?: import("react-icons").IconType;
+  dashboardLink?: string;
+  subCategories: any[];
+  title?: string;
   labelKey?: string;
 }

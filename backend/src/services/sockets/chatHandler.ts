@@ -1,5 +1,3 @@
-// chatHandler.ts
-
 import { Server, Socket } from "socket.io";
 import { EncryptionController } from "../../controllers/encryptionController/encryptionController.ts";
 import prisma from "../../core/utils/db.ts";

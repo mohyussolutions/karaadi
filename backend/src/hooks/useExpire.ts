@@ -1,4 +1,9 @@
-import { EXPIRY_CONFIG } from "src/constants/payment.constants.ts";
+import { EXPIRY_CONFIG } from "src/config/payment.constants.ts";
+
+const toDate = (date: Date | string | null | undefined): Date | null => {
+  if (!date) return null;
+  return typeof date === "string" ? new Date(date) : date;
+};
 
 export const calculateExpiryDate = (
   subPlan: { basic30: number; standard60: number; premium90: number } | null,
@@ -36,24 +41,29 @@ export const getDefaultExpiryDate = (
   return new Date(baseDate.getTime() + days * EXPIRY_CONFIG.A_DAY);
 };
 
-export const isExpired = (expiryDate: Date | null | undefined): boolean => {
-  if (!expiryDate) return false;
-  return new Date() > expiryDate;
+export const isExpired = (
+  expiryDate: Date | string | null | undefined,
+): boolean => {
+  const date = toDate(expiryDate);
+  if (!date) return false;
+  return new Date() > date;
 };
 
 export const getDaysUntilExpiry = (
-  expiryDate: Date | null | undefined,
+  expiryDate: Date | string | null | undefined,
 ): number => {
-  if (!expiryDate) return 0;
-  const diff = expiryDate.getTime() - Date.now();
+  const date = toDate(expiryDate);
+  if (!date) return 0;
+  const diff = date.getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / EXPIRY_CONFIG.A_DAY));
 };
 
 export const formatExpiryDate = (
-  expiryDate: Date | null | undefined,
+  expiryDate: Date | string | null | undefined,
 ): string => {
-  if (!expiryDate) return "No expiry";
-  return expiryDate.toLocaleDateString("en-US", {
+  const date = toDate(expiryDate);
+  if (!date) return "No expiry";
+  return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",

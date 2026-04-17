@@ -1,4 +1,5 @@
-import { cookies } from "next/headers";
+import { cache } from "react";
+import { getClientCookie } from "@/app/ui/invoices/slugify";
 
 export type HeadersWithAuth = {
   "Content-Type": string;
@@ -8,26 +9,38 @@ export type HeadersWithAuth = {
   Authorization?: string;
 };
 
-export async function getAuthHeaders(token?: string): Promise<HeadersWithAuth> {
-  const cookieStore = await cookies();
+const BASE_HEADERS = {
+  "Content-Type": "application/json",
+  "Cache-Control": "no-cache, no-store, must-revalidate",
+  Pragma: "no-cache",
+  Expires: "0",
+};
 
-  const cookieToken =
+const getServerToken = cache(async (): Promise<string | undefined> => {
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  return (
     cookieStore.get("idToken")?.value ||
     cookieStore.get("accessToken")?.value ||
-    cookieStore.get("token")?.value;
+    cookieStore.get("token")?.value
+  );
+});
 
-  const authToken = token || cookieToken;
+export async function getAuthHeaders(token?: string): Promise<HeadersWithAuth> {
+  let authToken = token;
 
-  const headers: HeadersWithAuth = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
+  if (!authToken) {
+    if (typeof window === "undefined") {
+      authToken = await getServerToken();
+    } else {
+      authToken =
+        getClientCookie("idToken") ||
+        getClientCookie("accessToken") ||
+        getClientCookie("token");
+    }
   }
 
-  return headers;
+  return authToken
+    ? { ...BASE_HEADERS, Authorization: `Bearer ${authToken}` }
+    : BASE_HEADERS;
 }

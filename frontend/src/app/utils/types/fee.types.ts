@@ -1,73 +1,35 @@
-export interface LISTING_TYPES_Props {
-  FEE: number;
-  FREE: number;
-}
-
-export const LISTING_TYPES: LISTING_TYPES_Props = {
-  FEE: 1,
-  FREE: 0,
-};
-
-export interface AppCategories {
-  marketplace: string;
-  car: string;
-  realestate: string;
-  boat: string;
-  motorcycle: string;
-  traktor: string;
-  advertisement: string;
-  subscription: string;
-}
-
 export interface FeeConfig {
-  id?: string;
-  art?: string;
-  electronics?: string;
-  animal?: string;
-  sports?: string;
-  furniture?: string;
-  fashion?: string;
-  rent?: string;
-  sale?: string;
-  land?: string;
-  farm?: string;
-  business?: string;
-  carSale?: string;
-  carRent?: string;
-  trailer?: string;
-  carParts?: string;
-  truck?: string;
-  electricCar?: string;
-  motoSale?: string;
-  motoRent?: string;
-  motoParts?: string;
-  motoOther?: string;
-  boatSale?: string;
-  boatRent?: string;
-  boatEngine?: string;
-  boatParts?: string;
-  tractorSale?: string;
-  agriTool?: string;
-  fertilizer?: string;
-  harvester?: string;
-  fullTime?: string;
-  partTime?: string;
-  freelance?: string;
-  basic30?: string;
-  standard60?: string;
-  premium90?: string;
-  taxRate?: string;
-  platformFee?: string;
-  waafi?: string;
-  currency?: string;
-  isActive?: boolean;
-  createdBy?: string;
-  updatedBy?: string;
-  createdAt?: string | Date;
+  subscription: number;
+  basic30: number;
+  standard60: number;
+  premium90: number;
+  marketplace: number;
+  electronics: number;
+  cars: number;
+  carSale: number;
+  carRent: number;
+  truck: number;
+  trailer: number;
+  carParts: number;
+  realestate: number;
+  sale: number;
+  rent: number;
+  land: number;
+  farm: number;
+  business: number;
+  boats: number;
+  motorcycle: number;
+  farmequipment: number;
+  jobs: number;
+  taxRate: number;
+  platformFee: number;
+  waafi: number;
+  currency: string;
+  [key: string]: string | number;
 }
 
 export interface CalculatedFee {
-  type: string | number;
+  type: 0 | 1;
   isFree: boolean;
   baseFee: number;
   taxAmount: number;
@@ -77,24 +39,46 @@ export interface CalculatedFee {
   currency: string;
 }
 
-export interface CreateFeePayload {
+export interface FeeCategory {
+  id: string;
   name: string;
-  amount: number;
-  currency: string;
+  description?: string;
+  amount?: number;
 }
 
-export interface CalculateFeePayload {
-  category: keyof AppCategories;
-  price: number;
+export const LISTING_TYPES = [
+  "rent",
+  "sale",
+  "auction",
+  "lease",
+  "service",
+  "FREE",
+] as const;
+
+export const LISTING_TYPE = {
+  RENT: "rent",
+  SALE: "sale",
+  AUCTION: "auction",
+  LEASE: "lease",
+  SERVICE: "service",
+  FREE: "FREE",
+} as const;
+
+export type ListingType = (typeof LISTING_TYPES)[number];
+
+export interface AppCategories {
+  subscription: string;
+  marketplace: string;
+  cars: string;
+  realestate: string;
+  boats: string;
+  motorcycle: string;
+  farmequipment: string;
+  jobs: string;
 }
 
-export const CATEGORY_MAP: AppCategories = {
-  marketplace: String(LISTING_TYPES.FEE),
-  car: String(LISTING_TYPES.FEE),
-  realestate: String(LISTING_TYPES.FEE),
-  boat: String(LISTING_TYPES.FEE),
-  motorcycle: String(LISTING_TYPES.FEE),
-  traktor: String(LISTING_TYPES.FEE),
-  advertisement: String(LISTING_TYPES.FEE),
-  subscription: String(LISTING_TYPES.FEE),
-};
+export interface FeeCalculationParams {
+  feeConfig: FeeConfig;
+  category: keyof FeeConfig | keyof AppCategories;
+  subType?: "basic30" | "standard60" | "premium90";
+}

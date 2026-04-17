@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import Link from "next/link";
-import { FaArrowLeft, FaSearch } from "react-icons/fa";
-import JobCard from "@/app/(storeFront)/components/Cards/JobCard";
+import { FaArrowLeft, FaSearch } from "@/app/utils/icons";
+import JobCard from "@/app/(storeFront)/components/Cards/categoriesCards/JobCard";
 
 interface Job {
   id: string;
@@ -16,12 +18,13 @@ interface Job {
 }
 
 function It() {
+  const { t } = useTranslation();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/jobs")
+    fetch(`${BASE_API_URL}/api/jobs`)
       .then((res) => res.json())
       .then((data) => {
         const filtered = data.filter((job: Job) => job.category.includes("IT"));
@@ -46,7 +49,7 @@ function It() {
           className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors mb-4"
         >
           <FaArrowLeft className="mr-2" />
-          Back to All Jobs
+          {t("jobsPage.backToAll")}
         </Link>
 
         <div className="relative w-full max-w-md">
@@ -55,8 +58,8 @@ function It() {
           </span>
           <input
             type="text"
-            placeholder="Search by job title or company..."
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm"
+            placeholder={t("jobsPage.searchPlaceholder")}
+            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -64,16 +67,18 @@ function It() {
       </div>
 
       <div className="border-b border-gray-100 pb-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">IT & Software Jobs</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {t("jobsPage.itTitle")}
+        </h1>
         <p className="text-gray-500 text-sm">
-          Found {filteredJobs.length} positions
+          {t("jobsPage.foundCount", { count: filteredJobs.length })}
         </p>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="animate-pulse text-indigo-600 font-medium text-lg">
-            Loading IT jobs...
+            {t("jobsPage.loading")}
           </div>
         </div>
       ) : filteredJobs.length > 0 ? (
@@ -81,19 +86,19 @@ function It() {
           {filteredJobs.map((job) => (
             <JobCard
               key={job.id}
-              job={{
-                title: job.title,
-                company: job.company || "Company Name",
-                location: `${job.city}, ${job.region}`,
-              }}
-              jobTypeLabel={job.employmentType}
+              title={job.title}
+              company={job.company || "Company Name"}
+              location={`${job.city}, ${job.region}`}
+              id={""}
+              type={""}
+              createdAt={""}
             />
           ))}
         </div>
       ) : (
         <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
           <p className="text-gray-500 text-lg">
-            No matches found for "{searchTerm}"
+            {t("jobsPage.noResults", { query: searchTerm })}
           </p>
           <button
             onClick={() => setSearchTerm("")}

@@ -1,65 +1,39 @@
-import * as http from "http";
-import cluster from "node:cluster";
-import os from "node:os";
+import "dotenv/config";
+import http from "node:http";
 import process from "node:process";
 import chalk from "chalk";
+
 import app from "./app.js";
 import redisServer from "./services/redisserver/redisServer.js";
 import prisma from "./core/utils/db.js";
-import { socketServer } from "./services/sockets/socketServer.ts";
+import { socketServer } from "./services/sockets/socketServer.js";
+import setupGracefulShutdown from "./core/utils/gracefulShutdown.js";
 
-const numCPUs = os.availableParallelism?.() || os.cpus().length;
+const server = http.createServer(app);
 
-// In development we avoid forking workers (pm2 or local runs manage process restarts)
-const isProd = process.env.NODE_ENV === "production";
+const startServer = async () => {
+  try {
+    await Promise.all([redisServer.start(), prisma.$connect()]);
 
-if (isProd && cluster.isPrimary) {
-  console.log(chalk.bold.magenta(`Primary System [PID: ${process.pid}]`));
-  console.log(chalk.cyan(`Targeting ${numCPUs} Workers`));
+    const pub = redisServer.getClient();
+    const sub = pub.duplicate();
+    await sub.connect();
 
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
+    socketServer(server, pub, sub);
+
+    server.listen(Number(process.env.PORT) || 8080, () => {
+      console.log(
+        chalk.green(
+          `Server PID ${process.pid} ready on port ${process.env.PORT}`,
+        ),
+      );
+    });
+
+    setupGracefulShutdown({ server, prisma, redisServer });
+  } catch (err) {
+    console.error(chalk.red("Startup failed:"), err);
+    process.exit(1);
   }
+};
 
-  cluster.on("exit", (worker, code, signal) => {
-    console.log(
-      chalk.red(
-        `Worker ${worker.process.pid} died [Code: ${code}] [Signal: ${signal}]`,
-      ),
-    );
-    cluster.fork();
-  });
-} else {
-  // Single-process startup (development or worker processes in production)
-  const server = http.createServer(app);
-
-  const startServer = async () => {
-    try {
-      await redisServer.start();
-      const status = await redisServer.getStatus();
-
-      const pubClient = redisServer.getClient();
-      const subClient = pubClient.duplicate();
-
-      await subClient.connect();
-
-      socketServer(server, pubClient, subClient);
-
-      await prisma.$connect();
-
-      const PORT = process.env.PORT || 8080;
-      server.listen(PORT, () => {
-        console.log(
-          chalk.green(
-            `Process ${process.pid} | Port: ${PORT} | Redis: ${status.isConnected ? "Online" : "Offline"}`,
-          ),
-        );
-      });
-    } catch (e) {
-      console.error(chalk.red(`Process ${process.pid} failed:`), e);
-      process.exit(1);
-    }
-  };
-
-  startServer();
-}
+startServer();

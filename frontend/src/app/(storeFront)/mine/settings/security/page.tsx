@@ -1,111 +1,96 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { logout, verifySession } from "@/actions/core/authAction";
+import { logout, clearAuthCookies } from "@/actions/core/authAction";
+
+import { useAuth } from "@/context/AuthContext";
 import {
   getActiveSessions,
   logoutAllSessions,
   logoutSession,
-} from "@/actions/common/session";
+} from "@/actions/categories/session";
+
+interface Device {
+  id: string;
+  device?: string;
+  browser?: string;
+  active?: boolean;
+  lastActive?: string;
+}
 
 const Security: React.FC = () => {
-  const [activeDevices, setActiveDevices] = useState<any[]>([]);
+  const { user, loading: authLoading } = useAuth();
+  const [activeDevices, setActiveDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
+  const fetchActiveDevices = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const token = user.accessToken || user.token;
+      const sessions = await getActiveSessions(token);
+      setActiveDevices(sessions || []);
+    } catch {
+      setActiveDevices([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
-    const checkUser = () => {
-      const hasAuthCookie =
-        document.cookie.includes("token=") ||
-        document.cookie.includes("auth-token=") ||
-        document.cookie.includes("session=");
-
-      if (!hasAuthCookie) {
+    if (!authLoading) {
+      if (!user) {
         router.replace("/");
-        return;
-      }
-
-      const verifyAndFetch = async () => {
-        const session = await verifySession();
-        if (!session) {
-          router.replace("/");
-          return;
-        }
+      } else {
         fetchActiveDevices();
-      };
-      verifyAndFetch();
-    };
-    checkUser();
-  }, []);
+      }
+    }
+  }, [user, authLoading, router, fetchActiveDevices]);
 
   const handleLogout = async () => {
     try {
       await logout();
+      clearAuthCookies();
       setActiveDevices([]);
-      window.location.href = "/";
+      window.location.reload();
     } catch {
       alert("Cilad ayaa dhacday markaad ka baxaysay");
     }
   };
 
   const handleLogoutAllDevices = async () => {
-    if (!confirm("Ma hubtaa inaad rabto inaad ka baxdo dhammaan qalabka?")) {
+    if (!confirm("Ma hubtaa inaad rabto inaad ka baxdo dhammaan qalabka?"))
       return;
-    }
 
     setIsLoggingOut(true);
     try {
-      const session = await verifySession();
-      const accessToken = session?.accessToken || session?.token;
-
-      const logoutAllSuccess = await logoutAllSessions(accessToken);
-      await logout(accessToken);
+      const token = user?.accessToken || user?.token;
+      const logoutAllSuccess = await logoutAllSessions(token);
+      await logout();
+      clearAuthCookies();
 
       if (logoutAllSuccess) {
         alert("Waxaad ka baxday dhammaan qalabka");
         setActiveDevices([]);
-        window.location.href = "/";
+        window.location.reload();
       } else {
         alert("Cilad ayaa dhacay marka lagu jarinayay dhammaan qalabka");
       }
-    } catch (error) {
+    } catch {
       alert("Cilad ayaa dhacay marka lagu jarinayay dhammaan qalabka");
     } finally {
       setIsLoggingOut(false);
     }
   };
 
-  const fetchActiveDevices = async () => {
-    try {
-      setLoading(true);
-      const session = await verifySession();
-
-      if (session) {
-        const accessToken = session.accessToken || session.token;
-        const sessions = await getActiveSessions(accessToken);
-        setActiveDevices(sessions);
-      } else {
-        setActiveDevices([]);
-      }
-    } catch (error) {
-      setActiveDevices([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogoutDevice = async (sessionId: string) => {
     try {
-      const session = await verifySession();
-      if (!session) {
-        alert("Ma jiro session firfircoon");
-        return;
-      }
-
-      const accessToken = session.accessToken || session.token;
-      const success = await logoutSession(sessionId, accessToken);
+      const token = user?.accessToken || user?.token;
+      const success = await logoutSession(sessionId, token);
 
       if (success) {
         setActiveDevices((prev) =>
@@ -114,7 +99,7 @@ const Security: React.FC = () => {
       } else {
         alert("Failed to logout device");
       }
-    } catch (error) {
+    } catch {
       alert("Cilad ayaa dhacay marka lagu jarinayay qalabka");
     }
   };
@@ -127,7 +112,7 @@ const Security: React.FC = () => {
         month: "2-digit",
         year: "numeric",
       });
-    } catch (error) {
+    } catch {
       return "";
     }
   };
@@ -135,7 +120,7 @@ const Security: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear === 2025 ? "2025" : `2025–${currentYear}`;
 
-  if (loading) return null;
+  if (authLoading || loading) return null;
 
   return (
     <div className="max-w-5xl mx-auto p-8">
@@ -170,7 +155,7 @@ const Security: React.FC = () => {
           <ul className="space-y-4">
             {activeDevices.map((device) => (
               <li
-                key={device.id || device.device}
+                key={device.id}
                 className="flex justify-between items-center border-b pb-3"
               >
                 <div>
@@ -188,7 +173,7 @@ const Security: React.FC = () => {
                   )}
                 </div>
                 <button
-                  onClick={() => handleLogoutDevice(device.id || device.device)}
+                  onClick={() => handleLogoutDevice(device.id)}
                   className="text-red-600 underline hover:text-red-800 transition"
                 >
                   Ka bax
@@ -207,7 +192,7 @@ const Security: React.FC = () => {
         <p>Suuqa Fursadaha, Ganacsi, Noqo Macaamiil...</p>
         <p>
           © {yearRange} Karaadi AS. Karaadi waa qayb ka mid ah Vend. Vend ayaa
-          mas'uul ka ah xogtaada boggan. Akhri wax badan.
+          mas&rsquo;uul ka ah xogtaada boggan. Akhri wax badan.
         </p>
       </section>
     </div>

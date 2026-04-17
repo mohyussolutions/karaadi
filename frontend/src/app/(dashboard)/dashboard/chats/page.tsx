@@ -12,10 +12,6 @@ import {
   MdClose,
 } from "react-icons/md";
 import { FiUser, FiMessageSquare, FiMail } from "react-icons/fi";
-import {
-  SOCKET_EVENTS,
-  SOCKET_URL,
-} from "@/actions/constant/communicationEndpoints";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import {
   getAllChats,
@@ -25,6 +21,7 @@ import {
   Chat,
   Message,
 } from "@/actions/core/chatActions";
+import { SOCKET_EVENTS, SOCKET_URL } from "@/actions/constant/sockets";
 
 export default function AdminMonitor() {
   const [socket, setSocket] = useState<any>(null);
@@ -84,8 +81,7 @@ export default function AdminMonitor() {
       setLoading(true);
       const data = await getAllChats();
       setChats(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -156,9 +152,7 @@ export default function AdminMonitor() {
       if (socket) {
         socket.emit(SOCKET_EVENTS.EMIT.JOIN_CHAT, chat.id);
       }
-    } catch (error) {
-      console.error(error);
-    }
+    } catch {}
   };
 
   const handleDeleteChat = async (chatId: number) => {
@@ -172,7 +166,10 @@ export default function AdminMonitor() {
         setMessages([]);
       }
     } else {
-      alert(result.error || "Failed to delete chat");
+      alert(
+        (result as { success: boolean; error?: string }).error ||
+          "Failed to delete chat",
+      );
     }
   };
 
@@ -181,7 +178,10 @@ export default function AdminMonitor() {
     if (result.success) {
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
     } else {
-      alert(result.error || "Failed to delete message");
+      alert(
+        (result as { success: boolean; error?: string }).error ||
+          "Failed to delete message",
+      );
     }
   };
 

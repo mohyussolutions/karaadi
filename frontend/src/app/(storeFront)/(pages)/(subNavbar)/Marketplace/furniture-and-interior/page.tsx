@@ -1,21 +1,30 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
-import { FurnitureNestedSub } from "@/app/(links)/storeFrontLinks/nestedSubcategoryForMarketplace";
-import { getGlobalSearchResults } from "@/actions/common/getGlobalSearchResults";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/page";
-import {
-  getMarketplaceItems,
-  MarketplaceItem,
-} from "@/actions/categories/marketplaceActions";
+import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
+import { getMarketplaceItems } from "@/actions/categories/marketplaceActions";
+import { MarketplaceItem } from "@/app/utils/types/marketplace.types";
 import SearchInput from "@/app/ui/search/SearchInput";
+import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
+import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { useError } from "@/app/(storeFront)/components/hooks/useError";
+import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
+import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
+import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
+import { ITEM_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
+import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
 
 export default function FurnitureAndInterior() {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { renderError } = useError();
+  const { scroll } = usehandleHorizontalScroll(scrollRef);
+
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -33,7 +42,27 @@ export default function FurnitureAndInterior() {
     async function loadItems() {
       try {
         const data = await getMarketplaceItems();
-        if (data) setItems(data);
+        if (data) {
+          setItems(
+            data.map((item: any) => ({
+              id: item.id ?? item._id ?? "",
+              title: item.title ?? "",
+              description: item.description ?? "",
+              price: item.price ?? 0,
+              images: item.images ?? [],
+              createdAt: item.createdAt ?? "",
+              updatedAt: item.updatedAt ?? "",
+              location: item.location ?? item.city ?? "",
+              category:
+                typeof item.category === "string"
+                  ? item.category
+                  : (item.category?.[0] ?? ""),
+              userId: item.userId ?? item.user?._id ?? "",
+              type: item.type ?? "",
+              ...item,
+            })),
+          );
+        }
       } catch (err) {
         setIsError(true);
       } finally {
@@ -64,22 +93,24 @@ export default function FurnitureAndInterior() {
           : item.category === "Furniture & Interior",
       );
       const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
-        _id: item._id ?? item.id ?? "",
         id: item.id ?? item._id ?? "",
-        user: item.user ?? null,
         title: item.title ?? "",
         description: item.description ?? "",
-        city: item.city ?? "",
         price: item.price ?? 0,
         images: item.images ?? [],
-        category: item.category ?? "",
-        subcategory: item.subcategory ?? "",
-        region: item.region ?? "",
-        mainCategory: item.mainCategory ?? "Furniture & Interior",
+        createdAt: item.createdAt ?? "",
+        updatedAt: item.updatedAt ?? "",
+        location: item.location ?? item.city ?? "",
+        category:
+          typeof item.category === "string"
+            ? item.category
+            : (item.category?.[0] ?? ""),
+        userId: item.userId ?? item.user?._id ?? "",
+        type: item.type ?? "",
+        ...item,
       }));
       setSearchResults(mappedResults);
     }, 400);
-
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
@@ -106,41 +137,37 @@ export default function FurnitureAndInterior() {
     let list = query.trim() ? searchResults : allFurnitureItems;
 
     if (selectedSubcategory) {
+      const normalized = t(selectedSubcategory).toLowerCase();
       list = list.filter((item) => {
         const subs = Array.isArray(item.subcategory)
           ? item.subcategory
           : [item.subcategory];
-        return subs.some(
-          (s) => s?.toLowerCase() === selectedSubcategory.toLowerCase(),
+        return subs.some((s) =>
+          String(s || "")
+            .toLowerCase()
+            .includes(normalized),
         );
       });
     }
 
     if (selectedRegion) {
-      const activeRegs = selectedRegion.split(",");
+      const activeRegs = selectedRegion.toLowerCase().split(",");
       list = list.filter(
-        (item) =>
-          item.region &&
-          activeRegs.some(
-            (r) => r.toLowerCase() === item.region!.toLowerCase(),
-          ),
+        (item) => item.region && activeRegs.includes(item.region.toLowerCase()),
       );
     }
 
-    const activeCities = Object.keys(checkedCities).filter(
-      (city) => checkedCities[city],
-    );
+    const activeCities = Object.keys(checkedCities)
+      .filter((city) => checkedCities[city])
+      .map((c) => c.toLowerCase());
+
     if (activeCities.length > 0) {
       list = list.filter(
-        (item) =>
-          item.city &&
-          activeCities.some(
-            (c) => c.toLowerCase() === item.city!.toLowerCase(),
-          ),
+        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
       );
     }
 
-    return Array.from(new Map(list.map((item) => [item._id, item])).values());
+    return Array.from(new Map(list.map((item) => [item.id, item])).values());
   }, [
     allFurnitureItems,
     searchResults,
@@ -148,129 +175,108 @@ export default function FurnitureAndInterior() {
     selectedSubcategory,
     selectedRegion,
     checkedCities,
+    t,
   ]);
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      scrollRef.current.scrollTo({
-        left: scrollLeft + (direction === "left" ? -clientWidth : clientWidth),
-        behavior: "smooth",
-      });
-    }
-  };
+  const ordered = useListingFeed(itemsToDisplay, query, "Furniture & Interior");
 
-  if (isError)
-    return (
-      <div className="text-red-500 p-10 text-center font-bold">
-        Cilad ayaa ku timid soo dejinta alaabta guriga.
-      </div>
-    );
+  if (isError) return renderError(isError);
 
   return (
-    <div className="container mx-auto px-4 pb-10">
-      <SearchInput onSearch={setQuery} />
-      <div className="pt-2">
+    <div className="container mx-auto px-2 py-2 space-y-3">
+      <ContainerLinks>
+        <SearchInput onSearch={setQuery} defaultValue={query} />
+      </ContainerLinks>
+
+      <div className="pt-1">
         <PathSegmentsDisplay />
       </div>
 
-      <div className="relative py-6">
-        <div className="flex justify-center relative items-center">
-          <button
-            onClick={() => scroll("left")}
-            className="absolute left-0 z-10 bg-white shadow-md p-3 rounded-full border hover:bg-gray-100 transition-all"
-          >
-            <FaChevronLeft />
-          </button>
-          <div
-            ref={scrollRef}
-            className="flex overflow-x-auto space-x-6 scrollbar-hide px-10 max-w-[calc(100%-100px)] py-4"
-          >
-            {FurnitureNestedSub.map((filter) => (
-              <button
-                key={filter.title}
-                onClick={() =>
-                  setSelectedSubcategory((prev) =>
-                    prev === filter.title ? null : filter.title,
-                  )
-                }
-                className={`flex-shrink-0 w-44 flex flex-col items-center justify-center text-center rounded-xl p-5 border transition-all duration-300 ${
-                  selectedSubcategory === filter.title
-                    ? "bg-blue-600 border-blue-600 shadow-lg scale-105 text-white"
-                    : "bg-white border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-900"
-                }`}
-              >
-                <div className="text-2xl mb-2">{filter.icon}</div>
-                <span className="text-[15px] font-medium leading-tight">
-                  {filter.so}
-                </span>
-                <span
-                  className={`text-[10px] uppercase mt-1 ${selectedSubcategory === filter.title ? "text-blue-100" : "text-gray-500"}`}
-                >
-                  ({filter.title})
-                </span>
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => scroll("right")}
-            className="absolute right-0 z-10 bg-white shadow-md p-3 rounded-full border hover:bg-gray-100 transition-all"
-          >
-            <FaChevronRight />
-          </button>
-        </div>
-      </div>
+      <ContainerLinks>
+        <CommonSubCategoryLinks
+          items={nesCategories.FurnitureNestedSub || []}
+          selectedId={selectedSubcategory}
+          onSelect={(id) =>
+            setSelectedSubcategory((prev) => (prev === id ? null : id))
+          }
+          onScroll={scroll}
+          scrollRef={scrollRef}
+          t={t}
+        />
+      </ContainerLinks>
 
-      <div className="flex flex-col-reverse md:flex-row gap-8 pt-2">
-        <aside className="md:w-1/3 sticky top-4 self-start">
-          <LocationSelector
-            onFilterChange={(reg, cities) => {
-              setSelectedRegion(reg);
-              setCheckedCities(cities);
-            }}
-            selectedRegion={selectedRegion}
-            checkedCities={checkedCities}
-            regionCounts={regionCityCounts.regionCounts}
-            cityCounts={regionCityCounts.cityCounts}
-          />
-          <div className="mt-4 bg-gray-50 rounded-xl p-2 border border-gray-100 shadow-sm">
-            <SomaliMap
+      <div className="flex flex-col-reverse md:flex-row gap-4 pt-1">
+        <aside className="w-full md:w-1/3 space-y-4 sticky top-4 self-start">
+          <ContainerLinks>
+            <LocationSelector
+              onFilterChange={(
+                reg: React.SetStateAction<string | null>,
+                cities: React.SetStateAction<Record<string, boolean>>,
+              ) => {
+                setSelectedRegion(reg);
+                setCheckedCities(cities);
+              }}
               selectedRegion={selectedRegion}
-              onRegionClick={setSelectedRegion}
-              items={allFurnitureItems}
+              checkedCities={checkedCities}
+              regionCounts={regionCityCounts.regionCounts}
+              cityCounts={regionCityCounts.cityCounts}
             />
-          </div>
+          </ContainerLinks>
+          <ContainerLinks>
+            <div className="p-1">
+              <SomaliMap
+                selectedRegion={selectedRegion}
+                onRegionClick={setSelectedRegion}
+                items={allFurnitureItems}
+              />
+            </div>
+          </ContainerLinks>
         </aside>
 
-        <main className="md:w-2/3 w-full">
-          <div className="mb-6 text-sm font-medium text-gray-600 bg-blue-50 py-2 px-4 rounded-lg inline-block border border-blue-100">
-            Waxaa la soo bandhigayaa{" "}
-            <span className="text-blue-700 font-bold">
-              {itemsToDisplay.length}
-            </span>{" "}
-            alaabta guriga ah.
-          </div>
+        <main className="md:w-2/3 w-full space-y-4">
+          <ContainerLinks>
+            <div className="text-xs font-medium text-gray-500 px-3 py-1 flex justify-between items-center">
+              <span>{isLoading ? t("loading") : t("resultsFound")}</span>
+              {!isLoading && (
+                <span className="text-blue-700 font-bold">
+                  {itemsToDisplay.length}{" "}
+                  {t("items", { defaultValue: "alaab" })}
+                </span>
+              )}
+            </div>
+          </ContainerLinks>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {itemsToDisplay.length > 0
-              ? itemsToDisplay.map((item) => (
-                  <UniversalCard
-                    key={item._id}
-                    id={item._id}
-                    title={item.title}
-                    description={item.description}
-                    city={item.city}
-                    price={item.price}
-                    images={item.images}
-                    category="marketplace"
-                  />
-                ))
-              : !isLoading && (
-                  <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-medium">
-                    Ma jiro wax alaab ah oo la helay deegaankan.
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loading />
+            </div>
+          ) : (
+            <ContainerLinks>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-3">
+                {ordered.length > 0 ? (
+                  ordered.map((item) => (
+                    <UniversalCard
+                      key={item._id}
+                      id={item._id}
+                      title={item.title}
+                      description={item.description}
+                      city={item.city}
+                      price={item.price}
+                      images={item.images}
+                      category="marketplace"
+                      href={`${ITEM_DETAILS}/${item._id || item.id}`}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-20 text-gray-400 text-xs">
+                    {t("noResults", {
+                      defaultValue: "Ma jiro wax alaab ah oo la helay.",
+                    })}
                   </div>
                 )}
-          </div>
+              </div>
+            </ContainerLinks>
+          )}
         </main>
       </div>
     </div>

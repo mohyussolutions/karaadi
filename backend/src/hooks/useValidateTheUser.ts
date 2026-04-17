@@ -1,8 +1,4 @@
-export interface validateProps {
-  username?: string;
-  email: string;
-  password: string;
-}
+import { validateProps } from "../types/index.ts";
 
 const passwordRegex =
   /^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[^0-9A-Za-z]).{8,32}$/;

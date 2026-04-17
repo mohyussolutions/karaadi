@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import LoginLoading from "../components/shared/Loading/LoginLoading";
-import { logout } from "@/actions/core/authAction";
-import { FiEdit2, FiLogOut, FiPhone } from "react-icons/fi";
+import { FiEdit2, FiLogOut, FiPhone, FiCheckCircle } from "@/app/utils/icons";
 import { useTranslation } from "react-i18next";
+import { logout, clearAuthCookies } from "@/actions/core/authAction";
+import LoginLoading from "../components/shared/Loading/LoginLoading";
 import { NormalizedUser } from "@/app/utils/types/user.types";
 
 interface ProfileCardProps {
@@ -14,28 +14,26 @@ interface ProfileCardProps {
   accessToken?: string;
 }
 
-const ProfileCard = ({ user }: ProfileCardProps) => {
+const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
   const { t } = useTranslation();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
-      setIsLoggingOut(true);
-      const token =
-        document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("accessToken="))
-          ?.split("=")[1] ||
-        document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("idToken="))
-          ?.split("=")[1] ||
-        "";
-      await logout(token);
-      window.location.href = "/";
+      await logout(accessToken || user?.token || "");
     } catch (err) {
+      console.error(err);
+    } finally {
+      clearAuthCookies();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
+      }
       window.location.href = "/";
     }
   };
@@ -44,111 +42,98 @@ const ProfileCard = ({ user }: ProfileCardProps) => {
     router.push("/profile-edit");
   };
 
-  if (!user) {
-    return (
-      <div className="w-full mx-auto bg-white shadow-sm rounded-2xl p-6 mt-10 text-center border border-gray-100">
-        <p className="text-gray-500 font-medium">
-          {t("mine.profile.noUser", "No user data found.")}
-        </p>
-      </div>
-    );
-  }
-
-  const displayName =
-    user.username || t("mine.profile.defaultDisplayName", "User");
-
-  const getValidImageSrc = () => {
-    if (!user.profileImage || imageError) {
-      return "/default-profile.png";
-    }
-    try {
-      new URL(user.profileImage);
+  const profileImageSrc = useMemo(() => {
+    if (!user?.profileImage || imageError) return "/default-profile.png";
+    if (
+      user.profileImage.startsWith("http") ||
+      user.profileImage.startsWith("data:")
+    ) {
       return user.profileImage;
-    } catch {
-      if (
-        /^[A-Za-z0-9+/=]+$/.test(user.profileImage) &&
-        user.profileImage.length > 100
-      ) {
-        return `data:image/png;base64,${user.profileImage}`;
-      }
-      return "/default-profile.png";
     }
-  };
+    return user.profileImage.length > 100
+      ? `data:image/png;base64,${user.profileImage}`
+      : "/default-profile.png";
+  }, [user?.profileImage, imageError]);
 
-  const profileImageSrc = getValidImageSrc();
+  if (!user) return null;
 
   return (
-    <div className="relative w-full mx-auto bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 md:p-8 mt-10 border border-gray-100 shadow-sm hover:shadow transition-all duration-300">
-      <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 w-full">
-          <div className="relative group shrink-0">
-            <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300">
+    <div className="relative w-full mx-auto bg-white rounded-[2.5rem] p-6 md:p-10 mt-10 border border-gray-100 shadow-sm transition-all duration-300 group">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-8 w-full">
+          <div className="flex items-center justify-center w-full md:w-auto">
+            <div className="w-28 h-28 rounded-full overflow-hidden border border-gray-200 bg-gray-50">
               <Image
                 src={profileImageSrc}
-                alt={displayName}
-                fill
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
-                sizes="(max-width: 768px) 96px, 112px"
+                alt={user.username || "User"}
+                width={112}
+                height={112}
+                className="object-cover rounded-full"
                 priority
                 onError={() => setImageError(true)}
               />
             </div>
-            <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
           </div>
 
-          <div className="text-center md:text-left space-y-3 w-full">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
-                {displayName}
+          <div className="text-center md:text-left space-y-4 w-full">
+            <div className="space-y-1">
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
+                {user.username}
               </h2>
-              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3">
-                <p className="text-gray-500 break-all bg-gray-100/50 px-3 py-1 rounded-full text-xs md:text-sm font-medium">
+              <div className="flex justify-center md:justify-start">
+                <p className="text-blue-600 font-bold text-sm tracking-wide bg-blue-50 inline-block px-4 py-1 rounded-full">
                   {user.email}
                 </p>
               </div>
-
-              {user.phone && (
-                <div className="flex items-center justify-center md:justify-start gap-2 text-gray-600 mt-3">
-                  <FiPhone size={14} className="text-gray-400" />
-                  <span className="text-sm">{user.phone}</span>
-                  {user.phoneVerified && (
-                    <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
-                      {t("mine.profile.verified", "Verified")}
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
 
-            <div className="flex items-center justify-center md:justify-start pt-2">
+            {user.phone && (
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
+                  <FiPhone size={14} className="text-gray-400" />
+                  <span className="text-sm font-black text-gray-700">
+                    {user.phone}
+                  </span>
+                </div>
+                {user.phoneVerified && (
+                  <div className="flex items-center gap-1 text-green-600">
+                    <FiCheckCircle size={16} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      {t("mine.profile.verified")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-center md:justify-start">
               <button
                 onClick={handleEditProfile}
-                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
+                className="px-8 py-3.5 bg-gray-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 transition-all duration-300 flex items-center gap-3"
               >
-                <FiEdit2 size={15} /> {t("mine.profile.edit", "Edit")}
+                <FiEdit2 size={14} />
+                {t("mine.profile.edit")}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="w-full md:w-auto border-t md:border-t-0 border-gray-100 mt-6 md:mt-0 pt-6 md:pt-0">
+        <div className="flex justify-center w-full lg:w-auto mt-6 lg:mt-0">
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className={`w-full md:w-auto min-w-[140px] px-6 py-3.5 md:py-3 text-sm font-bold rounded-2xl md:rounded-xl transition-all duration-300 shadow-sm active:scale-95 flex items-center justify-center gap-2 border ${
+            className={`px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 border-2 min-w-[140px] ${
               isLoggingOut
-                ? "bg-green-600 text-white border-transparent cursor-not-allowed"
-                : "bg-gradient-to-r from-red-600 to-red-500 text-white border-transparent hover:from-red-700 hover:to-red-600 hover:shadow-lg hover:shadow-red-100"
+                ? "bg-gray-100 text-gray-400 border-transparent"
+                : "bg-white text-red-500 border-red-50 hover:bg-red-500 hover:text-white hover:border-red-500"
             }`}
           >
             {isLoggingOut ? (
-              <div className="flex items-center gap-2">
-                <LoginLoading />
-              </div>
+              <LoginLoading />
             ) : (
               <>
-                <FiLogOut size={19} className="shrink-0" />
-                <span>{t("mine.profile.logout", "Logout")}</span>
+                <FiLogOut size={18} />
+                <span>{t("mine.profile.logout")}</span>
               </>
             )}
           </button>

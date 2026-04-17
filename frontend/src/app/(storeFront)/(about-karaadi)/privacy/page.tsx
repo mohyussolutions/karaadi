@@ -1,6 +1,11 @@
+"use client";
+export const dynamic = "force-dynamic";
+
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 function Privacy() {
+  const { t } = useTranslation();
   return (
     <div
       style={{
@@ -22,20 +27,16 @@ function Privacy() {
         }}
       >
         <h1 style={{ color: "#222", marginBottom: "1.5rem" }}>
-          Nidaamka Sirta iyo Ilaalinta Xogta ee Karaadi
+          {t("privacyPage.title")}
         </h1>
 
         <section>
-          <h2 style={{ color: "#333", fontSize: "1.3rem" }}>Ururinta Xogta</h2>
-          <p>
-            Karaadi waxay u ururisaa macluumaadka si ay u bixiso adeegyo tayo
-            leh oo ku habboon dhammaan isticmaalayaashayada. Tan waxaa ku jira
-            macluumaadka aad na siiso si toos ah, sida magacaaga, taleefankaaga,
-            iyo ciwaanka iimaylka, iyo sidoo kale xogta si otomaatig ah loogu
-            ururiyo marka aad isticmaalayso boggayaga. Waxaan isticmaalnaa habab
-            ammaan oo aad u sarreeya si aan u hubinno in xogtaada marna si
-            khaldan aan loo isticmaalin.
-          </p>
+          <section>
+            <h2 style={{ color: "#333", fontSize: "1.3rem" }}>
+              {t("privacyPage.sections.collectionTitle")}
+            </h2>
+            <p>{t("privacyPage.sections.collection")}</p>
+          </section>
         </section>
 
         <hr
@@ -49,16 +50,9 @@ function Privacy() {
 
         <section>
           <h2 style={{ color: "#333", fontSize: "1.3rem" }}>
-            Sida aan u Isticmaalno Xogta
+            {t("privacyPage.sections.usageTitle")}
           </h2>
-          <p>
-            Macluumaadka aan ururinno waxaa loo isticmaalaa in lagu horumariyo
-            adeegyada Karaadi, in lagula soo xiriiro marka ay lagama maarmaan
-            tahay, iyo in lagu xaqiijiyo ammaanka akoonkaaga. Marna kama
-            ganacsano xogtaada gaarka ah, lamana wadaagno dhinacyo saddexaad oo
-            aan oggolaansho u lahayn, marka laga reebo xaaladaha sharcigu
-            dalbanayo si loo ilaaliyo badqabka bulshada.
-          </p>
+          <p>{t("privacyPage.sections.usage")}</p>
         </section>
 
         <hr
@@ -72,16 +66,9 @@ function Privacy() {
 
         <section>
           <h2 style={{ color: "#333", fontSize: "1.3rem" }}>
-            Xuquuqdaada iyo Sirtaada
+            {t("privacyPage.sections.rightsTitle")}
           </h2>
-          <p>
-            Waxaad xaq u leedahay inaad gasho, cusboonaysiiso, ama tirtirto
-            macluumaadkaaga gaarka ah wakhti kasta oo aad rabto. Karaadi waxay
-            ka go'an tahay hufnaan buuxda oo ku saabsan sida xogtaada loo
-            tacaalo. Haddii aad qabto wax su'aalo ah oo ku saabsan xuquuqdaada
-            ama habka aan u maarayno sirtaada, fadlan si degdeg ah ula xiriir
-            kooxdayada adeegga macaamiisha.
-          </p>
+          <p>{t("privacyPage.sections.rights")}</p>
         </section>
 
         <hr
@@ -94,14 +81,10 @@ function Privacy() {
         />
 
         <section>
-          <h2 style={{ color: "#333", fontSize: "1.3rem" }}>Ammaanka Xogta</h2>
-          <p>
-            Nidaamka Karaadi wuxuu ku dhisanyahay tignoolajiyad casri ah oo
-            loogu talagalay in looga hortago jabsiga iyo gelitaanka aan la
-            oggolayn. Waxaan si joogto ah u cusboonaysiinaa nidaamkayaga
-            ammaanka si aan u ilaalino kalsoonida aad nagu qabto iyo xogta aad
-            noo dhiibatay.
-          </p>
+          <h2 style={{ color: "#333", fontSize: "1.3rem" }}>
+            {t("privacyPage.sections.securityTitle")}
+          </h2>
+          <p>{t("privacyPage.sections.security")}</p>
         </section>
       </div>
     </div>

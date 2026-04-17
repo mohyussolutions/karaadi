@@ -34,7 +34,7 @@ boatsRoutes.post(
   validateRequest(createBoatSchema),
   createBoat,
 );
-boatsRoutes.put("/:id/payment", updateBoatPayment);
+boatsRoutes.patch("/:id/payment", updateBoatPayment);
 boatsRoutes.put("/:id", validateRequest(createBoatSchema), updateBoat);
 boatsRoutes.delete("/:id", deleteBoat);
 

@@ -1,17 +1,26 @@
-"use server";
+import { BASE_API_URL } from "../constant/BASE_API_URL";
+export const HAGE_API_URL = `${BASE_API_URL}/api/hage/chat`;
 
-import { HAGE_API_URL } from "../constant/sockets";
+interface ChatResponse {
+  reply?: string;
+  error?: string;
+}
 
-export async function sendChatMessage(content: string) {
+export async function sendChatMessage(
+  content: string,
+  category: string = "car",
+  city: string = "",
+  maxPrice: number = 1000000,
+): Promise<ChatResponse> {
   try {
     const res = await fetch(HAGE_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: content,
-        category: "car",
-        city: "",
-        maxPrice: 1000000,
+        category,
+        city,
+        maxPrice,
       }),
     });
 
@@ -23,6 +32,7 @@ export async function sendChatMessage(content: string) {
 
     return { reply: data.reply };
   } catch (err) {
+    console.error(err);
     return {
       error: "Waan ka xumahay, jawaab lama helin. Fadlan isku day mar kale.",
     };

@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import en from "@/i18n/locales/en.json";
@@ -14,11 +15,12 @@ import {
   FiSearch,
   FiTrendingUp,
   FiClock,
-} from "react-icons/fi";
+} from "@/app/utils/icons";
 import { navLinks } from "@/app/(links)/storeFrontLinks/mineLinks";
-import { verifySession } from "@/actions/core/authAction";
+import { useAuth } from "@/context/AuthContext";
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 
-const API_BASE = "http://localhost:8080/api/history-search";
+const API_BASE = `${BASE_API_URL}/api/history-search`;
 
 const SearchItemDetails = ({ item }: { item: any }) => {
   if (!item) return null;
@@ -42,39 +44,33 @@ const SearchItemDetails = ({ item }: { item: any }) => {
   );
 };
 
-const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
-  accessToken,
-}) => {
+const SavedSearchHistory: React.FC = () => {
   const { t } = useTranslation();
-  const { activeLanguage } = useLanguage();
+  const { user: authUser, loading: authLoading } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [popularSearches, setPopularSearches] = useState([]);
+  const [itemsMap, setItemsMap] = useState<Record<string, any>>({});
   const [missingTranslations, setMissingTranslations] = useState<{
     en: string[];
     so: string[];
   }>({ en: [], so: [] });
-  const [user, setUser] = useState<any>(null);
-  const [popularSearches, setPopularSearches] = useState([]);
-  const [itemsMap, setItemsMap] = useState<Record<string, any>>({});
-
-  const fetchData = async () => {
-    try {
-      const sessionFn =
-        typeof verifySession === "function"
-          ? verifySession()
-          : Promise.resolve({});
-      const [profile, session] = await Promise.all([
-        getProfile(accessToken),
-        sessionFn,
-      ]);
-      setUser({ ...profile, ...session });
-
-      const popularRes = await fetch(`${API_BASE}/admin/popular`);
-      if (popularRes.ok) setPopularSearches(await popularRes.json());
-    } catch (error) {}
-  };
 
   useEffect(() => {
+    const fetchData = async () => {
+      if (!authUser) return;
+      try {
+        const token = authUser.accessToken || authUser.token;
+        const profile = await getProfile(token);
+        setUserProfile(profile);
+
+        const popularRes = await fetch(`${API_BASE}/admin/popular`);
+        if (popularRes.ok) setPopularSearches(await popularRes.json());
+      } catch (error) {
+        console.error(error);
+      }
+    };
     fetchData();
-  }, [accessToken]);
+  }, [authUser]);
 
   useEffect(() => {
     const required = [
@@ -95,32 +91,25 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
       }, obj);
     };
 
-    const missingEn: string[] = [];
-    const missingSo: string[] = [];
-    required.forEach((k) => {
-      if (getKey(en, k) === undefined) missingEn.push(k);
-      if (getKey(so, k) === undefined) missingSo.push(k);
-    });
+    const missingEn: string[] = required.filter(
+      (k) => getKey(en, k) === undefined,
+    );
+    const missingSo: string[] = required.filter(
+      (k) => getKey(so, k) === undefined,
+    );
 
-    if (missingEn.length || missingSo.length) {
-      setMissingTranslations({ en: missingEn, so: missingSo });
-      console.warn("Missing translation keys:", {
-        en: missingEn,
-        so: missingSo,
-      });
-    } else {
-      setMissingTranslations({ en: [], so: [] });
-    }
+    setMissingTranslations({ en: missingEn, so: missingSo });
   }, []);
 
   useEffect(() => {
-    const queries: string[] = (user?.searchLogs || [])
+    const displayUser = userProfile || authUser;
+    const logs = (displayUser as any)?.searchLogs || [];
+    const queries: string[] = logs
       .slice(0, 10)
       .map((l: any) => l.query)
       .filter(Boolean);
 
     const unique = Array.from(new Set(queries));
-
     let mounted = true;
 
     (async () => {
@@ -136,30 +125,26 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
               );
               if (!res.ok) return [q, null] as const;
               const data = await res.json();
-              const first = Array.isArray(data) ? data[0] : data;
-              return [q, first] as const;
-            } catch (e) {
+              return [q, Array.isArray(data) ? data[0] : data] as const;
+            } catch {
               return [q, null] as const;
             }
           }),
         );
 
         if (!mounted) return;
-
         const map: Record<string, any> = {};
         results.forEach(([q, item]) => {
           map[q] = item;
         });
         setItemsMap(map);
-      } catch (e) {
-
-      }
+      } catch {}
     })();
 
     return () => {
       mounted = false;
     };
-  }, [user?.searchLogs]);
+  }, [userProfile, authUser]);
 
   const handleDeleteLog = async (logId: string) => {
     try {
@@ -167,12 +152,15 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
         method: "DELETE",
       });
       if (res.ok) {
-        setUser((prev: any) => ({
-          ...prev,
-          searchLogs: prev.searchLogs.filter((log: any) => log.id !== logId),
-        }));
+        setUserProfile((prev: any) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            searchLogs: prev.searchLogs?.filter((log: any) => log.id !== logId),
+          };
+        });
       }
-    } catch (error) {}
+    } catch {}
   };
 
   const handleDeleteTrending = async (query: string) => {
@@ -188,12 +176,18 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
           prev.filter((item: any) => item.query !== query),
         );
       }
-    } catch (error) {}
+    } catch {}
   };
+
+  if (authLoading) return null;
+
+  const displayUser = (userProfile || authUser) as any;
+  const searchLogs = displayUser?.searchLogs || [];
 
   return (
     <div className="min-h-screen flex flex-col pt-10 pb-10 px-4">
-      {(missingTranslations.en.length || missingTranslations.so.length) && (
+      {(missingTranslations.en.length > 0 ||
+        missingTranslations.so.length > 0) && (
         <div className="max-w-5xl mx-auto mb-4 p-3 rounded border bg-yellow-50 text-sm text-yellow-800">
           <strong className="block font-black">
             Missing translation keys:
@@ -206,6 +200,7 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
           )}
         </div>
       )}
+
       <div className="max-w-5xl mx-auto w-full flex-grow space-y-6">
         <div className="border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4">
@@ -217,7 +212,7 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
                 {t("mine.currentProfile", "Current Profile")}
               </p>
               <h1 className="text-xl font-black text-gray-900 leading-none">
-                {user?.username || t("mine.guest", "Guest")}
+                {displayUser?.username || t("mine.guest", "Guest")}
               </h1>
             </div>
           </div>
@@ -230,7 +225,7 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
                 {t("mine.emailAddress", "Email Address")}
               </p>
               <h1 className="text-xl font-black text-gray-900 leading-none">
-                {user?.email || t("mine.notAvailable", "N/A")}
+                {displayUser?.email || t("mine.notAvailable", "N/A")}
               </h1>
             </div>
           </div>
@@ -263,8 +258,8 @@ const SavedSearchHistory: React.FC<{ accessToken: string }> = ({
               {t("mine.searchHistory.recent", "Recent Search History")}
             </h3>
             <div className="space-y-4">
-              {user?.searchLogs?.length > 0 ? (
-                user.searchLogs.slice(0, 10).map((log: any) => (
+              {searchLogs.length > 0 ? (
+                searchLogs.slice(0, 10).map((log: any) => (
                   <div
                     key={log.id}
                     className="bg-gray-50 p-4 rounded-xl border border-gray-100 group transition-all"

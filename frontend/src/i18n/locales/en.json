@@ -1,4 +1,50 @@
 {
+  "about": {
+    "title": "About Karaadi",
+    "heading": "About Karaadi",
+    "description": "Learn more about Karaadi, our mission and values.",
+    "metaTitle": "About Karaadi",
+    "metaDescription": "Information about Karaadi, mission, and team.",
+    "lead": "The best place to buy and sell across Somalia.",
+    "missionHeading": "Our Mission",
+    "mission": "Our mission is to make trading and communication between people and businesses in Somalia simple and trusted. We provide a marketplace where you can find everything from real estate and vehicles to jobs and services. We commit to transparency, ease, and safety in all transactions.",
+    "whatHeading": "What You Can Find",
+    "items": {
+      "realEstate": "Real Estate: Buy, sell or rent homes, land, and offices.",
+      "vehicles": "Vehicles: Cars, motorcycles, boats and other transport.",
+      "marketplace": "Marketplace: Electronics, home goods, clothing and more.",
+      "jobs": "Jobs: Find new opportunities or advertise openings.",
+      "services": "Services: Find or offer services like construction, repairs, and consulting."
+    },
+    "contactHeading": "Contact Us",
+    "contactIntro": "Have questions, feedback, or concerns? Please contact us — we're here to help.",
+    "contact": {
+      "emailLabel": "Email:",
+      "phoneLabel": "Phone:"
+    }
+  },
+  "terms": {
+    "title": "Terms and Conditions",
+    "heading": "Terms & Conditions",
+    "description": "Read the terms and conditions for using Karaadi.",
+    "items": [
+      "Fraudulent behaviour is prohibited.",
+      "Products must be described accurately.",
+      "Keep your password secure.",
+      "Provide accurate information.",
+      "Fraud may result in account suspension.",
+      "Karaadi is a marketplace only; transactions are between users."
+    ],
+    "metaTitle": "Terms and Conditions",
+    "metaDescription": "Legal terms and conditions for Karaadi users."
+  },
+  "contact": {
+    "title": "Contact Us",
+    "heading": "Contact Karaadi",
+    "description": "Get in touch with the Karaadi team for support or inquiries.",
+    "metaTitle": "Contact Karaadi",
+    "metaDescription": "Support and contact information for Karaadi."
+  },
   "nav": {
     "home": "Home",
     "about": "About Us",
@@ -12,6 +58,13 @@
   },
   "welcome": "Welcome to Karaadi",
   "search": "Search here...",
+  "filters": {
+    "location": {
+      "title": "Regions",
+      "mobileFilter": "Location Filter",
+      "clearAll": "Clear All"
+    }
+  },
   "auth": {
     "login": {
       "title": "Welcome Back!",
@@ -219,6 +272,7 @@
     "title": "Farm Equipment Listing",
     "mainCategory": "Main Category",
     "category": "Category",
+    "subcategory": "Subcategory",
     "titlePlaceholder": "Title",
     "pricePlaceholder": "Price ($)",
     "descriptionPlaceholder": "More details...",
@@ -249,14 +303,14 @@
     "pageTitle": "Boats",
     "mainCategory": "Main Category",
     "category": "Category",
-    "city": "City / Magaalo",
+    "city": "City",
     "addingCity": "Adding city...",
     "addAnotherCity": "+ Add city",
     "typePlaceholder": "Type (required)",
     "modelPlaceholder": "Model",
     "gearboxPlaceholder": "Gearbox",
     "colorPlaceholder": "Color",
-    "feeLabel": "Lacagta Adeegga",
+    "feeLabel": "Service Fee",
     "subcategory": "Subcategory",
     "selectCategory": "Select category",
     "selectSubcategory": "Select subcategory",
@@ -323,12 +377,23 @@
       "furniture": "Furniture",
       "fashion": "Fashion"
     },
+    "farmEquipment": {
+      "tractor": "Tractor",
+      "tools": "Farm Tools",
+      "fertilizerSpreader": "Fertilizer Spreader",
+      "harvester": "Grain Harvester",
+      "plow": "Plow",
+      "irrigation": "Irrigation System"
+    },
     "realEstate": {
       "forRent": "For Rent",
       "forSale": "For Sale",
       "landForSale": "Land for Sale",
       "farmForSale": "Farm for Sale",
-      "commercial": "Commercial"
+      "commercial": "Commercial",
+      "resultsFound": "Results found:",
+      "resultsCount": "{{count}} properties",
+      "noPropertiesFound": "No matching properties found."
     },
     "cars": {
       "carsForSale": "Cars for Sale",
@@ -609,15 +674,26 @@
       }
     }
   },
-  "footer_extra": {},
+  "marketplace": {
+    "displaying": "Displaying {{count}} {{category}}."
+  },
+  "common": {
+    "loading": "Loading...",
+    "noResults": "No results found in this area.",
+    "back": "Back",
+    "continue": "Continue"
+  },
   "mine": {
     "nav": {
       "myAds": "My Ads",
       "favorites": "Favorites",
       "saved": "Saved",
       "tickets": "Tickets",
-      "settings": "Settings"
+      "settings": "Settings",
+      "badge": "Badge"
     },
+    "noData": "No data",
+    "noDataDesc": "No records available",
     "settings": {
       "privacy": "Privacy",
       "security": "Security",
@@ -631,6 +707,12 @@
       "settings": "Settings",
       "favorites": "Favorites",
       "savedSearches": "Saved Searches",
+      "badge": "Badge",
+      "pendingPayments": "Pending Payments",
+      "badgeDescription": "This page shows your badge and related statistics.",
+      "badgeVisits": "Visits",
+      "badgeContacts": "Contacts",
+      "badgeResponses": "Responses",
       "forBusinesses": "For Businesses",
       "contactHistory": "Contact History",
       "mySubscriptions": "My Subscriptions"
@@ -756,11 +838,157 @@
     "delete": "Delete"
   },
   "checkout": {
-    "steps": {
-      "account": "Account",
-      "newAd": "New Ad",
-      "summary": "Summary",
-      "payment": "Payment"
+    "title": "Checkout",
+    "description": "Complete your checkout process",
+    "signIn": "Sign In",
+    "newAd": "New Ad",
+    "payment": "Payment"
+  },
+  "plan": {
+    "selectHeading": "Choose Your",
+    "plan": "Plan",
+    "itemFee": "Item Fee:",
+    "planPrice": "Plan Price:",
+    "total": "Total:",
+    "selected": "✓ Selected",
+    "clickToSelect": "Click to select",
+    "days": "days",
+    "currency": "USD"
+  },
+  "summary": {
+    "review": "Review",
+    "verifyDetails": "Verify your listing and complete payment",
+    "listingSummary": "Listing Summary"
+  },
+  "payment": {
+    "payment": "Payment"
+  },
+  "paymentPage": {
+    "pageTitle": "Payment",
+    "heading": "Payment",
+    "subheading": "Complete Your Payment",
+    "selectPaymentType": "Select Payment Type",
+    "mobileMoney": "Mobile Money",
+    "cardPayment": "Card Payment",
+    "processing": "Processing...",
+    "confirmPayment": "Confirm Payment",
+    "orderSummary": "Order Summary",
+    "itemId": "Item ID",
+    "plan": "Plan",
+    "paymentMethod": "Payment Method",
+    "total": "TOTAL"
+  },
+  "subscription": {
+    "title": "Subscription Settings",
+    "add": "Add Subscription",
+    "edit": "Edit Subscription",
+    "delete": "Delete Subscription",
+    "category": "Category",
+    "region": "Region",
+    "cities": "Cities",
+    "priceRange": "Price Range",
+    "minPrice": "Min Price",
+    "maxPrice": "Max Price",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "success": "Subscription saved successfully!",
+    "error": "An error occurred. Please try again.",
+    "required": "Please fill all required fields.",
+    "selectCategory": "Select category",
+    "selectRegion": "Select region",
+    "selectCities": "Select cities",
+    "addCity": "+ Add city",
+    "newCityPlaceholder": "Enter new city name",
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
     }
+  },
+  "wantSell": {
+    "title": "Sell Item"
+  },
+  "jobsPage": {
+    "title": "Jobs",
+    "heading": "Job Listings",
+    "foundCount": "Found {{count}} opportunities",
+    "latestUpdates": "Latest Updates",
+    "backToAll": "Back to All Jobs",
+    "searchPlaceholder": "Search by job title or company...",
+    "loading": "Loading jobs...",
+    "noResults": "No matches found for \"{{query}}\"",
+    "itTitle": "IT & Software Jobs",
+    "airportsTitle": "Airport & Aviation Jobs",
+    "cleaningTitle": "Public & Cleaning Jobs",
+    "itLink": "IT",
+    "airportsLink": "Airport",
+    "publicLink": "Public",
+    "seaportLink": "Seaport",
+    "notFound": "Job not found",
+    "jobDescription": "Job Description",
+    "applicationSuccess": "Application Submitted Successfully!",
+    "backLabel": "Back to Job Listings",
+    "application": {
+      "applyFor": "Apply for: {{title}}",
+      "personalInformation": "Personal Information",
+      "thankYou": "Thank you for your application: {{title}} at {{company}}. We'll be in touch shortly.",
+      "fullNameLabel": "Full Name *",
+      "fullNamePlaceholder": "Enter your full name",
+      "emailLabel": "Email Address *",
+      "emailPlaceholder": "example@email.com",
+      "phoneLabel": "Phone Number *",
+      "phonePlaceholder": "+252 (optional format)",
+      "linkedinLabel": "LinkedIn/Portfolio URL",
+      "linkedinPlaceholder": "https://linkedin.com/in/...",
+      "documents": "Documents",
+      "uploadResume": "Upload Resume/CV (PDF/DOCX) *",
+      "noFileChosen": "No file chosen",
+      "coverLetterLabel": "Cover Letter",
+      "coverLetterPlaceholder": "Write your cover letter here (Why are you a good fit for this job?)",
+      "voluntary": "Voluntary Self-Identification",
+      "genderLabel": "Gender",
+      "genderPlaceholder": "Choose",
+      "submit": "Submit Application"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "nav": {
+      "profile": "Profile",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "profile": {
+      "title": "My Profile",
+      "username": "Username",
+      "email": "Email",
+      "phone": "Phone",
+      "role": "Role",
+      "memberSince": "Member Since",
+      "updateImage": "Update Profile Photo",
+      "usernameUpdated": "Username updated",
+      "phoneUpdated": "Phone updated",
+      "imageUpdated": "Profile image updated",
+      "updateFailed": "Update failed",
+      "deleteAccount": "Delete My Account",
+      "deleteConfirm": "Are you sure you want to delete your account? This cannot be undone.",
+      "noUser": "No user found. Please log in.",
+      "admin": "Admin",
+      "manager": "Manager",
+      "support": "Support",
+      "user": "User"
+    }
+  },
+  "cookiesPage": {
+    "heading": "Cookies Policy",
+    "paragraphs": [
+      "This website uses cookies to ensure you get the best experience on our website.",
+      "Cookies are small text files that are placed on your device to help the site provide a better user experience.",
+      "You can disable cookies in your browser settings, but some features of the site may not function properly.",
+      "By continuing to use this site, you consent to our use of cookies as described in this policy."
+    ]
   }
 }

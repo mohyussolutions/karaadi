@@ -1,59 +1,22 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
-import { getPaginationParams } from "../../constants/config.constants.ts";
-import { PaymentService } from "../../services/paymentServer/paymentServer.ts";
-import { useErrorHandler } from "../../hooks/useErrorHandler.ts";
 import { ResponseCodes } from "../../config/waafipay.service.responseCodes.ts";
-import { PaymentStatus } from "@prisma/client";
 import { paymentValidation } from "../../validation/payment.validation.ts";
-import {
-  PaymentMethod,
-  ItemCategory,
-  ListingType,
-} from "../../types/payment.ts";
+import { useErrorHandler } from "../../hooks/useErrorHandler.ts";
+import { PaymentStatus, type Prisma } from "@prisma/client";
+import { startOfMonth, endOfMonth } from "date-fns";
 
-const paymentService = new PaymentService();
-
-const getQueryString = (param: any): string | undefined => {
-  if (Array.isArray(param)) return param[0];
-  if (typeof param === "string") return param;
-  return undefined;
-};
-
-interface PaymentRequestBody {
-  payment?: any;
-  userId?: string;
-  itemId?: string;
-  itemCategory?: ItemCategory;
-  listingType?: ListingType;
-  [key: string]: any;
-}
-
-export const createPayment = async (
-  req: Request<{}, {}, PaymentRequestBody>,
-  res: Response,
-) => {
+export const createPayment = async (req: Request, res: Response) => {
   try {
     const p = req.body?.payment || req.body;
     const userId = p?.userId || (req as any).user?.id;
 
-    if (!p || typeof p !== "object") {
+    if (!userId) {
       return res.status(400).json({
         success: false,
-        message: "Payment information is required.",
-        responseCode: 400,
-        key: "MISSING_DATA",
-        userFriendly: true,
-      });
-    }
-
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({
-        success: false,
+        key: ResponseCodes.MISSING_FIELDS.key,
         message: "Missing userId in payment object or authentication.",
-        responseCode: 400,
-        key: "MISSING_USER_ID",
-        userFriendly: true,
+        responseCode: ResponseCodes.MISSING_FIELDS.code,
       });
     }
 
@@ -62,282 +25,111 @@ export const createPayment = async (
     if (!validation.success) {
       return res.status(400).json({
         success: false,
-        message: "Invalid payment data",
+        key: ResponseCodes.MISSING_FIELDS.key,
+        message: ResponseCodes.MISSING_FIELDS.message,
+        responseCode: ResponseCodes.MISSING_FIELDS.code,
         errors: validation.error.flatten().fieldErrors,
       });
     }
 
-    const result = await paymentService.processWaafiPayment(
-      validation.data as any,
-    );
-
-    if (!result.success) {
+    if (!validation.data.totalAmount || validation.data.totalAmount <= 0) {
       return res.status(400).json({
-        key: result.key || ResponseCodes.PROCESSING_ERROR.key,
-        message: result.message || ResponseCodes.PROCESSING_ERROR.message,
-        responseCode:
-          result.responseCode || ResponseCodes.PROCESSING_ERROR.code,
-        amount: result.amount || null,
+        success: false,
+        key: ResponseCodes.INVALID_AMOUNT.key,
+        message: ResponseCodes.INVALID_AMOUNT.message,
+        responseCode: ResponseCodes.INVALID_AMOUNT.code,
       });
     }
 
-    return res.status(201).json({
-      key: ResponseCodes.SUCCESS.key,
-      message: "Payment processed successfully!",
-      responseCode: ResponseCodes.SUCCESS.code,
-      amount: result.amount,
-      transactionId: result.transactionId,
+    const payment = await prisma.payment.create({
+      data: validation.data as Prisma.PaymentUncheckedCreateInput,
     });
-  } catch (err: any) {
-    const handledError = useErrorHandler(err);
-    return res.status(500).json(handledError);
-  }
-};
-
-export const createCardPaymentIntent = async (
-  req: Request<{}, {}, PaymentRequestBody>,
-  res: Response,
-) => {
-  try {
-    const p = req.body?.payment || req.body;
-    const userId = p?.userId || (req as any).user?.id;
-    const itemId = p?.itemId || req.body.itemId;
-    const itemCategory = p?.itemCategory || req.body.itemCategory;
-    const listingType = p?.listingType || req.body.listingType;
-
-    if (!p || typeof p !== "object") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment information is required.",
-        responseCode: 400,
-        key: "MISSING_DATA",
-        userFriendly: true,
-      });
-    }
-
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "Missing userId in payment object or authentication.",
-        responseCode: 400,
-        key: "MISSING_USER_ID",
-        userFriendly: true,
-      });
-    }
-
-    if (!itemId || typeof itemId !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "itemId is required for payment.",
-        responseCode: 400,
-        key: "MISSING_ITEM_ID",
-        userFriendly: true,
-      });
-    }
-
-    if (!itemCategory) {
-      return res.status(400).json({
-        success: false,
-        message: "itemCategory is required for payment.",
-        responseCode: 400,
-        key: "MISSING_ITEM_CATEGORY",
-        userFriendly: true,
-      });
-    }
-
-    const cardPaymentData = {
-      ...p,
-      userId,
-      itemId,
-      itemCategory,
-      listingType,
-      paymentMethod: PaymentMethod.CARD,
-    };
-
-    const validation = paymentValidation.safeParse(cardPaymentData);
-
-    if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid payment data",
-        errors: validation.error.flatten().fieldErrors,
-      });
-    }
-
-    // Convert listingType string to enum if needed
-    const processedListingType =
-      listingType === "FREE"
-        ? ListingType.FREE
-        : listingType === "FEE"
-          ? ListingType.FEE
-          : undefined;
-
-    const result = await paymentService.processPayment({
-      ...validation.data,
-      itemId,
-      itemCategory,
-      listingType: processedListingType,
-      paymentMethod: PaymentMethod.CARD,
-    });
-
-    if (!result.success) {
-      return res.status(400).json({
-        key: result.key,
-        message: result.message,
-        responseCode: result.responseCode,
-        amount: result.amount || null,
-      });
-    }
-
-    if (result.requiresConfirmation) {
-      return res.status(201).json({
-        success: true,
-        requiresConfirmation: true,
-        clientSecret: result.clientSecret,
-        paymentIntentId: result.paymentIntentId,
-        transactionId: result.transactionId,
-        amount: result.amount,
-        message: "Payment intent created. Please confirm the payment.",
-      });
-    }
 
     return res.status(201).json({
       success: true,
       key: ResponseCodes.SUCCESS.key,
-      message: "Payment processed successfully!",
+      message: ResponseCodes.SUCCESS.message,
       responseCode: ResponseCodes.SUCCESS.code,
-      amount: result.amount,
-      transactionId: result.transactionId,
+      amount: payment.totalAmount,
+      transactionId: payment.transactionId,
     });
-  } catch (err: any) {
-    const handledError = useErrorHandler(err);
-    return res.status(500).json(handledError);
-  }
-};
-
-export const confirmCardPayment = async (req: Request, res: Response) => {
-  try {
-    const { paymentIntentId } = req.body;
-
-    if (!paymentIntentId) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment intent ID is required",
-      });
-    }
-
-    const result = await paymentService.confirmCardPayment(paymentIntentId);
-
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: result.message,
-        key: result.key,
-        responseCode: result.responseCode,
-      });
-    }
-
-    return res.json({
-      success: true,
-      message: "Payment confirmed successfully",
-      transactionId: result.transactionId,
-      amount: result.amount,
-    });
-  } catch (err: any) {
-    const handledError = useErrorHandler(err);
-    return res.status(500).json(handledError);
-  }
-};
-
-export const refundCardPayment = async (req: Request, res: Response) => {
-  try {
-    const { paymentIntentId, amount } = req.body;
-
-    if (!paymentIntentId) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment intent ID is required",
-      });
-    }
-
-    const result = await paymentService.refundCardPayment(
-      paymentIntentId,
-      amount,
-    );
-
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.json({
-      success: true,
-      message: "Refund processed successfully",
-      refundId: result.refundId,
-      amount: result.amount,
-    });
-  } catch (err: any) {
-    const handledError = useErrorHandler(err);
-    return res.status(500).json(handledError);
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
 export const getItemDetail = async (req: Request, res: Response) => {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-
-    const item = await paymentService.getItemDetail(id);
+    const item = await prisma.payment.findUnique({
+      where: { id: req.params.id as string },
+      select: {
+        id: true,
+        status: true,
+        paymentMethod: true,
+        totalAmount: true,
+        createdAt: true,
+      },
+    });
 
     if (!item) {
       return res.status(404).json({
         success: false,
+        key: ResponseCodes.TRANSACTION_FAILED.key,
         message: "Item not found.",
+        responseCode: ResponseCodes.TRANSACTION_FAILED.code,
       });
     }
 
     return res.json({
       success: true,
-      category: item.category,
-      data: item.data,
+      data: item,
     });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Unable to retrieve item details.",
-    });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
 export const getPaymentStats = async (req: Request, res: Response) => {
   try {
-    const region = getQueryString(req.query.region);
-    const city = getQueryString(req.query.city);
+    const _region = req.query.region as string | undefined;
+    const _city = req.query.city as string | undefined;
 
-    const stats = await paymentService.getPaymentStats(region, city);
+    const [total, successful, pending, failed, revenue] = await Promise.all([
+      prisma.payment.count(),
+      prisma.payment.count({ where: { status: PaymentStatus.COMPLETED } }),
+      prisma.payment.count({ where: { status: PaymentStatus.PENDING } }),
+      prisma.payment.count({ where: { status: PaymentStatus.FAILED } }),
+      prisma.payment.aggregate({
+        _sum: { totalAmount: true },
+        where: { status: PaymentStatus.COMPLETED },
+      }),
+    ]);
 
-    return res.json({ success: true, data: stats });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch payment statistics.",
+    return res.json({
+      success: true,
+      data: {
+        total,
+        successful,
+        pending,
+        failed,
+        totalRevenue: revenue._sum.totalAmount ?? 0,
+      },
     });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
-    const { page, limit, skip } = getPaginationParams(
-      req.query.page as string,
-      req.query.limit as string,
-    );
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+    const status = req.query.status as PaymentStatus | undefined;
+    const paymentMethod = req.query.paymentMethod as string | undefined;
 
-    const status = getQueryString(req.query.status);
-    const paymentMethod = getQueryString(req.query.paymentMethod);
-
-    const where: any = {};
-    if (status) where.status = status as PaymentStatus;
+    const where: Prisma.PaymentWhereInput = {};
+    if (status) where.status = status;
     if (paymentMethod) where.paymentMethod = paymentMethod;
 
     const [payments, total] = await Promise.all([
@@ -368,19 +160,10 @@ export const getAllPayments = async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      data: {
-        payments,
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
+      data: { payments, total, page, limit, pages: Math.ceil(total / limit) },
     });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch payments.",
-    });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
@@ -391,14 +174,14 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
     if (!status) {
       return res.status(400).json({
         success: false,
+        key: ResponseCodes.MISSING_FIELDS.key,
         message: "Status is required.",
+        responseCode: ResponseCodes.MISSING_FIELDS.code,
       });
     }
 
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-
     const payment = await prisma.payment.update({
-      where: { id },
+      where: { id: req.params.id as string },
       data: { status, transactionId, updatedAt: new Date() },
       select: {
         id: true,
@@ -411,55 +194,55 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
+      key: ResponseCodes.SUCCESS.key,
       message: "Payment updated successfully.",
+      responseCode: ResponseCodes.SUCCESS.code,
       data: payment,
     });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update payment status.",
-    });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
 export const deletePayment = async (req: Request, res: Response) => {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-
     const payment = await prisma.payment.findUnique({
-      where: { id },
-      select: { userId: true },
+      where: { id: req.params.id as string },
+      select: { id: true },
     });
 
     if (!payment) {
       return res.status(404).json({
         success: false,
+        key: ResponseCodes.TRANSACTION_FAILED.key,
         message: "Payment not found.",
+        responseCode: ResponseCodes.TRANSACTION_FAILED.code,
       });
     }
 
-    await prisma.payment.delete({ where: { id } });
+    await prisma.payment.delete({ where: { id: req.params.id as string } });
 
     return res.json({
       success: true,
-      message: "Payment deleted successfully",
+      key: ResponseCodes.SUCCESS.key,
+      message: "Payment deleted successfully.",
+      responseCode: ResponseCodes.SUCCESS.code,
     });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Unable to delete payment.",
-    });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
 export const searchPayments = async (req: Request, res: Response) => {
   try {
-    const query = getQueryString(req.query.query);
+    const query = req.query.query as string;
 
     if (!query) {
       return res.status(400).json({
         success: false,
+        key: ResponseCodes.MISSING_FIELDS.key,
         message: "Search query is required.",
+        responseCode: ResponseCodes.MISSING_FIELDS.code,
       });
     }
 
@@ -488,15 +271,9 @@ export const searchPayments = async (req: Request, res: Response) => {
       take: 50,
     });
 
-    return res.json({
-      success: true,
-      data: payments,
-    });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Unable to search payments.",
-    });
+    return res.json({ success: true, data: payments });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
@@ -507,7 +284,9 @@ export const getMyPayments = async (req: Request, res: Response) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
+        key: ResponseCodes.MISSING_FIELDS.key,
         message: "User authentication required.",
+        responseCode: ResponseCodes.MISSING_FIELDS.code,
       });
     }
 
@@ -538,24 +317,16 @@ export const getMyPayments = async (req: Request, res: Response) => {
       take: 100,
     });
 
-    return res.json({
-      success: true,
-      data: payments,
-    });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch your payments.",
-    });
+    return res.json({ success: true, data: payments });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
 export const getPaymentById = async (req: Request, res: Response) => {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-
     const payment = await prisma.payment.findUnique({
-      where: { id },
+      where: { id: req.params.id as string },
       select: {
         id: true,
         totalAmount: true,
@@ -587,27 +358,57 @@ export const getPaymentById = async (req: Request, res: Response) => {
     if (!payment) {
       return res.status(404).json({
         success: false,
+        key: ResponseCodes.TRANSACTION_FAILED.key,
         message: "Payment not found.",
+        responseCode: ResponseCodes.TRANSACTION_FAILED.code,
       });
     }
 
-    return res.json({
-      success: true,
-      data: payment,
+    return res.json({ success: true, data: payment });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
+  }
+};
+
+export const revenueByMonth = async (_req: Request, res: Response) => {
+  try {
+    const months = await prisma.payment.findMany({
+      select: { createdAt: true },
+      orderBy: { createdAt: "asc" },
     });
-  } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch payment details.",
-    });
+
+    const monthSet = Array.from(
+      new Set(
+        months.map(
+          (p) => `${p.createdAt.getFullYear()}-${p.createdAt.getMonth() + 1}`,
+        ),
+      ),
+    );
+
+    const results = await Promise.all(
+      monthSet.map(async (m) => {
+        const [year, month] = m.split("-").map(Number);
+        const sum = await prisma.payment.aggregate({
+          _sum: { totalAmount: true },
+          where: {
+            createdAt: {
+              gte: startOfMonth(new Date(year, month - 1)),
+              lte: endOfMonth(new Date(year, month - 1)),
+            },
+          },
+        });
+        return { month: m, revenue: sum._sum?.totalAmount ?? 0 };
+      }),
+    );
+
+    return res.json({ success: true, data: results });
+  } catch (err: unknown) {
+    return res.status(500).json(useErrorHandler(err));
   }
 };
 
 const paymentController = {
   createPayment,
-  createCardPaymentIntent,
-  confirmCardPayment,
-  refundCardPayment,
   getItemDetail,
   getPaymentStats,
   getAllPayments,
@@ -616,6 +417,7 @@ const paymentController = {
   searchPayments,
   getMyPayments,
   getPaymentById,
+  revenueByMonth,
 };
 
 export default paymentController;

@@ -21,9 +21,8 @@ export default function VisitorList() {
     try {
       const data = await fetchVisitors();
       setVisitors(data);
-    } catch (err) {
+    } catch {
       setError("Failed to load visitors");
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -45,7 +44,7 @@ export default function VisitorList() {
         setVisitors(previousVisitors);
         alert("Failed to delete visitor");
       }
-    } catch (err) {
+    } catch {
       setVisitors(previousVisitors);
       alert("Error deleting visitor");
     }

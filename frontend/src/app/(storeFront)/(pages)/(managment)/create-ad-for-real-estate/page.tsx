@@ -1,550 +1,634 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { MdOutlinePlaylistRemove, MdCloudUpload } from "react-icons/md";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
-import { FaHome } from "react-icons/fa";
-
-import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
-import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
-import {
-  RealEstateCommercialNestedSub,
-  RealEstateFarmForSaleNestedSub,
-  RealEstateForRentNestedSub,
-  RealEstateForSaleNestedSub,
-  RealEstateLandForSaleNestedSub,
-} from "@/app/(links)/storeFrontLinks/nestedSubcategoryProperties";
-
-import {
-  getAllRegions,
-  getAllCities,
-  addCity,
-} from "@/actions/categories/geoAction";
-import { verifySession } from "@/actions/core/authAction";
-import { createRealEstate } from "@/actions/categories/realEstateActions";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { MdAttachMoney } from "@/app/utils/icons";
+import { useImageUpload } from "@/app/(storeFront)/components/shared/ImageUpload/useImageUpload";
+import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageUpload";
+import { FaHome } from "react-icons/fa";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import { createRealEstate } from "@/actions/categories/realEstateActions";
+import { getAllRegions, getAllCities, addCity } from "@/actions/categories/geoAction";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { useAuth } from "@/context/AuthContext";
+import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
+import { updateItem } from "@/store/slices/reducers/listingDraftSlice";
+import { getRealEstateFees } from "@/actions/categories/feeAction";
+import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps";
 
-const categoryNestedMap: Record<string, any[]> = {
-  "For Rent": RealEstateForRentNestedSub,
-  "For Sale": RealEstateForSaleNestedSub,
-  "Land for Sale": RealEstateLandForSaleNestedSub,
-  "Farm for Sale": RealEstateFarmForSaleNestedSub,
-  Commercial: RealEstateCommercialNestedSub,
+const RE_CATEGORIES = [
+  { key: "forRent", label: "For Rent" },
+  { key: "forSale", label: "For Sale" },
+  { key: "landForSale", label: "Land For Sale" },
+  { key: "farmForSale", label: "Farm For Sale" },
+  { key: "commercial", label: "Commercial" },
+];
+
+const RE_FEE_MAPPING: Record<string, string> = {
+  forRent: "rent",
+  forSale: "sale",
+  landForSale: "land",
+  farmForSale: "farm",
+  commercial: "business",
 };
 
-export default function CreateRealEstate() {
-  const { t, i18n } = useTranslation();
+const PROPERTY_TYPES = [
+  "Apartment",
+  "House / Villa",
+  "Commercial Space",
+  "Land",
+  "Warehouse",
+  "Farm",
+  "Other",
+];
+
+const AMENITIES_LIST = [
+  "Swimming Pool",
+  "Gym",
+  "Security",
+  "Elevator",
+  "Generator",
+  "Water Supply",
+  "Air Conditioning",
+  "Garden",
+  "Balcony",
+  "Parking",
+];
+
+export default function CreateAdForRealEstatePage() {
   const router = useRouter();
+  return <RealEstateForm onNext={() => router.push("/plan")} />;
+}
+
+function RealEstateForm({ onNext }: { onNext: () => void }) {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { t, i18n } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
+  const savedItem = useAppSelector((state) => state.listingDraft.item);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [dataLoading, setDataLoading] = useState(true);
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
   const [filteredCities, setFilteredCities] = useState<any[]>([]);
-  const [images, setImages] = useState<File[]>([]);
+  const { images, addImages, removeImage, toBase64 } = useImageUpload();
   const [newCity, setNewCity] = useState("");
   const [showNewCityInputs, setShowNewCityInputs] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
 
   const [formData, setFormData] = useState({
-    mainCategory:
-      allCategories.find((cat) => cat.key === "RealEstate")?.name ||
-      "Real Estate",
-    category: "",
-    subCategory: "",
-    title: "",
-    price: "",
-    region: "",
-    city: "",
-    address: "",
-    description: "",
+    mainCategory: "Real Estate",
+    category:
+      typeof savedItem.category === "string"
+        ? savedItem.category
+        : Array.isArray(savedItem.category) && savedItem.category.length > 0
+          ? savedItem.category[0]
+          : "",
+    subCategory:
+      typeof savedItem.subCategory === "string"
+        ? savedItem.subCategory
+        : Array.isArray(savedItem.subCategory) && savedItem.subCategory.length > 0
+          ? savedItem.subCategory[0]
+          : "",
+    title: savedItem.title || "",
+    description: savedItem.description || "",
+    price: savedItem.price || "",
+    region: savedItem.region || "",
+    city: savedItem.city || "",
+    propertyType: savedItem.propertyType || "",
+    sizeSqm: savedItem.sizeSqm || "",
+    bedrooms: savedItem.bedrooms || "",
+    bathrooms: savedItem.bathrooms || "",
+    floor: savedItem.floor || "",
+    totalFloors: savedItem.totalFloors || "",
+    furnished: savedItem.furnished || false,
+    parking: savedItem.parking || false,
+    hasGarage: (savedItem as any).hasGarage || false,
+    hasGarden: (savedItem as any).hasGarden || false,
+    amenities: (savedItem.amenities as string[]) || [],
+    address: (savedItem as any).address || "",
   });
 
   useEffect(() => {
-    async function init() {
+    if (!authLoading && !user) router.push("/login");
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    const loadData = async () => {
       try {
-        const sessionUser = await verifySession();
-        if (sessionUser) setCurrentUser(sessionUser);
-        const [regs, cities] = await Promise.all([
+        const [regs, cits, feeRes] = await Promise.all([
           getAllRegions(),
           getAllCities(),
+          getRealEstateFees(),
         ]);
         setRegions(regs || []);
-        setAllCities(cities || []);
-      } catch (err) {
-        console.error("init error", err);
+        setAllCities(cits || []);
+        setActiveFeeConfig(Array.isArray(feeRes) ? feeRes[0] || {} : feeRes || {});
+      } catch {
+      } finally {
+        setDataLoading(false);
       }
-    }
-    init();
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
     if (formData.region) {
-      setFilteredCities(
-        allCities.filter((c) => c.regionId === formData.region),
-      );
+      setFilteredCities(allCities.filter((c) => c.regionId === formData.region));
+    } else {
+      setFilteredCities([]);
     }
   }, [formData.region, allCities]);
 
-  useEffect(() => {
-    const nested = categoryNestedMap[formData.category] || [];
-    if (formData.subCategory) {
-      const selected = nested.find((s) => s.title === formData.subCategory);
-      if (selected) {
-        const lang = i18n?.language || "en";
-        const newTitle = lang.startsWith("so")
-          ? selected.so
-          : selected.labelKey
-            ? t(selected.labelKey)
-            : selected.title;
-        setFormData((prev) => ({ ...prev, title: newTitle }));
-      }
-    }
-  }, [formData.category, formData.subCategory, i18n?.language]);
+  const getFeeForCategory = useCallback(
+    (categoryKey: string): number => {
+      if (!activeFeeConfig) return 0;
+      const feeKey = RE_FEE_MAPPING[categoryKey];
+      return Number(activeFeeConfig[feeKey] || 0);
+    },
+    [activeFeeConfig],
+  );
 
-  const renderLabel = (key: string, defaultValue?: string) => {
-    return t(key, { defaultValue });
+  const getNestedSubcategories = () => {
+    if (!formData.category) return [];
+    const map = nesCategories.categoryNestedMap as any;
+    return map[formData.category] || [];
   };
 
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (e) => reject(e);
-    });
+  const toggleAmenity = (amenity: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter((a) => a !== amenity)
+        : [...prev.amenities, amenity],
+    }));
   };
 
-  const onHandleSubmit = async () => {
-    if (!currentUser || isLoading) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || isLoading) return;
 
-    if (
-      !formData.category ||
-      !formData.subCategory ||
-      !formData.price ||
-      !formData.region ||
-      (showNewCityInputs ? !newCity : !formData.city)
-    ) {
-      return toast.error("Fadlan buuxi banaanada muhiimka ah");
+    const requiredFields = [
+      "category",
+      "title",
+      "description",
+      "price",
+      "region",
+      "city",
+    ];
+    const isMissing =
+      requiredFields.some((key) => !(formData as any)[key]) || images.length === 0;
+
+    if (isMissing) {
+      return toast.error(t("createMotorcycle.fillRequired"));
     }
-    if (images.length === 0)
-      return toast.error("Ugu yaraan hal sawir soo geli");
 
     setIsLoading(true);
+    const toastId = toast.loading(t("createMotorcycle.registering"));
+
     try {
-      let finalCityName = formData.city;
-
+      let finalCity = formData.city;
       if (showNewCityInputs && newCity.trim()) {
-        const cityPayload = {
-          id: newCity.trim().toLowerCase().replace(/\s+/g, "-"),
-          name: newCity.trim(),
-          regionId: formData.region,
-          isActive: true,
-        };
-
-        const res: any = await addCity(cityPayload);
-        if (res.success && res.data) {
-          finalCityName = res.data.name;
-          setAllCities((prev) => [...prev, res.data]);
-        } else {
-          setIsLoading(false);
-          return toast.error(
-            t("createRealEstate.cityAddFailed", {
-              defaultValue: "Failed to add city",
-            }),
-          );
-        }
+        const res: any = await addCity({ name: newCity.trim(), regionId: formData.region });
+        if (res?.success) finalCity = res.data.name;
       }
 
-      const imagesBase64 = await Promise.all(
-        images.map((img) => convertToBase64(img)),
-      );
+      const imagesBase64 = await toBase64();
+
+      const fee = getFeeForCategory(formData.category);
 
       const payload = {
-        userId: currentUser._id,
+        userId: user._id || user.id,
+        name: formData.title,
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
-        mainCategory: formData.mainCategory,
-        category: [formData.category],
-        subcategory: [formData.subCategory],
-        address: formData.address,
-        region: formData.region,
-        city: finalCityName,
-        county: finalCityName,
-        images: imagesBase64,
         so: formData.title,
+        mainCategory: "Real Estate",
+        category: formData.category ? [formData.category] : [],
+        subcategory: formData.subCategory ? [formData.subCategory] : [],
+        propertyType: formData.propertyType,
+        squareFeet: formData.sizeSqm ? Number(formData.sizeSqm) : undefined,
+        sizeSqm: formData.sizeSqm ? Number(formData.sizeSqm) : undefined,
+        bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
+        bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
+        floor: formData.floor ? Number(formData.floor) : undefined,
+        totalFloors: formData.totalFloors ? Number(formData.totalFloors) : undefined,
+        furnished: formData.furnished,
+        parking: formData.parking,
+        hasGarage: formData.hasGarage,
+        hasGarden: formData.hasGarden,
+        amenities: formData.amenities,
+        address: formData.address,
+        county: formData.region,
+        region: formData.region,
+        city: finalCity,
+        images: imagesBase64,
+        isPaid: false,
+        feeAmount: fee,
       };
 
       const result: any = await createRealEstate(
         payload as any,
-        currentUser.token,
+        user.token || (user as any).accessToken,
       );
 
       if (result.success) {
-        toast.success(
-          t("createRealEstate.submittedSuccess", {
-            defaultValue: "Listing submitted!",
-          }),
-        );
-        router.push(`/realEstateSummary?id=${result.data?._id || result.id}`);
+        toast.update(toastId, {
+          render: t("createMotorcycle.successMessage"),
+          type: "success",
+          isLoading: false,
+          autoClose: 2000,
+        });
+        const createdId = result.id || result._id;
+        dispatch(updateItem({ ...payload, id: String(createdId) }));
+        setTimeout(() => onNext(), 1200);
       } else {
-        toast.error(
-          result.message ||
-            t("createRealEstate.submitError", {
-              defaultValue: "An error occurred",
-            }),
-        );
+        toast.update(toastId, {
+          render: result.message || t("createMotorcycle.errorMessage"),
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
       }
     } catch {
-      toast.error(
-        t("createRealEstate.networkError", {
-          defaultValue: "Network error occurred",
-        }),
-      );
+      toast.update(toastId, {
+        render: t("createMotorcycle.errorMessage"),
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!currentUser) return <Loading />;
+  if (authLoading || dataLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full mx-auto mt-6 p-4 md:p-8 bg-white rounded-2xl border border-gray-100">
-      <ToastContainer position="top-center" autoClose={3000} />
+    <div className="rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
 
-      <h1 className="text-3xl font-black text-center mb-10 text-gray-800 flex items-center justify-center gap-2">
-        {t("createRealEstate.title", { defaultValue: "Real Estate" })}{" "}
-        <FaHome className="text-blue-600" />
-      </h1>
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              {renderLabel("createRealEstate.mainCategory", "Main Category")}
-            </label>
-            <select
-              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none cursor-not-allowed"
-              disabled
-            >
-              <option>
-                {(() => {
-                  const so =
-                    allCategories.find((c) => c.key === "RealEstate")?.so || "";
-                  const enLabel = t("categories.RealEstate", {
-                    defaultValue: "Real Estate",
-                  });
-                  const lang = i18n?.language || "en";
-                  return lang.startsWith("so") ? so : enLabel;
-                })()}
-              </option>
-            </select>
+      <CheckoutSteps step1 step2 />
+
+      <div className="text-center mb-10">
+        <div className="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <FaHome className="text-4xl text-blue-600" />
+        </div>
+        <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
+          Create Real Estate Listing
+        </h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            Main Category
+          </label>
+          <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
+            <FaHome className="text-blue-500" />
+            <input
+              type="text"
+              readOnly
+              value={formData.mainCategory}
+              className="bg-transparent outline-none font-black text-blue-700 w-full"
+            />
           </div>
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              {renderLabel("createRealEstate.category", "Category")}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Category
             </label>
             <select
               value={formData.category}
               onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  category: e.target.value,
-                  subCategory: "",
-                })
+                setFormData({ ...formData, category: e.target.value, subCategory: "" })
               }
-              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+              required
             >
-              <option value="">
-                {t("createRealEstate.selectCategory", {
-                  defaultValue: "Select category",
-                })}
-              </option>
-              {realEstateSubCategories.map((cat) => (
-                <option key={cat.title} value={cat.title}>
-                  {cat.labelKey ? t(cat.labelKey) : cat.so}
+              <option value="">Select Category</option>
+              {RE_CATEGORIES.map((cat) => (
+                <option key={cat.key} value={cat.key}>
+                  {cat.label}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              {renderLabel("createRealEstate.type", "Type")}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Subcategory
             </label>
             <select
               value={formData.subCategory}
-              onChange={(e) =>
-                setFormData({ ...formData, subCategory: e.target.value })
-              }
-              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+              onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
               disabled={!formData.category}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
+              required
             >
-              <option value="">
-                {t("createRealEstate.selectType", {
-                  defaultValue: "Select type",
-                })}
-              </option>
-              {formData.category && categoryNestedMap[formData.category]
-                ? categoryNestedMap[formData.category].map((sub) => (
-                    <option key={sub.title} value={sub.title}>
-                      {sub.labelKey ? t(sub.labelKey) : sub.so}
-                    </option>
-                  ))
-                : null}
+              <option value="">Select Subcategory</option>
+              {getNestedSubcategories().map((sub: any, idx: number) => (
+                <option key={idx} value={sub.labelKey || sub.key || sub}>
+                  {t(sub.labelKey || sub.name || sub)}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="title"
-            className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"
-          >
-            {renderLabel("createRealEstate.titleLabel", "Title")}
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            Title
           </label>
           <input
-            id="title"
-            type="text"
-            placeholder={t("createRealEstate.titlePlaceholder", {
-              defaultValue: "Title",
-            })}
-            className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none font-bold focus:border-blue-400"
+            placeholder="e.g. Spacious 3BR Apartment in Mogadishu"
             value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+            required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label
-              htmlFor="price"
-              className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"
-            >
-              {renderLabel("createRealEstate.priceLabel", "Price ($)")}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Property Type
             </label>
-            <input
-              id="price"
-              type="number"
-              placeholder={t("createRealEstate.pricePlaceholder", {
-                defaultValue: "Price ($)",
-              })}
-              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
-              value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
-            />
+            <select
+              value={formData.propertyType}
+              onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+              required
+            >
+              <option value="">Select Property Type</option>
+              {PROPERTY_TYPES.map((pt) => (
+                <option key={pt} value={pt}>
+                  {pt}
+                </option>
+              ))}
+            </select>
           </div>
-          <div>
-            <label
-              htmlFor="address"
-              className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"
-            >
-              {renderLabel("createRealEstate.addressLabel", "Address")}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Size (sqm)
             </label>
             <input
-              id="address"
-              type="text"
-              placeholder={t("createRealEstate.addressPlaceholder", {
-                defaultValue: "Address",
-              })}
-              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
-              value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
+              type="number"
+              placeholder="e.g. 120"
+              value={formData.sizeSqm}
+              onChange={(e) => setFormData({ ...formData, sizeSqm: e.target.value })}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
             />
           </div>
         </div>
 
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">Bedrooms</label>
+            <input
+              type="number"
+              placeholder="e.g. 3"
+              value={formData.bedrooms}
+              onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">Bathrooms</label>
+            <input
+              type="number"
+              placeholder="e.g. 2"
+              value={formData.bathrooms}
+              onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">Floor</label>
+            <input
+              type="number"
+              placeholder="e.g. 3"
+              value={formData.floor}
+              onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              Total Floors
+            </label>
+            <input
+              type="number"
+              placeholder="e.g. 10"
+              value={formData.totalFloors}
+              onChange={(e) => setFormData({ ...formData, totalFloors: e.target.value })}
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-6">
+          {[
+            { key: "furnished", label: "Furnished" },
+            { key: "parking", label: "Parking" },
+            { key: "hasGarage", label: "Garage" },
+            { key: "hasGarden", label: "Garden" },
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={(formData as any)[key]}
+                onChange={(e) => setFormData({ ...formData, [key]: e.target.checked })}
+                className="w-5 h-5 accent-blue-600"
+              />
+              <span className="font-black text-gray-700 text-sm uppercase tracking-wide">
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            Amenities
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {AMENITIES_LIST.map((amenity) => (
+              <label
+                key={amenity}
+                className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  formData.amenities.includes(amenity)
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-100 bg-gray-50 hover:border-blue-200"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.amenities.includes(amenity)}
+                  onChange={() => toggleAmenity(amenity)}
+                  className="w-4 h-4 accent-blue-600"
+                />
+                <span className="text-xs font-bold text-gray-700">{amenity}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label
-              htmlFor="region"
-              className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"
-            >
-              {renderLabel("createRealEstate.regionLabel", "Region")}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Description
+            </label>
+            <textarea
+              placeholder="Describe the property, neighborhood, key features..."
+              rows={5}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              Region
             </label>
             <select
               value={formData.region}
               onChange={(e) =>
                 setFormData({ ...formData, region: e.target.value, city: "" })
               }
-              id="region"
-              className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
+              required
             >
-              {regions.length === 0 ? (
-                <option value="" disabled>
-                  {t("createRealEstate.loadingRegions", {
-                    defaultValue: "Loading regions...",
-                  })}
+              <option value="">Select Region</option>
+              {regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {i18n.language === "so" ? r.so || r.name : r.name}
                 </option>
-              ) : (
-                <>
-                  <option value="">
-                    {t("createRealEstate.selectRegion", {
-                      defaultValue: "Select region",
-                    })}
-                  </option>
-                  {regions.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </>
-              )}
+              ))}
             </select>
           </div>
-          <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 md:ml-2 md:mb-1">
-            {renderLabel("createRealEstate.cityLabel", "City")}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+            City
           </label>
-          <select
-            id="city"
-            value={showNewCityInputs ? "custom" : formData.city}
-            onChange={(e) => {
-              setShowNewCityInputs(e.target.value === "custom");
-              setFormData({
-                ...formData,
-                city: e.target.value === "custom" ? "" : e.target.value,
-              });
-            }}
-            className="border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-green-400"
-            disabled={!formData.region}
-          >
-            {filteredCities.length === 0 ? (
-              <option value="" disabled>
-                {formData.region
-                  ? t("createRealEstate.noCities", {
-                      defaultValue: "No cities available",
-                    })
-                  : t("createRealEstate.selectRegion", {
-                      defaultValue: "Select region",
-                    })}
-              </option>
-            ) : (
-              <>
-                <option value="">
-                  {t("createRealEstate.selectCity", {
-                    defaultValue: "Select city",
-                  })}
-                </option>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowCityDropdown(!showCityDropdown)}
+              disabled={!formData.region}
+              className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
+            >
+              {showNewCityInputs ? "Adding city..." : formData.city || "Select City"}
+              <span>▾</span>
+            </button>
+            {showCityDropdown && (
+              <div className="absolute z-30 left-0 right-0 mt-2 bg-white border rounded-2xl shadow-xl max-h-56 overflow-auto">
                 {filteredCities.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, city: c.name });
+                      setShowCityDropdown(false);
+                      setShowNewCityInputs(false);
+                    }}
+                    className="w-full text-left p-4 hover:bg-blue-50 font-bold border-b last:border-0"
+                  >
+                    {i18n.language === "so" ? c.so || c.name : c.name}
+                  </button>
                 ))}
-              </>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewCityInputs(true);
+                    setShowCityDropdown(false);
+                  }}
+                  className="w-full text-left p-4 text-blue-600 font-black text-xs"
+                >
+                  + ADD NEW CITY
+                </button>
+              </div>
             )}
-            <option value="custom" className="text-blue-600 font-bold">
-              {t("createRealEstate.addCity", { defaultValue: "+ Add city" })}
-            </option>
-          </select>
+          </div>
         </div>
 
         {showNewCityInputs && (
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="newCity"
-              className="text-xs font-bold text-gray-400 ml-2"
-            >
-              {t("createRealEstate.newCityLabel", { defaultValue: "New city" })}
-            </label>
-            <input
-              id="newCity"
-              type="text"
-              placeholder={t("createRealEstate.newCityPlaceholder", {
-                defaultValue: "Enter new city name",
-              })}
-              className="w-full border-2 border-blue-200 bg-blue-50 px-4 py-3 rounded-xl outline-none"
-              onChange={(e) => setNewCity(e.target.value)}
-            />
-          </div>
+          <input
+            placeholder="Enter new city name"
+            value={newCity}
+            onChange={(e) => setNewCity(e.target.value)}
+            className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
+          />
         )}
 
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="description"
-            className="text-xs font-bold text-gray-400 ml-2"
-          >
-            {t("createRealEstate.descriptionLabel", {
-              defaultValue: "Description",
-            })}
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            Address
           </label>
-          <textarea
-            id="description"
-            rows={4}
-            placeholder={t("createRealEstate.descriptionPlaceholder", {
-              defaultValue: "More details...",
-            })}
-            className="w-full border-2 border-gray-100 bg-gray-50 px-4 py-3 rounded-xl outline-none focus:border-blue-400"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
+          <input
+            placeholder="e.g. KM4, Hodan District"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
           />
         </div>
 
-        <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl">
-          <div className="flex flex-wrap gap-4">
-            <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-              <MdCloudUpload className="text-3xl text-gray-300" />
-              <span className="text-[10px] text-gray-400 font-bold">
-                {t("createRealEstate.upload", { defaultValue: "Upload" })}
-              </span>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                className="hidden"
-                onChange={(e) =>
-                  e.target.files &&
-                  setImages((prev) => [...prev, ...Array.from(e.target.files!)])
-                }
-              />
-            </label>
-            {images.map((img, i) => (
-              <div key={i} className="relative w-24 h-24 group">
-                <img
-                  src={URL.createObjectURL(img)}
-                  className="w-full h-full object-cover rounded-2xl shadow-md"
-                  alt="preview"
-                />
-                <button
-                  onClick={() =>
-                    setImages(images.filter((_, idx) => idx !== i))
-                  }
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-                >
-                  <MdOutlinePlaylistRemove />
-                </button>
-              </div>
-            ))}
+        <div className="space-y-2">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+            Price ($)
+          </label>
+          <div className="relative">
+            <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
+            <input
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500"
+              required
+            />
           </div>
         </div>
 
+        <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
+          <ImageUpload
+            images={images}
+            onAdd={addImages}
+            onRemove={removeImage}
+            label={t("createMotorcycle.upload")}
+          />
+        </div>
+
         <button
-          type="button"
-          onClick={onHandleSubmit}
+          type="submit"
           disabled={isLoading}
-          className={`w-full py-4 rounded-2xl text-white font-black text-lg transition-all shadow-xl ${
-            isLoading
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 active:scale-[0.98]"
-          }`}
+          className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-gray-200 flex items-center justify-center"
         >
-          {isLoading
-            ? t("createRealEstate.submitting", {
-                defaultValue: "Submitting...",
-              })
-            : t("createRealEstate.submit", { defaultValue: "Submit Listing" })}
+          {isLoading ? (
+            <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" />
+          ) : (
+            t("createMotorcycle.submit")
+          )}
         </button>
-      </div>
+      </form>
     </div>
   );
 }

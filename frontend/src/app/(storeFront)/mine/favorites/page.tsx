@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,55 +10,39 @@ import "react-toastify/dist/ReactToastify.css";
 import {
   getMyFavorites,
   removeFavorite,
-  addToFavorite,
 } from "@/actions/categories/favoriteAction";
-import { verifySession } from "@/actions/core/authAction";
+import { useAuth } from "@/context/AuthContext";
 import usePagination from "../../components/hooks/usePagination";
 import Pagination from "@/app/ui/invoices/pagination";
 
 const SaveFavorite = () => {
   const router = useRouter();
   const { t } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
   const [favorites, setFavorites] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
-    (async () => {
-      try {
-        const user = await verifySession();
-        if (!user) return;
-        const data = await getMyFavorites();
-        setFavorites(Array.isArray(data) ? data : []);
-      } catch (error) {
-        toast.error(
-          t("mine.favorites.errorLoading", "Failed to load favorites"),
-        );
-      }
-    })();
-  }, []);
+    if (!authLoading && user) {
+      (async () => {
+        try {
+          const data = await getMyFavorites();
+          setFavorites(Array.isArray(data) ? data : []);
+        } catch (error) {
+          toast.error(
+            t("mine.favorites.errorLoading", "Failed to load favorites"),
+          );
+        }
+      })();
+    }
+  }, [user, authLoading, t]);
 
   const {
     paginatedItems: paginatedFavorites,
     totalPages,
     isEmpty,
   } = usePagination(favorites, page, ITEMS_PER_PAGE);
-
-  const handleSave = async (item: any) => {
-    const res = await addToFavorite(item);
-
-    if (res?.error) {
-      if (res.status === 400) {
-        toast.warning(res.error);
-      } else {
-        toast.error(res.error);
-      }
-      return;
-    }
-
-    toast.success(t("mine.favorites.saved", "Item saved to favorites!"));
-    setFavorites((prev) => [res, ...prev]);
-  };
 
   const handleDelete = async (id: string) => {
     if (!confirm(t("mine.favorites.removeConfirm", "Remove this item?")))
@@ -86,6 +71,8 @@ const SaveFavorite = () => {
       url.startsWith("data:image")
     );
   };
+
+  if (authLoading) return null;
 
   return (
     <div className="container mx-auto p-6 mt-10">
@@ -168,9 +155,9 @@ const SaveFavorite = () => {
           </div>
 
           <Pagination
-            totalPages={totalPages}
-            currentPage={page}
-            onPageChange={setPage}
+            hasMore={page < (totalPages || 0)}
+            onSeeMore={() => setPage((p) => p + 1)}
+            loading={false}
           />
         </>
       )}

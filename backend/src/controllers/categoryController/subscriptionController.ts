@@ -1,3 +1,24 @@
+import { Request, Response } from "express";
+import { User } from "@prisma/client";
+import chalk from "chalk";
+import prisma from "../../core/utils/db.ts";
+import { getIO } from "../../services/sockets/socketServer.ts";
+import cacheManager from "src/services/redisserver/cacheManager.ts";
+import { CACHE_TTL } from "src/config/config.constants.ts";
+import {
+  getDaysUntilExpiry,
+  formatExpiryDate,
+  isExpired,
+} from "src/hooks/useExpire.ts";
+import {
+  AuthRequest,
+  ItemModels,
+  ItemData,
+  CreateSubscriptionBody,
+  UpdateStatusBody,
+  TriggerNotificationBody,
+} from "src/types/index.ts";
+
 export const getSubscriptionStats = async (req: Request, res: Response) => {
   try {
     const stats = await cacheManager.withCache(
@@ -34,51 +55,12 @@ export const getTotalSubscriptions = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Count failed" });
   }
 };
-import { Request, Response } from "express";
-import { User } from "@prisma/client";
-import chalk from "chalk";
-import prisma from "../../core/utils/db.ts";
-import { getIO } from "../../services/sockets/socketServer.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { CACHE_TTL } from "src/constants/config.constants.ts";
-import {
-  getDaysUntilExpiry,
-  formatExpiryDate,
-  isExpired,
-} from "src/hooks/useExpire.ts";
-
-interface AuthRequest extends Request {
-  user?: User & { _id?: string; sub?: string };
-}
-
 const getUserId = (req: AuthRequest): string | undefined =>
   req.user?.id || req.user?._id || req.user?.sub;
 
 const includeUser = {
   user: { select: { id: true, username: true, email: true, phone: true } },
 };
-
-export type ItemModels =
-  | "marketplace"
-  | "car"
-  | "realestate"
-  | "boat"
-  | "motorcycle"
-  | "farmequipment"
-  | "advertisement";
-
-interface ItemData {
-  title: string;
-  price: number;
-  mainCategory: string;
-  subCategory?: string;
-  region: string;
-  city: string;
-  brand?: string;
-  model?: string;
-  condition?: string;
-  posterId: string;
-}
 
 const CACHE_KEYS = {
   USER_SUBSCRIPTIONS: (userId: string) => `subscriptions:user:${userId}:all`,
@@ -189,7 +171,6 @@ export const notifyMatchingSubscribers = async (
       },
     });
 
-    // Safe socket emission - check if io exists
     const io = getIO();
     if (io) {
       const createdNotifications = await prisma.notification.findMany({
@@ -235,22 +216,6 @@ export const notifyMatchingSubscribers = async (
     return 0;
   }
 };
-interface CreateSubscriptionBody {
-  userId: string;
-  title: string;
-  category: string | string[];
-  subCategory?: string;
-  region: string;
-  cities: string | string[];
-  priceMin?: string;
-  priceMax?: string;
-  brand?: string;
-  model?: string;
-  totalFee?: number;
-  condition?: string;
-  specificFeatures?: string;
-}
-
 export const createSubscription = async (
   req: Request<{}, {}, CreateSubscriptionBody>,
   res: Response,
@@ -300,7 +265,6 @@ export const createSubscription = async (
       include: includeUser,
     });
 
-    // Fix: Filter out undefined patterns and ensure keys exist
     const cachePatterns = [
       `subscriptions:user:${userId}:*`,
       `subscriptions:my:${userId}`,
@@ -308,9 +272,8 @@ export const createSubscription = async (
       `subscriptions:paid:*`,
       CACHE_KEYS.TOTAL,
       CACHE_KEYS.STATS,
-    ].filter(Boolean); // Remove any undefined values
+    ].filter(Boolean);
 
-    // Only attempt to delete if there are patterns to delete
     if (cachePatterns.length > 0) {
       await Promise.all(
         cachePatterns.map((pattern) => {
@@ -327,7 +290,6 @@ export const createSubscription = async (
       );
     }
 
-    // Send subscription created confirmation
     const io = getIO();
     if (io) {
       io.to(`user_${userId}`).emit("subscriptionCreated", {
@@ -412,11 +374,6 @@ export const getMySubscriptions = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: "Failed to fetch subscriptions" });
   }
 };
-
-interface UpdateStatusBody {
-  status: "active" | "inactive" | "paused";
-  isActive?: boolean;
-}
 
 export const updateSubscriptionStatus = async (
   req: Request<{ id: string }, {}, UpdateStatusBody>,
@@ -539,21 +496,6 @@ export const searchSubscriptions = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Search failed" });
   }
 };
-
-interface TriggerNotificationBody {
-  itemType: ItemModels;
-  itemId: string;
-  title: string;
-  price: number;
-  mainCategory: string;
-  subCategory?: string;
-  region: string;
-  city: string;
-  brand?: string;
-  model?: string;
-  condition?: string;
-  posterId: string;
-}
 
 export const triggerNotification = async (
   req: Request<{}, {}, TriggerNotificationBody>,

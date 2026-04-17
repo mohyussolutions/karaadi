@@ -1,32 +1,39 @@
-import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-let prismaInstance: PrismaClient | null = null;
-let poolInstance: pg.Pool | null = null;
-export const getPrismaClient = () => {
-  if (!prismaInstance) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL is not defined in environment variables");
-    }
 
-    poolInstance = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
+const connectionString = process.env.DATABASE_URL;
 
-    const adapter = new PrismaPg(poolInstance);
-    prismaInstance = new PrismaClient({ adapter });
-  }
-  return prismaInstance;
-};
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not defined in environment variables");
+}
 
-export const prisma = getPrismaClient();
-export default prisma;
+declare global {
+  var prisma: PrismaClient | undefined;
+}
+
+const pool = new pg.Pool({
+  connectionString,
+  max: parseInt(process.env.PG_POOL_MAX || "20"),
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  maxUses: 7500,
+});
+
+const adapter = new PrismaPg(pool);
+
+export const prisma =
+  global.prisma ||
+  new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
+
+if (process.env.NODE_ENV !== "production") global.prisma = prisma;
 
 export const connectDb = async () => {
   try {
-    const client = getPrismaClient();
-    await client.$connect();
+    await prisma.$connect();
     console.log("DB connected!");
   } catch (err) {
     console.error("DB connection failed:", err);
@@ -36,14 +43,12 @@ export const connectDb = async () => {
 
 export const disconnectDb = async () => {
   try {
-    if (poolInstance) {
-      await poolInstance.end();
-      poolInstance = null;
-      prismaInstance = null;
-    }
+    await prisma.$disconnect();
+    await pool.end();
     console.log("DB disconnected!");
   } catch (err) {
     console.error("DB disconnection failed:", err);
-    process.exit(1);
   }
 };
+
+export default prisma;

@@ -1,7 +1,4 @@
-import {
-  SOCKET_EVENTS,
-  SOCKET_URL,
-} from "@/actions/constant/communicationEndpoints";
+import { SOCKET_EVENTS, SOCKET_URL } from "@/actions/constant/sockets";
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 

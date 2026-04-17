@@ -1,20 +1,15 @@
 "use client";
+export const dynamic = "force-dynamic";
+
 import { settingsOptions } from "@/app/(links)/storeFrontLinks/mineLinks";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-interface Setting {
-  title: string;
-  description: string;
-  href: string;
-  icon: React.ElementType;
-  colorClass?: string;
-}
-
 const Settings: React.FC = () => {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -33,11 +28,15 @@ const Settings: React.FC = () => {
                   <Icon size={48} />
                 </div>
                 <h3 className="text-xl font-bold text-center">
-                  {item.labelKey ? t(item.labelKey, item.title) : item.title}
+                  {item.labelKey
+                    ? t(item.labelKey, { defaultValue: item.title })
+                    : item.title}
                 </h3>
                 <p className="text-sm text-gray-600 text-center line-clamp-3">
                   {item.labelKey
-                    ? t(`${item.labelKey}.description`, item.description)
+                    ? t(`${item.labelKey}.description`, {
+                        defaultValue: item.description,
+                      })
                     : item.description}
                 </p>
               </div>

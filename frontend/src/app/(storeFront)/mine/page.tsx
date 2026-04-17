@@ -1,30 +1,26 @@
-"use server";
+"use client";
 
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
-import Link from "next/link";
 import ProfileCard from "./ProfileCard";
-import { verifySession } from "@/actions/core/authAction";
 import AccountOptionsClient from "./AccountOptionsClient";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 
-export default async function MyAccountCards() {
-  const cookieStore = await cookies();
-  const accessToken =
-    cookieStore.get("accessToken")?.value ||
-    cookieStore.get("idToken")?.value ||
-    "";
+export default function MyAccountCards() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  const user = await verifySession(accessToken);
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/login");
+    }
+  }, [user, loading, router]);
 
-  if (!user) redirect("/");
+  if (loading || !user) {
+    return null;
+  }
 
-  const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value;
-  const headerHeaders = await headers();
-  const headerLocale = headerHeaders
-    .get("accept-language")
-    ?.split(",")[0]
-    ?.split("-")[0];
-  const locale = (cookieLocale || headerLocale || "en").toLowerCase();
+  const accessToken = user.token || "";
 
   return (
     <>

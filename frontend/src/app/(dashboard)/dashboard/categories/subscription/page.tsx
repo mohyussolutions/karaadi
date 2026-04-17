@@ -1,6 +1,12 @@
 "use client";
 
-import React, { JSX, useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Download,
   RefreshCw,
@@ -11,210 +17,236 @@ import {
   Filter,
   X,
 } from "lucide-react";
-import StatsCard from "@/app/(storeFront)/components/Cards/StatsCardSubscription";
+import StatsCard from "@/app/(storeFront)/components/Cards/NormalCards/StatsCardSubscription";
 import FilterSection from "@/app/(storeFront)/components/Filters/FilterSectionForSubscriptions";
-import SubscriptionTable from "@/app/(storeFront)/components/Cards/SubscriptionTable";
-import SubscriptionDetailModal from "@/app/(storeFront)/components/shared/modals/SubscriptionDetailModal";
-import {
-  Subscription,
-  SubscriptionFilters,
-} from "@/app/utils/types/subscription";
+import SubscriptionTable from "@/app/(storeFront)/components/Cards/NormalCards/SubscriptionTable";
 import {
   deleteSubscriptionAdmin,
   getAllSubscriptionsAdmin,
   updateSubscriptionStatus,
 } from "@/actions/categories/subscriptionsActions";
-import { verifySession } from "@/actions/core/authAction";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
+import {
+  Subscription,
+  SubscriptionFilters,
+} from "@/app/utils/types/subscription";
+import dynamic from "next/dynamic";
 
-function AdminSubscriptionsPage() {
+const SubscriptionDetailModal = dynamic(
+  () =>
+    import("@/app/(storeFront)/components/shared/modals/SubscriptionDetailModal"),
+  { ssr: false },
+);
+
+const INITIAL_FILTERS: SubscriptionFilters = {
+  search: "",
+  status: "",
+  region: "",
+  category: "",
+  dateFrom: "",
+  dateTo: "",
+};
+
+function mapSubscriptions(subs: any[]): Subscription[] {
+  return subs.map((sub: any) => ({
+    id: sub._id || sub.id,
+    _id: sub._id || sub.id,
+    userId: sub.userId?._id
+      ? sub.userId
+      : sub.user
+        ? {
+            _id: sub.user._id || sub.user.id || "",
+            username: sub.user.username || "Unknown",
+            email: sub.user.email || "",
+            phone: sub.user.phone || "",
+          }
+        : sub.userId || "",
+    title: sub.title || "",
+    category: sub.category || "",
+    subCategory: sub.subCategory || "",
+    region: sub.region || "",
+    cities: sub.cities || [],
+    isPaid: sub.isPaid || false,
+    isActive: sub.isActive || false,
+    status: sub.status || "inactive",
+    createdAt: sub.createdAt || new Date().toISOString(),
+    updatedAt: sub.updatedAt || new Date().toISOString(),
+    priceMin: sub.priceMin,
+    priceMax: sub.priceMax,
+    notificationCount: sub.notificationCount || 0,
+  }));
+}
+
+function computeStats(subscriptions: Subscription[]) {
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const activeCount = subscriptions.filter(
+    (s) => s.status === "active" || s.isActive,
+  ).length;
+  return {
+    total: subscriptions.length,
+    active: activeCount,
+    inactive: subscriptions.length - activeCount,
+    recent: subscriptions.filter((s) => new Date(s.createdAt || 0) >= weekAgo)
+      .length,
+  };
+}
+
+export default function AdminSubscriptionsPageComponent() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [filteredSubscriptions, setFilteredSubscriptions] = useState<
-    Subscription[]
-  >([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [selectedSubscription, setSelectedSubscription] =
     useState<Subscription | null>(null);
-  const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<SubscriptionFilters>(INITIAL_FILTERS);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const [filters, setFilters] = useState<SubscriptionFilters>({
-    search: "",
-    status: "",
-    region: "",
-    category: "",
-    dateFrom: "",
-    dateTo: "",
-  });
+  const isMounted = useRef(true);
 
-  const [regions, setRegions] = useState<string[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    inactive: 0,
-    recent: 0,
-  });
+  const fetchSubscriptions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const subs = await getAllSubscriptionsAdmin(filters as any);
+      if (isMounted.current) setSubscriptions(mapSubscriptions(subs));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (isMounted.current) setLoading(false);
+    }
+  }, [filters]);
 
   useEffect(() => {
-    const fetchTokenAndData = async () => {
-      const user = await verifySession();
-      const token = user?.accessToken || user?.token;
-      setAccessToken(token);
-      await fetchSubscriptions(token);
+    isMounted.current = true;
+    fetchSubscriptions();
+    return () => {
+      isMounted.current = false;
     };
-    fetchTokenAndData();
-  }, []);
+  }, [fetchSubscriptions]);
 
-  useEffect(() => {
-    const s = filters.search.toLowerCase();
-    let filtered = subscriptions.filter((sub) => {
+  const filteredSubscriptions = useMemo(() => {
+    const s = filters.search?.toLowerCase() || "";
+    return subscriptions.filter((sub) => {
       const user = typeof sub.userId === "object" ? sub.userId : null;
-      const username = user?.username?.toLowerCase() || "";
-      const email = user?.email?.toLowerCase() || "";
-
       const matchesSearch =
         !s ||
-        sub.title.toLowerCase().includes(s) ||
-        username.includes(s) ||
-        email.includes(s) ||
-        sub.region.toLowerCase().includes(s) ||
+        sub.title?.toLowerCase().includes(s) ||
+        user?.username?.toLowerCase().includes(s) ||
+        user?.email?.toLowerCase().includes(s) ||
+        sub.region?.toLowerCase().includes(s) ||
         sub.cities?.some((city) => city.toLowerCase().includes(s));
 
       const matchesRegion = !filters.region || sub.region === filters.region;
       const matchesCategory =
         !filters.category || sub.category === filters.category;
-
-      return matchesSearch && matchesRegion && matchesCategory;
-    });
-
-    if (filters.status) {
-      filtered = filtered.filter((sub) =>
-        filters.status === "active"
+      const matchesStatus =
+        !filters.status ||
+        (filters.status === "active"
           ? sub.status === "active" || sub.isActive
-          : sub.status !== "active" && !sub.isActive,
+          : sub.status !== "active" && !sub.isActive);
+
+      return matchesSearch && matchesRegion && matchesCategory && matchesStatus;
+    });
+  }, [subscriptions, filters]);
+
+  const visibleSubscriptions = filteredSubscriptions.slice(0, visibleCount);
+  const hasMore = filteredSubscriptions.length > visibleCount;
+
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + 20);
+      setLoadingMore(false);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [filters]);
+
+  const regions = useMemo(
+    () =>
+      Array.from(new Set(subscriptions.map((s) => s.region))).filter(Boolean),
+    [subscriptions],
+  );
+  const categories = useMemo(
+    () =>
+      Array.from(new Set(subscriptions.map((s) => s.category))).filter(Boolean),
+    [subscriptions],
+  );
+  const stats = useMemo(() => computeStats(subscriptions), [subscriptions]);
+
+  const handleUpdateStatus = useCallback(
+    async (id: string | undefined, newStatus: string) => {
+      if (!id) return;
+      try {
+        await updateSubscriptionStatus(id, { status: newStatus });
+        setSubscriptions((prev) =>
+          prev.map((s) =>
+            s._id === id
+              ? {
+                  ...s,
+                  status: newStatus as any,
+                  isActive: newStatus === "active",
+                }
+              : s,
+          ),
+        );
+      } catch {
+        alert("Update failed");
+      }
+    },
+    [],
+  );
+
+  const handleDeleteSubscription = useCallback(
+    async (id: string | undefined) => {
+      if (!id || !confirm("Delete subscription?")) return;
+      try {
+        await deleteSubscriptionAdmin(id);
+        setSubscriptions((prev) => prev.filter((sub) => sub._id !== id));
+      } catch {
+        alert("Delete failed");
+      }
+    },
+    [],
+  );
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilters((p) => ({ ...p, [key]: value }));
+  }, []);
+
+  const clearFilters = useCallback(() => setFilters(INITIAL_FILTERS), []);
+
+  const handleBulkStatus = useCallback(
+    (status: "active" | "inactive") => {
+      filteredSubscriptions.forEach(
+        (sub) => sub._id && handleUpdateStatus(sub._id, status),
       );
-    }
-    setFilteredSubscriptions(filtered);
-  }, [filters, subscriptions]);
+    },
+    [filteredSubscriptions, handleUpdateStatus],
+  );
 
-  const fetchSubscriptions = async (tokenOverride?: string) => {
-    try {
-      setLoading(true);
-
-      const filtersRecord: Record<string, unknown> = {
-        search: filters.search,
-        status: filters.status,
-        region: filters.region,
-        category: filters.category,
-        dateFrom: filters.dateFrom,
-        dateTo: filters.dateTo,
-      };
-
-      const subs = await getAllSubscriptionsAdmin(filtersRecord);
-
-      const mapped: Subscription[] = subs.map((sub: any) => ({
-        id: sub._id || sub.id,
-        _id: sub._id || sub.id,
-        userId: sub.userId?._id
-          ? sub.userId
-          : sub.user
-            ? {
-                _id: sub.user._id || sub.user.id || "",
-                username: sub.user.username || "Unknown",
-                email: sub.user.email || "",
-                phone: sub.user.phone || "",
-              }
-            : sub.userId || "",
-        title: sub.title || "",
-        category: sub.category || "",
-        subCategory: sub.subCategory || "",
-        region: sub.region || "",
-        cities: sub.cities || [],
-        isPaid: sub.isPaid || false,
-        isActive: sub.isActive || false,
-        status: sub.status || "inactive",
-        createdAt: sub.createdAt || new Date().toISOString(),
-        priceMin: sub.priceMin,
-        priceMax: sub.priceMax,
-        notificationCount: sub.notificationCount || 0,
-      }));
-
-      setSubscriptions(mapped);
-      setRegions(
-        Array.from(new Set(mapped.map((s) => s.region))).filter(Boolean),
-      );
-      setCategories(
-        Array.from(new Set(mapped.map((s) => s.category))).filter(Boolean),
-      );
-
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const activeCount = mapped.filter(
-        (s) => s.status === "active" || s.isActive,
-      ).length;
-
-      setStats({
-        total: mapped.length,
-        active: activeCount,
-        inactive: mapped.length - activeCount,
-        recent: mapped.filter((s) => new Date(s.createdAt) >= weekAgo).length,
-      });
-    } catch (error) {
-      console.error("Fetch Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
-    try {
-      await updateSubscriptionStatus(id, { status: newStatus });
-      setSubscriptions((prev) =>
-        prev.map((s) =>
-          s._id === id
-            ? { ...s, status: newStatus, isActive: newStatus === "active" }
-            : s,
-        ),
-      );
-    } catch (error) {
-      alert("Update failed");
-    }
-  };
-
-  const handleDeleteSubscription = async (id: string) => {
-    if (!confirm("Delete subscription?")) return;
-    try {
-      await deleteSubscriptionAdmin(id);
-      setSubscriptions((prev) => prev.filter((sub) => sub._id !== id));
-      if (selectedSubscription?._id === id) setSelectedSubscription(null);
-    } catch (error) {
-      alert("Delete failed");
-    }
-  };
-
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     setExporting(true);
-    try {
-      const headers =
-        "ID,User,Email,Title,Category,Region,Cities,Status,Created\n";
-      const rows = filteredSubscriptions
-        .map((s) => {
-          const user = typeof s.userId === "object" ? s.userId : null;
-          return `${s._id},${user?.username || "N/A"},${user?.email || "N/A"},"${s.title}",${s.category},${s.region},"${s.cities?.join("|")}",${s.status},${s.createdAt}`;
-        })
-        .join("\n");
-      const blob = new Blob([headers + rows], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `subscriptions-${new Date().toISOString().split("T")[0]}.csv`;
-      a.click();
-    } finally {
-      setExporting(false);
-    }
-  };
+    const headers =
+      "ID,User,Email,Title,Category,Region,Cities,Status,Created\n";
+    const rows = filteredSubscriptions
+      .map((s) => {
+        const user = typeof s.userId === "object" ? s.userId : null;
+        return `${s._id},${user?.username || "N/A"},${user?.email || "N/A"},"${s.title}",${s.category},${s.region},"${s.cities?.join("|")}",${s.status},${s.createdAt}`;
+      })
+      .join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `subscriptions-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    setExporting(false);
+  }, [filteredSubscriptions]);
 
   if (loading)
     return (
@@ -228,40 +260,30 @@ function AdminSubscriptionsPage() {
       <div className="w-full px-3 sm:px-4 md:px-6 py-4 sm:py-6">
         <div className="w-full max-w-7xl mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-800 break-words uppercase tracking-tight">
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-800 uppercase tracking-tight">
                 Subscriptions
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5 break-words">
+              <p className="text-xs sm:text-sm text-gray-500 font-medium">
                 Manage automated user alerts and preferences
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
               <button
-                onClick={() =>
-                  setFilters({
-                    search: "",
-                    status: "",
-                    region: "",
-                    category: "",
-                    dateFrom: "",
-                    dateTo: "",
-                  })
-                }
-                className="px-2 sm:px-3 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition text-xs sm:text-sm whitespace-nowrap"
+                onClick={clearFilters}
+                className="px-3 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition text-xs sm:text-sm"
               >
                 Clear
               </button>
               <button
-                onClick={() => fetchSubscriptions()}
-                className="p-2 bg-white border border-gray-300 rounded-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 transition-all shadow-sm flex-shrink-0"
-                title="Refresh"
+                onClick={fetchSubscriptions}
+                className="p-2 bg-white border border-gray-300 rounded-full hover:bg-blue-50 transition-all shadow-sm"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-                className="sm:hidden flex items-center justify-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+                className="sm:hidden flex items-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
               >
                 <Filter className="h-3 w-3" />
                 {mobileFiltersOpen ? "Hide" : "Filters"}
@@ -269,16 +291,13 @@ function AdminSubscriptionsPage() {
               <button
                 onClick={handleExportCSV}
                 disabled={exporting || filteredSubscriptions.length === 0}
-                className="px-2 sm:px-3 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-1 shadow-sm transition text-xs sm:text-sm whitespace-nowrap"
+                className="px-3 py-2 bg-blue-600 text-white font-bold rounded-lg disabled:opacity-50 flex items-center gap-1 text-xs sm:text-sm shadow-sm transition"
               >
                 <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden xs:inline">
-                  {exporting ? "Exporting..." : "CSV"}
-                </span>
+                <span>{exporting ? "..." : "CSV"}</span>
               </button>
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
             <StatsCard
               title="Total"
@@ -309,86 +328,35 @@ function AdminSubscriptionsPage() {
               gradientTo="to-purple-700"
             />
           </div>
-
-          <div className="hidden sm:block bg-white rounded-xl border border-gray-200 p-4 w-full overflow-hidden">
-            <FilterSection
-              filters={filters}
-              regions={regions}
-              categories={categories}
-              filteredCount={filteredSubscriptions.length}
-              onFilterChange={(k, v) => setFilters((p) => ({ ...p, [k]: v }))}
-              onClearFilters={() =>
-                setFilters({
-                  search: "",
-                  status: "",
-                  region: "",
-                  category: "",
-                  dateFrom: "",
-                  dateTo: "",
-                })
-              }
-              onBulkActivate={() =>
-                filteredSubscriptions.forEach((sub) =>
-                  handleUpdateStatus(sub._id, "active"),
-                )
-              }
-              onBulkDeactivate={() =>
-                filteredSubscriptions.forEach((sub) =>
-                  handleUpdateStatus(sub._id, "inactive"),
-                )
-              }
-            />
-          </div>
-
-          {mobileFiltersOpen && (
-            <div className="sm:hidden bg-white rounded-xl border border-gray-200 p-4 w-full overflow-hidden">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-gray-700 text-sm">Filters</h3>
-                <button
-                  onClick={() => setMobileFiltersOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <FilterSection
-                filters={filters}
-                regions={regions}
-                categories={categories}
-                filteredCount={filteredSubscriptions.length}
-                onFilterChange={(k, v) => setFilters((p) => ({ ...p, [k]: v }))}
-                onClearFilters={() =>
-                  setFilters({
-                    search: "",
-                    status: "",
-                    region: "",
-                    category: "",
-                    dateFrom: "",
-                    dateTo: "",
-                  })
-                }
-                onBulkActivate={() =>
-                  filteredSubscriptions.forEach((sub) =>
-                    handleUpdateStatus(sub._id, "active"),
-                  )
-                }
-                onBulkDeactivate={() =>
-                  filteredSubscriptions.forEach((sub) =>
-                    handleUpdateStatus(sub._id, "inactive"),
-                  )
-                }
+          <div
+            className={`${mobileFiltersOpen ? "block" : "hidden"} sm:block bg-white rounded-xl border border-gray-200 p-4 w-full`}
+          >
+            <div className="flex justify-between items-center sm:hidden mb-3">
+              <h3 className="font-bold text-gray-700 text-sm">Filters</h3>
+              <X
+                className="h-4 w-4 text-gray-500"
+                onClick={() => setMobileFiltersOpen(false)}
               />
             </div>
-          )}
-
-          <div className="bg-white rounded-xl border border-gray-200 w-full overflow-x-auto">
+            <FilterSection
+              filters={filters}
+              regions={regions as string[]}
+              categories={categories as string[]}
+              filteredCount={filteredSubscriptions.length}
+              onFilterChange={handleFilterChange}
+              onClearFilters={clearFilters}
+              onBulkActivate={() => handleBulkStatus("active")}
+              onBulkDeactivate={() => handleBulkStatus("inactive")}
+            />
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 w-full overflow-hidden">
             <SubscriptionTable
-              subscriptions={filteredSubscriptions}
+              subscriptions={visibleSubscriptions}
               onViewDetails={setSelectedSubscription}
               onDelete={handleDeleteSubscription}
               onUpdateStatus={handleUpdateStatus}
               formatDate={(d) =>
-                new Date(d).toLocaleDateString("en-US", {
+                new Date(d ?? "").toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
@@ -396,8 +364,12 @@ function AdminSubscriptionsPage() {
               }
               formatPrice={(p) => (p ? `$${p.toLocaleString()}` : "N/A")}
             />
-          </div>
-
+          </div>{" "}
+          <Pagination
+            hasMore={hasMore}
+            onSeeMore={handleLoadMore}
+            loading={loadingMore}
+          />
           {selectedSubscription && (
             <SubscriptionDetailModal
               subscription={selectedSubscription}
@@ -411,5 +383,3 @@ function AdminSubscriptionsPage() {
     </div>
   );
 }
-
-export default AdminSubscriptionsPage;

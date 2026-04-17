@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { managerTotalLinks } from "@/app/(links)/managmentLinks/managerLinks";
 import { TeamPerformanceChart } from "./LineChart";
 import { ProjectProgressChart } from "./BarChart";
 import { DocumentActivityChart } from "./AreaChart";
+import { managerTotalLinks } from "@/app/(links)/management/managerLinks";
 
 export default function ManagerPage() {
-  const managementLinks = managerTotalLinks.filter((i) =>
-    ["inventory", "backoffice"].includes(i.category),
+  const managementLinks = managerTotalLinks.filter(
+    (i) =>
+      i.category !== undefined &&
+      ["inventory", "backoffice"].includes(i.category as string),
   );
 
   return (
@@ -19,7 +21,7 @@ export default function ManagerPage() {
           {managementLinks.map((item) => (
             <Link
               key={item.name}
-              href={item.href}
+              href={item.href ?? "#"}
               className="group flex flex-col items-center justify-center p-10 bg-white border border-gray-200 rounded-[2.5rem] hover:border-blue-400 hover:shadow-2xl transition-all duration-300"
             >
               <div className="p-6 rounded-3xl bg-gray-100 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-300 shadow-sm group-hover:shadow-blue-200">

@@ -3,11 +3,7 @@ import prisma from "../../core/utils/db.ts";
 import { Prisma } from "@prisma/client";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 
-import {
-  CACHE_TTL,
-  getPaginationParams,
-} from "src/constants/config.constants.ts";
-import { skip } from "@prisma/client/runtime/client";
+import { CACHE_TTL, getPaginationParams } from "src/config/config.constants.ts";
 import { AdQuery } from "src/types/advertisement.types.ts";
 
 const selectUser = {
@@ -41,7 +37,16 @@ export const getAllAdvertisements = async (req: Request, res: Response) => {
           orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
           skip,
           take: pageSize,
-          include: { user: selectUser },
+          select: {
+            id: true,
+            title: true,
+            imageUrl: true,
+            link: true,
+            buttonText: true,
+            position: true,
+            priority: true,
+            user: selectUser,
+          },
         });
       },
       CACHE_TTL.LIST,

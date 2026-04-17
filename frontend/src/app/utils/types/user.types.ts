@@ -1,70 +1,45 @@
-export interface User {
-  _id: string;
-  username: string;
-  email: string;
-  profileImage?: string | null;
-  isAdmin: boolean;
-  isSupport: boolean;
-  isManager: boolean;
-  accessToken?: string;
-  refreshToken?: string;
-  phone: string;
-  phoneVerified?: boolean;
-  emailVerified?: boolean;
-  token: string;
-  expiresIn?: number;
-}
-
-export interface NormalizedUser {
-  _id: string;
-  username: string;
-  email: string;
-  profileImage: string | null;
-  phone: string;
-  phoneVerified: boolean;
-  emailVerified?: boolean;
-  token: string;
-  accessToken: string;
-  refreshToken: string;
-  isAdmin: boolean;
-  isManager: boolean;
-  isSupport: boolean;
-}
-
-export interface RawUserData {
-  _id?: string;
+export type RawUserData = {
   id?: string;
+  _id?: string;
   sub?: string;
   username?: string;
   preferred_username?: string;
   email?: string;
   profileImage?: string;
   phone?: string;
-  phoneVerified?: boolean | string;
-  emailVerified?: boolean | string;
+  phoneVerified?: boolean | string | number;
   token?: string;
   accessToken?: string;
   refreshToken?: string;
-  isAdmin?: boolean | string;
-  isManager?: boolean | string;
-  isSupport?: boolean | string;
-  "custom:isAdmin"?: string;
-  "custom:isManager"?: string;
-  "custom:isSupport"?: string;
+  isAdmin?: boolean | string | number;
+  isManager?: boolean | string | number;
+  isSupport?: boolean | string | number;
+  [key: string]: any;
+};
+
+export interface User {
+  _id: string;
+  id: string;
+  username: string;
+  email: string;
+  profileImage?: string;
+  isAdmin: boolean;
+  isSupport: boolean;
+  isManager: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  phone: string;
+  phoneVerified: boolean;
+  token: string;
+  expiresIn?: number;
+}
+
+export interface NormalizedUser extends User {
+  emailVerified?: boolean;
 }
 
 export interface LoginResponse {
-  success: boolean;
+  user: NormalizedUser;
   token: string;
-  accessToken: string;
-  refreshToken: string;
   expiresIn?: number;
-  user: any;
-}
-
-export interface SessionResponse {
-  user?: RawUserData;
-  token?: string;
-  accessToken?: string;
-  refreshToken?: string;
 }

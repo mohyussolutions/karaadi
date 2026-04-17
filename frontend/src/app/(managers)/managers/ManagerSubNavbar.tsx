@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -11,15 +11,18 @@ import {
   FaSpinner,
   FaCircle,
 } from "react-icons/fa";
-import { managerTotalLinks } from "@/app/(links)/managmentLinks/managerLinks";
-import { logout, verifySession } from "@/actions/core/authAction";
+
+import { logout } from "@/actions/core/authAction";
+import { managerTotalLinks } from "@/app/(links)/management/managerLinks";
+import { useAuth } from "@/context/AuthContext";
+
 export default function ManagerSidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, loading: authLoading } = useAuth();
 
   const [hasMounted, setHasMounted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [openSections, setOpenSections] = useState({
     management: true,
     auth: false,
@@ -27,11 +30,6 @@ export default function ManagerSidebar() {
 
   useEffect(() => {
     setHasMounted(true);
-    const fetchSession = async () => {
-      const session = await verifySession();
-      setUser(session);
-    };
-    fetchSession();
   }, []);
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -39,14 +37,14 @@ export default function ManagerSidebar() {
   };
 
   const handleLogout = async () => {
-    setIsLoading(true);
+    setIsLoggingOut(true);
     try {
-      if (logout) await logout();
+      await logout();
       router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoggingOut(false);
     }
   };
 
@@ -63,12 +61,18 @@ export default function ManagerSidebar() {
       <div className="p-8 border-b border-slate-800/50">
         <div className="flex flex-col items-center gap-4 p-6 rounded-3xl bg-slate-800/40 border border-white/5 shadow-inner">
           <div className="relative">
-            <FaUserCircle className="w-16 h-16 text-blue-500 shadow-lg" />
-            <FaCircle className="absolute bottom-1 right-1 text-emerald-500 border-4 border-[#1e293b] rounded-full text-[10px]" />
+            {authLoading ? (
+              <FaSpinner className="w-16 h-16 text-slate-600 animate-spin" />
+            ) : (
+              <>
+                <FaUserCircle className="w-16 h-16 text-blue-500 shadow-lg" />
+                <FaCircle className="absolute bottom-1 right-1 text-emerald-500 border-4 border-[#1e293b] rounded-full text-[10px]" />
+              </>
+            )}
           </div>
           <div className="text-center w-full">
             <h2 className="text-lg font-black text-white tracking-tight truncate px-2">
-              {user?.username || "Loading..."}
+              {authLoading ? "Checking..." : user?.username || "Guest"}
             </h2>
             <span className="inline-block text-[10px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full font-bold tracking-widest uppercase border border-blue-500/30">
               {roleLabel}
@@ -77,7 +81,7 @@ export default function ManagerSidebar() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-8 overflow-y-auto">
+      <div className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
         <section className="space-y-2">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-4 mb-4">
             Core Menu
@@ -141,13 +145,11 @@ export default function ManagerSidebar() {
       <div className="p-6 border-t border-slate-800/50 bg-[#0c1222]">
         <button
           onClick={handleLogout}
-          disabled={isLoading}
+          disabled={isLoggingOut}
           className="flex items-center gap-4 w-full p-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all font-bold text-sm disabled:opacity-50 group"
         >
-          <div
-            className={`p-2 rounded-lg bg-red-400/10 group-hover:bg-red-400/20 transition-colors`}
-          >
-            {isLoading ? (
+          <div className="p-2 rounded-lg bg-red-400/10 group-hover:bg-red-400/20 transition-colors">
+            {isLoggingOut ? (
               <FaSpinner className="animate-spin size-5" />
             ) : (
               <FaSignOutAlt className="size-5" />

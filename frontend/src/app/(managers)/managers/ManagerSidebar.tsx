@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,33 +10,26 @@ import {
   FaLifeRing,
   FaTimes,
 } from "react-icons/fa";
-import { managerTotalLinks } from "@/app/(links)/managmentLinks/managerLinks";
-import { logout, verifySession } from "@/actions/core/authAction";
+import { logout } from "@/actions/core/authAction";
+import { managerTotalLinks } from "@/app/(links)/management/managerLinks";
+import { useAuth } from "@/context/AuthContext";
 
 interface ManagerSidebarProps {
   open: boolean;
   onClose: () => void;
 }
 
+function isTrue(val: unknown): boolean {
+  return val === true || val === "true";
+}
+
 export default function ManagerSidebar({ open, onClose }: ManagerSidebarProps) {
   const pathname = usePathname();
-  const [hasMounted, setHasMounted] = useState(false);
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    setHasMounted(true);
-    const getSession = async () => {
-      const session = await verifySession();
-      setUser(session);
-    };
-    getSession();
-  }, []);
+  const { user } = useAuth();
 
   const handleLogout = async () => {
     await logout();
   };
-
-  if (!hasMounted) return null;
 
   return (
     <aside
@@ -67,9 +60,9 @@ export default function ManagerSidebar({ open, onClose }: ManagerSidebarProps) {
                   {user.username || user.email?.split("@")[0]}
                 </h2>
                 <span className="inline-block text-[9px] bg-blue-500/20 text-blue-400 px-3 py-0.5 rounded-full font-black tracking-widest uppercase border border-blue-500/30">
-                  {user.isAdmin === true || user.isAdmin === "true"
+                  {isTrue(user.isAdmin)
                     ? "Admin"
-                    : user.isManager === true || user.isManager === "true"
+                    : isTrue(user.isManager)
                       ? "Manager"
                       : "Support"}
                 </span>

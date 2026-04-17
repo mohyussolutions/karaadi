@@ -1,0 +1,212 @@
+import { Icons } from "@/app/utils/icons/managementIcons";
+import { ManagementSection, NavLink } from "@/app/utils/types/managementTypes";
+
+const BASE_PATH = "/dashboard/management";
+
+export const managerTotalLinks: NavLink[] = [
+  {
+    name: "Dashboard",
+    icon: Icons.FaTachometerAlt,
+    href: "/managers",
+    category: "core",
+  },
+  {
+    name: "Teams",
+    icon: Icons.FaUsers,
+    href: "/managers/teams",
+    category: "core",
+  },
+  {
+    name: "Approvals",
+    icon: Icons.FaCheckCircle,
+    href: "/managers/approvals",
+    category: "core",
+  },
+  {
+    name: "Inventory",
+    icon: Icons.FaBoxes,
+    href: "/managers/inventory",
+    category: "backoffice",
+  },
+  {
+    name: "Reports",
+    icon: Icons.FaFileAlt,
+    href: "/managers/reports",
+    category: "backoffice",
+  },
+  {
+    name: "Analytics",
+    icon: Icons.FaChartBar,
+    href: "/managers/analytics",
+    category: "backoffice",
+  },
+  {
+    name: "Settings",
+    icon: Icons.FaCog,
+    href: "/managers/settings",
+    category: "system",
+  },
+  {
+    name: "Sign Out",
+    icon: Icons.FaSignOutAlt,
+    href: "#",
+    action: "logout",
+    category: "system",
+  },
+];
+
+export const managementSections: ManagementSection[] = [
+  {
+    id: "marketplace",
+    name: "Marketplace",
+    path: `${BASE_PATH}/marketplace`,
+    icon: Icons.FaStore,
+    description: "Manage marketplace listings",
+    category: "listings",
+    featured: true,
+  },
+  {
+    id: "realestate",
+    name: "Real Estate",
+    path: `${BASE_PATH}/real-estate`,
+    icon: Icons.FaHome,
+    description: "Manage properties",
+    category: "listings",
+    featured: true,
+  },
+  {
+    id: "cars",
+    name: "Cars",
+    path: `${BASE_PATH}/cars`,
+    icon: Icons.FaCar,
+    description: "Manage car listings",
+    category: "listings",
+    featured: true,
+  },
+  {
+    id: "boats",
+    name: "Boats",
+    path: `${BASE_PATH}/boats`,
+    icon: Icons.FaShip,
+    description: "Manage boat listings",
+    category: "listings",
+    featured: true,
+  },
+  {
+    id: "tractors",
+    name: "Tractors",
+    path: `${BASE_PATH}/tractors`,
+    icon: Icons.FaTractor,
+    description: "Manage tractor listings",
+    category: "listings",
+  },
+  {
+    id: "motorcycles",
+    name: "Motorcycles",
+    path: `${BASE_PATH}/motorcycles`,
+    icon: Icons.FaMotorcycle,
+    description: "Manage motorcycle listings",
+    category: "listings",
+  },
+  {
+    id: "jobs",
+    name: "Jobs",
+    path: `${BASE_PATH}/jobs`,
+    icon: Icons.FaBriefcase,
+    description: "Manage job listings",
+    category: "listings",
+  },
+];
+
+export const otherManagementSections: ManagementSection[] = [
+  {
+    id: "listings",
+    name: "All Listings",
+    path: `${BASE_PATH}/listings`,
+    icon: Icons.FaList,
+    description: "View all marketplace listings",
+    category: "content",
+    featured: true,
+  },
+  {
+    id: "featured",
+    name: "Featured Items",
+    path: `${BASE_PATH}/featured`,
+    icon: Icons.FaStar,
+    description: "Manage promoted listings",
+    category: "content",
+  },
+  {
+    id: "bulk",
+    name: "Bulk Operations",
+    path: `${BASE_PATH}/bulk`,
+    icon: Icons.FaLayerGroup,
+    description: "Bulk updates",
+    category: "content",
+  },
+  {
+    id: "users",
+    name: "User Management",
+    path: `${BASE_PATH}/users`,
+    icon: Icons.FaUsers,
+    description: "Manage accounts",
+    category: "users",
+    featured: true,
+  },
+  {
+    id: "roles",
+    name: "Role Management",
+    path: `${BASE_PATH}/roles`,
+    icon: Icons.FaUserCog,
+    description: "Configure permissions",
+    category: "users",
+  },
+  {
+    id: "analytics",
+    name: "Analytics",
+    path: `${BASE_PATH}/analytics`,
+    icon: Icons.FaChartBar,
+    description: "Platform reports",
+    category: "analytics",
+    featured: true,
+  },
+  {
+    id: "moderation",
+    name: "Moderation",
+    path: `${BASE_PATH}/moderation`,
+    icon: Icons.FaShieldAlt,
+    description: "Moderate content",
+    category: "content",
+  },
+  {
+    id: "invoices",
+    name: "Invoices",
+    path: `${BASE_PATH}/invoices`,
+    icon: Icons.FaFileInvoice,
+    description: "Payment records",
+    category: "content",
+  },
+  {
+    id: "system-health",
+    name: "System Health",
+    path: `${BASE_PATH}/system-health`,
+    icon: Icons.FaFileInvoice,
+    description: "Monitor performance",
+    category: "analytics",
+  },
+  {
+    id: "settings",
+    name: "System Settings",
+    path: `${BASE_PATH}/settings`,
+    icon: Icons.FaCog,
+    description: "Global configuration",
+    category: "settings",
+    featured: true,
+  },
+];
+
+export const ManagementLinks = {
+  managerTotalLinks,
+  managementSections,
+  otherManagementSections,
+};

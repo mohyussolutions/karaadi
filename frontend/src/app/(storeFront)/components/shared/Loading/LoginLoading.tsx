@@ -3,8 +3,7 @@
 export default function LoginLoading() {
   return (
     <svg
-      className="animate-spin h-5 w-5 text-white"
-      xmlns="http://www.w3.org/2000/svg"
+      className="animate-spin h-10 w-10 text-blue-600"
       fill="none"
       viewBox="0 0 24 24"
     >

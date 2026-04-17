@@ -11,7 +11,6 @@ import { supportTicketSeedData } from "../seeder/ticketData.ts";
 import { cities, regions } from "../seeder/SomaliaRegionsSeeder.ts";
 import { jobsData } from "../seeder/jobsSeed.ts";
 import { recommendations } from "../seeder/recomendationSeeder.ts";
-import "dotenv/config";
 import prisma from "../core/utils/db.ts";
 
 const importData = async () => {

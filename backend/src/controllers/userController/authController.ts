@@ -13,6 +13,29 @@ import {
 } from "../../core/utils/cognitoauth.ts";
 import prisma from "../../core/utils/db.ts";
 
+export const userSignupsByMonth = async (req: Request, res: Response) => {
+  try {
+    const rows = await prisma.$queryRaw<{ month: string; users: bigint }[]>`
+      SELECT to_char("createdAt", 'YYYY-MM') AS month, COUNT(*)::bigint AS users
+      FROM "User"
+      GROUP BY month
+      ORDER BY month ASC
+    `;
+    let running = 0;
+    const results = rows.map((r) => {
+      running += Number(r.users);
+      return {
+        month: r.month,
+        users: Number(r.users),
+        totalUsers: running,
+      };
+    });
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch user signups by month" });
+  }
+};
+
 export const deleteMyAccount = async (
   req: Request,
   res: Response,
@@ -20,11 +43,6 @@ export const deleteMyAccount = async (
   const user = (req as any).user;
   const authHeader = req.headers.authorization;
   const accessToken = authHeader?.split(" ")[1];
-
-  console.log("--- DELETE ACCOUNT REQUEST ---");
-  console.log("Token from Header:", accessToken);
-  console.log("ID from Body:", req.body.id);
-  console.log("ID from Middleware User:", user?.id);
 
   const rawId = req.body.id || user?.id || user?.sub;
   const userId = Array.isArray(rawId)
@@ -48,7 +66,6 @@ export const deleteMyAccount = async (
     if (targetCognitoId) {
       try {
         await deleteFromCognito(targetCognitoId);
-        console.log("Successfully deleted Cognito User:", targetCognitoId);
       } catch (err: any) {
         console.error("Cognito Error:", err.message);
       }
@@ -60,7 +77,6 @@ export const deleteMyAccount = async (
 
     return res.status(200).json({ success: true, message: "Account deleted" });
   } catch (error: any) {
-    console.error("Database Error:", error.message);
     return res.status(500).json({ error: error.message || "Deletion failed" });
   }
 };
@@ -70,17 +86,10 @@ export const deleteUserByAdmin = async (
   res: Response,
 ): Promise<Response> => {
   const { id } = req.params;
-  const authHeader = req.headers.authorization;
-  const adminToken = authHeader?.split(" ")[1];
-
-  console.log("--- Admin Delete User ---");
-  console.log("Target User ID:", id);
-  console.log("Admin Token:", adminToken);
 
   const userId = Array.isArray(id) ? (id[0] as string) : (id as string);
 
   if (!userId) {
-    console.log("Error: Admin did not provide target ID");
     return res.status(400).json({ error: "User ID is required" });
   }
 
@@ -91,7 +100,6 @@ export const deleteUserByAdmin = async (
     });
 
     if (!dbUser) {
-      console.log("Error: Target user not found for ID:", userId);
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -100,12 +108,10 @@ export const deleteUserByAdmin = async (
     await prisma.user.delete({
       where: { id: userId },
     });
-    console.log("Admin: DB record deleted");
 
     if (targetCognitoId) {
       try {
         await deleteFromCognito(targetCognitoId);
-        console.log("Admin: Cognito account deleted");
       } catch (err: any) {
         console.error("Admin: Cognito cleanup failed:", err.message);
       }
@@ -113,7 +119,6 @@ export const deleteUserByAdmin = async (
 
     return res.status(200).json({ success: true, message: "User deleted" });
   } catch (error: any) {
-    console.error("Admin Delete Exception:", error.message);
     return res
       .status(500)
       .json({ error: error.message || "Failed to delete user" });

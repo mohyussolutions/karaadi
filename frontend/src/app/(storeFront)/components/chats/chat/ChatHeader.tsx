@@ -19,7 +19,8 @@ export const ChatHeader = ({
 }: ChatHeaderProps) => {
   const { t } = useTranslation();
   const itemType = selectedChat?.item?.type;
-  const itemRoute = useGetRoute({ category: itemType });
+  const { getRoute } = useGetRoute();
+  const itemRoute = getRoute(itemType);
   const itemId = selectedChat.item?.id;
   const itemTitle =
     selectedChat.item?.title ||
@@ -36,9 +37,7 @@ export const ChatHeader = ({
         const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='transparent' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black' font-size='16' font-family='Arial, Helvetica, sans-serif'>${initial}</text></svg>`;
         return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
       }
-    } catch (e) {
-
-    }
+    } catch (e) {}
     return profileImage;
   })();
 
@@ -83,13 +82,8 @@ export const ChatHeader = ({
                 height={48}
                 className="object-cover"
                 onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  if (target && !target.dataset.fallback) {
-                    target.dataset.fallback = "1";
-                    const initial = username?.charAt(0)?.toUpperCase() || "U";
-                    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='transparent' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black' font-size='16' font-family='Arial, Helvetica, sans-serif'>${initial}</text></svg>`;
-                    target.src = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-                  }
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.style.display = "none";
                 }}
               />
             ) : (

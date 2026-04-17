@@ -3,13 +3,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
 import session from "express-session";
+import { RedisStore } from "connect-redis";
 import cookieParser from "cookie-parser";
 import compression from "compression";
-
+import redisServer from "./services/redisserver/redisServer.js";
 import { setupSecurity } from "./core/middelware/securityMiddleware.js";
-import { SESSION_TIME_MS } from "./constants/session-time.js";
+import { logger } from "./core/middelware/logger.js";
 
-// Import routes
 import marketplaceRoutes from "./routers/categoryRoute/marketplaceRouter.js";
 import realEstateRouter from "./routers/categoryRoute/realEstateRouter.js";
 import boatsRoutes from "./routers/categoryRoute/boatsRouter.js";
@@ -40,23 +40,32 @@ import jobsRouter from "./routers/categoryRoute/jobsRouter.js";
 import hageRouter from "./AI/hageRouter.js";
 import reportRoutes from "./routers/categoryRoute/reportRoute.js";
 import { setupServerUtils } from "./core/utils/serverUtils.ts";
+import { overloadMiddleware } from "./core/middelware/overloadMiddleware.js";
+import { SESSION_TIME_MS } from "./config/session-time.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
 
+app.get("/health", (req, res) =>
+  res.status(200).json({ status: "OK", pid: process.pid }),
+);
+app.use(
+  "/assets",
+  express.static(path.join(__dirname, "../assets"), { maxAge: "1d" }),
+);
+
 setupSecurity(app);
 setupServerUtils(app);
 
 app.use(cookieParser());
-app.use(morgan("dev"));
+if (!isProd) app.use(morgan("dev"));
 app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
+    store: new RedisStore({ client: redisServer.getClient() }),
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
@@ -64,65 +73,71 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: isProd,
-      sameSite: isProd ? "none" : "lax",
+      sameSite: "lax",
       maxAge: SESSION_TIME_MS,
       domain: process.env.COOKIE_DOMAIN,
     },
   }),
 );
 
-// Routes
-app.use("/api/marketplace", marketplaceRoutes);
-app.use("/api/cars", carsRoutes);
-app.use("/api/boats", boatsRoutes);
-app.use("/api/motorcycles", motorcyclesRoutes);
-app.use("/api/real-estate", realEstateRouter);
-app.use("/api/traktor", traktorRoutes);
-app.use("/api/ads", myAdsRouter);
-app.use("/api/favorites", favoriteRoutes);
-app.use("/api/recommendations", recommendationRoutes);
-app.use("/api/advertisements", advertisementRouter);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/subscription", subscriptionRoute);
-app.use("/api/chats", chatRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/contactUs", contactUsRouter);
-app.use("/api/agencies", agencyRoutes);
-app.use("/api/users", authRouters);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/Fee", FeeRoutes);
-app.use("/api/customers", customerSupportRoutes);
-app.use("/api/visitors", visitorRoute);
-app.use("/api/search", searchRouter);
-app.use("/api/filtering", filterRouter);
-app.use("/api/jobs", jobsRouter);
-app.use("/api/locations", locRoutes);
-app.use("/api/redis", redisStatsRouter);
-app.use("/api/history-search", historySearchRoutes);
-app.use("/api/reports", reportRoutes);
-app.use("/api/hage", hageRouter);
+app.use(overloadMiddleware);
 
-app.use("/assets", express.static(path.join(__dirname, "../assets")));
-
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK", uptime: process.uptime() });
-});
-
-app.get("/", (req, res) => res.send("API is running"));
+const apiRouter = express.Router();
+apiRouter.use("/marketplace", marketplaceRoutes);
+apiRouter.use("/cars", carsRoutes);
+apiRouter.use("/boats", boatsRoutes);
+apiRouter.use("/motorcycles", motorcyclesRoutes);
+apiRouter.use("/real-estate", realEstateRouter);
+apiRouter.use("/traktor", traktorRoutes);
+apiRouter.use("/ads", myAdsRouter);
+apiRouter.use("/favorites", favoriteRoutes);
+apiRouter.use("/recommendations", recommendationRoutes);
+apiRouter.use("/advertisements", advertisementRouter);
+apiRouter.use("/notifications", notificationRoutes);
+apiRouter.use("/subscription", subscriptionRoute);
+apiRouter.use("/chats", chatRoutes);
+apiRouter.use("/messages", messageRoutes);
+apiRouter.use("/contactUs", contactUsRouter);
+apiRouter.use("/agencies", agencyRoutes);
+apiRouter.use("/users", authRouters);
+apiRouter.use("/payments", paymentRoutes);
+apiRouter.use("/Fee", FeeRoutes);
+apiRouter.use("/customers", customerSupportRoutes);
+apiRouter.use("/visitors", visitorRoute);
+apiRouter.use("/search", searchRouter);
+apiRouter.use("/filtering", filterRouter);
+apiRouter.use("/jobs", jobsRouter);
+apiRouter.use("/locations", locRoutes);
+apiRouter.use("/redis", redisStatsRouter);
+apiRouter.use("/history-search", historySearchRoutes);
+apiRouter.use("/reports", reportRoutes);
+apiRouter.use("/hage", hageRouter);
+app.use("/api", apiRouter);
 
 app.use(
   (
-    err: any,
+    err: unknown,
     req: express.Request,
     res: express.Response,
-    next: express.NextFunction,
+    _next: express.NextFunction,
   ) => {
-    res.status(500).json({ message: req.t("api_errors.server_error") });
+    try {
+      logger.error((err as any)?.stack || err);
+    } catch {}
+    const msg =
+      typeof (req as any).t === "function"
+        ? (req as any).t("api_errors.server_error")
+        : "Server error";
+    res.status(500).json({ message: msg });
   },
 );
 
 app.use((req: express.Request, res: express.Response) => {
-  res.status(404).json({ message: req.t("api_errors.not_found") });
+  const msg =
+    typeof (req as any).t === "function"
+      ? (req as any).t("api_errors.not_found")
+      : "Not found";
+  res.status(404).json({ message: msg });
 });
 
 export default app;

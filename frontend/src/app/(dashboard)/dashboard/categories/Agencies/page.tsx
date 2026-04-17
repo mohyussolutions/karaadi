@@ -1,14 +1,12 @@
 "use client";
-
 import {
   deleteAgency,
   fetchAgencies,
   updateAgency,
   createAgency,
 } from "@/actions/categories/actionsAgency";
-import { verifySession } from "@/actions/core/authAction";
-
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   FiEdit2,
   FiTrash2,
@@ -17,13 +15,27 @@ import {
   FiCheckCircle,
   FiX,
 } from "react-icons/fi";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AgencyDashboard() {
-  const [agencies, setAgencies] = useState<any[]>([]);
+  interface Agency {
+    id?: string;
+    _id?: string;
+    name?: string;
+    type?: string;
+    location?: string;
+    specialty?: string;
+    image?: string;
+    link?: string;
+    status?: string;
+  }
+
+  const { user } = useAuth();
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = user?._id || null;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -35,6 +47,16 @@ export default function AgencyDashboard() {
     status: "Verified",
   });
 
+  function isResultSuccess(
+    r: unknown,
+  ): r is { success: boolean; error?: string } {
+    return !!(
+      r &&
+      typeof r === "object" &&
+      (r as Record<string, unknown>).success
+    );
+  }
+
   const loadData = async () => {
     setLoading(true);
     const data = await fetchAgencies();
@@ -43,26 +65,19 @@ export default function AgencyDashboard() {
   };
 
   useEffect(() => {
-    const init = async () => {
-      const user = await verifySession();
-      if (user?._id) {
-        setCurrentUserId(user._id);
-      }
-      loadData();
-    };
-    init();
+    loadData();
   }, []);
 
-  const handleOpenEdit = (agency: any) => {
-    setEditingId(agency.id || agency._id);
+  const handleOpenEdit = (agency: Agency) => {
+    setEditingId(String(agency.id ?? agency._id ?? ""));
     setFormData({
-      name: agency.name,
-      type: agency.type,
-      location: agency.location,
-      specialty: agency.specialty,
-      image: agency.image,
-      link: agency.link || "",
-      status: agency.status || "Verified",
+      name: agency.name ?? "",
+      type: agency.type ?? "",
+      location: agency.location ?? "",
+      specialty: agency.specialty ?? "",
+      image: agency.image ?? "",
+      link: agency.link ?? "",
+      status: agency.status ?? "Verified",
     });
     setIsModalOpen(true);
   };
@@ -87,11 +102,12 @@ export default function AgencyDashboard() {
 
     if (editingId) {
       const res = await updateAgency(editingId, formData);
-      if (res.success) {
+      if (isResultSuccess(res) && res.success) {
         handleCloseModal();
         loadData();
       } else {
-        alert(res.error || "Failed to update agency");
+        const err = res && (res as Record<string, unknown>).error;
+        alert(err || "Failed to update agency");
       }
     } else {
       const agencyData = {
@@ -105,11 +121,12 @@ export default function AgencyDashboard() {
       };
 
       const res = await createAgency(agencyData);
-      if (res.success) {
+      if (isResultSuccess(res) && res.success) {
         handleCloseModal();
         loadData();
       } else {
-        alert(res.error || "Failed to create agency");
+        const err = res && (res as Record<string, unknown>).error;
+        alert(err || "Failed to create agency");
       }
     }
   };
@@ -117,14 +134,15 @@ export default function AgencyDashboard() {
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure?")) {
       const res = await deleteAgency(id);
-      if (res.success) loadData();
+      if (isResultSuccess(res) && res.success) loadData();
     }
   };
 
-  const toggleVerify = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === "Verified" ? "Pending" : "Verified";
+  const toggleVerify = async (id: string, currentStatus?: string) => {
+    const status = currentStatus ?? "Verified";
+    const newStatus = status === "Verified" ? "Pending" : "Verified";
     const res = await updateAgency(id, { status: newStatus });
-    if (res.success) loadData();
+    if (isResultSuccess(res) && res.success) loadData();
   };
 
   return (
@@ -255,18 +273,21 @@ export default function AgencyDashboard() {
           <tbody className="text-sm">
             {agencies.map((agency) => (
               <tr
-                key={agency.id || agency._id}
+                key={String(agency.id ?? agency._id ?? "")}
                 className="border-b hover:bg-gray-50 transition-colors"
               >
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     {agency.image ? (
-                      <img
+                      <Image
                         src={`/api/images/${agency.image}`}
+                        width={32}
+                        height={32}
                         className="w-8 h-8 rounded-lg object-cover bg-gray-100 shadow-sm"
-                        alt={agency.name}
+                        alt={agency.name ?? ""}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            "none";
                         }}
                       />
                     ) : null}
@@ -280,7 +301,10 @@ export default function AgencyDashboard() {
                 <td className="py-4 px-4">
                   <button
                     onClick={() =>
-                      toggleVerify(agency.id || agency._id, agency.status)
+                      toggleVerify(
+                        String(agency.id ?? agency._id ?? ""),
+                        agency.status ?? "Verified",
+                      )
                     }
                     className={`px-2 py-1 rounded-md text-[10px] font-black uppercase flex items-center gap-1 transition-all ${
                       agency.status === "Verified"
@@ -300,7 +324,9 @@ export default function AgencyDashboard() {
                       <FiEdit2 size={16} />
                     </button>
                     <button
-                      onClick={() => handleDelete(agency.id || agency._id)}
+                      onClick={() =>
+                        handleDelete(String(agency.id ?? agency._id ?? ""))
+                      }
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                     >
                       <FiTrash2 size={16} />

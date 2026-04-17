@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../core/utils/db.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
-import {
-  CACHE_TTL,
-  getPaginationParams,
-} from "src/constants/config.constants.ts";
+import { CACHE_TTL, getPaginationParams } from "src/config/config.constants.ts";
 
 const parseId = (id: any) => (Array.isArray(id) ? id[0] : id);
 
@@ -54,7 +51,6 @@ export const getAllAgencies = async (req: Request, res: Response) => {
 export const createAgency = async (req: Request, res: Response) => {
   try {
     const agency = await prisma.agency.create({ data: req.body });
-    // Activity: Delete lists and stats so they refresh on next GET
     await cacheManager.deletePattern("agency:all:*");
     await cacheManager.delete("agency:stats");
     res.status(201).json({ success: true, agency });

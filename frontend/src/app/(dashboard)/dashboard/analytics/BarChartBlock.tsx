@@ -1,8 +1,11 @@
 "use client";
+
+import React from "react";
 import {
   ResponsiveContainer,
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -10,30 +13,132 @@ import {
   Legend,
 } from "recharts";
 
+export type ChartData = {
+  name?: string;
+  [key: string]: string | number | undefined;
+};
+
 export interface BarChartBlockProps {
   title: string;
-  data: any[];
+  subtitle?: string;
+  data: ChartData[];
   dataKey: string;
   barColor: string;
+  secondaryDataKey?: string;
+  secondaryLabel?: string;
+  secondaryColor?: string;
 }
 
 export const BarChartBlock: React.FC<BarChartBlockProps> = ({
   title,
+  subtitle = "All time",
   data,
   dataKey,
   barColor,
-}) => (
-  <div className="bg-white p-6 rounded-xl shadow">
-    <h3 className="text-lg font-semibold mb-4 text-gray-700">{title}</h3>
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey={dataKey} fill={barColor} />
-      </BarChart>
-    </ResponsiveContainer>
-  </div>
-);
+  secondaryDataKey,
+  secondaryLabel = "Total",
+  secondaryColor = "#f59e0b",
+}) => {
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex flex-col p-6 h-full">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
+          {title}
+        </p>
+        <p className="text-xs text-slate-300 mb-4">{subtitle}</p>
+        <div className="flex flex-1 items-center justify-center h-[300px] rounded-xl bg-slate-50 border border-dashed border-slate-200">
+          <p className="text-sm text-slate-400">No data available yet</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
+        {title}
+      </p>
+      <p className="text-xs text-slate-300 mb-5">{subtitle}</p>
+      <ResponsiveContainer width="100%" height={300}>
+        <ComposedChart
+          data={data}
+          margin={{ top: 8, right: 8, bottom: 0, left: 10 }}
+        >
+          <CartesianGrid
+            strokeDasharray="0"
+            vertical={false}
+            stroke="#f1f5f9"
+          />
+          <XAxis
+            dataKey="month"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: "#94a3b8", fontSize: 11 }}
+            dy={8}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: "#94a3b8", fontSize: 11 }}
+            tickFormatter={(v) => Math.round(v).toLocaleString("en-US")}
+            allowDecimals={false}
+            width={40}
+          />
+          {secondaryDataKey && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#94a3b8", fontSize: 11 }}
+              tickFormatter={(v) => Math.round(v).toLocaleString("en-US")}
+              allowDecimals={false}
+              width={44}
+            />
+          )}
+          <Tooltip
+            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+            contentStyle={{
+              borderRadius: "10px",
+              border: "1px solid #f1f5f9",
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.08)",
+              padding: "10px 14px",
+              fontSize: "13px",
+            }}
+            labelStyle={{ color: "#64748b", fontWeight: 600, marginBottom: 2 }}
+            formatter={(value: any, name: any) => [
+              typeof value === "number"
+                ? Math.round(value).toLocaleString("en-US")
+                : value,
+              name === dataKey ? "New Signups" : secondaryLabel,
+            ]}
+          />
+          {secondaryDataKey && (
+            <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+          )}
+          <Bar
+            dataKey={dataKey}
+            name="New Signups"
+            fill={barColor}
+            radius={[4, 4, 0, 0]}
+            maxBarSize={48}
+            animationDuration={1200}
+          />
+          {secondaryDataKey && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey={secondaryDataKey}
+              name={secondaryLabel}
+              stroke={secondaryColor}
+              strokeWidth={2}
+              dot={{ r: 3, fill: secondaryColor }}
+              activeDot={{ r: 5 }}
+              animationDuration={1200}
+            />
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};

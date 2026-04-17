@@ -1,38 +1,33 @@
-export interface User {
+export interface SubscriptionUser {
   _id: string;
   username: string;
   email: string;
-  phone?: string;
+  phone: string;
 }
 
 export interface Subscription {
-  _id: string;
   id?: string;
-  userId: User | string;
-  title: string;
-  category: string;
+  _id?: string;
+  userId?: string | SubscriptionUser;
+  title?: string;
+  category?: string;
   subCategory?: string;
-  description?: string;
-  region: string;
-  cities: string[];
-  selectedCityIds?: string[];
-  customCities?: string[];
+  region?: string;
+  cities?: string[];
+  isPaid?: boolean;
+  isActive?: boolean;
+  status?: "active" | "inactive" | "pending";
+  createdAt?: string;
+  updatedAt?: string;
   priceMin?: number;
   priceMax?: number;
-  totalFee?: number;
-  isPaid?: boolean;
-  isActive: boolean;
-  status: string;
+  notificationCount?: number;
+  customCities?: string[];
   lastNotified?: string;
-  notificationCount: number;
-  condition?: string;
+  totalFee?: number;
   brand?: string;
   model?: string;
-  specificFeatures?: string;
-  metadata?: any;
-  createdAt: string;
-  updatedAt?: string;
-  expiryDate?: string;
+  condition?: string;
 }
 
 export interface SubscriptionFilters {
@@ -44,20 +39,24 @@ export interface SubscriptionFilters {
   dateTo: string;
 }
 
-export interface SubscriptionDetailModalProps {
-  subscription: Subscription;
-  onClose: () => void;
-  onDelete: (id: string) => Promise<void> | void;
-  onUpdateStatus: (id: string, status: string) => Promise<void> | void;
-}
-
 export interface FilterSectionProps {
   filters: SubscriptionFilters;
   regions: string[];
   categories: string[];
   filteredCount: number;
-  onFilterChange: (key: keyof SubscriptionFilters, value: string) => void;
+  onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   onBulkActivate: () => void;
   onBulkDeactivate: () => void;
+}
+
+export interface AdminSubscriptionsPageProps {
+  accessToken?: string;
+}
+
+export interface SubscriptionStats {
+  total: number;
+  active: number;
+  inactive: number;
+  recent: number;
 }

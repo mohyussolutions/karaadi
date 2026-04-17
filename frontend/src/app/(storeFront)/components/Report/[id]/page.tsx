@@ -3,48 +3,42 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { IoIosArrowBack } from "react-icons/io";
-import { verifySession } from "@/actions/core/authAction";
-
+import { useAuth } from "@/context/AuthContext";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { createReport } from "@/actions/categories/reportAction";
 
 export default function ReportPage() {
   const router = useRouter();
   const params = useParams();
-  const itemId = params?.id as string;
 
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const itemId = (Array.isArray(params?.id) ? params.id[0] : params?.id) || "";
+
+  const { user, loading: authLoading } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const session = await verifySession();
-        if (!session) {
-          router.push("/login");
-          return;
-        }
-        setUser(session);
-      } catch (error) {
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
+    if (!authLoading && !user) {
+      router.push("/login");
     }
-    checkAuth();
-  }, [router]);
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const userId = user?._id || user?.id;
+    if (!userId || !itemId) {
+      setError("Unable to identify user or item. Please try again.");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
     const formData = new FormData(e.currentTarget);
     const reason = formData.get("reason") as string;
-    const details = formData.get("details") as string;
+    const description = (formData.get("details") as string) || "";
 
     if (!reason) {
       setError("Please select a reason for reporting");
@@ -54,11 +48,11 @@ export default function ReportPage() {
 
     try {
       const result = await createReport({
-        userId: user?._id,
+        userId: String(userId),
         reason,
-        details,
+        description,
         itemType: "MARKETPLACE",
-        itemId,
+        itemId: String(itemId),
       });
 
       if (result.success) {
@@ -76,13 +70,15 @@ export default function ReportPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loading />
       </div>
     );
   }
+
+  if (!user) return null;
 
   if (success) {
     return (
@@ -119,7 +115,7 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-16 px-6">
+    <div className="min-h-screen py-16 px-6">
       <div className="max-w-2xl mx-auto">
         <button
           onClick={() => router.back()}
@@ -195,9 +191,6 @@ export default function ReportPage() {
               >
                 {submitting ? "Submitting..." : "Submit Report"}
               </button>
-              <p className="text-center text-gray-400 text-[10px] mt-6 font-medium">
-                Item ID: {itemId}
-              </p>
             </div>
           </form>
         </div>

@@ -1,74 +1,74 @@
 "use server";
 
-import { FAVORITE_ROUTES } from "../constant/constant";
-import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+import { cookies } from "next/headers";
+import { FAVORITE_ENDPOINTS } from "../constant/constant";
 
-const handleResponse = async (res: Response) => {
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    return { error: data?.message || "Operation failed", status: res.status };
-  }
-  return data;
-};
+async function authHeaders(): Promise<HeadersInit> {
+  const store = await cookies();
+  const token =
+    store.get("idToken")?.value ||
+    store.get("accessToken")?.value ||
+    store.get("token")?.value;
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 export async function getMyFavorites() {
-  const headers = await getAuthHeaders();
-  const res = await fetch(FAVORITE_ROUTES.MY_FAVORITES, {
-    method: "GET",
-    headers: headers as HeadersInit,
+  const res = await fetch(FAVORITE_ENDPOINTS.MY_FAVORITES, {
+    headers: await authHeaders(),
     cache: "no-store",
   });
-  return await handleResponse(res);
+  return res.ok ? res.json() : [];
 }
 
 export async function getFavoriteById(id: string) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(FAVORITE_ROUTES.BY_ID(id), {
-    method: "GET",
-    headers: headers as HeadersInit,
+  const res = await fetch(FAVORITE_ENDPOINTS.GET_BY_ID(id), {
+    headers: await authHeaders(),
     cache: "no-store",
   });
-  return await handleResponse(res);
+  return res.ok ? res.json() : null;
 }
 
-export async function addToFavorite(data: any) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(FAVORITE_ROUTES.BASE, {
+export async function addToFavorite(data: Record<string, unknown>) {
+  const res = await fetch(FAVORITE_ENDPOINTS.ADD, {
     method: "POST",
-    headers: headers as HeadersInit,
+    headers: await authHeaders(),
     body: JSON.stringify(data),
     cache: "no-store",
   });
-  return await handleResponse(res);
+  return res.ok ? res.json() : { error: "Failed" };
 }
 
-export async function updateFavorite(id: string, data: any) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(FAVORITE_ROUTES.BY_ID(id), {
+export async function updateFavorite(
+  id: string,
+  data: Record<string, unknown>,
+) {
+  const res = await fetch(FAVORITE_ENDPOINTS.UPDATE(id), {
     method: "PUT",
-    headers: headers as HeadersInit,
+    headers: await authHeaders(),
     body: JSON.stringify(data),
     cache: "no-store",
   });
-  return await handleResponse(res);
+  return res.ok ? res.json() : { error: "Failed" };
 }
 
 export async function removeFavorite(id: string) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(FAVORITE_ROUTES.BY_ID(id), {
+  const res = await fetch(FAVORITE_ENDPOINTS.DELETE(id), {
     method: "DELETE",
-    headers: headers as HeadersInit,
+    headers: await authHeaders(),
     cache: "no-store",
   });
-  return await handleResponse(res);
+  return res.ok ? { success: true } : { error: "Failed" };
 }
 
 export async function getFavoritesCount() {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${FAVORITE_ROUTES.BASE}/count`, {
-    method: "GET",
-    headers: headers as HeadersInit,
+  const res = await fetch(FAVORITE_ENDPOINTS.COUNT, {
+    headers: await authHeaders(),
     cache: "no-store",
   });
-  return await handleResponse(res);
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.count ?? data.total ?? 0;
 }

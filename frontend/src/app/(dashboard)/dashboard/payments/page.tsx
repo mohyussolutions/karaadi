@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useEffect, useState } from "react";
+import React, { JSX, useEffect, useState, useCallback } from "react";
 import {
   FaTrash,
   FaCheckCircle,
@@ -15,15 +15,15 @@ import {
   FaBriefcase,
   FaNewspaper,
   FaFilter,
-  FaTimes,
 } from "react-icons/fa";
 
 import {
   deletePayment,
   getAllPayments,
-  Payment,
-} from "@/actions/categories/paymentAction";
+} from "@/actions/categories/paymentActions";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
+import { Payment } from "@/app/utils/types/payment";
 
 export default function Payments() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -33,6 +33,8 @@ export default function Payments() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     loadPayments();
@@ -48,13 +50,25 @@ export default function Payments() {
         ),
       );
     }
+    setVisibleCount(20);
   }, [payments, statusFilter]);
+
+  const visiblePayments = filteredPayments.slice(0, visibleCount);
+  const hasMore = filteredPayments.length > visibleCount;
+
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + 20);
+      setLoadingMore(false);
+    }, 300);
+  }, []);
 
   async function loadPayments() {
     setLoading(true);
     const data = await getAllPayments();
-    setPayments(data.payments || []);
-    setFilteredPayments(data.payments || []);
+    setPayments(data.items || []);
+    setFilteredPayments(data.items || []);
     setTotal(data.total || 0);
     setLoading(false);
   }
@@ -160,7 +174,6 @@ export default function Payments() {
         </div>
       </div>
 
-      
       <div className="mb-6 flex flex-wrap gap-2">
         <button
           onClick={() => setStatusFilter("all")}
@@ -227,8 +240,8 @@ export default function Payments() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {filteredPayments.length > 0 ? (
-              filteredPayments.map((payment) => {
+            {visiblePayments.length > 0 ? (
+              visiblePayments.map((payment) => {
                 const category = getCategoryFromPayment(payment);
                 return (
                   <tr
@@ -307,6 +320,11 @@ export default function Payments() {
           </tbody>
         </table>
       </div>
+      <Pagination
+        hasMore={hasMore}
+        onSeeMore={handleLoadMore}
+        loading={loadingMore}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Image from "next/image";
 import { trackAdClick } from "@/actions/categories/advertisementService";
 
@@ -17,51 +17,68 @@ interface AdvertisementProps {
   ads: SingleAd[];
 }
 
-const AdvertisementComponent: React.FC<AdvertisementProps> = ({ ads }) => {
-  const [imgLoading, setImgLoading] = useState(true);
+function AdCard({ ad }: { ad: SingleAd }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
 
-  const handleAdClick = (adId: string, link: string) => {
-    trackAdClick(adId).catch(console.error);
-    const formattedLink = link.startsWith("http") ? link : `https://${link}`;
-    window.open(formattedLink, "_blank", "noopener,noreferrer");
-  };
+  const href = ad.link.startsWith("http") ? ad.link : `https://${ad.link}`;
 
-  if (!ads.length) return null;
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      // Track without blocking navigation
+      trackAdClick(ad.id).catch(() => {});
+    },
+    [ad.id],
+  );
 
   return (
-    <div className="flex flex-col gap-4 w-full h-full max-w-[300px]">
-      {ads.map((ad) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={handleClick}
+      className="block bg-white rounded-lg overflow-hidden border border-gray-200 cursor-pointer transition-shadow hover:shadow-lg flex flex-col h-[600px] no-underline"
+    >
+      <div className="relative w-full h-[350px] bg-gray-100">
+        {/* Gray skeleton shown until image loads — no flash */}
         <div
-          key={ad.id}
-          onClick={() => handleAdClick(ad.id, ad.link)}
-          className="bg-white rounded-lg overflow-hidden border border-gray-200 cursor-pointer transition-all hover:shadow-lg flex flex-col h-[600px]"
-        >
-          <div className="relative w-full h-[350px] bg-gray-100">
-            <Image
-              src={ad.imageUrl}
-              alt={ad.title}
-              fill
-              className={`object-cover transition-opacity duration-500 ${
-                imgLoading ? "opacity-0" : "opacity-100"
-              }`}
-              onLoadingComplete={() => setImgLoading(false)}
-              priority
-            />
-          </div>
-          <div className="p-4 flex flex-col flex-grow justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-gray-900 uppercase truncate">
-                {ad.title}
-              </h2>
-              <p className="text-xs text-gray-500 mt-2 line-clamp-4">
-                {ad.description}
-              </p>
-            </div>
-            <div className="mt-4 text-[10px] bg-blue-600 text-white py-3 rounded font-bold text-center uppercase">
-              {ad.buttonText || "Learn More"}
-            </div>
-          </div>
+          className={`absolute inset-0 bg-gray-200 animate-pulse transition-opacity duration-300 ${
+            imgLoaded ? "opacity-0" : "opacity-100"
+          }`}
+        />
+        <Image
+          src={ad.imageUrl}
+          alt={ad.title}
+          fill
+          className={`object-cover transition-opacity duration-500 ${
+            imgLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => setImgLoaded(true)}
+          priority
+        />
+      </div>
+      <div className="p-4 flex flex-col flex-grow justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-gray-900 uppercase truncate">
+            {ad.title}
+          </h2>
+          <p className="text-xs text-gray-500 mt-2 line-clamp-4">
+            {ad.description}
+          </p>
         </div>
+        <div className="mt-4 text-[10px] bg-blue-600 text-white py-3 rounded font-bold text-center uppercase">
+          {ad.buttonText || "Learn More"}
+        </div>
+      </div>
+    </a>
+  );
+}
+
+const AdvertisementComponent: React.FC<AdvertisementProps> = ({ ads }) => {
+  if (!ads.length) return null;
+  return (
+    <div className="flex flex-col gap-4 w-full max-w-[260px]">
+      {ads.map((ad) => (
+        <AdCard key={ad.id} ad={ad} />
       ))}
     </div>
   );

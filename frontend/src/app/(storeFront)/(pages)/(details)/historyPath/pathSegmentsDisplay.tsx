@@ -3,10 +3,43 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
+
+const SEGMENT_LABEL_KEYS: Record<string, string> = {
+  "real-estate": "categories.RealEstate",
+  marketplace: "categories.Marketplace",
+  cars: "categories.Cars",
+  boats: "categories.Boats",
+  "boats-for-sale": "subcategories.boats.boatsForSale",
+  "boats-for-rent": "subcategories.boats.boatsForRent",
+  "boat-engines-for-sale": "subcategories.boats.boatEnginesForSale",
+  "boat-parts": "subcategories.boats.boatParts",
+  motorcycles: "categories.Motorcycles",
+  "for-rent": "subcategories.realEstate.forRent",
+  "for-sale": "subcategories.realEstate.forSale",
+  "land-for-sale": "subcategories.realEstate.landForSale",
+  "farm-for-sale": "subcategories.realEstate.farmForSale",
+  commercial: "subcategories.realEstate.commercial",
+};
+
+function humanize(segment: string) {
+  return segment
+    .split("-")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(" ");
+}
 
 export default function PathSegmentsDisplay() {
+  const { t, i18n } = useTranslation();
   const pathname = usePathname();
   const segments = pathname?.slice(1).split("/") || [];
+
+  // Prevent hydration mismatch: only render after i18n is initialized and language is set
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted) return null;
 
   if (segments.length === 0) return null;
 
@@ -14,10 +47,14 @@ export default function PathSegmentsDisplay() {
     <div className="ml-2 mt-4">
       <div className="flex flex-wrap gap-1 items-center text-sm font-mono text-blue-600 mb-6">
         <Link href="/" className="hover:underline capitalize">
-          Home
+          {t("nav.home", { defaultValue: "Home" })}
         </Link>
         {segments.map((segment, index) => {
-          const path = "/" + segments.slice(0, 1).join("/");
+          const path = "/" + segments.slice(0, index + 1).join("/");
+          const key = SEGMENT_LABEL_KEYS[segment];
+          const label = key
+            ? t(key, { defaultValue: humanize(segment) })
+            : humanize(decodeURIComponent(segment));
 
           return (
             <React.Fragment key={index}>
@@ -26,7 +63,7 @@ export default function PathSegmentsDisplay() {
                 href={path}
                 className="hover:underline capitalize transition-colors duration-200"
               >
-                {decodeURIComponent(segment)}
+                {label}
               </Link>
             </React.Fragment>
           );

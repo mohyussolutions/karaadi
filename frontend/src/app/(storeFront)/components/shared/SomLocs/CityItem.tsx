@@ -10,7 +10,6 @@ interface City {
   regionId: string;
   isActive?: boolean;
 }
-
 interface CityItemProps {
   city: City;
   isSelected: boolean;

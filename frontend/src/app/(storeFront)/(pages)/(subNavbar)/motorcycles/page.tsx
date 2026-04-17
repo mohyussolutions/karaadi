@@ -1,126 +1,155 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
-import UniversalCard from "@/app/(storeFront)/components/Cards/UniversalCard";
-import { motorcyclesSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  getMotorcycles,
-  Motorcycle,
-} from "@/actions/categories/motorcycleActions";
+import { useSearchParams } from "next/navigation";
+import { getMotorcycles } from "@/actions/categories/motorcycleActions";
+import { motorcycleSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import SearchInput from "@/app/ui/search/SearchInput";
 import WantSell from "@/app/(storeFront)/components/shared/WantToSell/page";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
+import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
+import { useError } from "@/app/(storeFront)/components/hooks/useError";
+import SubCategoryList from "@/app/(storeFront)/components/navbar/categories/SubCategoryList";
+import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
+import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
+import { Motorcycle } from "@/app/utils/types/motorcycles.types";
+import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
+import Pagination from "@/app/(storeFront)/components/shared/Pagination";
+
+const PAGE_SIZE = 12;
 
 function MotorcyclesLinks() {
   const { t } = useTranslation();
+  const { renderError } = useError();
   const [items, setItems] = useState<Motorcycle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [query, setQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
+  const filteredItems = useListingFeed(items, query, "Motorcycles");
+  const shuffledItems = useRandomizedItems(filteredItems);
+  const { getRoute } = useGetRoute();
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    async function fetchItems() {
-      setIsError(false);
-      try {
-        const data = await getMotorcycles();
-        if (data) setItems(data);
-      } catch (error) {
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
+  const loadData = useCallback(async () => {
+    setIsError(false);
+    setIsLoading(true);
+    try {
+      const data = await getMotorcycles();
+      setItems(data || []);
+    } catch {
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
     }
-    fetchItems();
   }, []);
 
-  const itemsToDisplay = (() => {
-    if (!query.trim()) return items;
-    const lowerQuery = query.toLowerCase();
-    return items.filter((item) => {
-      const descText = Array.isArray(item.description)
-        ? item.description.join(" ")
-        : item.description || "";
-      return (
-        item.title?.toLowerCase().includes(lowerQuery) ||
-        item.city?.toLowerCase().includes(lowerQuery) ||
-        descText.toLowerCase().includes(lowerQuery)
-      );
-    });
-  })();
+  useEffect(() => {
+    setMounted(true);
+    loadData();
+  }, [loadData]);
+
+  const displayItems = mounted ? shuffledItems : filteredItems;
+  const visibleItems = displayItems.slice(0, visibleCount);
+  const hasMore = displayItems.length > visibleCount;
+
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + PAGE_SIZE);
+      setLoadingMore(false);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query]);
+
+  if (isError) return renderError(isError);
 
   return (
-    <div className="container mx-auto px-2 py-2">
-      <SearchInput defaultValue={query} />
+    <div className="container mx-auto px-2 py-2 space-y-4">
+      <ContainerLinks>
+        <SearchInput defaultValue={query} />
+      </ContainerLinks>
+
       <div className="pt-1">
         <PathSegmentsDisplay />
       </div>
 
-      <div className="grid grid-cols-2 gap-1 px-1 py-1 sm:grid-cols-2 lg:grid-cols-2">
-        {motorcyclesSubCategories.map((category, index) => (
-          <Link
-            key={category.title || index}
-            href={
-              (category as any).href ||
-              `/motorcycles/${category.title.toLowerCase().replace(/\s+/g, "-")}`
-            }
-            className="flex flex-col items-center text-center group p-0.5 rounded-lg border border-gray-100 bg-white hover:border-blue-200 transition-all active:scale-95"
-            aria-label={t(category.labelKey ?? "", {
-              defaultValue: category.so ?? category.title ?? category.labelKey,
-            })}
-          >
-            <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 text-lg text-[#0063fb] group-hover:text-black">
-              {category.icon}
-            </div>
-            <div className="flex flex-col pt-0.5">
-              <span className="text-[12px] font-bold text-gray-900 leading-tight truncate w-full px-0.5">
-                {t(category.labelKey ?? "", {
-                  defaultValue:
-                    category.so ?? category.title ?? category.labelKey,
-                })}
+      <ContainerLinks>
+        <SubCategoryList data={motorcycleSubCategories} />
+      </ContainerLinks>
+
+      <ContainerLinks>
+        <WantSell />
+      </ContainerLinks>
+
+      {isLoading || !mounted ? (
+        <Loading />
+      ) : (
+        <div className="space-y-4">
+          <ContainerLinks>
+            <div className="text-sm font-medium text-gray-600 px-3 py-1 flex justify-between items-center">
+              <span>
+                {t("resultsFound", { defaultValue: "Natiijada la helay:" })}
+              </span>
+              <span className="text-blue-700 font-bold">
+                {displayItems.length}{" "}
+                {t("motorcycles", { defaultValue: "mootooyin" })}
               </span>
             </div>
-          </Link>
-        ))}
-      </div>
-      <div className="flex items-center justify-center">
-        <WantSell />
-      </div>
+          </ContainerLinks>
 
-      <div className="min-h-[450px]">
-        {isError ? (
-          <div className="text-center py-10 text-red-500 font-medium">
-            Cilad baa ku timid soo dejinta mootooyinka. Fadlan dib u tijaabi.
-          </div>
-        ) : isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loading />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
-            {itemsToDisplay.length > 0 ? (
-              itemsToDisplay.map((item, index) => (
-                <UniversalCard
-                  key={`moto-${item._id || index}`}
-                  id={item._id}
-                  title={item.title}
-                  description={item.description}
-                  city={item.city}
-                  images={item.images}
-                  price={item.price}
-                  category="Motorcycles"
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl text-gray-400 text-sm">
-                Ma jiraan mootooyin waafaqsan raadintaada.
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          <ContainerLinks>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {visibleItems.length > 0 ? (
+                visibleItems.map((item: any, index: number) => {
+                  const itemId = item._id || item.id;
+                  const routePrefix = getRoute("motorcycles");
+                  const linkHref = itemId
+                    ? `${routePrefix}/${encodeURIComponent(itemId)}`
+                    : "/";
+                  return (
+                    <UniversalCard
+                      key={itemId || index}
+                      id={itemId}
+                      title={item.title}
+                      description={item.description || ""}
+                      city={item.city}
+                      images={item.images}
+                      price={item.price}
+                      category="Motorcycles"
+                      isBasic30={item.isBasic30}
+                      isStandard60={item.isStandard60}
+                      isPremium90={item.isPremium90}
+                      type={item.type}
+                      linkHref={linkHref}
+                    />
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-12 text-gray-400 text-sm">
+                  {t("noResults", {
+                    defaultValue: "Ma jiraan mootooyin waafaqsan raadintaada.",
+                  })}
+                </div>
+              )}
+            </div>
+          </ContainerLinks>
+          <Pagination
+            hasMore={hasMore}
+            loading={loadingMore}
+            onSeeMore={handleLoadMore}
+          />
+        </div>
+      )}
     </div>
   );
 }

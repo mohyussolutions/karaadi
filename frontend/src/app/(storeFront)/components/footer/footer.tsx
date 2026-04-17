@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import AIChatPopup from "../chats/AI/page";
 import { useTranslation } from "react-i18next";
 
 export default function Footer() {
@@ -47,7 +46,7 @@ export default function Footer() {
           <h3 className="font-semibold mb-3">{t("footer.categories")}</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link href="/marketplace" className="hover:text-blue-600">
+              <Link href="/Marketplace" className="hover:text-blue-600">
                 {t("footer.marketplace")}
               </Link>
             </li>
@@ -79,7 +78,6 @@ export default function Footer() {
             </li>
           </ul>
         </div>
-        <AIChatPopup />
       </div>
 
       <div className="mx-auto w-full max-w-[59rem] px-6 py-8 mt-0 text-center text-sm text-gray-600">

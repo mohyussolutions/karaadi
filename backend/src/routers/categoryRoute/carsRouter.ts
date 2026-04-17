@@ -1,3 +1,4 @@
+import { patchCarIsPaid } from "../../controllers/categoryController/carsController.ts";
 import { Router } from "express";
 import {
   getAllCars,
@@ -40,5 +41,7 @@ carsRoutes.delete("/:id", ProtectRoute, deleteCar);
 carsRoutes.get("/", getAllCars);
 
 carsRoutes.get("/:id", getCarById);
+
+carsRoutes.patch("/:id", ProtectRoute, adminAndManager, patchCarIsPaid);
 
 export default carsRoutes;

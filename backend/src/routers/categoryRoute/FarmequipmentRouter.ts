@@ -1,9 +1,12 @@
 import { Router } from "express";
-import { createFarmequipmentSchema } from "../../validation/Farmequipment.validation.ts";
+import {
+  createFarmequipmentSchema,
+  updateFarmequipmentSchema,
+} from "../../validation/Farmequipment.validation.ts";
 import {
   getAllTractors,
   getAllTractorsIncludingUnpaid,
-  getTotalTractors,
+  getTotalFarmEquipment,
   getTractorById,
   updateTractor,
   deleteTractor,
@@ -24,7 +27,12 @@ traktorRoutes.get(
   adminAndManager,
   getAllTractorsIncludingUnpaid,
 );
-traktorRoutes.get("/total", ProtectRoute, adminAndManager, getTotalTractors);
+traktorRoutes.get(
+  "/total",
+  ProtectRoute,
+  adminAndManager,
+  getTotalFarmEquipment,
+);
 traktorRoutes.get("/:id", getTractorById);
 traktorRoutes.post(
   "/",
@@ -35,7 +43,7 @@ traktorRoutes.post(
 traktorRoutes.patch(
   "/:id",
   ProtectRoute,
-  validateRequest(createFarmequipmentSchema),
+  validateRequest(updateFarmequipmentSchema),
   updateTractor,
 );
 traktorRoutes.delete("/:id", ProtectRoute, deleteTractor);

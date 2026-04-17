@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CACHE_TTL } from "src/constants/config.constants.ts";
+import { CACHE_TTL } from "src/config/config.constants.ts";
 import prisma from "src/core/utils/db.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 

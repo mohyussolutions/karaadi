@@ -7,9 +7,8 @@ import {
   addCity,
   deleteCity,
 } from "@/actions/categories/geoAction";
-import { Region, City } from "@/app/utils/types/geoTypes";
+import type { Region, City } from "@/app/utils/types/geoTypes";
 import { FiEdit2, FiTrash2, FiArrowLeft } from "react-icons/fi";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 export default function Cities() {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -40,12 +39,7 @@ export default function Cities() {
     setTogglingId(city.id);
     try {
       const currentStatus = city.isActive !== false;
-      await addCity(city.name, "", city.regionId, {
-        id: city.id,
-        name: city.name,
-        regionId: city.regionId,
-        isActive: !currentStatus,
-      });
+      await addCity({ name: city.name, regionId: city.regionId });
       setRegions((prev) =>
         prev.map((region) => ({
           ...region,
@@ -65,12 +59,7 @@ export default function Cities() {
   const handleUpdate = async (city: City) => {
     if (!editName.trim()) return;
     try {
-      await addCity(editName, "", city.regionId, {
-        id: city.id,
-        name: editName,
-        regionId: city.regionId,
-        isActive: city.isActive !== false,
-      });
+      await addCity({ name: editName, regionId: city.regionId });
       setRegions((prev) =>
         prev.map((region) => ({
           ...region,
@@ -105,12 +94,16 @@ export default function Cities() {
   };
 
   if (loading) {
-    return <Loading />;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-6 sm:px-6 md:px-8 lg:px-10">
+    <div className="min-h-screen w-full p-4">
+      <div className="max-w-6xl mx-auto py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900">

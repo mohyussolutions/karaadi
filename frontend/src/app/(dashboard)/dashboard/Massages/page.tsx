@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   MdInbox,
@@ -11,7 +11,6 @@ import {
   MdToday,
   MdDelete,
 } from "react-icons/md";
-import { verifySession } from "@/actions/core/authAction";
 import {
   getAllTickets,
   getTicketDetails,
@@ -21,34 +20,60 @@ import {
   deleteMessage,
   addTicketMessage,
 } from "@/actions/categories/contactMeAction";
+import { useAuth } from "@/context/AuthContext";
+
+export type Message = {
+  id: number;
+  body: string;
+  senderName: string;
+  senderEmail?: string;
+  senderRole?: string;
+};
+
+export type Ticket = {
+  id: number;
+  senderName: string;
+  senderEmail: string;
+  subject: string;
+  status: string;
+  messages?: Message[];
+};
+
+export type AdminUser = {
+  username?: string;
+  name?: string;
+  email?: string;
+  isAdmin?: boolean;
+  isManager?: boolean;
+};
+
+type Stats = { total: number; today: number };
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const { user: admin } = useAuth();
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [replyBody, setReplyBody] = useState("");
-  const [admin, setAdmin] = useState<any>(null);
-  const [stats, setStats] = useState({ total: 0, today: 0 });
+  const [stats, setStats] = useState<Stats>({ total: 0, today: 0 });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      const session = await verifySession();
-      if (!session) {
-        router.push("/login");
+      if (!admin) {
+        router.back();
         return;
       }
-      setAdmin(session);
 
       const [allTickets, statsData] = await Promise.all([
         getAllTickets(),
         getTicketStats(),
       ]);
 
-      if (allTickets.length > 0) {
-        const sorted = allTickets.sort((a: any, b: any) => b.id - a.id);
-        const uniqueUsersMap = new Map();
+      if (allTickets && allTickets.length > 0) {
+        const sorted = (allTickets as Ticket[]).sort((a, b) => b.id - a.id);
+        const uniqueUsersMap = new Map<string, Ticket>();
 
-        sorted.forEach((ticket: any) => {
+        sorted.forEach((ticket) => {
           if (!uniqueUsersMap.has(ticket.senderEmail)) {
             uniqueUsersMap.set(ticket.senderEmail, ticket);
           }
@@ -57,10 +82,10 @@ export default function AdminDashboard() {
       }
 
       setStats(statsData);
-    } catch (err) {
-      console.error("Failed to load dashboard data:", err);
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
     }
-  };
+  }, [router, admin]);
 
   const loadDetails = async (id: number) => {
     try {
@@ -71,8 +96,8 @@ export default function AdminDashboard() {
           await handleStatusUpdate("IN_PROGRESS", id);
         }
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -89,8 +114,8 @@ export default function AdminDashboard() {
           setSelectedTicket(updated);
         }
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -102,8 +127,8 @@ export default function AdminDashboard() {
         setSelectedTicket(null);
         await loadData();
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -115,8 +140,8 @@ export default function AdminDashboard() {
         const updated = await getTicketDetails(selectedTicket.id);
         setSelectedTicket(updated);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -124,11 +149,15 @@ export default function AdminDashboard() {
     if (!replyBody.trim() || !selectedTicket || !admin) return;
 
     try {
+      const senderName = admin.username ?? admin.username ?? "Admin";
+      const senderEmail = admin.email ?? "";
+      const senderRole = admin.isAdmin ? "ADMIN" : "SUPPORT_MANAGER";
+
       const result = await addTicketMessage(selectedTicket.id, {
         body: replyBody,
-        senderName: admin.username || admin.name || "Admin",
-        senderEmail: admin.email,
-        senderRole: admin.isAdmin ? "ADMIN" : "SUPPORT_MANAGER",
+        senderName: senderName,
+        senderEmail: senderEmail,
+        senderRole: senderRole,
       });
 
       if (result.success) {
@@ -137,8 +166,8 @@ export default function AdminDashboard() {
         setSelectedTicket(updated);
         await loadData();
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -146,7 +175,7 @@ export default function AdminDashboard() {
     loadData();
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadData]);
 
   return (
     <div className="flex h-screen max-h-screen bg-gray-50 flex-col overflow-hidden">
@@ -216,7 +245,7 @@ export default function AdminDashboard() {
                     {t.status.replace("_", " ")}
                   </div>
                   <div className="text-xs text-gray-400 truncate italic mt-1">
-                    "{t.subject}"
+                    &quot;{t.subject}&quot;
                   </div>
                 </div>
               ))
@@ -265,7 +294,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-4">
-                {selectedTicket.messages?.map((msg: any) => (
+                {selectedTicket.messages?.map((msg: Message) => (
                   <div
                     key={msg.id}
                     className={`flex flex-col ${msg.senderRole === "USER" ? "items-start" : "items-end"}`}
