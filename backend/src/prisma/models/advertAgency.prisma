@@ -36,3 +36,39 @@ model Agency {
   createdAt DateTime @default(now())
   users     User[]   @relation("UserAgencies")
 }
+
+model Business {
+  id               String    @id @default(cuid())
+  userId           String
+  name             String
+  orgNumber        String?
+  email            String
+  phone            String
+  address          String?
+  website          String?
+  logo             String?
+  images           String[]  @default([])
+  description      String?
+  categories       String[]
+  contactName      String?
+  planType         String?
+  status           String    @default("pending")
+  isVerified       Boolean   @default(false)
+  isPaid           Boolean   @default(false)
+  isAdminEnabled   Boolean   @default(true)
+  expiryDate       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  planId           String?
+  planStartDate    DateTime?
+  plan             BusinessPlan? @relation(fields: [planId], references: [id])
+  owner            User          @relation("BusinessOwner", fields: [userId], references: [id], onDelete: Cascade)
+  members          User[]        @relation("BusinessMembers")
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([isVerified])
+  @@index([isAdminEnabled])
+  @@index([createdAt])
+}

@@ -54,15 +54,15 @@ export const BarChartBlock: React.FC<BarChartBlockProps> = ({
   }
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-6">
       <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
         {title}
       </p>
-      <p className="text-xs text-slate-300 mb-5">{subtitle}</p>
-      <ResponsiveContainer width="100%" height={300}>
+      <p className="text-xs text-slate-300 mb-3 sm:mb-5">{subtitle}</p>
+      <ResponsiveContainer width="100%" height={220}>
         <ComposedChart
           data={data}
-          margin={{ top: 8, right: 8, bottom: 0, left: 10 }}
+          margin={{ top: 8, right: 4, bottom: 0, left: 0 }}
         >
           <CartesianGrid
             strokeDasharray="0"

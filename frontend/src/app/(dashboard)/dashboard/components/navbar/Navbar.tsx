@@ -4,7 +4,7 @@ import { logout, clearAuthCookies } from "@/actions/core/authAction";
 import DashboardSearch from "@/app/(dashboard)/dashboard/components/search/DashboardSearch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { FaUser, FaBars } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -58,7 +58,9 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-6">
-          <DashboardSearch />
+          <Suspense>
+            <DashboardSearch />
+          </Suspense>
           <Lang />
 
           <div className="relative">

@@ -44,7 +44,7 @@ export default async function CategoryBlock({
                 ? (it.category as string[])[0]
                 : (it.category as string | undefined)
             }
-            subcategory={it.subcategory}
+            subcategory={Array.isArray(it.subcategory) ? it.subcategory[0] : it.subcategory}
             maGaday={!!it.maGaday}
             isBasic30={it.isBasic30}
             isStandard60={it.isStandard60}

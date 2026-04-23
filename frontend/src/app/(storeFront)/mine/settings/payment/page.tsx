@@ -6,15 +6,33 @@ import { useAuth } from "@/context/AuthContext";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback } from "react";
+import {
+  FaCheckCircle,
+  FaClock,
+  FaTimesCircle,
+  FaShip,
+  FaCar,
+  FaHome,
+  FaMotorcycle,
+  FaTractor,
+  FaShoppingBag,
+  FaBriefcase,
+  FaMobileAlt,
+  FaReceipt,
+  FaUserCircle,
+  FaEnvelope,
+} from "react-icons/fa";
+import Image from "next/image";
 
 interface PaymentItem {
   id: string;
   totalAmount?: number;
   currency: string;
   status: string;
-  paymentMethod: string;
+  paymentMethod?: string;
   transactionId?: string;
   createdAt: string;
+  paidAt?: string;
   boatId?: string | null;
   carId?: string | null;
   marketplaceId?: string | null;
@@ -25,7 +43,27 @@ interface PaymentItem {
   subscriptionId?: string | null;
 }
 
-const PaymentPage: React.FC = () => {
+const STATUS_MAP: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
+  completed: { label: "Completed", color: "text-green-700", bg: "bg-green-50 border-green-200", icon: <FaCheckCircle className="text-green-500" /> },
+  success: { label: "Completed", color: "text-green-700", bg: "bg-green-50 border-green-200", icon: <FaCheckCircle className="text-green-500" /> },
+  pending: { label: "Pending", color: "text-yellow-700", bg: "bg-yellow-50 border-yellow-200", icon: <FaClock className="text-yellow-500" /> },
+  failed: { label: "Failed", color: "text-red-700", bg: "bg-red-50 border-red-200", icon: <FaTimesCircle className="text-red-500" /> },
+  declined: { label: "Failed", color: "text-red-700", bg: "bg-red-50 border-red-200", icon: <FaTimesCircle className="text-red-500" /> },
+};
+
+const CATEGORY_MAP = (p: PaymentItem): { label: string; icon: React.ReactNode } => {
+  if (p.boatId) return { label: "Boat", icon: <FaShip className="text-blue-500" /> };
+  if (p.carId) return { label: "Car", icon: <FaCar className="text-green-500" /> };
+  if (p.realEstateId) return { label: "Real Estate", icon: <FaHome className="text-purple-500" /> };
+  if (p.motorcycleId) return { label: "Motorcycle", icon: <FaMotorcycle className="text-orange-500" /> };
+  if (p.farmequipmentId) return { label: "Farm Equipment", icon: <FaTractor className="text-yellow-700" /> };
+  if (p.marketplaceId) return { label: "Marketplace", icon: <FaShoppingBag className="text-pink-500" /> };
+  if (p.jobId) return { label: "Job", icon: <FaBriefcase className="text-indigo-500" /> };
+  if (p.subscriptionId) return { label: "Subscription", icon: <FaReceipt className="text-teal-500" /> };
+  return { label: "General", icon: <FaShoppingBag className="text-gray-400" /> };
+};
+
+export default function PaymentPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [payments, setPayments] = useState<PaymentItem[]>([]);
@@ -33,153 +71,139 @@ const PaymentPage: React.FC = () => {
 
   const fetchPayments = useCallback(async () => {
     try {
-      const myPayments = await getMyPayments();
-      setPayments((myPayments as PaymentItem[]) || []);
-    } catch (error) {
-      console.error("Failed to fetch payments:", error);
+      const data = await getMyPayments();
+      setPayments((data as PaymentItem[]) || []);
+    } catch {
+      setPayments([]);
     } finally {
       setIsFetching(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.replace("/login");
-      } else {
-        fetchPayments();
-      }
-    }
+    if (authLoading) return;
+    if (!user) { router.replace("/login"); return; }
+    fetchPayments();
   }, [user, authLoading, router, fetchPayments]);
 
-  const getStatusColor = (status: string) => {
-    const s = status?.toLowerCase() || "";
-    if (["completed", "success", "approved"].includes(s))
-      return "text-green-600";
-    if (s === "pending") return "text-yellow-600";
-    if (["failed", "declined"].includes(s)) return "text-red-600";
-    if (s === "refunded") return "text-purple-600";
-    return "text-gray-600";
-  };
-
-  const getStatusText = (status: string) => {
-    const s = status?.toLowerCase() || "";
-    if (["completed", "success", "approved"].includes(s)) return "SUCCESS";
-    if (s === "pending") return "PENDING";
-    if (["failed", "declined"].includes(s)) return "FAILED";
-    return status?.toUpperCase() || "UNKNOWN";
-  };
-
-  const getItemType = (p: PaymentItem) => {
-    if (p.boatId) return "Boat";
-    if (p.carId) return "Car";
-    if (p.marketplaceId) return "Marketplace";
-    if (p.realEstateId) return "Real Estate";
-    if (p.motorcycleId) return "Motorcycle";
-    if (p.farmequipmentId) return "Farm Equipment";
-    if (p.jobId) return "Job";
-    if (p.subscriptionId) return "Subscription";
-    return "General";
-  };
-
   if (authLoading || isFetching) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loading />
-      </div>
-    );
+    return <div className="min-h-[60vh] flex items-center justify-center"><Loading /></div>;
   }
 
   if (!user) return null;
 
-  return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Payment Details</h1>
+  const totalPaid = payments
+    .filter((p) => ["completed", "success"].includes(p.status?.toLowerCase()))
+    .reduce((sum, p) => sum + (p.totalAmount || 0), 0);
 
-      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h2 className="text-lg font-semibold mb-3">Your Information</h2>
-        <div className="space-y-1">
-          <p className="text-sm sm:text-base">
-            <span className="font-semibold">Email:</span> {user.email || "N/A"}
+  return (
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <FaReceipt className="text-blue-500" />
+        My Payments
+      </h1>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
+        {user.profileImage ? (
+          <Image
+            src={user.profileImage}
+            alt={user.username || "User"}
+            width={56}
+            height={56}
+            className="rounded-full object-cover border border-gray-200"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+            <FaUserCircle className="text-blue-400" size={32} />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="font-bold text-gray-900 text-lg truncate">
+            {user.username || user.name || "—"}
           </p>
-          <p className="text-sm sm:text-base">
-            <span className="font-semibold">Phone:</span> {user.phone || "N/A"}
+          <p className="text-sm text-gray-500 flex items-center gap-1.5 truncate">
+            <FaEnvelope size={11} className="text-gray-400" />
+            {user.email || "—"}
+          </p>
+          <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
+            <FaMobileAlt size={11} className="text-gray-400" />
+            {user.phone || "No phone set"}
           </p>
         </div>
       </div>
 
-      <h2 className="text-xl font-semibold mb-4">Payment History</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Total Paid</p>
+          <p className="text-2xl font-extrabold text-blue-600">${totalPaid.toLocaleString()}</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Transactions</p>
+          <p className="text-2xl font-extrabold text-gray-800">{payments.length}</p>
+        </div>
+      </div>
 
       {payments.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
-          No payment history found
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+          <FaReceipt className="mx-auto text-gray-300 mb-3" size={36} />
+          <p className="text-gray-500 font-medium">No payments yet</p>
+          <p className="text-gray-400 text-sm mt-1">Your payment history will appear here after your first purchase.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="sm:hidden space-y-3 p-3">
-            {payments.map((p) => (
-              <div key={p.id} className="bg-gray-50 rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs font-mono text-gray-500">
-                    ID: {p.id.slice(0, 8)}
-                  </span>
-                  <span
-                    className={`text-xs font-bold ${getStatusColor(p.status)}`}
-                  >
-                    {getStatusText(p.status)}
-                  </span>
-                </div>
-                <p className="font-medium text-gray-900">{getItemType(p)}</p>
-                <p className="text-sm text-gray-600">
-                  {(p.totalAmount || 0).toLocaleString()} {p.currency}
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  {new Date(p.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-widest">
+            Payment History
           </div>
 
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 text-xs font-semibold text-gray-600 uppercase">
-                <tr>
-                  <th className="py-3 px-4">ID</th>
-                  <th className="py-3 px-4">Item Type</th>
-                  <th className="py-3 px-4">Amount</th>
-                  <th className="py-3 px-4">Method</th>
-                  <th className="py-3 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 text-sm">
-                {payments.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 font-mono text-gray-600">
-                      {p.id.slice(0, 8)}...
-                    </td>
-                    <td className="py-3 px-4 text-gray-900">
-                      {getItemType(p)}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-gray-900">
-                      {(p.totalAmount || 0).toLocaleString()} {p.currency}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {p.paymentMethod}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`font-bold ${getStatusColor(p.status)}`}>
-                        {getStatusText(p.status)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="divide-y divide-gray-50">
+            {payments.map((p) => {
+              const status = STATUS_MAP[p.status?.toLowerCase()] ?? {
+                label: p.status,
+                color: "text-gray-600",
+                bg: "bg-gray-50 border-gray-200",
+                icon: null,
+              };
+              const category = CATEGORY_MAP(p);
+              const date = p.paidAt || p.createdAt;
+              return (
+                <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+                      {category.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm">{category.label}</p>
+                      {p.transactionId && (
+                        <p className="text-[11px] text-gray-400 font-mono truncate">{p.transactionId}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
+                    <div className="text-right">
+                      <p className="font-bold text-gray-900">${(p.totalAmount || 0).toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-400 uppercase">{p.paymentMethod || "mobile"}</p>
+                    </div>
+
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${status.bg} ${status.color}`}>
+                      {status.icon}
+                      {status.label}
+                    </div>
+
+                    <p className="text-xs text-gray-400 w-20 text-right hidden sm:block">
+                      {date ? new Date(date).toLocaleDateString("en-GB") : "—"}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-gray-400 sm:hidden">
+                    {date ? new Date(date).toLocaleDateString("en-GB") : "—"}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default PaymentPage;
+}

@@ -16,7 +16,7 @@ interface JobCardProps {
 }
 
 export default function JobCard(props: JobCardProps) {
-  // Use getDetailRoute for consistency
+  const { title, type, company, location, createdAt, salary } = props;
   const detailRoute = getDetailRoute({
     ...props,
     category: props.category || "job",

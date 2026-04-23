@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import io from "socket.io-client";
 import {
   MdChat,
@@ -24,6 +25,7 @@ import {
 import { SOCKET_EVENTS, SOCKET_URL } from "@/actions/constant/sockets";
 
 export default function AdminMonitor() {
+  const { t } = useTranslation();
   const [socket, setSocket] = useState<any>(null);
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -277,9 +279,9 @@ export default function AdminMonitor() {
                 <div className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full animate-pulse border-2 border-white"></div>
               </div>
               <div>
-                <h1 className="text-lg md:text-xl font-bold">Chat Monitor</h1>
+                <h1 className="text-lg md:text-xl font-bold">{t("adminTable.chatMonitor")}</h1>
                 <p className="text-slate-300 text-xs md:text-sm">
-                  Live conversation tracking
+                  {t("adminTable.liveTracking")}
                 </p>
               </div>
             </div>
@@ -294,7 +296,7 @@ export default function AdminMonitor() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search chats..."
+                placeholder={t("adminTable.searchChats")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full p-2 md:p-3 pl-9 md:pl-10 bg-slate-800/50 border border-slate-700 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -312,7 +314,7 @@ export default function AdminMonitor() {
                       : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
                   }`}
                 >
-                  {filter === "all" ? "All Chats" : "Recent"}
+                  {filter === "all" ? t("adminTable.allChats") : t("adminTable.recent")}
                 </button>
               ))}
             </div>
@@ -326,10 +328,10 @@ export default function AdminMonitor() {
                 <MdChat className="text-slate-400 text-xl md:text-2xl" />
               </div>
               <h3 className="text-slate-700 font-semibold text-sm md:text-base mb-1 md:mb-2">
-                No chats found
+                {t("adminTable.noChatsFound")}
               </h3>
               <p className="text-slate-500 text-xs md:text-sm">
-                Try changing your search or filter
+                {t("adminTable.trySearchFilter")}
               </p>
             </div>
           ) : (
@@ -473,7 +475,7 @@ export default function AdminMonitor() {
                   onClick={() => handleDeleteChat(selectedChat.id)}
                   className="px-3 py-1.5 md:px-4 md:py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs md:text-sm transition-colors"
                 >
-                  {isMobile ? "Delete" : "Delete Chat"}
+                  {isMobile ? t("adminTable.delete") : t("adminTable.delete") + " Chat"}
                 </button>
               </div>
             </div>
@@ -486,7 +488,7 @@ export default function AdminMonitor() {
                 <div className="flex flex-col items-center justify-center h-full">
                   <FiMessageSquare className="text-slate-300 text-3xl md:text-4xl mb-2" />
                   <p className="text-slate-500 text-sm md:text-base">
-                    No messages in this chat yet
+                    {t("adminTable.noMessages")}
                   </p>
                 </div>
               ) : (
@@ -585,10 +587,10 @@ export default function AdminMonitor() {
               <MdSecurity className="relative text-slate-300 text-4xl md:text-6xl" />
             </div>
             <h2 className="text-lg md:text-2xl font-bold text-slate-800 mb-1 md:mb-2 text-center">
-              Chat Monitor Active
+              {t("adminTable.chatMonitorActive")}
             </h2>
             <p className="text-slate-500 text-center mb-4 md:mb-6 text-sm md:text-base">
-              Select a chat from the sidebar to view live conversations
+              {t("adminTable.selectChatSidebar")}
             </p>
             <div className="grid grid-cols-3 gap-2 md:gap-4 text-center w-full max-w-md">
               <div className="bg-slate-50 p-2 md:p-4 rounded-lg">
@@ -596,7 +598,7 @@ export default function AdminMonitor() {
                   {chats.length}
                 </div>
                 <div className="text-slate-600 text-xs md:text-sm">
-                  Total Chats
+                  {t("adminTable.totalChats")}
                 </div>
               </div>
               <div className="bg-slate-50 p-2 md:p-4 rounded-lg">
@@ -611,7 +613,7 @@ export default function AdminMonitor() {
                   }
                 </div>
                 <div className="text-slate-600 text-xs md:text-sm">
-                  Active Now
+                  {t("adminTable.activeNow")}
                 </div>
               </div>
               <div className="bg-slate-50 p-2 md:p-4 rounded-lg">
@@ -622,7 +624,7 @@ export default function AdminMonitor() {
                   )}
                 </div>
                 <div className="text-slate-600 text-xs md:text-sm">
-                  Total Messages
+                  {t("adminTable.totalMessages")}
                 </div>
               </div>
             </div>
@@ -631,7 +633,7 @@ export default function AdminMonitor() {
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="mt-6 px-4 py-2 bg-slate-900 text-white rounded-lg shadow-lg"
               >
-                Open Chat List
+                {t("adminTable.openChatList")}
               </button>
             )}
           </div>

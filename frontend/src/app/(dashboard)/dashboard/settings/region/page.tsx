@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { getAllRegions, deleteRegion } from "@/actions/categories/geoAction";
 import { Region } from "@/app/utils/types/geoTypes";
 
 export default function Regions() {
+  const { t } = useTranslation();
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -43,13 +45,13 @@ export default function Regions() {
           onClick={() => router.push("/dashboard/settings")}
           className="text-indigo-600 text-sm font-semibold flex items-center gap-2 hover:underline"
         >
-          <span className="text-lg">←</span> Back to Settings
+          <span className="text-lg">←</span> {t("adminTable.backToSettings")}
         </button>
         <div className="flex justify-between items-end mt-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Regions</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("adminTable.regionsTitle")}</h1>
             <p className="text-gray-500 text-xs mt-1">
-              Manage geographical areas and their linked city counts.
+              {t("adminTable.regionsSubtitle")}
             </p>
           </div>
           <button
@@ -57,7 +59,7 @@ export default function Regions() {
             disabled={loading}
             className="px-3 py-1 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Refreshing..." : "Refresh"}
+            {loading ? t("adminTable.refreshing") : t("adminTable.refresh")}
           </button>
         </div>
       </header>
@@ -81,12 +83,12 @@ export default function Regions() {
                   onClick={() => handleDelete(region.id)}
                   disabled={deletingId === region.id}
                   className="text-gray-300 hover:text-red-500 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
-                  aria-label="Delete region"
+                  aria-label={t("adminTable.delete")}
                 >
                   {deletingId === region.id ? (
                     <div className="w-3 h-3 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin" />
                   ) : (
-                    "Delete"
+                    t("adminTable.delete")
                   )}
                 </button>
               </div>
@@ -95,13 +97,13 @@ export default function Regions() {
               </h3>
               <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-50">
                 <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-wider">
-                  {region.cities?.length || 0} Cities Linked
+                  {region.cities?.length || 0} {t("adminTable.citiesLinked")}
                 </span>
                 <button
                   onClick={() => router.push(`/dashboard/settings/cities`)}
                   className="text-[10px] font-bold text-gray-400 hover:text-indigo-600 transition-colors ml-2"
                 >
-                  View Cities →
+                  {t("adminTable.viewCities")} →
                 </button>
               </div>
               {region.cities?.length ? (

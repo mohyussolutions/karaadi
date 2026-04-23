@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +11,7 @@ import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageU
 import { FaMotorcycle } from "react-icons/fa";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { createMotorcycle } from "@/actions/categories/motorcycleActions";
-import { getAllRegions, getAllCities, addCity } from "@/actions/categories/geoAction";
+import { clientGetAllRegions, clientGetAllCities, clientAddCity } from "@/services/geoService";
 import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
 import { useAuth } from "@/context/AuthContext";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
@@ -20,12 +19,7 @@ import { updateItem } from "@/store/slices/reducers/listingDraftSlice";
 import { getMotorcycleFees } from "@/actions/categories/feeAction";
 import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps";
 
-const MOTO_CATEGORIES = [
-  { key: "forSale", label: "For Sale" },
-  { key: "forRent", label: "For Rent" },
-  { key: "parts", label: "Parts" },
-  { key: "other", label: "Other" },
-];
+const MOTO_CATEGORY_KEYS = ["forSale", "forRent", "parts", "other"] as const;
 
 const MOTO_FEE_MAPPING: Record<string, string> = {
   forSale: "motoSale",
@@ -34,9 +28,9 @@ const MOTO_FEE_MAPPING: Record<string, string> = {
   other: "motoOther",
 };
 
-const FUEL_TYPES = ["Petrol", "Electric", "Other"];
-const GEARBOX_OPTIONS = ["Manual", "Automatic", "Semi-Automatic"];
-const CONDITION_OPTIONS = ["New", "Used"];
+const FUEL_TYPE_KEYS = ["petrol", "electric", "other"] as const;
+const GEARBOX_KEYS = ["manual", "automatic", "semiAutomatic"] as const;
+const CONDITION_KEYS = ["new", "used"] as const;
 
 export default function CreateAdForMotorcyclesPage() {
   const router = useRouter();
@@ -48,7 +42,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
   const dispatch = useAppDispatch();
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
-  const savedItem = useAppSelector((state) => state.listingDraft.item);
+  const savedItem = useAppSelector((state) => state.listingDraft.item) ?? {};
 
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -99,8 +93,8 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
     const loadData = async () => {
       try {
         const [regs, cits, feeRes] = await Promise.all([
-          getAllRegions(),
-          getAllCities(),
+          clientGetAllRegions(),
+          clientGetAllCities(),
           getMotorcycleFees(),
         ]);
         setRegions(regs || []);
@@ -167,12 +161,14 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
     try {
       let finalCity = formData.city;
       if (showNewCityInputs && newCity.trim()) {
-        const res: any = await addCity({ name: newCity.trim(), regionId: formData.region });
-        if (res?.success) finalCity = res.data.name;
+        const res: any = await clientAddCity({ name: newCity.trim(), regionId: formData.region });
+        if (res?.success) {
+          finalCity = res.data?.name || newCity.trim();
+          setAllCities((prev) => [...prev, { id: res.data?.id, name: finalCity, regionId: formData.region }]);
+        }
       }
 
       const imagesBase64 = await toBase64();
-
       const fee = getFeeForCategory(formData.category);
 
       const payload = {
@@ -246,8 +242,6 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
-
-
       <CheckoutSteps step1 step2 />
 
       <div className="text-center mb-10">
@@ -255,14 +249,14 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
           <FaMotorcycle className="text-4xl text-blue-600" />
         </div>
         <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
-          Create Motorcycle Listing
+          {t("createMotorcycle.pageTitle")}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Main Category
+            {t("createMotorcycle.mainCategoryLabel")}
           </label>
           <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
             <FaMotorcycle className="text-blue-500" />
@@ -278,7 +272,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Category
+              {t("createMotorcycle.categoryLabel")}
             </label>
             <select
               value={formData.category}
@@ -288,10 +282,10 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
               required
             >
-              <option value="">Select Category</option>
-              {MOTO_CATEGORIES.map((cat) => (
-                <option key={cat.key} value={cat.key}>
-                  {cat.label}
+              <option value="">{t("createMotorcycle.selectCategory")}</option>
+              {MOTO_CATEGORY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`createMotorcycle.categories.${key}`)}
                 </option>
               ))}
             </select>
@@ -299,7 +293,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Subcategory
+              {t("createMotorcycle.subCategoryLabel")}
             </label>
             <select
               value={formData.subCategory}
@@ -308,7 +302,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
               required
             >
-              <option value="">Select Subcategory</option>
+              <option value="">{t("createMotorcycle.selectSubcategory")}</option>
               {getNestedSubcategories().map((sub: any, idx: number) => (
                 <option key={idx} value={sub.labelKey || sub.key || sub}>
                   {t(sub.labelKey || sub.name || sub)}
@@ -320,10 +314,10 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Title
+            {t("createMotorcycle.titleLabel")}
           </label>
           <input
-            placeholder="e.g. Honda CB500 2021 – Excellent Condition"
+            placeholder={t("createMotorcycle.titlePlaceholder")}
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
@@ -333,9 +327,11 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Year</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createMotorcycle.yearLabel")}
+            </label>
             <input
-              placeholder="e.g. 2021"
+              placeholder={t("createMotorcycle.yearPlaceholder")}
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -343,9 +339,11 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Make</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createMotorcycle.makeLabel")}
+            </label>
             <input
-              placeholder="e.g. Honda"
+              placeholder={t("createMotorcycle.makePlaceholder")}
               value={formData.make}
               onChange={(e) => setFormData({ ...formData, make: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -353,9 +351,11 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Model</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createMotorcycle.modelLabel")}
+            </label>
             <input
-              placeholder="e.g. CB500"
+              placeholder={t("createMotorcycle.modelPlaceholder")}
               value={formData.model}
               onChange={(e) => setFormData({ ...formData, model: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -364,11 +364,11 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Engine (cc)
+              {t("createMotorcycle.engineCcLabel")}
             </label>
             <input
               type="number"
-              placeholder="e.g. 500"
+              placeholder={t("createMotorcycle.engineCcPlaceholder")}
               value={formData.engineCc}
               onChange={(e) => setFormData({ ...formData, engineCc: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -379,58 +379,64 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Mileage (km)
+              {t("createMotorcycle.mileageLabel")}
             </label>
             <input
               type="number"
-              placeholder="e.g. 12000"
+              placeholder={t("createMotorcycle.mileagePlaceholder")}
               value={formData.mileage}
               onChange={(e) => setFormData({ ...formData, mileage: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Fuel Type</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createMotorcycle.fuelTypeLabel")}
+            </label>
             <select
               value={formData.fuelType}
               onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             >
-              <option value="">Select</option>
-              {FUEL_TYPES.map((f) => (
-                <option key={f} value={f}>
-                  {f}
+              <option value="">{t("createMotorcycle.selectFuelType")}</option>
+              {FUEL_TYPE_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`createMotorcycle.fuelTypes.${key}`)}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Gearbox</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createMotorcycle.gearboxLabel")}
+            </label>
             <select
               value={formData.gearbox}
               onChange={(e) => setFormData({ ...formData, gearbox: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             >
-              <option value="">Select</option>
-              {GEARBOX_OPTIONS.map((g) => (
-                <option key={g} value={g}>
-                  {g}
+              <option value="">{t("createMotorcycle.selectGearbox")}</option>
+              {GEARBOX_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`createMotorcycle.gearboxOptions.${key}`)}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Condition</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createMotorcycle.conditionLabel")}
+            </label>
             <select
               value={formData.condition}
               onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             >
-              <option value="">Select</option>
-              {CONDITION_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">{t("createMotorcycle.selectCondition")}</option>
+              {CONDITION_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`createMotorcycle.conditions.${key}`)}
                 </option>
               ))}
             </select>
@@ -438,9 +444,11 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-black text-gray-400 uppercase">Color</label>
+          <label className="text-[10px] font-black text-gray-400 uppercase">
+            {t("createMotorcycle.colorLabel")}
+          </label>
           <input
-            placeholder="e.g. Red"
+            placeholder={t("createMotorcycle.colorPlaceholder")}
             value={formData.color}
             onChange={(e) => setFormData({ ...formData, color: e.target.value })}
             className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -450,10 +458,10 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Description
+              {t("createMotorcycle.descriptionLabel")}
             </label>
             <textarea
-              placeholder="Describe your motorcycle..."
+              placeholder={t("createMotorcycle.descriptionPlaceholder")}
               rows={5}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -464,7 +472,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Region
+              {t("createMotorcycle.regionLabel")}
             </label>
             <select
               value={formData.region}
@@ -474,7 +482,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             >
-              <option value="">Select Region</option>
+              <option value="">{t("createMotorcycle.selectRegion")}</option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
                   {i18n.language === "so" ? r.so || r.name : r.name}
@@ -486,7 +494,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            City
+            {t("createMotorcycle.cityLabel")}
           </label>
           <div className="relative">
             <button
@@ -495,7 +503,9 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
               disabled={!formData.region}
               className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
             >
-              {showNewCityInputs ? "Adding city..." : formData.city || "Select City"}
+              {showNewCityInputs
+                ? t("createMotorcycle.addingCity")
+                : formData.city || t("createMotorcycle.selectCity")}
               <span>▾</span>
             </button>
             {showCityDropdown && (
@@ -522,7 +532,7 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
                   }}
                   className="w-full text-left p-4 text-blue-600 font-black text-xs"
                 >
-                  + ADD NEW CITY
+                  {t("createMotorcycle.addNewCity")}
                 </button>
               </div>
             )}
@@ -530,17 +540,22 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
         </div>
 
         {showNewCityInputs && (
-          <input
-            placeholder="Enter new city name"
-            value={newCity}
-            onChange={(e) => setNewCity(e.target.value)}
-            className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
-          />
+          <div className="space-y-2">
+            <input
+              placeholder={t("createMotorcycle.newCityPlaceholder")}
+              value={newCity}
+              onChange={(e) => setNewCity(e.target.value)}
+              className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
+            />
+            <p className="text-xs text-blue-500 font-medium ml-1">
+              {t("createMotorcycle.newCityNote")}
+            </p>
+          </div>
         )}
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            Price ($)
+            {t("createMotorcycle.priceLabel")}
           </label>
           <div className="relative">
             <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
@@ -559,14 +574,18 @@ function MotorcycleForm({ onNext }: { onNext: () => void }) {
             images={images}
             onAdd={addImages}
             onRemove={removeImage}
+            maxImages={10}
             label={t("createMotorcycle.upload")}
           />
+          <p className="text-xs text-gray-400 mt-3 text-center">
+            {t("createMotorcycle.imageNote")}
+          </p>
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-gray-200 flex items-center justify-center"
+          className="w-full py-5 rounded-2xl bg-[#0063fb] text-white font-black text-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-gray-200 flex items-center justify-center"
         >
           {isLoading ? (
             <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" />

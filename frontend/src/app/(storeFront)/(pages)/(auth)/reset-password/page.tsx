@@ -150,11 +150,18 @@ export default function ResetCode() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-3xl shadow-md transition ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-3xl shadow-md transition
+            ${loading ? "py-2 text-base opacity-50 cursor-not-allowed" : "py-4 text-lg"}
+          `}
         >
-          {loading ? <Loading /> : "Reset Password"}
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2" />
+              Loading...
+            </span>
+          ) : (
+            "Reset Password"
+          )}
         </button>
 
         <p className="mt-8 text-center text-gray-700">

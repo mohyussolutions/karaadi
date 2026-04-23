@@ -1,35 +1,39 @@
 import { Suspense } from "react";
 import { fetchAgencies } from "@/actions/categories/actionsAgency";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
-import { loadMoreFeedItems } from "@/actions/categories/feedActions";
-import Agencies from "@/app/(agencies)/agencies/page";
-import HomeContent from "../Filters/HomeContent";
+import { loadFeedPage } from "@/actions/categories/feedActions";
+import AgenciesCarousel from "@/app/(agencies)/agencies/AgenciesCarousel";
 import FeedClient from "./FeedClient";
 
 async function AgenciesSection() {
   const agencies = await fetchAgencies().catch(() => []);
-  return <Agencies initialAgencies={agencies} />;
+  if (!agencies.length) return null;
+  return <AgenciesCarousel initialAgencies={agencies} />;
 }
 
-export default async function DataFeed({ query }: { query: string }) {
-  if (query) {
-    const results = await getGlobalSearchResults(query).catch(() => []);
-    return (
-      <HomeContent
-        serverSearchResults={Array.isArray(results) ? results : []}
-        query={query}
-      />
-    );
-  }
+async function Feed() {
+  const items = await loadFeedPage(1);
+  return <FeedClient initialItems={items} />;
+}
 
-  const initialItems = await loadMoreFeedItems(1);
+function FeedSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-3">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div key={i} className="aspect-[4/3] rounded-xl bg-gray-100 animate-pulse" />
+      ))}
+    </div>
+  );
+}
 
+export default function DataFeed() {
   return (
     <div className="space-y-4">
       <Suspense fallback={null}>
         <AgenciesSection />
       </Suspense>
-      <FeedClient initialItems={initialItems} />
+      <Suspense fallback={<FeedSkeleton />}>
+        <Feed />
+      </Suspense>
     </div>
   );
 }

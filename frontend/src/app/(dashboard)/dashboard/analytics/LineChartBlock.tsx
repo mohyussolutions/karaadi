@@ -49,15 +49,15 @@ export const LineChartBlock = <T extends Record<string, any>>({
   const gradientId = `grad-${dataKey}`;
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-6">
       <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
         {title}
       </p>
-      <p className="text-xs text-slate-300 mb-5">{subtitle}</p>
-      <ResponsiveContainer width="100%" height={300}>
+      <p className="text-xs text-slate-300 mb-3 sm:mb-5">{subtitle}</p>
+      <ResponsiveContainer width="100%" height={220}>
         <AreaChart
           data={data}
-          margin={{ top: 8, right: 8, bottom: 0, left: 10 }}
+          margin={{ top: 8, right: 4, bottom: 0, left: 0 }}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -80,9 +80,9 @@ export const LineChartBlock = <T extends Record<string, any>>({
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "#94a3b8", fontSize: 11 }}
+            tick={{ fill: "#94a3b8", fontSize: 10 }}
             tickFormatter={(v) => formatValue(v)}
-            width={64}
+            width={48}
           />
           <Tooltip
             cursor={{ stroke: stroke, strokeWidth: 1, strokeDasharray: "4 4" }}

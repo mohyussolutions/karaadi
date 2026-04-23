@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, useEffect, useCallback, JSX } from "react";
+import { useTranslation } from "react-i18next";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import { useAuth } from "@/context/AuthContext";
 
@@ -16,12 +17,13 @@ interface VisitorManagerProps {
 }
 
 function VisitorManager({ onBack }: VisitorManagerProps): JSX.Element {
+  const { t } = useTranslation();
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchVisitors = async (): Promise<void> => {
+  const fetchVisitors = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
@@ -35,8 +37,7 @@ function VisitorManager({ onBack }: VisitorManagerProps): JSX.Element {
       }
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      const data: { total: number; visitors: Visitor[] } =
-        await response.json();
+      const data: { total: number; visitors: Visitor[] } = await response.json();
       setVisitors(data.visitors);
     } catch (err) {
       setError("Failed to fetch visitors.");
@@ -44,21 +45,18 @@ function VisitorManager({ onBack }: VisitorManagerProps): JSX.Element {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchVisitors();
-  }, []);
+  }, [fetchVisitors]);
 
   const handleDelete = async (userId: string): Promise<void> => {
     if (!user || !user.accessToken) {
       setError("You must be logged in to delete visitors.");
       return;
     }
-    if (
-      !window.confirm(`Are you sure you want to delete visitor ID: ${userId}?`)
-    )
-      return;
+    if (!window.confirm(`Are you sure you want to delete visitor ID: ${userId}?`)) return;
     try {
       const response = await fetch(`${API_BASE_URL}/${userId}`, {
         method: "DELETE",
@@ -70,101 +68,95 @@ function VisitorManager({ onBack }: VisitorManagerProps): JSX.Element {
       });
       if (!response.ok)
         throw new Error(`Deletion failed with status: ${response.status}`);
-      console.log(`Visitor ${userId} deleted successfully.`);
       fetchVisitors();
     } catch (err: any) {
       setError(`Failed to delete visitor: ${err.message}`);
-      console.error("Delete error:", err);
     }
   };
 
-  if (loading) return <div>Loading visitors...</div>;
-  if (error) return <div style={{ color: "red" }}>Error: {error}</div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-500">
+        {t("adminTable.loading")}
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="text-red-600 bg-red-50 border border-red-200 rounded-xl p-4">
+        {error}
+      </div>
+    );
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <h2>Unique Visitor Manager ({visitors.length} Total)</h2>
-        <div>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h2 className="text-lg font-bold text-gray-800">
+          {t("adminTable.visitorManager")} ({visitors.length} {t("adminTable.total")})
+        </h2>
+        <div className="flex gap-2">
           <button
             onClick={onBack}
-            style={{
-              marginRight: "10px",
-              padding: "8px 15px",
-              border: "1px solid #ccc",
-            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition"
           >
-            ← Back to Settings
+            ← {t("adminTable.backToSettings")}
           </button>
           <button
             onClick={fetchVisitors}
-            style={{
-              padding: "8px 15px",
-              backgroundColor: "#4F46E5",
-              color: "white",
-              border: "none",
-            }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
           >
-            Refresh List
+            {t("adminTable.refreshList")}
           </button>
         </div>
       </div>
 
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
-        <thead>
-          <tr style={{ borderBottom: "2px solid #ccc" }}>
-            <th style={{ padding: "8px", textAlign: "left" }}>
-              Visitor ID (Total)
-            </th>
-            <th style={{ padding: "8px", textAlign: "left" }}>IP Address</th>
-            <th style={{ padding: "8px", textAlign: "left" }}>Last Visited</th>
-            <th style={{ padding: "8px", textAlign: "left" }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visitors.length === 0 ? (
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <td colSpan={4} style={{ textAlign: "center", padding: "10px" }}>
-                No visitors found.
-              </td>
+              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                {t("adminTable.visitorId")}
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                {t("adminTable.ip")}
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                {t("adminTable.lastVisited")}
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                {t("adminTable.actions")}
+              </th>
             </tr>
-          ) : (
-            visitors.map((visitor: Visitor) => (
-              <tr
-                key={visitor.userId}
-                style={{ borderBottom: "1px solid #eee" }}
-              >
-                <td style={{ padding: "8px" }}>{visitor.userId}</td>
-                <td style={{ padding: "8px" }}>{visitor.ipAddress || "N/A"}</td>
-                <td style={{ padding: "8px" }}>
-                  {new Date(visitor.visitedAt).toLocaleString()}
-                </td>
-                <td style={{ padding: "8px" }}>
-                  <button
-                    onClick={() => handleDelete(visitor.userId)}
-                    style={{
-                      backgroundColor: "#dc3545",
-                      color: "white",
-                      border: "none",
-                      padding: "5px 10px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Delete
-                  </button>
+          </thead>
+          <tbody>
+            {visitors.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="text-center py-8 text-gray-400">
+                  {t("adminTable.noVisitorsFound")}
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              visitors.map((visitor: Visitor) => (
+                <tr key={visitor.userId} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <td className="px-4 py-3 text-gray-700 font-mono text-xs">{visitor.userId}</td>
+                  <td className="px-4 py-3 text-gray-500">{visitor.ipAddress || "N/A"}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {new Date(visitor.visitedAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleDelete(visitor.userId)}
+                      className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 transition"
+                    >
+                      {t("adminTable.delete")}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

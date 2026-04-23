@@ -3,7 +3,13 @@
 import { useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
-import ChatInbox from "@/app/(storeFront)/components/chats/chat/ChatInbox"
+import dynamic from "next/dynamic"
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading"
+
+const ChatInbox = dynamic(
+  () => import("@/app/(storeFront)/components/chats/chat/ChatInbox"),
+  { ssr: false, loading: () => <div className="h-full flex items-center justify-center"><Loading /></div> },
+)
 
 function MessagesContent() {
   const router = useRouter()

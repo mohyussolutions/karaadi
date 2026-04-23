@@ -17,7 +17,7 @@ import Pagination from "@/app/(storeFront)/components/shared/Pagination";
 const PAGE_SIZE = 20;
 
 const NotificationsComponent = () => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
@@ -54,7 +54,7 @@ const NotificationsComponent = () => {
       if (!user) {
         router.replace("/login?redirect=/notifications");
       } else {
-        loadNotifications(user._id || user._id);
+        loadNotifications(user.id || user._id || user.sub || "");
       }
     }
   }, [user, authLoading, router, loadNotifications]);
@@ -69,8 +69,10 @@ const NotificationsComponent = () => {
     return `${Math.floor(diff / 86400000)}d`;
   };
 
-  const getItemLink = (n: any) =>
-    `/${getCategoryRoute(n.itemType)}/${n.itemId}`;
+  const getItemLink = (n: any) => {
+    if (!n.itemId || !n.itemType) return "/notifications";
+    return `/${getCategoryRoute(n.itemType)}/${n.itemId}?type=${n.itemType}`;
+  };
 
   const handleMarkAsRead = async (id: string) => {
     try {
@@ -78,6 +80,7 @@ const NotificationsComponent = () => {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
+      window.dispatchEvent(new CustomEvent("notification-read"));
     } catch {}
   };
 

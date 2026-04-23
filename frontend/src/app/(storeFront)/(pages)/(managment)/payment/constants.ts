@@ -17,7 +17,7 @@ export const PAYMENT_METHODS: PaymentMethodOption[] = [
 ];
 
 export const PHONE_PREFIX = "+252";
-export const MAX_POLL_ATTEMPTS = 10;
+export const MAX_POLL_ATTEMPTS = 30;
 export const POLL_INTERVAL_MS = 3000;
 export const SUCCESS_REDIRECT_DELAY_MS = 2000;
 

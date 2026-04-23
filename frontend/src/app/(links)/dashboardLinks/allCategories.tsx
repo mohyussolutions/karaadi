@@ -13,6 +13,7 @@ import {
   FaShip,
   FaLaptop,
 } from "react-icons/fa";
+import { IoBusinessOutline } from "react-icons/io5";
 import {
   HiSearchCircle,
   CiMoneyBill,
@@ -63,6 +64,11 @@ export const allCategoriesDashbaord: SidebarLink[] = [
     link: "/dashboard/FeeManagement",
   },
   { name: "Jobs", icon: MdWork, link: "/dashboard/categories/jobs" },
+  {
+    name: "Businesses",
+    icon: IoBusinessOutline,
+    link: "/dashboard/categories/businesses",
+  },
   {
     name: "Agencies",
     icon: CiMoneyBill,

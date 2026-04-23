@@ -81,7 +81,8 @@ export async function createTraktor(
   if (!res.ok) {
     return { success: false, message: result.message || "Failed to create" };
   }
-  return { success: true, _id: result.id || result._id || "" };
+  const item = result.data || result;
+  return { success: true, _id: item.id || item._id || "" };
 }
 
 export async function updateTraktor(

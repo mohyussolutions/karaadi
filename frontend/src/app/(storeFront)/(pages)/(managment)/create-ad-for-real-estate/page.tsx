@@ -12,7 +12,11 @@ import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageU
 import { FaHome } from "react-icons/fa";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { createRealEstate } from "@/actions/categories/realEstateActions";
-import { getAllRegions, getAllCities, addCity } from "@/actions/categories/geoAction";
+import {
+  getAllRegions,
+  getAllCities,
+  addCity,
+} from "@/actions/categories/geoAction";
 import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
 import { useAuth } from "@/context/AuthContext";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
@@ -21,11 +25,11 @@ import { getRealEstateFees } from "@/actions/categories/feeAction";
 import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps";
 
 const RE_CATEGORIES = [
-  { key: "forRent", label: "For Rent" },
-  { key: "forSale", label: "For Sale" },
-  { key: "landForSale", label: "Land For Sale" },
-  { key: "farmForSale", label: "Farm For Sale" },
-  { key: "commercial", label: "Commercial" },
+  { key: "forRent", tKey: "createRealEstate.categories.forRent" },
+  { key: "forSale", tKey: "createRealEstate.categories.forSale" },
+  { key: "landForSale", tKey: "createRealEstate.categories.landForSale" },
+  { key: "farmForSale", tKey: "createRealEstate.categories.farmForSale" },
+  { key: "commercial", tKey: "createRealEstate.categories.commercial" },
 ];
 
 const RE_FEE_MAPPING: Record<string, string> = {
@@ -37,26 +41,29 @@ const RE_FEE_MAPPING: Record<string, string> = {
 };
 
 const PROPERTY_TYPES = [
-  "Apartment",
-  "House / Villa",
-  "Commercial Space",
-  "Land",
-  "Warehouse",
-  "Farm",
-  "Other",
+  { key: "apartment", tKey: "createRealEstate.propertyTypes.apartment" },
+  { key: "houseVilla", tKey: "createRealEstate.propertyTypes.houseVilla" },
+  {
+    key: "commercialSpace",
+    tKey: "createRealEstate.propertyTypes.commercialSpace",
+  },
+  { key: "land", tKey: "createRealEstate.propertyTypes.land" },
+  { key: "warehouse", tKey: "createRealEstate.propertyTypes.warehouse" },
+  { key: "farm", tKey: "createRealEstate.propertyTypes.farm" },
+  { key: "other", tKey: "createRealEstate.propertyTypes.other" },
 ];
 
 const AMENITIES_LIST = [
-  "Swimming Pool",
-  "Gym",
-  "Security",
-  "Elevator",
-  "Generator",
-  "Water Supply",
-  "Air Conditioning",
-  "Garden",
-  "Balcony",
-  "Parking",
+  { key: "Swimming Pool", tKey: "createRealEstate.swimmingPoolLabel" },
+  { key: "Gym", tKey: "createRealEstate.gymLabel" },
+  { key: "Security", tKey: "createRealEstate.securityLabel" },
+  { key: "Elevator", tKey: "createRealEstate.elevatorLabel" },
+  { key: "Generator", tKey: "createRealEstate.generatorLabel" },
+  { key: "Water Supply", tKey: "createRealEstate.waterSupplyLabel" },
+  { key: "Air Conditioning", tKey: "createRealEstate.airConditioningLabel" },
+  { key: "Garden", tKey: "createRealEstate.gardenLabel" },
+  { key: "Balcony", tKey: "createRealEstate.balconyLabel" },
+  { key: "Parking", tKey: "createRealEstate.parkingLabel" },
 ];
 
 export default function CreateAdForRealEstatePage() {
@@ -69,7 +76,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
   const dispatch = useAppDispatch();
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
-  const savedItem = useAppSelector((state) => state.listingDraft.item);
+  const savedItem = useAppSelector((state) => state.listingDraft?.item ?? {});
 
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -93,7 +100,8 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
     subCategory:
       typeof savedItem.subCategory === "string"
         ? savedItem.subCategory
-        : Array.isArray(savedItem.subCategory) && savedItem.subCategory.length > 0
+        : Array.isArray(savedItem.subCategory) &&
+            savedItem.subCategory.length > 0
           ? savedItem.subCategory[0]
           : "",
     title: savedItem.title || "",
@@ -129,7 +137,9 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
         ]);
         setRegions(regs || []);
         setAllCities(cits || []);
-        setActiveFeeConfig(Array.isArray(feeRes) ? feeRes[0] || {} : feeRes || {});
+        setActiveFeeConfig(
+          Array.isArray(feeRes) ? feeRes[0] || {} : feeRes || {},
+        );
       } catch {
       } finally {
         setDataLoading(false);
@@ -140,7 +150,9 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
 
   useEffect(() => {
     if (formData.region) {
-      setFilteredCities(allCities.filter((c) => c.regionId === formData.region));
+      setFilteredCities(
+        allCities.filter((c) => c.regionId === formData.region),
+      );
     } else {
       setFilteredCities([]);
     }
@@ -183,24 +195,27 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
       "city",
     ];
     const isMissing =
-      requiredFields.some((key) => !(formData as any)[key]) || images.length === 0;
+      requiredFields.some((key) => !(formData as any)[key]) ||
+      images.length === 0;
 
     if (isMissing) {
-      return toast.error(t("createMotorcycle.fillRequired"));
+      return toast.error(t("createRealEstate.fillRequired"));
     }
 
     setIsLoading(true);
-    const toastId = toast.loading(t("createMotorcycle.registering"));
+    const toastId = toast.loading(t("createRealEstate.submitting"));
 
     try {
       let finalCity = formData.city;
       if (showNewCityInputs && newCity.trim()) {
-        const res: any = await addCity({ name: newCity.trim(), regionId: formData.region });
+        const res: any = await addCity({
+          name: newCity.trim(),
+          regionId: formData.region,
+        });
         if (res?.success) finalCity = res.data.name;
       }
 
       const imagesBase64 = await toBase64();
-
       const fee = getFeeForCategory(formData.category);
 
       const payload = {
@@ -219,7 +234,9 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
         bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
         bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
         floor: formData.floor ? Number(formData.floor) : undefined,
-        totalFloors: formData.totalFloors ? Number(formData.totalFloors) : undefined,
+        totalFloors: formData.totalFloors
+          ? Number(formData.totalFloors)
+          : undefined,
         furnished: formData.furnished,
         parking: formData.parking,
         hasGarage: formData.hasGarage,
@@ -241,7 +258,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
 
       if (result.success) {
         toast.update(toastId, {
-          render: t("createMotorcycle.successMessage"),
+          render: t("createRealEstate.submittedSuccess"),
           type: "success",
           isLoading: false,
           autoClose: 2000,
@@ -251,7 +268,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
         setTimeout(() => onNext(), 1200);
       } else {
         toast.update(toastId, {
-          render: result.message || t("createMotorcycle.errorMessage"),
+          render: result.message || t("createRealEstate.submitError"),
           type: "error",
           isLoading: false,
           autoClose: 3000,
@@ -259,7 +276,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
       }
     } catch {
       toast.update(toastId, {
-        render: t("createMotorcycle.errorMessage"),
+        render: t("createRealEstate.submitError"),
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -279,8 +296,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
-
-
       <CheckoutSteps step1 step2 />
 
       <div className="text-center mb-10">
@@ -288,43 +303,49 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           <FaHome className="text-4xl text-blue-600" />
         </div>
         <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
-          Create Real Estate Listing
+          {t("createRealEstate.pageTitle")}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Main Category */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Main Category
+            {t("createRealEstate.mainCategory")}
           </label>
           <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
             <FaHome className="text-blue-500" />
             <input
               type="text"
               readOnly
-              value={formData.mainCategory}
+              value={t("createRealEstate.title")}
               className="bg-transparent outline-none font-black text-blue-700 w-full"
             />
           </div>
         </div>
 
+        {/* Category + Subcategory */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Category
+              {t("createRealEstate.category")}
             </label>
             <select
               value={formData.category}
               onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value, subCategory: "" })
+                setFormData({
+                  ...formData,
+                  category: e.target.value,
+                  subCategory: "",
+                })
               }
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
               required
             >
-              <option value="">Select Category</option>
+              <option value="">{t("createRealEstate.selectCategory")}</option>
               {RE_CATEGORIES.map((cat) => (
                 <option key={cat.key} value={cat.key}>
-                  {cat.label}
+                  {t(cat.tKey)}
                 </option>
               ))}
             </select>
@@ -332,16 +353,17 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Subcategory
+              {t("createRealEstate.subcategoryLabel")}
             </label>
             <select
               value={formData.subCategory}
-              onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, subCategory: e.target.value })
+              }
               disabled={!formData.category}
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
-              required
             >
-              <option value="">Select Subcategory</option>
+              <option value="">{t("createRealEstate.selectSubcategory")}</option>
               {getNestedSubcategories().map((sub: any, idx: number) => (
                 <option key={idx} value={sub.labelKey || sub.key || sub}>
                   {t(sub.labelKey || sub.name || sub)}
@@ -351,154 +373,203 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
+        {/* Title */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Title
+            {t("createRealEstate.titleLabel")}
           </label>
           <input
-            placeholder="e.g. Spacious 3BR Apartment in Mogadishu"
+            placeholder={t("createRealEstate.titleInputPlaceholder")}
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
             required
           />
         </div>
 
+        {/* Property Type + Size */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Property Type
+              {t("createRealEstate.propertyTypeLabel")}
             </label>
             <select
               value={formData.propertyType}
-              onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, propertyType: e.target.value })
+              }
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
-              required
             >
-              <option value="">Select Property Type</option>
+              <option value="">{t("createRealEstate.selectPropertyType")}</option>
               {PROPERTY_TYPES.map((pt) => (
-                <option key={pt} value={pt}>
-                  {pt}
+                <option key={pt.key} value={pt.key}>
+                  {t(pt.tKey)}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Size (sqm)
+              {t("createRealEstate.sizeSqmLabel")}
             </label>
             <input
               type="number"
-              placeholder="e.g. 120"
+              placeholder={t("createRealEstate.sizeSqmPlaceholder")}
               value={formData.sizeSqm}
-              onChange={(e) => setFormData({ ...formData, sizeSqm: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, sizeSqm: e.target.value })
+              }
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
             />
           </div>
         </div>
 
+        {/* Bedrooms / Bathrooms / Floor / Total Floors */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Bedrooms</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createRealEstate.bedroomsLabel")}
+            </label>
             <input
               type="number"
-              placeholder="e.g. 3"
+              placeholder={t("createRealEstate.bedroomsPlaceholder")}
               value={formData.bedrooms}
-              onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Bathrooms</label>
-            <input
-              type="number"
-              placeholder="e.g. 2"
-              value={formData.bathrooms}
-              onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Floor</label>
-            <input
-              type="number"
-              placeholder="e.g. 3"
-              value={formData.floor}
-              onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, bedrooms: e.target.value })
+              }
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Total Floors
+              {t("createRealEstate.bathroomsLabel")}
             </label>
             <input
               type="number"
-              placeholder="e.g. 10"
+              placeholder={t("createRealEstate.bathroomsPlaceholder")}
+              value={formData.bathrooms}
+              onChange={(e) =>
+                setFormData({ ...formData, bathrooms: e.target.value })
+              }
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createRealEstate.floorLabel")}
+            </label>
+            <input
+              type="number"
+              placeholder={t("createRealEstate.floorPlaceholder")}
+              value={formData.floor}
+              onChange={(e) =>
+                setFormData({ ...formData, floor: e.target.value })
+              }
+              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createRealEstate.totalFloorsLabel")}
+            </label>
+            <input
+              type="number"
+              placeholder={t("createRealEstate.totalFloorsPlaceholder")}
               value={formData.totalFloors}
-              onChange={(e) => setFormData({ ...formData, totalFloors: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, totalFloors: e.target.value })
+              }
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-6">
-          {[
-            { key: "furnished", label: "Furnished" },
-            { key: "parking", label: "Parking" },
-            { key: "hasGarage", label: "Garage" },
-            { key: "hasGarden", label: "Garden" },
-          ].map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={(formData as any)[key]}
-                onChange={(e) => setFormData({ ...formData, [key]: e.target.checked })}
-                className="w-5 h-5 accent-blue-600"
-              />
-              <span className="font-black text-gray-700 text-sm uppercase tracking-wide">
-                {label}
-              </span>
-            </label>
-          ))}
+        {/* Furnished / Parking / Garage / Garden — optional */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-gray-400 uppercase tracking-wider">
+              {t("createRealEstate.furnishedLabel")} ·{" "}
+              {t("createRealEstate.parkingLabel")} ·{" "}
+              {t("createRealEstate.garageLabel")} ·{" "}
+              {t("createRealEstate.gardenLabel")}
+            </span>
+            <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">
+              {t("createRealEstate.optional")}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-6">
+            {[
+              { key: "furnished", tKey: "createRealEstate.furnishedLabel" },
+              { key: "parking", tKey: "createRealEstate.parkingLabel" },
+              { key: "hasGarage", tKey: "createRealEstate.garageLabel" },
+              { key: "hasGarden", tKey: "createRealEstate.gardenLabel" },
+            ].map(({ key, tKey }) => (
+              <label key={key} className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={(formData as any)[key]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [key]: e.target.checked })
+                  }
+                  className="w-5 h-5 accent-blue-600"
+                />
+                <span className="font-black text-gray-700 text-sm uppercase tracking-wide">
+                  {t(tKey)}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
+        {/* Amenities — optional */}
         <div className="space-y-3">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Amenities
-          </label>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider">
+              {t("createRealEstate.amenitiesLabel")}
+            </label>
+            <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">
+              {t("createRealEstate.optional")}
+            </span>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {AMENITIES_LIST.map((amenity) => (
+            {AMENITIES_LIST.map(({ key, tKey }) => (
               <label
-                key={amenity}
+                key={key}
                 className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                  formData.amenities.includes(amenity)
+                  formData.amenities.includes(key)
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-100 bg-gray-50 hover:border-blue-200"
                 }`}
               >
                 <input
                   type="checkbox"
-                  checked={formData.amenities.includes(amenity)}
-                  onChange={() => toggleAmenity(amenity)}
+                  checked={formData.amenities.includes(key)}
+                  onChange={() => toggleAmenity(key)}
                   className="w-4 h-4 accent-blue-600"
                 />
-                <span className="text-xs font-bold text-gray-700">{amenity}</span>
+                <span className="text-xs font-bold text-gray-700">
+                  {t(tKey)}
+                </span>
               </label>
             ))}
           </div>
         </div>
 
+        {/* Description + Region */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Description
+              {t("createRealEstate.descriptionLabel")}
             </label>
             <textarea
-              placeholder="Describe the property, neighborhood, key features..."
+              placeholder={t("createRealEstate.descriptionPlaceholder")}
               rows={5}
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             />
@@ -506,7 +577,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Region
+              {t("createRealEstate.regionLabel")}
             </label>
             <select
               value={formData.region}
@@ -516,7 +587,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             >
-              <option value="">Select Region</option>
+              <option value="">{t("createRealEstate.selectRegion")}</option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
                   {i18n.language === "so" ? r.so || r.name : r.name}
@@ -526,9 +597,10 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
+        {/* City */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            City
+            {t("createRealEstate.cityLabel")}
           </label>
           <div className="relative">
             <button
@@ -537,7 +609,9 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
               disabled={!formData.region}
               className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
             >
-              {showNewCityInputs ? "Adding city..." : formData.city || "Select City"}
+              {showNewCityInputs
+                ? t("createRealEstate.newCityLabel")
+                : formData.city || t("createRealEstate.selectCity")}
               <span>▾</span>
             </button>
             {showCityDropdown && (
@@ -564,7 +638,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
                   }}
                   className="w-full text-left p-4 text-blue-600 font-black text-xs"
                 >
-                  + ADD NEW CITY
+                  {t("createRealEstate.addNewCity")}
                 </button>
               </div>
             )}
@@ -573,47 +647,55 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
 
         {showNewCityInputs && (
           <input
-            placeholder="Enter new city name"
+            placeholder={t("createRealEstate.newCityPlaceholder")}
             value={newCity}
             onChange={(e) => setNewCity(e.target.value)}
             className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
           />
         )}
 
+        {/* Address */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Address
+            {t("createRealEstate.addressLabel")}
           </label>
           <input
-            placeholder="e.g. KM4, Hodan District"
+            placeholder={t("createRealEstate.addressPlaceholder")}
             value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, address: e.target.value })
+            }
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
           />
         </div>
 
+        {/* Price */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            Price ($)
+            {t("createRealEstate.priceLabel")}
           </label>
           <div className="relative">
             <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
             <input
               type="number"
+              placeholder={t("createRealEstate.pricePlaceholder")}
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
               className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500"
               required
             />
           </div>
         </div>
 
+        {/* Images */}
         <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
           <ImageUpload
             images={images}
             onAdd={addImages}
             onRemove={removeImage}
-            label={t("createMotorcycle.upload")}
+            label={t("createRealEstate.upload")}
           />
         </div>
 
@@ -625,7 +707,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           {isLoading ? (
             <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" />
           ) : (
-            t("createMotorcycle.submit")
+            t("createRealEstate.submit")
           )}
         </button>
       </form>

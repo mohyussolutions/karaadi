@@ -1,192 +1,226 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback, useRef } from "react"
-import { useAuth } from "@/context/AuthContext"
-import { getUserChatrooms, createOrGetChat } from "@/services/chatService"
-import { socketService } from "@/actions/sockets/socketService"
-import ConversationRow from "./ConversationRow"
-import MessageThread from "./MessageThread"
-import type { Chatroom } from "@/app/utils/types/chat.types"
-import { MessageSquare } from "lucide-react"
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getUserChatrooms,
+  createOrGetChat,
+  deleteChatroom,
+} from "@/services/chatService";
+import { socketService } from "@/actions/sockets/socketService";
+import ConversationRow from "./ConversationRow";
+import MessageThread from "./MessageThread";
+import type { Chatroom } from "@/app/utils/types/chat.types";
+import { MessageSquare } from "lucide-react";
 
 interface Props {
-  initialChatId?: number
-  sellerId?: string
-  itemId?: string
-  itemModel?: string
+  initialChatId?: number;
+  sellerId?: string;
+  itemId?: string;
+  itemModel?: string;
 }
 
-export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }: Props) {
-  const { user } = useAuth()
-  const [chatrooms, setChatrooms] = useState<Chatroom[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeChatId, setActiveChatId] = useState<number | null>(initialChatId ?? null)
-  const [search, setSearch] = useState("")
-  const [showThread, setShowThread] = useState(!!initialChatId || !!(sellerId && itemId))
-  const chatroomsRef = useRef<Chatroom[]>([])
+export default function ChatInbox({
+  initialChatId,
+  sellerId,
+  itemId,
+  itemModel,
+}: Props) {
+  const { user } = useAuth();
+  const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeChatId, setActiveChatId] = useState<number | null>(
+    initialChatId ?? null,
+  );
+  const [search, setSearch] = useState("");
+  const [showThread, setShowThread] = useState(
+    !!initialChatId || !!(sellerId && itemId),
+  );
+  const chatroomsRef = useRef<Chatroom[]>([]);
 
-  const currentUserId = user?._id || user?.id || ""
+  const currentUserId = user?._id || user?.id || "";
 
   useEffect(() => {
-    chatroomsRef.current = chatrooms
-  }, [chatrooms])
+    chatroomsRef.current = chatrooms;
+  }, [chatrooms]);
 
   useEffect(() => {
     if (!currentUserId) {
-      setLoading(true)
-      return
+      setLoading(true);
+      return;
     }
 
-    getUserChatrooms(currentUserId).then(async (rooms) => {
-      setChatrooms(rooms)
+    if (initialChatId) {
+      getUserChatrooms(currentUserId).then((rooms) => {
+        setChatrooms(rooms);
+        setActiveChatId(initialChatId);
+        setLoading(false);
+      });
+      return;
+    }
 
-      if (initialChatId) {
-        setActiveChatId(initialChatId)
-        setLoading(false)
-        return
-      }
+    if (sellerId && itemId) {
+      // Fire both requests in parallel — don't wait for chatrooms before creating chat
+      const roomsPromise = getUserChatrooms(currentUserId);
+      const chatPromise = createOrGetChat({
+        senderId: currentUserId,
+        receiverId: sellerId,
+        itemId,
+        itemModel: itemModel || "Marketplace",
+      });
 
-      if (sellerId && itemId) {
-        // Check if a chat already exists with this seller for this item
-        const existing = rooms.find(
-          (r) =>
-            (r.senderId === currentUserId && r.receiverId === sellerId) ||
-            (r.receiverId === currentUserId && r.senderId === sellerId)
-        )
+      Promise.all([roomsPromise, chatPromise])
+        .then(([rooms, newRoom]) => {
+          setChatrooms(() => {
+            const exists = rooms.some((r) => r.chatId === newRoom.chatId);
+            return exists ? rooms : [newRoom, ...rooms];
+          });
+          setActiveChatId(newRoom.chatId);
+          setShowThread(true);
+        })
+        .catch(() => {
+          // chat creation failed — still show inbox
+          roomsPromise.then((rooms) => setChatrooms(rooms));
+        })
+        .finally(() => setLoading(false));
+      return;
+    }
 
-        if (existing) {
-          setActiveChatId(existing.chatId)
-          setShowThread(true)
-          setLoading(false)
-          return
-        }
-
-        // Create a new chat
-        try {
-          const newRoom = await createOrGetChat({
-            senderId: currentUserId,
-            receiverId: sellerId,
-            itemId,
-            itemModel: itemModel || "Marketplace",
-          })
-          setChatrooms((prev) => {
-            const exists = prev.some((r) => r.chatId === newRoom.chatId)
-            return exists ? prev : [newRoom, ...prev]
-          })
-          setActiveChatId(newRoom.chatId)
-          setShowThread(true)
-        } catch {
-          // fall through — show empty inbox
-        }
-      }
-
-      setLoading(false)
-    })
-  }, [currentUserId, initialChatId, sellerId, itemId])
+    getUserChatrooms(currentUserId).then((rooms) => {
+      setChatrooms(rooms);
+      setLoading(false);
+    });
+  }, [currentUserId, initialChatId, sellerId, itemId, itemModel]);
 
   useEffect(() => {
-    if (!currentUserId) return
-    socketService.connect(currentUserId)
+    if (!currentUserId) return;
+    socketService.connect(currentUserId);
 
     const handleNew = (data: unknown) => {
-      const { chatId, message } = data as { chatId: string; message: any }
-      const numId = Number(chatId)
-      if (!numId || !message) return
+      const { chatId, message } = data as { chatId: string; message: any };
+      const numId = Number(chatId);
+      if (!numId || !message) return;
 
       setChatrooms((prev) => {
-        const idx = prev.findIndex((c) => c.chatId === numId)
+        const idx = prev.findIndex((c) => c.chatId === numId);
 
         if (idx === -1) {
           getUserChatrooms(currentUserId).then((rooms) => {
-            const fresh = rooms.find((r) => r.chatId === numId)
+            const fresh = rooms.find((r) => r.chatId === numId);
             if (fresh) {
               setChatrooms((cur) => {
-                if (cur.some((c) => c.chatId === numId)) return cur
-                return [fresh, ...cur]
-              })
+                if (cur.some((c) => c.chatId === numId)) return cur;
+                return [fresh, ...cur];
+              });
             }
-          })
-          return prev
+          });
+          return prev;
         }
 
-        const updated = [...prev]
-        const room = { ...updated[idx] }
-        room.lastMessage = message.content
-        room.lastMessageAt = message.timestamp || new Date().toISOString()
-        if (message.senderId !== currentUserId && numId !== (activeChatIdRef.current ?? -1)) {
-          room.unreadCount = (room.unreadCount || 0) + 1
+        const updated = [...prev];
+        const room = { ...updated[idx] };
+        room.lastMessage = message.content;
+        room.lastMessageAt = message.timestamp || new Date().toISOString();
+        if (
+          message.senderId !== currentUserId &&
+          numId !== (activeChatIdRef.current ?? -1)
+        ) {
+          room.unreadCount = (room.unreadCount || 0) + 1;
         }
-        updated.splice(idx, 1)
-        return [room, ...updated]
-      })
-    }
+        updated.splice(idx, 1);
+        return [room, ...updated];
+      });
+    };
 
-    const off = socketService.on("newMessage", handleNew)
-    return () => off()
-  }, [currentUserId])
+    const off = socketService.on("newMessage", handleNew);
+    return () => off();
+  }, [currentUserId]);
 
-  const activeChatIdRef = useRef<number | null>(activeChatId)
+  const activeChatIdRef = useRef<number | null>(activeChatId);
   useEffect(() => {
-    activeChatIdRef.current = activeChatId
-  }, [activeChatId])
+    activeChatIdRef.current = activeChatId;
+  }, [activeChatId]);
 
   const handleSelect = useCallback((chatId: number) => {
-    setActiveChatId(chatId)
-    setShowThread(true)
+    const room = chatroomsRef.current.find((c) => c.chatId === chatId);
+    const unread = room?.unreadCount || 0;
+    setActiveChatId(chatId);
+    setShowThread(true);
     setChatrooms((prev) =>
-      prev.map((c) => (c.chatId === chatId ? { ...c, unreadCount: 0 } : c))
-    )
-  }, [])
+      prev.map((c) => (c.chatId === chatId ? { ...c, unreadCount: 0 } : c)),
+    );
+    if (unread > 0) {
+      window.dispatchEvent(new CustomEvent("karaadi:messages-read", { detail: { unread } }));
+    }
+  }, []);
 
   const handleBack = useCallback(() => {
-    setShowThread(false)
-  }, [])
+    setShowThread(false);
+  }, []);
 
-  const handleNewMessage = useCallback((chatId: number, lastMessage: string, lastMessageAt: string) => {
-    setChatrooms((prev) => {
-      const idx = prev.findIndex((c) => c.chatId === chatId)
-      if (idx === -1) return prev
-      const updated = [...prev]
-      const room = { ...updated[idx], lastMessage, lastMessageAt }
-      updated.splice(idx, 1)
-      return [room, ...updated]
-    })
-  }, [])
+  const handleDelete = useCallback(
+    async (chatId: number) => {
+      const ok = await deleteChatroom(chatId, currentUserId);
+      if (!ok) return;
+      setChatrooms((prev) => prev.filter((c) => c.chatId !== chatId));
+      if (activeChatId === chatId) {
+        setActiveChatId(null);
+        setShowThread(false);
+      }
+    },
+    [currentUserId, activeChatId],
+  );
 
-  const activeChatroom = chatrooms.find((c) => c.chatId === activeChatId)
+  const handleNewMessage = useCallback(
+    (chatId: number, lastMessage: string, lastMessageAt: string) => {
+      setChatrooms((prev) => {
+        const idx = prev.findIndex((c) => c.chatId === chatId);
+        if (idx === -1) return prev;
+        const updated = [...prev];
+        const room = { ...updated[idx], lastMessage, lastMessageAt };
+        updated.splice(idx, 1);
+        return [room, ...updated];
+      });
+    },
+    [],
+  );
+
+  const activeChatroom = chatrooms.find((c) => c.chatId === activeChatId);
 
   const filtered = chatrooms
     .filter((c) => {
-      if (!search) return true
-      const q = search.toLowerCase()
-      const isSender = c.senderId === currentUserId
-      const name = isSender ? c.receiverName : c.senderName
+      if (!search) return true;
+      const q = search.toLowerCase();
+      const isSender = c.senderId === currentUserId;
+      const name = isSender ? c.receiverName : c.senderName;
       return (
         name.toLowerCase().includes(q) ||
         (c.lastMessage || "").toLowerCase().includes(q) ||
         (c.itemTitle || "").toLowerCase().includes(q)
-      )
+      );
     })
     .sort((a, b) => {
-      const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-      const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
-      return tb - ta
-    })
+      const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+      return tb - ta;
+    });
 
-  const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0)
+  const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   return (
     <div className="flex h-full bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm">
       {/* Sidebar */}
       <div
         className={`flex flex-col border-r border-gray-200 bg-white ${
-          showThread ? "hidden md:flex md:w-[320px] lg:w-[360px]" : "flex w-full md:w-[320px] lg:w-[360px]"
+          showThread
+            ? "hidden md:flex md:w-[320px] lg:w-[360px]"
+            : "flex w-full md:w-[320px] lg:w-[360px]"
         } flex-shrink-0`}
       >
         {/* Sidebar header */}
         <div className="px-4 pt-5 pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2 mb-3">
-            <h1 className="text-xl font-bold text-gray-900">Meldinger</h1>
+            <h1 className="text-xl font-bold text-gray-900">Messages</h1>
             {totalUnread > 0 && (
               <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center">
                 {totalUnread}
@@ -195,7 +229,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
           </div>
           <input
             type="text"
-            placeholder="Søk i samtaler…"
+            placeholder="Search conversations…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 placeholder:text-gray-400"
@@ -206,7 +240,10 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 animate-pulse">
+              <div
+                key={i}
+                className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 animate-pulse"
+              >
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3.5 bg-gray-200 rounded w-28" />
@@ -220,9 +257,11 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                 <MessageSquare className="w-8 h-8 text-gray-400" />
               </div>
-              <p className="font-semibold text-gray-700">Ingen samtaler</p>
+              <p className="font-semibold text-gray-700">No conversations</p>
               <p className="text-sm text-gray-400 mt-1">
-                {search ? "Ingen treff på søket" : "Start ved å kontakte en selger"}
+                {search
+                  ? "No results found"
+                  : "Start by contacting a seller"}
               </p>
             </div>
           ) : (
@@ -233,6 +272,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
                 isActive={activeChatId === room.chatId}
                 currentUserId={currentUserId}
                 onClick={handleSelect}
+                onDelete={handleDelete}
               />
             ))
           )}
@@ -258,11 +298,15 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
             <div className="w-20 h-20 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-4 shadow-sm">
               <MessageSquare className="w-10 h-10 text-gray-300" />
             </div>
-            <p className="text-lg font-semibold text-gray-600">Velg en samtale</p>
-            <p className="text-sm text-gray-400 mt-1">Velg en samtale fra listen til venstre</p>
+            <p className="text-lg font-semibold text-gray-600">
+              Select a conversation
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              Choose a conversation from the list on the left
+            </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

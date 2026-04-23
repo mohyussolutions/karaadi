@@ -16,11 +16,22 @@ export const getTotalOfRegions = async (): Promise<number> => {
 
 export const getAllRegions = async (): Promise<Region[]> => {
   const headers = await getAuthHeaders();
-  const res = await fetch(geoEndpoints.GET_ALL_REGIONS, {
-    headers: headers as HeadersInit,
-    next: { revalidate: 300 },
-  });
-  return res.ok ? await res.json() : [];
+  const [regRes, cityRes] = await Promise.all([
+    fetch(geoEndpoints.GET_ALL_REGIONS, { headers: headers as HeadersInit, cache: "no-store" }),
+    fetch(geoEndpoints.GET_ALL_CITIES, { headers: headers as HeadersInit, cache: "no-store" }),
+  ]);
+  if (!regRes.ok) return [];
+  const regions: Region[] = await regRes.json();
+  const cities = cityRes.ok ? await cityRes.json() : [];
+  if (!regions[0]?.cities) {
+    const cityMap = new Map<string, typeof cities>();
+    for (const city of cities) {
+      if (!cityMap.has(city.regionId)) cityMap.set(city.regionId, []);
+      cityMap.get(city.regionId)!.push(city);
+    }
+    return regions.map((r) => ({ ...r, cities: cityMap.get(r.id) ?? [] }));
+  }
+  return regions;
 };
 
 export const addRegion = async (data: { id: string; name: string }) => {
@@ -62,7 +73,7 @@ export const getAllCities = async (regionId?: string) => {
     : geoEndpoints.GET_ALL_CITIES;
   const res = await fetch(url, {
     headers: headers as HeadersInit,
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
   return res.ok ? await res.json() : [];
 };
@@ -71,6 +82,17 @@ export const addCity = async (data: { name: string; regionId: string }) => {
   const headers = await getAuthHeaders();
   const res = await fetch(geoEndpoints.ADD_CITY, {
     method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  return { success: res.ok, data: await res.json() };
+};
+
+export const updateCity = async (id: string, data: { name?: string; isActive?: boolean }) => {
+  const headers = await getAuthHeaders();
+  const res = await fetch(geoEndpoints.UPDATE_CITY(id), {
+    method: "PATCH",
     headers: headers as HeadersInit,
     body: JSON.stringify(data),
     cache: "no-store",

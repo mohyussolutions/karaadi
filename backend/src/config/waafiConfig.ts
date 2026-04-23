@@ -3,14 +3,12 @@ import {
   validateAccountNumber,
 } from "../core/utils/payment.utils.ts";
 import { ResponseCodes } from "./waafipay.service.responseCodes.ts";
+import { WAAFI_TIMEOUT_MS, WAAFI_DEFAULT_URL } from "./payment.constants.ts";
 import chalk from "chalk";
 
 export class WaafiService {
   private isProduction(): boolean {
-    return (
-      process.env.NODE_ENV === "production" &&
-      process.env.USE_WAAFIPAY_PROD === "true"
-    );
+    return process.env.USE_WAAFIPAY_PROD === "true";
   }
 
   async processPayment(
@@ -88,18 +86,7 @@ export class WaafiService {
     description: string,
     referenceId: string,
   ): Promise<any> {
-    const baseUrl = process.env.WAAFIPAY_PRODUCTION_URL;
-
-    if (!baseUrl) {
-      throw new Error(
-        JSON.stringify({
-          success: false,
-          message: "WAAFIPAY_PRODUCTION_URL is not configured",
-          responseCode: ResponseCodes.CONFIGURATION_ERROR.code,
-          key: ResponseCodes.CONFIGURATION_ERROR.key,
-        }),
-      );
-    }
+    const baseUrl = process.env.WAAFIPAY_PRODUCTION_URL || WAAFI_DEFAULT_URL;
 
     this.validateUrl(baseUrl);
 
@@ -120,7 +107,7 @@ export class WaafiService {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), WAAFI_TIMEOUT_MS);
 
     try {
       const payload = {
@@ -155,9 +142,10 @@ export class WaafiService {
       clearTimeout(timeoutId);
 
       const responseData = await response.json();
+      console.log(chalk.cyan(`[WAAFI] HTTP ${response.status} responseCode=${responseData?.responseCode} state=${responseData?.params?.state} msg=${responseData?.responseMsg ?? responseData?.errorMsg ?? ""}`));
 
       if (!response.ok) {
-        console.error(chalk.red(ResponseCodes.GATEWAY_ERROR.message));
+        console.error(chalk.red(`[WAAFI] Gateway error: HTTP ${response.status}`), responseData);
         throw new Error(
           JSON.stringify({
             success: false,

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
 import type { AdFormData } from "./types";
 
 interface AdFormProps {
@@ -27,6 +28,7 @@ export default function AdForm({
   onSubmit,
   onCancelEdit,
 }: AdFormProps) {
+  const { t } = useTranslation();
   const isEditing = !!editingId;
   const isSidebar = position === "sidebar";
 
@@ -46,7 +48,6 @@ export default function AdForm({
       </div>
 
       <div className="p-6">
-        {/* Live Preview */}
         <div className="mb-6">
           {isSidebar ? (
             <div className="w-48 border-2 border-dashed border-indigo-200 rounded-xl p-3 bg-indigo-50/40 flex flex-col gap-2">
@@ -106,7 +107,7 @@ export default function AdForm({
               </div>
             </div>
           )}
-          <p className="text-[10px] text-gray-400 mt-1">Live preview</p>
+          <p className="text-[10px] text-gray-400 mt-1">{t("adminTable.livePreview")}</p>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-3">
@@ -168,7 +169,7 @@ export default function AdForm({
                 }
                 className="h-4 w-4"
               />
-              Active
+              {t("adminTable.active")}
             </label>
           </div>
           <div className="flex gap-2 pt-1">
@@ -178,10 +179,10 @@ export default function AdForm({
               className={`px-5 py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 ${isSidebar ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
             >
               {loading
-                ? "Saving..."
+                ? t("adminTable.saving")
                 : isEditing
-                  ? `Update ${label}`
-                  : `Create ${label}`}
+                  ? `${t("adminTable.update")} ${label}`
+                  : `${t("adminTable.create")} ${label}`}
             </button>
             {isEditing && (
               <button
@@ -189,7 +190,7 @@ export default function AdForm({
                 onClick={onCancelEdit}
                 className="px-5 py-2 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200"
               >
-                Cancel
+                {t("adminTable.cancel")}
               </button>
             )}
           </div>

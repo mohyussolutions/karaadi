@@ -1,6 +1,7 @@
 model Marketplace {
   id           String    @id @default(cuid())
   userId       String
+  businessId   String?
   title        String
   description  String
   price        Float
@@ -37,11 +38,13 @@ model Marketplace {
   @@index([createdAt])
   @@index([userId])
   @@index([region])
+  @@index([businessId])
 }
 
 model RealEstate {
   id           String    @id @default(cuid())
   userId       String
+  businessId   String?
   title        String
   description  String
   price        Float
@@ -89,6 +92,7 @@ model RealEstate {
   @@index([createdAt])
   @@index([userId])
   @@index([region])
+  @@index([businessId])
 }
 
 model Boat {
@@ -135,6 +139,7 @@ model Boat {
 model Car {
   id           String    @id @default(cuid())
   userId       String
+  businessId   String?
   title        String
   description  String
   price        Float
@@ -181,6 +186,7 @@ model Car {
   @@index([createdAt])
   @@index([userId])
   @@index([region])
+  @@index([businessId])
 }
 
 model Motorcycle {

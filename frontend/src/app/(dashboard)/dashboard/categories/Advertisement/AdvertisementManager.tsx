@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import {
   createAdvertisement,
@@ -13,6 +14,7 @@ import AdCard from "./AdCard";
 import { emptyForm, type AdFormData, type AdItem } from "./types";
 
 export default function AdvertisementManager() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [ads, setAds] = useState<AdItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -133,20 +135,18 @@ export default function AdvertisementManager() {
     <div className="max-w-7xl mx-auto p-6 space-y-10">
       <header>
         <h1 className="text-3xl font-bold text-gray-900">
-          Advertisement Manager
+          {t("adminTable.advertisementManager")}
         </h1>
         <p className="text-gray-500 text-sm mt-1">
-          Create and manage two types of ads: Sidebar (small card) and
-          Background (full-width banner)
+          {t("adminTable.advertisementSubtitle")}
         </p>
       </header>
 
-      {/* Create / Edit forms */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AdForm
           position="sidebar"
-          label="Sidebar Ad"
-          hint="Small card shown beside listings"
+          label={t("adminTable.sidebarAd")}
+          hint={t("adminTable.sidebarHint")}
           form={sidebarForm}
           setForm={setSidebarForm}
           editingId={sidebarEditingId}
@@ -168,8 +168,8 @@ export default function AdvertisementManager() {
         />
         <AdForm
           position="background"
-          label="Background Ad"
-          hint="Full-width banner shown across the website"
+          label={t("adminTable.backgroundAd")}
+          hint={t("adminTable.backgroundHint")}
           form={bgForm}
           setForm={setBgForm}
           editingId={bgEditingId}
@@ -191,13 +191,11 @@ export default function AdvertisementManager() {
         />
       </div>
 
-      {/* Ads list */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sidebar ads */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-              Sidebar Ads
+              {t("adminTable.sidebarAds")}
             </span>
             <span className="text-xs text-gray-400">
               {sidebarAds.length} ad{sidebarAds.length !== 1 ? "s" : ""}
@@ -207,17 +205,17 @@ export default function AdvertisementManager() {
               disabled={loading}
               className="ml-auto text-xs text-gray-400 hover:text-gray-600"
             >
-              ↻ Refresh
+              ↻ {t("adminTable.refresh")}
             </button>
           </div>
           <div className="space-y-3">
             {loading && sidebarAds.length === 0 ? (
               <div className="text-center py-10 text-gray-400 text-sm">
-                Loading...
+                {t("adminTable.loading")}
               </div>
             ) : sidebarAds.length === 0 ? (
               <div className="text-center py-10 text-gray-400 text-sm border-2 border-dashed border-indigo-100 rounded-xl">
-                No sidebar ads yet
+                {t("adminTable.noSidebarAds")}
               </div>
             ) : (
               sidebarAds.map((ad) => (
@@ -234,11 +232,10 @@ export default function AdvertisementManager() {
           </div>
         </div>
 
-        {/* Background ads */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-              Background Ads
+              {t("adminTable.backgroundAds")}
             </span>
             <span className="text-xs text-gray-400">
               {bgAds.length} ad{bgAds.length !== 1 ? "s" : ""}
@@ -247,11 +244,11 @@ export default function AdvertisementManager() {
           <div className="space-y-3">
             {loading && bgAds.length === 0 ? (
               <div className="text-center py-10 text-gray-400 text-sm">
-                Loading...
+                {t("adminTable.loading")}
               </div>
             ) : bgAds.length === 0 ? (
               <div className="text-center py-10 text-gray-400 text-sm border-2 border-dashed border-emerald-100 rounded-xl">
-                No background ads yet
+                {t("adminTable.noBackgroundAds")}
               </div>
             ) : (
               bgAds.map((ad) => (

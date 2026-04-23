@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import Image from "next/image";
 import {
   FaTrashAlt,
@@ -23,6 +24,7 @@ import { farmEquipmentSubCategories } from "@/app/(links)/storeFrontLinks/subCat
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 
 export default function TraktorsPage() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<FarmEquipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -153,7 +155,7 @@ export default function TraktorsPage() {
 
           {!loading && (
             <div className="mt-6 w-full">
-              <div className="block md:hidden">
+              <div className="block lg:hidden">
                 <div className="space-y-4 w-full">
                   {filtered.length > 0 ? (
                     filtered.map((item) => (
@@ -189,21 +191,21 @@ export default function TraktorsPage() {
 
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-gray-500">City</span>
+                            <span className="text-gray-500">{t("adminTable.city")}</span>
                             <p className="font-medium truncate">{item.city}</p>
                           </div>
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-gray-500">Status</span>
+                            <span className="text-gray-500">{t("adminTable.status")}</span>
                             <p
                               className={`font-medium truncate ${item.isPaid ? "text-green-600" : "text-red-600"}`}
                             >
-                              {item.isPaid ? "Paid" : "Unpaid"}
+                              {item.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                             </p>
                           </div>
                         </div>
 
                         <div className="mt-3 bg-gray-50 p-3 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Seller</p>
+                          <p className="text-xs text-gray-500 mb-1">{t("adminTable.seller")}</p>
                           <p className="font-medium text-sm truncate">
                             {item.user?.username || "N/A"}
                           </p>
@@ -230,7 +232,7 @@ export default function TraktorsPage() {
                               <FaCheckCircle size={12} />
                             )}
                             <span className="truncate">
-                              {item.isPaid ? "Unpaid" : "Paid"}
+                              {item.isPaid ? t("adminTable.markUnpaid") : t("adminTable.markPaid")}
                             </span>
                           </button>
 
@@ -239,51 +241,33 @@ export default function TraktorsPage() {
                             className="flex-1 py-2 px-2 bg-red-500 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-red-600 transition"
                           >
                             <FaTrashAlt size={12} />
-                            <span className="truncate">Delete</span>
+                            <span className="truncate">{t("adminTable.delete")}</span>
                           </button>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-10 text-gray-500 border border-dashed rounded-lg">
-                      No items found
+                      {t("adminTable.noItems")}
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="hidden md:block w-full">
+              <div className="hidden lg:block w-full">
                 <div className="border border-gray-300 rounded-xl bg-white overflow-hidden">
                   <table className="w-full table-fixed">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">
-                          Image
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">
-                          Title
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
-                          Main Category
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
-                          Category
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
-                          Price
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
-                          City
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">
-                          Seller
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
-                          Paid
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
-                          Actions
-                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">{t("adminTable.image")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">{t("adminTable.title")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.mainCategory")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.category")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.price")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.city")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">{t("adminTable.seller")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.paid")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.actions")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -369,19 +353,13 @@ export default function TraktorsPage() {
                             <td className="border-b p-3">
                               {item.isPaid ? (
                                 <span className="text-green-600 font-semibold flex items-center text-xs">
-                                  <FaCheckCircle
-                                    className="mr-1 flex-shrink-0"
-                                    size={10}
-                                  />
-                                  PAID
+                                  <FaCheckCircle className="mr-1 flex-shrink-0" size={10} />
+                                  {t("adminTable.paid")}
                                 </span>
                               ) : (
                                 <span className="text-red-600 font-semibold flex items-center text-xs">
-                                  <FaTimesCircle
-                                    className="mr-1 flex-shrink-0"
-                                    size={10}
-                                  />
-                                  NOT PAID
+                                  <FaTimesCircle className="mr-1 flex-shrink-0" size={10} />
+                                  {t("adminTable.unpaid")}
                                 </span>
                               )}
                             </td>
@@ -420,11 +398,8 @@ export default function TraktorsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={9}
-                            className="text-center py-10 text-gray-500"
-                          >
-                            No items found
+                          <td colSpan={9} className="text-center py-10 text-gray-500">
+                            {t("adminTable.noItems")}
                           </td>
                         </tr>
                       )}

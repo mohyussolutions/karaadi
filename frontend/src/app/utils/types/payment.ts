@@ -7,23 +7,33 @@ export interface CreatePaymentData {
   itemType?: string;
 }
 
+interface ListingSnippet {
+  title?: string;
+  images?: string[];
+}
+
 export interface Payment {
   id: string;
   _id?: string;
   amount?: number;
   totalAmount?: number;
-  status: "pending" | "completed" | "failed" | "refunded" | "success";
+  status: "pending" | "completed" | "failed" | "refunded" | "success" | "PENDING" | "COMPLETED" | "FAILED";
   userId: string;
   user?: {
+    id?: string;
     username?: string;
     email?: string;
+    phone?: string;
+    profileImage?: string;
   };
   method?: string;
   paymentMethod?: string;
+  payerPhone?: string;
   description?: string;
   transactionId?: string;
   createdAt?: string;
   updatedAt?: string;
+  paidAt?: string;
   boatId?: string;
   carId?: string;
   realEstateId?: string;
@@ -33,6 +43,13 @@ export interface Payment {
   jobId?: string;
   subscriptionId?: string;
   currency?: string;
+  boat?: ListingSnippet;
+  car?: ListingSnippet;
+  realEstate?: ListingSnippet;
+  motorcycle?: ListingSnippet;
+  farmequipment?: ListingSnippet;
+  marketplace?: ListingSnippet;
+  job?: ListingSnippet;
 }
 
 export interface PaginatedPayments {

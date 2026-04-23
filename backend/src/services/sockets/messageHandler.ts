@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
-import { EncryptionController } from "../../controllers/encryptionController/encryptionController.ts";
+
 import prisma from "../../core/utils/db.ts";
+import { EncryptionController } from "src/controllers/encryptionController.ts";
 
 export const messageHandler = (io: Server, socket: Socket, userId: string) => {
   const processedMessageIds = new Set<string>();
@@ -105,7 +106,7 @@ export const messageHandler = (io: Server, socket: Socket, userId: string) => {
 
   socket.on("markAsRead", async (data: { chatId: number }) => {
     try {
-      const chatId = parseInt(data.chatId.toString())
+      const chatId = parseInt(data.chatId.toString());
       await prisma.message.updateMany({
         where: { chatId, receiverId: userId, read: false },
         data: { read: true, readAt: new Date() },

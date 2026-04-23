@@ -37,14 +37,23 @@ export async function getAllPayments(params?: {
   if (params?.paymentMethod)
     url.searchParams.append("paymentMethod", params.paymentMethod);
 
-  const response = await fetch(url.toString(), {
-    headers: headers as HeadersInit,
-    cache: "no-store",
-  });
-  const result = await response.json();
-  return response.ok
-    ? result.data
-    : { items: [], total: 0, page: 1, limit: 10 };
+  try {
+    const response = await fetch(url.toString(), {
+      headers: headers as HeadersInit,
+      cache: "no-store",
+    });
+    const result = await response.json();
+    return response.ok
+      ? {
+          items: result.data?.payments || [],
+          total: result.data?.total || 0,
+          page: result.data?.page || 1,
+          limit: result.data?.limit || 20,
+        }
+      : { items: [], total: 0, page: 1, limit: 20 };
+  } catch {
+    return { items: [], total: 0, page: 1, limit: 20 };
+  }
 }
 
 export async function getPaymentStats(

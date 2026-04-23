@@ -54,4 +54,5 @@ export interface ConversationRowProps {
   isActive: boolean
   currentUserId: string
   onClick: (chatId: number) => void
+  onDelete: (chatId: number) => void
 }

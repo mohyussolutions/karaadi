@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface SecuritySetting {
   id: number;
@@ -55,10 +56,11 @@ const securityData: SecuritySetting[] = [
 ];
 
 export default function Security() {
+  const { t } = useTranslation();
   return (
     <div className="p-6 w-full h-full">
       <h1 className="text-3xl font-bold text-indigo-700 mb-4">
-        Security Settings
+        {t("adminTable.securitySettings")}
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {securityData.map((item) => (
@@ -73,7 +75,7 @@ export default function Security() {
                   item.enabled ? "bg-green-600" : "bg-red-600"
                 }`}
               >
-                {item.enabled ? "Enabled" : "Disabled"}
+                {item.enabled ? t("adminTable.enabled") : t("adminTable.disabled")}
               </span>
             </div>
             <p className="text-gray-600 text-sm">{item.description}</p>

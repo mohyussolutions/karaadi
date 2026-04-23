@@ -31,6 +31,7 @@ export default function UniversalCard(props: Props) {
     isStandard60,
     isPremium90,
     type,
+    sellerName,
   } = data;
 
   const detailRoute = getDetailRoute(data);
@@ -57,14 +58,23 @@ export default function UniversalCard(props: Props) {
       <div className="relative flex flex-col h-full bg-white border border-[#E8E8E8] rounded-xl hover:shadow-md transition-shadow duration-200 overflow-hidden">
         <div className="relative aspect-[4/3] w-full overflow-hidden">
           {showImage ? (
-            <Image
-              src={currentUrl!}
-              alt={title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              onError={handleImgError}
-            />
+            currentUrl!.startsWith("data:") ? (
+              <img
+                src={currentUrl!}
+                alt={title}
+                className="w-full h-full object-cover"
+                onError={handleImgError}
+              />
+            ) : (
+              <Image
+                src={currentUrl!}
+                alt={title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                onError={handleImgError}
+              />
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-3 text-center">
@@ -102,6 +112,11 @@ export default function UniversalCard(props: Props) {
           <h3 className="text-[13px] sm:text-sm font-semibold text-[#1A1A1A] line-clamp-2 min-h-[36px] leading-tight">
             {title}
           </h3>
+          {sellerName && (
+            <p className="text-[11px] text-indigo-600 font-semibold mt-0.5 truncate">
+              {sellerName}
+            </p>
+          )}
           <p className="text-[12px] text-gray-500 mt-1 line-clamp-2 leading-snug">
             {truncateText(description || "")}
           </p>

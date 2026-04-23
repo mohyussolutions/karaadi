@@ -14,6 +14,8 @@ model User {
   lastSeenAt        DateTime?       @updatedAt
   
   agencies          Agency[]        @relation("UserAgencies")
+  ownedBusinesses   Business[]      @relation("BusinessOwner")
+  memberBusinesses  Business[]      @relation("BusinessMembers")
   advertisements    Advertisement[]
   boats             Boat[]          @relation("UserBoats")
   cars              Car[]           @relation("UserCars")

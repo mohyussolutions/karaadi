@@ -2,14 +2,15 @@ import {
   adminAndManager,
   ProtectRoute,
 } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
+
+import express from "express";
 import {
   createAgency,
   deleteAgency,
+  getAgencyStats,
   getAllAgencies,
   updateAgency,
-  getAgencyStats,
-} from "../controllers/categoryController/agencyController.ts";
-import express from "express";
+} from "src/controllers/agencyController.ts";
 
 const agencyRoutes = express.Router();
 

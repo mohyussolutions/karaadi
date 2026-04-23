@@ -24,14 +24,14 @@ import { updateItem } from "@/store/slices/reducers/listingDraftSlice";
 import { getCarFees } from "@/actions/categories/feeAction";
 import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps";
 
-const CAR_CATEGORIES = [
-  { key: "CarsForSaleNestedSub", label: "Cars For Sale" },
-  { key: "LeaseCarsNestedSub", label: "Lease Cars" },
-  { key: "BusSubLinks", label: "Buses" },
-  { key: "TrailerNestedSub", label: "Trailers" },
-  { key: "CarPartsNestedSub", label: "Car Parts" },
-  { key: "TruckNestedSub", label: "Trucks" },
-  { key: "ElectricCarsNestedSub", label: "Electric Cars" },
+const CAR_CATEGORY_KEYS = [
+  "CarsForSaleNestedSub",
+  "LeaseCarsNestedSub",
+  "BusSubLinks",
+  "TrailerNestedSub",
+  "CarPartsNestedSub",
+  "TruckNestedSub",
+  "ElectricCarsNestedSub",
 ];
 
 const CAR_FEE_MAPPING: Record<string, string> = {
@@ -44,9 +44,14 @@ const CAR_FEE_MAPPING: Record<string, string> = {
   ElectricCarsNestedSub: "electricCar",
 };
 
-const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "Electric", "Other"];
-const GEARBOX_OPTIONS = ["Manual", "Automatic"];
-const CONDITION_OPTIONS = ["New", "Used", "Certified Pre-Owned"];
+const FUEL_TYPE_KEYS = ["Petrol", "Diesel", "Hybrid", "Electric", "Other"];
+const GEARBOX_KEYS = ["Manual", "Automatic"];
+const CONDITION_KEYS = ["New", "Used", "CertifiedPreOwned"];
+const CONDITION_VALUES: Record<string, string> = {
+  New: "New",
+  Used: "Used",
+  CertifiedPreOwned: "Certified Pre-Owned",
+};
 
 export default function CreateAdForCarsPage() {
   const router = useRouter();
@@ -58,7 +63,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
   const dispatch = useAppDispatch();
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
-  const savedItem = useAppSelector((state) => state.listingDraft.item);
+  const savedItem = useAppSelector((state) => state.listingDraft.item) ?? {};
 
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -102,7 +107,6 @@ function CarForm({ onNext }: { onNext: () => void }) {
     condition: savedItem.condition || "",
     color: savedItem.color || "",
     doors: savedItem.doors || "",
-    tiktok: savedItem.tiktok || "",
   });
 
   useEffect(() => {
@@ -178,11 +182,11 @@ function CarForm({ onNext }: { onNext: () => void }) {
       images.length === 0;
 
     if (isMissing) {
-      return toast.error(t("createMotorcycle.fillRequired"));
+      return toast.error(t("createCars.fillRequired"));
     }
 
     setIsLoading(true);
-    const toastId = toast.loading(t("createMotorcycle.registering"));
+    const toastId = toast.loading(t("createCars.registering"));
 
     try {
       let finalCity = formData.city;
@@ -224,7 +228,6 @@ function CarForm({ onNext }: { onNext: () => void }) {
         images: imagesBase64,
         isPaid: false,
         feeAmount: fee,
-        tiktok: formData.tiktok,
       };
 
       const result: any = await createCar(
@@ -234,7 +237,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
 
       if (result.success) {
         toast.update(toastId, {
-          render: t("createMotorcycle.successMessage"),
+          render: t("createCars.successMessage"),
           type: "success",
           isLoading: false,
           autoClose: 2000,
@@ -244,7 +247,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
         setTimeout(() => onNext(), 1200);
       } else {
         toast.update(toastId, {
-          render: result.message || t("createMotorcycle.errorMessage"),
+          render: result.message || t("createCars.errorMessage"),
           type: "error",
           isLoading: false,
           autoClose: 3000,
@@ -252,7 +255,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
       }
     } catch {
       toast.update(toastId, {
-        render: t("createMotorcycle.errorMessage"),
+        render: t("createCars.errorMessage"),
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -279,14 +282,14 @@ function CarForm({ onNext }: { onNext: () => void }) {
           <FaCar className="text-4xl text-blue-600" />
         </div>
         <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
-          Create Car Listing
+          {t("createCars.pageTitle")}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Main Category
+            {t("createCars.mainCategoryLabel")}
           </label>
           <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
             <FaCar className="text-blue-500" />
@@ -302,24 +305,20 @@ function CarForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Category
+              {t("createCars.categoryLabel")}
             </label>
             <select
               value={formData.category}
               onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  category: e.target.value,
-                  subCategory: "",
-                })
+                setFormData({ ...formData, category: e.target.value, subCategory: "" })
               }
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
               required
             >
-              <option value="">Select Category</option>
-              {CAR_CATEGORIES.map((cat) => (
-                <option key={cat.key} value={cat.key}>
-                  {cat.label}
+              <option value="">{t("createCars.selectCategory")}</option>
+              {CAR_CATEGORY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`createCars.categories.${key}`, { defaultValue: key })}
                 </option>
               ))}
             </select>
@@ -327,7 +326,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Subcategory
+              {t("createCars.subcategoryLabel")}
             </label>
             <select
               value={formData.subCategory}
@@ -338,7 +337,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
               required
             >
-              <option value="">Select Subcategory</option>
+              <option value="">{t("createCars.selectSubcategory")}</option>
               {getNestedSubcategories().map((sub: any, idx: number) => (
                 <option key={idx} value={sub.labelKey || sub.key || sub}>
                   {t(sub.labelKey || sub.name || sub)}
@@ -350,14 +349,12 @@ function CarForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Title
+            {t("createCars.titleLabel")}
           </label>
           <input
-            placeholder="e.g. Toyota Camry 2022 – Low Mileage"
+            placeholder={t("createCars.titlePlaceholder")}
             value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
             required
           />
@@ -366,56 +363,48 @@ function CarForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Year
+              {t("createCars.yearLabel")}
             </label>
             <input
-              placeholder="e.g. 2022"
+              placeholder={t("createCars.yearPlaceholder")}
               value={formData.year}
-              onChange={(e) =>
-                setFormData({ ...formData, year: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, year: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Make
+              {t("createCars.makeLabel")}
             </label>
             <input
-              placeholder="e.g. Toyota"
+              placeholder={t("createCars.makePlaceholder")}
               value={formData.make}
-              onChange={(e) =>
-                setFormData({ ...formData, make: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, make: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Model
+              {t("createCars.modelLabel")}
             </label>
             <input
-              placeholder="e.g. Camry"
+              placeholder={t("createCars.modelPlaceholder")}
               value={formData.model}
-              onChange={(e) =>
-                setFormData({ ...formData, model: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Trim
+              {t("createCars.trimLabel")}
             </label>
             <input
-              placeholder="e.g. LE"
+              placeholder={t("createCars.trimPlaceholder")}
               value={formData.trim}
-              onChange={(e) =>
-                setFormData({ ...formData, trim: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, trim: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
@@ -424,66 +413,58 @@ function CarForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Mileage (km)
+              {t("createCars.mileageLabel")}
             </label>
             <input
               type="number"
-              placeholder="e.g. 45000"
+              placeholder={t("createCars.mileagePlaceholder")}
               value={formData.mileage}
-              onChange={(e) =>
-                setFormData({ ...formData, mileage: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, mileage: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Fuel Type
+              {t("createCars.fuelTypeLabel")}
             </label>
             <select
               value={formData.fuelType}
-              onChange={(e) =>
-                setFormData({ ...formData, fuelType: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             >
-              <option value="">Select</option>
-              {FUEL_TYPES.map((f) => (
-                <option key={f} value={f}>
-                  {f}
+              <option value="">{t("createCars.selectOption")}</option>
+              {FUEL_TYPE_KEYS.map((k) => (
+                <option key={k} value={k}>
+                  {t(`createCars.fuelTypes.${k}`, { defaultValue: k })}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Gearbox
+              {t("createCars.gearboxLabel")}
             </label>
             <select
               value={formData.gearbox}
-              onChange={(e) =>
-                setFormData({ ...formData, gearbox: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, gearbox: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             >
-              <option value="">Select</option>
-              {GEARBOX_OPTIONS.map((g) => (
-                <option key={g} value={g}>
-                  {g}
+              <option value="">{t("createCars.selectOption")}</option>
+              {GEARBOX_KEYS.map((k) => (
+                <option key={k} value={k}>
+                  {t(`createCars.gearboxOptions.${k}`, { defaultValue: k })}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Engine Size
+              {t("createCars.engineSizeLabel")}
             </label>
             <input
-              placeholder="e.g. 2.5L"
+              placeholder={t("createCars.engineSizePlaceholder")}
               value={formData.engineSize}
-              onChange={(e) =>
-                setFormData({ ...formData, engineSize: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, engineSize: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
@@ -492,48 +473,42 @@ function CarForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Condition
+              {t("createCars.conditionLabel")}
             </label>
             <select
               value={formData.condition}
-              onChange={(e) =>
-                setFormData({ ...formData, condition: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             >
-              <option value="">Select</option>
-              {CONDITION_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">{t("createCars.selectOption")}</option>
+              {CONDITION_KEYS.map((k) => (
+                <option key={k} value={CONDITION_VALUES[k]}>
+                  {t(`createCars.conditionOptions.${k}`, { defaultValue: CONDITION_VALUES[k] })}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Color
+              {t("createCars.colorLabel")}
             </label>
             <input
-              placeholder="e.g. White"
+              placeholder={t("createCars.colorPlaceholder")}
               value={formData.color}
-              onChange={(e) =>
-                setFormData({ ...formData, color: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Doors
+              {t("createCars.doorsLabel")}
             </label>
             <input
               type="number"
-              placeholder="e.g. 4"
+              placeholder={t("createCars.doorsPlaceholder")}
               value={formData.doors}
-              onChange={(e) =>
-                setFormData({ ...formData, doors: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, doors: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
@@ -542,15 +517,13 @@ function CarForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Description
+              {t("createCars.descriptionLabel")}
             </label>
             <textarea
-              placeholder="Describe your car..."
+              placeholder={t("createCars.descriptionPlaceholder")}
               rows={5}
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             />
@@ -558,7 +531,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Region
+              {t("createCars.regionLabel")}
             </label>
             <select
               value={formData.region}
@@ -568,7 +541,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             >
-              <option value="">Select Region</option>
+              <option value="">{t("createCars.selectRegion")}</option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
                   {i18n.language === "so" ? r.so || r.name : r.name}
@@ -580,7 +553,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            City
+            {t("createCars.cityLabel")}
           </label>
           <div className="relative">
             <button
@@ -590,8 +563,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
             >
               {showNewCityInputs
-                ? "Adding city..."
-                : formData.city || "Select City"}
+                ? t("createCars.addingCity")
+                : formData.city || t("createCars.selectCity")}
               <span>▾</span>
             </button>
             {showCityDropdown && (
@@ -618,7 +591,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
                   }}
                   className="w-full text-left p-4 text-blue-600 font-black text-xs"
                 >
-                  + ADD NEW CITY
+                  {t("createCars.addNewCity")}
                 </button>
               </div>
             )}
@@ -627,7 +600,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
 
         {showNewCityInputs && (
           <input
-            placeholder="Enter new city name"
+            placeholder={t("createCars.newCityPlaceholder")}
             value={newCity}
             onChange={(e) => setNewCity(e.target.value)}
             className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
@@ -636,36 +609,18 @@ function CarForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            Price ($)
+            {t("createCars.priceLabel")}
           </label>
           <div className="relative">
             <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
             <input
               type="number"
               value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500"
               required
             />
           </div>
-        </div>
-
-        {/* Social Media Links Section */}
-        <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            TikTok Link (optional)
-          </label>
-          <input
-            type="url"
-            placeholder="https://www.tiktok.com/@karaadi_"
-            value={formData.tiktok}
-            onChange={(e) =>
-              setFormData({ ...formData, tiktok: e.target.value })
-            }
-            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold outline-none focus:border-blue-500"
-          />
         </div>
 
         <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
@@ -673,7 +628,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
             images={images}
             onAdd={addImages}
             onRemove={removeImage}
-            label={t("createMotorcycle.upload")}
+            label={t("createCars.upload")}
           />
         </div>
 
@@ -685,7 +640,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
           {isLoading ? (
             <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" />
           ) : (
-            t("createMotorcycle.submit")
+            t("createCars.submit")
           )}
         </button>
       </form>

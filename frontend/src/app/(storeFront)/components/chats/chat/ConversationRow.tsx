@@ -1,35 +1,39 @@
 "use client"
 
+import { useState } from "react"
+import { FiTrash2 } from "react-icons/fi"
 import type { ConversationRowProps } from "@/app/utils/types/chat.types"
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return ""
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "nå"
+  if (mins < 1) return "now"
   if (mins < 60) return `${mins}m`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}t`
+  if (hrs < 24) return `${hrs}h`
   const days = Math.floor(hrs / 24)
   if (days < 7) return `${days}d`
-  return new Date(dateStr).toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
+  return new Date(dateStr).toLocaleDateString("en-US", { day: "numeric", month: "short" })
 }
 
-export default function ConversationRow({ chatroom, isActive, currentUserId, onClick }: ConversationRowProps) {
+export default function ConversationRow({ chatroom, isActive, currentUserId, onClick, onDelete }: ConversationRowProps) {
   const isSender = chatroom.senderId === currentUserId
   const otherName = isSender ? chatroom.receiverName : chatroom.senderName
   const otherAvatar = isSender ? chatroom.receiverAvatar : chatroom.senderAvatar
   const unread = chatroom.unreadCount || 0
+  const [hovered, setHovered] = useState(false)
 
   return (
-    <button
-      type="button"
-      onClick={() => onClick(chatroom.chatId)}
-      className={`w-full flex items-start gap-3 px-4 py-3.5 text-left transition-colors border-b border-gray-100 relative
+    <div
+      className={`relative flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 transition-colors cursor-pointer
         ${isActive
           ? "bg-[#f0f7ff] border-l-[3px] border-l-[#0063fb]"
           : "hover:bg-gray-50 border-l-[3px] border-l-transparent"
         }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => onClick(chatroom.chatId)}
     >
       {/* Avatar */}
       <div className="flex-shrink-0 relative mt-0.5">
@@ -66,14 +70,26 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
         {chatroom.itemTitle && (
           <p className="text-xs text-[#0063fb] font-medium truncate mb-0.5">
             {chatroom.itemTitle}
-            {chatroom.itemPrice ? ` · ${chatroom.itemPrice.toLocaleString("nb-NO")} kr` : ""}
+            {chatroom.itemPrice ? ` · ${chatroom.itemPrice.toLocaleString("en-US")} kr` : ""}
           </p>
         )}
 
         <p className={`text-xs truncate ${unread > 0 ? "text-gray-800 font-medium" : "text-gray-500"}`}>
-          {chatroom.lastMessage || "Ingen meldinger ennå"}
+          {chatroom.lastMessage || "No messages yet"}
         </p>
       </div>
-    </button>
+
+      {/* Delete button */}
+      {hovered && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(chatroom.chatId) }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+          title="Delete conversation"
+        >
+          <FiTrash2 size={15} />
+        </button>
+      )}
+    </div>
   )
 }

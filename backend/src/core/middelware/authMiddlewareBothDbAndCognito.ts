@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../utils/db.ts";
+import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { AuthRequest, DecodedToken } from "../../types/index.ts";
+
+const AUTH_CACHE_TTL = 120;
 
 const extractToken = (authHeader?: string, cookies?: any): string | null => {
   const fromHeader = authHeader?.startsWith("Bearer ")
@@ -11,19 +14,40 @@ const extractToken = (authHeader?: string, cookies?: any): string | null => {
   return fromHeader || fromCookie || null;
 };
 
-const validateSession = async (userId: string, res: Response) => {
-  const session = await prisma.cookie.findUnique({
-    where: { userId },
-  });
+const getAuthCacheKey = (sub: string) => `auth:session:${sub}`;
 
+const loadUserAndSession = async (sub: string, res: Response) => {
+  const cacheKey = getAuthCacheKey(sub);
+
+  const cached = await cacheManager.get<{ user: any; valid: boolean }>(cacheKey).catch(() => null);
+  if (cached) {
+    if (!cached.valid) {
+      res.clearCookie("idToken");
+      res.clearCookie("token");
+      res.clearCookie("accessToken");
+      return null;
+    }
+    return cached.user;
+  }
+
+  const user = await prisma.user.findUnique({ where: { cognitoId: sub } });
+  if (!user) {
+    await cacheManager.set(cacheKey, { user: null, valid: false }, AUTH_CACHE_TTL).catch(() => {});
+    return null;
+  }
+
+  const session = await prisma.cookie.findUnique({ where: { userId: user.id } });
   if (!session || session.expiresAt < new Date()) {
-    if (session) await prisma.cookie.delete({ where: { id: session.id } });
+    if (session) await prisma.cookie.delete({ where: { id: session.id } }).catch(() => {});
+    await cacheManager.set(cacheKey, { user: null, valid: false }, 30).catch(() => {});
     res.clearCookie("idToken");
     res.clearCookie("token");
     res.clearCookie("accessToken");
-    return false;
+    return null;
   }
-  return true;
+
+  await cacheManager.set(cacheKey, { user, valid: true }, AUTH_CACHE_TTL).catch(() => {});
+  return user;
 };
 
 export const ProtectRoute = async (
@@ -39,13 +63,8 @@ export const ProtectRoute = async (
     if (!decoded?.sub)
       return res.status(401).json({ message: "Invalid token" });
 
-    const user = await prisma.user.findUnique({
-      where: { cognitoId: decoded.sub },
-    });
-    if (!user) return res.status(401).json({ message: "User not found" });
-
-    const isValid = await validateSession(user.id, res);
-    if (!isValid) return res.status(401).json({ message: "Session expired" });
+    const user = await loadUserAndSession(decoded.sub, res);
+    if (!user) return res.status(401).json({ message: "Session expired or not found" });
 
     const tokenIsAdmin = decoded["custom:isAdmin"] === "true";
     const tokenIsManager = decoded["custom:isManager"] === "true";
@@ -65,7 +84,7 @@ export const ProtectRoute = async (
     };
 
     next();
-  } catch (err) {
+  } catch {
     res.clearCookie("idToken");
     res.clearCookie("token");
     res.clearCookie("accessToken");
@@ -83,17 +102,12 @@ export const adminAndManager = (
       res.status(401).json({ message: "Not authorized" });
       return;
     }
-
-    const isAdmin = req.user.isAdmin === true;
-    const isManager = req.user.isManager === true;
-
-    if (!isAdmin && !isManager) {
+    if (!req.user.isAdmin && !req.user.isManager) {
       res.status(403).json({ message: "Forbidden" });
       return;
     }
-
     next();
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -101,9 +115,7 @@ export const adminAndManager = (
 export const deleteExpiredTokens = async () => {
   try {
     const now = new Date();
-    await prisma.cookie.deleteMany({
-      where: { expiresAt: { lte: now } },
-    });
+    await prisma.cookie.deleteMany({ where: { expiresAt: { lte: now } } });
   } catch (e) {
     console.error(e);
   }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   MdInbox,
   MdReply,
@@ -50,6 +51,7 @@ export type AdminUser = {
 type Stats = { total: number; today: number };
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user: admin } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -184,13 +186,13 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2">
             <MdAssessment className="text-blue-600" size={20} />
             <span className="text-sm font-bold text-gray-700 uppercase">
-              Total: {stats.total}
+              {t("adminTable.total")}: {stats.total}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <MdToday className="text-orange-600" size={20} />
             <span className="text-sm font-bold text-gray-700 uppercase">
-              Today: {stats.today}
+              {t("adminTable.today")}: {stats.today}
             </span>
           </div>
         </div>
@@ -208,13 +210,13 @@ export default function AdminDashboard() {
           <div className="p-4 border-b bg-gray-900 text-white flex items-center gap-2 flex-shrink-0">
             <MdInbox />
             <span className="text-xs font-black uppercase tracking-widest">
-              Inbox
+              {t("adminTable.inbox")}
             </span>
           </div>
           <div className="flex-1 overflow-y-auto">
             {tickets.length === 0 ? (
               <div className="p-8 text-center text-gray-400 font-medium">
-                No tickets found
+                {t("adminTable.noTickets")}
               </div>
             ) : (
               tickets.map((t) => (
@@ -287,7 +289,7 @@ export default function AdminDashboard() {
                       onClick={() => handleStatusUpdate("DONE")}
                       className="bg-green-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase"
                     >
-                      Resolve
+                      {t("adminTable.resolve")}
                     </button>
                   )}
                 </div>
@@ -327,7 +329,7 @@ export default function AdminDashboard() {
               <div className="p-4 border-t flex gap-3 items-center bg-white flex-shrink-0">
                 <input
                   className="flex-1 p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  placeholder="Reply to client..."
+                  placeholder={t("adminTable.replyPlaceholder")}
                   value={replyBody}
                   onChange={(e) => setReplyBody(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleReply()}
@@ -345,7 +347,7 @@ export default function AdminDashboard() {
             <div className="m-auto text-gray-300 flex flex-col items-center">
               <MdInbox size={64} />
               <span className="font-black uppercase text-xs tracking-widest mt-4">
-                Select a conversation
+                {t("adminTable.selectConversation")}
               </span>
             </div>
           )}

@@ -11,11 +11,14 @@ import {
   Cell,
   LabelList,
 } from "recharts";
-import type { ChartData as ActionChartData } from "@/actions/categories/RegionsAndCityCharts";
+interface ChartData {
+  name: string;
+  buyers: number;
+}
 
 interface RegionsAndCityChartsProps {
-  regionData: ActionChartData[];
-  cityData: ActionChartData[];
+  regionData: ChartData[];
+  cityData: ChartData[];
 }
 
 function VerticalBarCard({
@@ -24,7 +27,7 @@ function VerticalBarCard({
   color,
 }: {
   title: string;
-  data: ActionChartData[];
+  data: ChartData[];
   color: string;
 }) {
   const sorted = [...data]
@@ -34,12 +37,12 @@ function VerticalBarCard({
 
   if (sorted.length === 0) {
     return (
-      <div className="flex flex-col p-6 h-full">
+      <div className="flex flex-col p-3 sm:p-6 h-full">
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
           {title}
         </p>
         <p className="text-xs text-slate-300 mb-4">All time</p>
-        <div className="flex flex-1 items-center justify-center min-h-[300px] rounded-xl bg-slate-50 border border-dashed border-slate-200">
+        <div className="flex flex-1 items-center justify-center min-h-[200px] sm:min-h-[300px] rounded-xl bg-slate-50 border border-dashed border-slate-200">
           <p className="text-sm text-slate-400">No data available yet</p>
         </div>
       </div>
@@ -47,18 +50,18 @@ function VerticalBarCard({
   }
 
   return (
-    <div className="p-6 w-full">
+    <div className="p-3 sm:p-6 w-full">
       <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
         {title}
       </p>
-      <p className="text-xs text-slate-300 mb-5">All time</p>
+      <p className="text-xs text-slate-300 mb-3 sm:mb-5">All time</p>
       <ResponsiveContainer
         width="100%"
-        height={Math.max(320, sorted.length * 28)}
+        height={Math.max(280, sorted.length * 26)}
       >
         <BarChart
           data={sorted}
-          margin={{ top: 16, right: 8, bottom: 64, left: 8 }}
+          margin={{ top: 12, right: 4, bottom: 48, left: 0 }}
         >
           <XAxis
             dataKey="name"
@@ -72,8 +75,9 @@ function VerticalBarCard({
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "#94a3b8", fontSize: 11 }}
+            tick={{ fill: "#94a3b8", fontSize: 10 }}
             tickFormatter={(v) => Math.round(v).toLocaleString("en-US")}
+            width={32}
           />
           <Tooltip
             cursor={{ fill: "rgba(0,0,0,0.03)" }}
@@ -120,7 +124,7 @@ export const RegionsAndCityCharts = ({
   regionData,
   cityData,
 }: RegionsAndCityChartsProps) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-2 sm:mt-6">
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       <VerticalBarCard
         title="Regions with Most Listings"

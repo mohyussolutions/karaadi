@@ -2,11 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import {
-  getAllReports,
-  getReportStats,
-  getTotalReports,
+  getReportsSummary,
   updateReportStatus,
   deleteReport,
 } from "@/actions/categories/reportAction";
@@ -67,6 +66,7 @@ interface ReportParams {
 }
 
 export default function AdminReportsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -87,10 +87,35 @@ export default function AdminReportsPage() {
   const [showModal, setShowModal] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  const fetchSummary = async () => {
+    const params: ReportParams = {
+      page,
+      limit: 10,
+      status: filters.status || undefined,
+      itemType: filters.itemType || undefined,
+      search: filters.search || undefined,
+    };
+    if (filters.fromDate) params.fromDate = filters.fromDate;
+    if (filters.toDate) params.toDate = filters.toDate;
+
+    try {
+      const result = await getReportsSummary(params);
+      if (result.success) {
+        setReports(result.data.reports);
+        setTotalPages(result.data.pagination.pages);
+        setTotalReports(result.data.stats?.total ?? 0);
+        setStats(result.data.stats);
+        groupReportsByDay(result.data.reports);
+      }
+    } catch (error) {
+      console.error("Failed to fetch reports summary:", error);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
-        await Promise.all([fetchReports(), fetchStats(), fetchTotalReports()]);
+        await fetchSummary();
       } catch {
         router.back();
       } finally {
@@ -98,51 +123,6 @@ export default function AdminReportsPage() {
       }
     })();
   }, [page, filters, router]);
-
-  const fetchReports = async () => {
-    try {
-      const params: ReportParams = {
-        page,
-        limit: 10,
-        status: filters.status || undefined,
-        itemType: filters.itemType || undefined,
-        search: filters.search || undefined,
-      };
-
-      if (filters.fromDate) params.fromDate = filters.fromDate;
-      if (filters.toDate) params.toDate = filters.toDate;
-
-      const result = await getAllReports(params);
-
-      if (result.success) {
-        setReports(result.data.reports);
-        setTotalPages(result.data.pagination.pages);
-        groupReportsByDay(result.data.reports);
-      }
-    } catch (error) {
-      console.error("Failed to fetch reports:", error);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const result = await getReportStats();
-      if (result.success) {
-        setStats(result.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
-    }
-  };
-
-  const fetchTotalReports = async () => {
-    try {
-      const result = await getTotalReports();
-      setTotalReports(result.data);
-    } catch (error) {
-      console.error("Failed to fetch total reports:", error);
-    }
-  };
 
   const groupReportsByDay = (reportsList: Report[]) => {
     const grouped: { [key: string]: Report[] } = {};
@@ -170,8 +150,7 @@ export default function AdminReportsPage() {
     try {
       const result = await updateReportStatus(id, { status: newStatus });
       if (result.success) {
-        fetchReports();
-        fetchStats();
+        fetchSummary();
       }
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -183,9 +162,7 @@ export default function AdminReportsPage() {
       try {
         const result = await deleteReport(id);
         if (result.success) {
-          fetchReports();
-          fetchStats();
-          fetchTotalReports();
+          fetchSummary();
         }
       } catch (error) {
         console.error("Failed to delete report:", error);
@@ -254,16 +231,16 @@ export default function AdminReportsPage() {
   }
 
   return (
-    <div className="w-screen min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="w-full min-h-screen bg-gray-50">
       <div className="w-full px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8 py-4 sm:py-5 md:py-6 lg:py-7 xl:py-8">
         <div className="w-full">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
             <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight truncate">
-                Reports Management
+                {t("adminTable.reportsManagement")}
               </h1>
               <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-                Total Reports:{" "}
+                {t("adminTable.totalReportsLabel")}:{" "}
                 <span className="text-blue-600 font-bold">{totalReports}</span>
               </p>
             </div>
@@ -271,7 +248,7 @@ export default function AdminReportsPage() {
               onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
               className="sm:hidden flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg w-full"
             >
-              <span>Filters</span>
+              <span>{t("adminTable.filters")}</span>
             </button>
           </div>
 
@@ -489,7 +466,7 @@ export default function AdminReportsPage() {
                   onClick={() => setMobileFiltersOpen(false)}
                   className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-bold"
                 >
-                  Apply Filters
+                  {t("adminTable.applyFilters")}
                 </button>
               </div>
             </div>
@@ -498,7 +475,7 @@ export default function AdminReportsPage() {
           {dailyReports.length > 0 && (
             <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
               <h3 className="text-base sm:text-lg font-black text-gray-900 mb-3 sm:mb-4">
-                Reports by Day
+                {t("adminTable.reportsByDay")}
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
                 {dailyReports.slice(0, 7).map((day) => (
@@ -530,28 +507,28 @@ export default function AdminReportsPage() {
             </div>
           )}
 
-          <div className="hidden md:block bg-white rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-5 lg:px-6 text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Reporter
+                      {t("adminTable.reporter")}
                     </th>
                     <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-5 lg:px-6 text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Reason
+                      {t("adminTable.reason")}
                     </th>
                     <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-5 lg:px-6 text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Item Type
+                      {t("adminTable.itemType")}
                     </th>
                     <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-5 lg:px-6 text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Status
+                      {t("adminTable.status")}
                     </th>
                     <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-5 lg:px-6 text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Date
+                      {t("adminTable.date")}
                     </th>
                     <th className="text-left py-3 sm:py-4 px-3 sm:px-4 md:px-5 lg:px-6 text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Actions
+                      {t("adminTable.actions")}
                     </th>
                   </tr>
                 </thead>
@@ -644,13 +621,13 @@ export default function AdminReportsPage() {
                               onClick={() => viewReportDetails(report)}
                               className="px-2 sm:px-3 py-1 bg-blue-500 text-white text-[8px] sm:text-[10px] font-bold rounded-lg hover:bg-blue-600"
                             >
-                              View
+                              {t("adminTable.viewDetails")}
                             </button>
                             <button
                               onClick={() => handleDelete(report.id)}
                               className="px-2 sm:px-3 py-1 bg-red-500 text-white text-[8px] sm:text-[10px] font-bold rounded-lg hover:bg-red-600"
                             >
-                              Delete
+                              {t("adminTable.delete")}
                             </button>
                           </div>
                         </td>
@@ -662,7 +639,7 @@ export default function AdminReportsPage() {
             </div>
           </div>
 
-          <div className="md:hidden space-y-3">
+          <div className="block lg:hidden space-y-3">
             {reports.length === 0 ? (
               <div className="bg-white rounded-xl p-8 text-center text-gray-400 font-medium text-sm">
                 No reports found
@@ -743,13 +720,13 @@ export default function AdminReportsPage() {
                       onClick={() => viewReportDetails(report)}
                       className="flex-1 py-2 bg-blue-500 text-white text-xs font-bold rounded-lg hover:bg-blue-600"
                     >
-                      View Details
+                      {t("adminTable.viewDetails")}
                     </button>
                     <button
                       onClick={() => handleDelete(report.id)}
                       className="flex-1 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600"
                     >
-                      Delete
+                      {t("adminTable.delete")}
                     </button>
                   </div>
                 </div>
@@ -764,17 +741,17 @@ export default function AdminReportsPage() {
                 disabled={page === 1}
                 className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-lg font-bold text-xs sm:text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                {t("adminTable.previous")}
               </button>
               <span className="text-xs sm:text-sm text-gray-500 font-medium">
-                Page {page} of {totalPages}
+                {t("adminTable.page")} {page} of {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-lg font-bold text-xs sm:text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                {t("adminTable.next")}
               </button>
             </div>
           )}
@@ -783,7 +760,7 @@ export default function AdminReportsPage() {
             <div className="mt-5 sm:mt-6 md:mt-7 lg:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
               <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100">
                 <h3 className="text-base sm:text-lg font-black text-gray-900 mb-3 sm:mb-4">
-                  Top Report Reasons
+                  {t("adminTable.topReasons")}
                 </h3>
                 <div className="space-y-2 sm:space-y-3">
                   {stats.topReasons.map((item) => (
@@ -804,7 +781,7 @@ export default function AdminReportsPage() {
 
               <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100">
                 <h3 className="text-base sm:text-lg font-black text-gray-900 mb-3 sm:mb-4">
-                  Reports by Type
+                  {t("adminTable.reportsByType")}
                 </h3>
                 <div className="space-y-2 sm:space-y-3">
                   {stats.byItemType.map((item) => (
@@ -833,7 +810,7 @@ export default function AdminReportsPage() {
             <div className="p-4 sm:p-5 md:p-6 lg:p-8">
               <div className="flex justify-between items-center mb-4 sm:mb-5 md:mb-6">
                 <h2 className="text-lg sm:text-xl md:text-2xl font-black text-gray-900">
-                  Report Details
+                  {t("adminTable.viewDetails")}
                 </h2>
                 <button
                   onClick={() => setShowModal(false)}
@@ -999,7 +976,7 @@ export default function AdminReportsPage() {
                     onClick={() => setShowModal(false)}
                     className="w-full sm:flex-1 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 border border-gray-200 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm text-gray-500 hover:text-gray-900"
                   >
-                    Close
+                    {t("adminTable.cancel")}
                   </button>
                   <button
                     onClick={() => {
@@ -1008,7 +985,7 @@ export default function AdminReportsPage() {
                     }}
                     className="w-full sm:flex-1 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 bg-red-500 text-white font-bold rounded-lg sm:rounded-xl hover:bg-red-600 text-xs sm:text-sm"
                   >
-                    Delete Report
+                    {t("adminTable.deleteReport")}
                   </button>
                 </div>
               </div>

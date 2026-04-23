@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, useCallback, Suspense } from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import Image from "next/image";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import { ImageControls } from "@/app/ui/invoices/ImageControls";
+import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { useAuth } from "@/context/AuthContext";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { getCarById } from "@/actions/categories/carActions";
@@ -25,48 +26,67 @@ interface VehicleItem {
   description: string;
   price: number | string;
   images: string[];
+  mainCategory?: string;
+  category?: string[];
+  subcategory?: string[];
   region?: string;
   city?: string;
   user?: any;
   userId?: string;
   maGaday?: boolean;
   make?: string;
+  brand?: string;
   model?: string;
+  modelName?: string;
+  vehicleModel?: string;
+  boatModel?: string;
+  farmequipmentModel?: string;
+  trim?: string;
   year?: number | string;
   mileage?: number | string;
   fuelType?: string;
   transmission?: string;
+  gearbox?: string;
+  engineSize?: string;
+  engineCc?: string;
   condition?: string;
   color?: string;
+  doors?: number | string;
+  vehicleKind?: string;
+  type?: string;
   boatType?: string;
   length?: number | string;
   hullMaterial?: string;
   engineHours?: number | string;
-  engineCC?: number | string;
   bikeType?: string;
   equipmentType?: string;
-  brand?: string;
   horsepower?: number | string;
+  enginePower?: string;
   hoursUsed?: number | string;
+  hours?: number | string;
+  attachmentsIncluded?: boolean;
 }
 
-const VEHICLE_CONFIG: Record<VehicleType, {
-  label: string;
-  itemModel: string;
-  fetchFn: (id: string) => Promise<any>;
-  fields: { key: keyof VehicleItem; label: string; format?: (v: any) => string }[];
-}> = {
+type FieldDef = { key: keyof VehicleItem; label: string; format?: (v: any) => string };
+
+const VEHICLE_CONFIG: Record<VehicleType, { label: string; itemModel: string; fetchFn: (id: string) => Promise<any>; fields: FieldDef[] }> = {
   car: {
     label: "Car",
     itemModel: "Car",
     fetchFn: getCarById,
     fields: [
       { key: "make", label: "Make" },
+      { key: "brand", label: "Brand" },
       { key: "model", label: "Model" },
+      { key: "vehicleModel", label: "Vehicle Model" },
+      { key: "trim", label: "Trim" },
       { key: "year", label: "Year" },
       { key: "mileage", label: "Mileage", format: (v) => `${Number(v).toLocaleString()} km` },
       { key: "fuelType", label: "Fuel Type" },
       { key: "transmission", label: "Transmission" },
+      { key: "gearbox", label: "Gearbox" },
+      { key: "engineSize", label: "Engine Size" },
+      { key: "doors", label: "Doors" },
       { key: "condition", label: "Condition" },
       { key: "color", label: "Color" },
     ],
@@ -76,14 +96,15 @@ const VEHICLE_CONFIG: Record<VehicleType, {
     itemModel: "Boat",
     fetchFn: getBoatById,
     fields: [
-      { key: "make", label: "Make" },
-      { key: "model", label: "Model" },
-      { key: "year", label: "Year" },
-      { key: "boatType", label: "Boat Type" },
+      { key: "type", label: "Boat Type" },
+      { key: "boatModel", label: "Model" },
+      { key: "transmission", label: "Transmission" },
+      { key: "color", label: "Color" },
+      { key: "condition", label: "Condition" },
       { key: "length", label: "Length", format: (v) => `${v} ft` },
       { key: "hullMaterial", label: "Hull Material" },
       { key: "engineHours", label: "Engine Hours", format: (v) => `${Number(v).toLocaleString()} hrs` },
-      { key: "condition", label: "Condition" },
+      { key: "year", label: "Year" },
     ],
   },
   motorcycle: {
@@ -93,10 +114,15 @@ const VEHICLE_CONFIG: Record<VehicleType, {
     fields: [
       { key: "make", label: "Make" },
       { key: "model", label: "Model" },
+      { key: "modelName", label: "Model Name" },
+      { key: "type", label: "Type" },
       { key: "year", label: "Year" },
-      { key: "engineCC", label: "Engine", format: (v) => `${v} cc` },
-      { key: "bikeType", label: "Type" },
+      { key: "engineSize", label: "Engine Size" },
+      { key: "engineCc", label: "Engine CC" },
       { key: "mileage", label: "Mileage", format: (v) => `${Number(v).toLocaleString()} km` },
+      { key: "fuelType", label: "Fuel Type" },
+      { key: "transmission", label: "Transmission" },
+      { key: "gearbox", label: "Gearbox" },
       { key: "color", label: "Color" },
       { key: "condition", label: "Condition" },
     ],
@@ -106,28 +132,46 @@ const VEHICLE_CONFIG: Record<VehicleType, {
     itemModel: "FarmEquipment",
     fetchFn: getFarmEquipmentById,
     fields: [
+      { key: "make", label: "Make" },
       { key: "brand", label: "Brand" },
-      { key: "model", label: "Model" },
-      { key: "year", label: "Year" },
+      { key: "farmequipmentModel", label: "Model" },
+      { key: "type", label: "Type" },
       { key: "equipmentType", label: "Equipment Type" },
-      { key: "horsepower", label: "Horsepower", format: (v) => `${v} HP` },
+      { key: "year", label: "Year" },
+      { key: "enginePower", label: "Engine Power" },
+      { key: "fuelType", label: "Fuel Type" },
       { key: "hoursUsed", label: "Hours Used", format: (v) => `${Number(v).toLocaleString()} hrs` },
+      { key: "hours", label: "Hours", format: (v) => `${Number(v).toLocaleString()} hrs` },
       { key: "condition", label: "Condition" },
-      { key: "color", label: "Color" },
+      { key: "attachmentsIncluded", label: "Attachments", format: (v) => (v ? "Yes" : "No") },
     ],
   },
 };
 
+const ALL_TYPES: VehicleType[] = ["car", "motorcycle", "boat", "farmequipment"];
+
 const isValidImageUrl = (url: any): url is string =>
   typeof url === "string" && (url.startsWith("http") || url.startsWith("/") || url.startsWith("data:image") || url.startsWith("blob:"));
 
-export default function VehicleDetails() {
+const normalise = (data: any, resolvedType: VehicleType): VehicleItem => ({
+  ...data,
+  id: typeof data._id === "string" ? data._id : typeof data.id === "string" ? data.id : "",
+  title: data.title ?? "",
+  description: data.description ?? "",
+  price: data.price ?? "",
+  images: data.images ?? [],
+  vehicleKind: resolvedType,
+});
+
+function VehicleDetailsContent() {
   const router = useRouter();
   const pathname = usePathname();
-  const { type, id } = useParams<{ type: string; id: string }>();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
 
   const [vehicle, setVehicle] = useState<VehicleItem | null>(null);
+  const [vehicleType, setVehicleType] = useState<VehicleType>("car");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -136,30 +180,40 @@ export default function VehicleDetails() {
   const [showPhone, setShowPhone] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
-  const vehicleType = (type?.toLowerCase() as VehicleType) || "car";
-  const config = VEHICLE_CONFIG[vehicleType] ?? VEHICLE_CONFIG.car;
+  useEffect(() => {
+    router.prefetch("/messages");
+  }, [router]);
 
   useEffect(() => {
     if (!id) { setIsLoading(false); return; }
-    let mounted = true;
-    config.fetchFn(id)
-      .then((data) => {
-        if (mounted && data) {
-          setVehicle({
-            ...data,
-            id: typeof data._id === "string" ? data._id : typeof data.id === "string" ? data.id : "",
-            title: data.title ?? "",
-            description: data.description ?? "",
-            price: data.price ?? "",
-            images: data.images ?? [],
-          });
-        }
-      })
-      .catch(() => {})
-      .finally(() => { if (mounted) setIsLoading(false); });
-    return () => { mounted = false; };
-  }, [id, vehicleType]);
+    let cancelled = false;
 
+    const typeHint = (searchParams.get("type") as VehicleType) || null;
+
+    const tryFetch = async () => {
+      const order: VehicleType[] = typeHint
+        ? [typeHint, ...ALL_TYPES.filter((t) => t !== typeHint)]
+        : ALL_TYPES;
+
+      for (const t of order) {
+        try {
+          const data = await VEHICLE_CONFIG[t].fetchFn(id);
+          if (data && !cancelled) {
+            setVehicle(normalise(data, t));
+            setVehicleType(t);
+            return;
+          }
+        } catch {
+          continue;
+        }
+      }
+    };
+
+    tryFetch().finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, searchParams]);
+
+  const config = VEHICLE_CONFIG[vehicleType];
   const images = useMemo(() => (vehicle?.images ?? []).filter(isValidImageUrl), [vehicle?.images]);
 
   const itemUser = useMemo(() => {
@@ -171,13 +225,12 @@ export default function VehicleDetails() {
     return { id: String(vehicle.userId || ""), username: "Seller", profileImage: null, phone: null };
   }, [vehicle]);
 
-  const isOwnItem = !!itemUser && !!user && String(itemUser.id) === String(user._id || user.id);
+  const sellerId = itemUser?.id || "";
+  const buyerId = String(user?._id || user?.id || "");
+  const isOwnItem = !!sellerId && !!buyerId && sellerId === buyerId;
 
   const handleSendMessage = useCallback(() => {
-    if (!user) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-      return;
-    }
+    if (!user) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
     const receiverId = itemUser?.id || vehicle?.userId;
     const itemId = vehicle?.id;
     if (!receiverId || !itemId || vehicle?.maGaday) return;
@@ -186,8 +239,7 @@ export default function VehicleDetails() {
   }, [user, itemUser, vehicle, router, pathname, config.itemModel]);
 
   const handleModalConfirm = useCallback(async () => {
-    if (!user) { router.push("/login"); return; }
-    if (!vehicle) return;
+    if (!user || !vehicle) return;
     try {
       const response: any = await addToFavorite({
         title: vehicle.title,
@@ -199,155 +251,130 @@ export default function VehicleDetails() {
       });
       setShowModal(false);
       if (!response?.error) router.push("/mine/favorites");
-    } catch {
-      setShowModal(false);
-    }
+    } catch { setShowModal(false); }
   }, [user, vehicle, images, router, config.itemModel]);
 
-  const handlePrevImage = useCallback(() => {
-    setSelectedImageIndex((p) => (p === 0 ? images.length - 1 : p - 1));
-  }, [images.length]);
+  const handlePrevImage = useCallback(() => setSelectedImageIndex((p) => (p === 0 ? images.length - 1 : p - 1)), [images.length]);
+  const handleNextImage = useCallback(() => setSelectedImageIndex((p) => (p === images.length - 1 ? 0 : p + 1)), [images.length]);
 
-  const handleNextImage = useCallback(() => {
-    setSelectedImageIndex((p) => (p === images.length - 1 ? 0 : p + 1));
-  }, [images.length]);
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loading />
+    </div>
+  );
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-7xl px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start animate-pulse">
-            <div className="space-y-6">
-              <div className="w-full bg-gray-200 rounded-2xl h-[600px] md:h-[700px]" />
-              <div className="flex gap-3 py-2">
-                {[0, 1, 2, 3].map((i) => <div key={i} className="min-w-[100px] h-24 bg-gray-200 rounded-xl" />)}
-              </div>
-            </div>
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <div className="w-24 h-8 bg-gray-200 rounded" />
-                <div className="w-2/3 h-10 bg-gray-200 rounded" />
-                <div className="w-1/3 h-8 bg-gray-200 rounded" />
-              </div>
-              <div className="bg-gray-100 rounded-2xl h-36" />
-              <div className="bg-gray-100 rounded-2xl h-40" />
-              <div className="space-y-4">
-                <div className="w-32 h-6 bg-gray-200 rounded" />
-                <div className="h-20 bg-gray-100 rounded" />
-              </div>
-              <div className="h-12 bg-gray-100 rounded" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!vehicle) {
-    return <div className="p-8 text-center text-red-600 font-bold">{config.label} listing not found.</div>;
-  }
+  if (!vehicle) return (
+    <div className="p-8 text-center text-red-600 font-bold">Listing not found.</div>
+  );
 
   const currentImage = images[selectedImageIndex];
   const description = vehicle.description || "";
   const shouldTruncate = description.length > 300;
   const sellerInitial = (itemUser?.username || "S").charAt(0).toUpperCase();
+  const category = vehicle.category?.[0] ?? "";
+  const subcategory = vehicle.subcategory?.[0] ?? "";
 
   return (
-    <div className="my-12 px-6 min-h-screen max-w-7xl mx-auto pb-24 md:pb-0">
-      <div className="mb-6 font-mono text-blue-600 text-sm h-5">
-        <p>{vehicle.region}, {vehicle.city}</p>
+    <div className="my-12 px-4 md:px-6 min-h-screen max-w-7xl mx-auto pb-24 md:pb-0">
+      <div className="mb-5 font-mono text-sm flex items-center gap-1 flex-wrap text-gray-400">
+        <span className="text-blue-600 font-bold capitalize">{config.label}</span>
+        {category && <><span>/</span><span className="capitalize">{category}</span></>}
+        {subcategory && <><span>/</span><span className="capitalize">{subcategory}</span></>}
+        {vehicle.region && <><span>·</span><span>{vehicle.region}</span></>}
+        {vehicle.city && <><span>/</span><span>{vehicle.city}</span></>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        <div className="space-y-6">
-          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[600px] md:h-[700px]">
-            {currentImage && (
-              <Image
-                src={currentImage}
-                alt={vehicle.title || "Vehicle image"}
-                fill
-                className={`object-cover transition-opacity duration-300 ${vehicle.maGaday ? "opacity-70" : "opacity-100"}`}
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-                placeholder="blur"
-                blurDataURL="/placeholder.png"
-              />
+        <div className="space-y-4">
+          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
+            {currentImage ? (
+              <>
+                <Image
+                  src={currentImage}
+                  alt={vehicle.title}
+                  fill
+                  className={`object-cover transition-opacity duration-300 ${vehicle.maGaday ? "opacity-70" : "opacity-100"}`}
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+                <ImageControls
+                  onHeartClick={() => user ? setShowModal(true) : router.push("/login")}
+                  onZoomClick={() => {}}
+                />
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-200 text-6xl">🚗</div>
             )}
-            <ImageControls
-              onHeartClick={() => user ? setShowModal(true) : router.push("/login")}
-              onZoomClick={() => {}}
-            />
             {images.length > 1 && (
               <>
-                <button onClick={handlePrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10" aria-label="Previous image">
-                  <IoIosArrowBack className="w-6 h-6 text-white" />
+                <button onClick={handlePrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10">
+                  <IoIosArrowBack className="w-5 h-5 text-white" />
                 </button>
-                <button onClick={handleNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10" aria-label="Next image">
-                  <IoIosArrowForward className="w-6 h-6 text-white" />
+                <button onClick={handleNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10">
+                  <IoIosArrowForward className="w-5 h-5 text-white" />
                 </button>
               </>
             )}
           </div>
 
           {images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto py-2 scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto py-1 scrollbar-hide">
               {images.map((thumb, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImageIndex(i)}
-                  className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all flex-shrink-0 ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-transparent opacity-70"}`}
-                  aria-label={`Thumbnail ${i + 1}`}
-                >
-                  <Image src={thumb} alt="" fill className="object-cover" loading="lazy" />
+                <button key={i} onClick={() => setSelectedImageIndex(i)}
+                  className={`min-w-[90px] h-20 border-2 rounded-xl overflow-hidden relative transition-all flex-shrink-0 ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-gray-100 opacity-70"}`}>
+                  <Image src={thumb} alt="" fill className="object-cover" sizes="90px" loading="lazy" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <div className="space-y-8">
-          <div className="space-y-3">
+        <div className="space-y-7">
+          <div className="space-y-2">
             <GoBackBtn />
-            <h1 className="text-4xl font-extrabold text-gray-900 leading-tight">{vehicle.title}</h1>
+            <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">{vehicle.title}</h1>
             <p className="text-3xl font-bold text-blue-700">${Number(vehicle.price).toLocaleString()}</p>
+            {(vehicle.region || vehicle.city) && (
+              <p className="text-sm text-gray-500">📍 {vehicle.region}{vehicle.city ? `, ${vehicle.city}` : ""}</p>
+            )}
           </div>
 
-          {!isOwnItem && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {itemUser?.profileImage && !avatarError ? (
-                    <img src={itemUser.profileImage} alt={itemUser.username || "Seller"} className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
-                  ) : (
-                    <span className="text-white font-bold text-lg leading-none">{sellerInitial}</span>
-                  )}
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-base leading-tight">{itemUser?.username || "Seller"}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Active seller</p>
-                </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {itemUser?.profileImage && !avatarError ? (
+                  <img src={itemUser.profileImage} alt={itemUser.username || "Seller"} className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
+                ) : (
+                  <span className="text-white font-bold text-lg leading-none">{sellerInitial}</span>
+                )}
               </div>
-
-              <button
-                onClick={handleSendMessage}
-                disabled={vehicle.maGaday || messagingLoading}
-                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all active:scale-[0.99] ${vehicle.maGaday ? "bg-gray-100 text-gray-400 cursor-not-allowed" : messagingLoading ? "bg-blue-400 text-white cursor-wait" : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-100"}`}
-              >
-                <MessageSquare size={17} />
-                {vehicle.maGaday ? "Item sold" : messagingLoading ? "Opening…" : "Send Message"}
-              </button>
-
-              {itemUser?.phone && (
-                <button
-                  onClick={() => setShowPhone((p) => !p)}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.99]"
-                >
-                  <Phone size={15} />
-                  {showPhone ? itemUser.phone : "Show phone number"}
-                </button>
-              )}
+              <div>
+                <p className="font-bold text-gray-900 text-base leading-tight">{itemUser?.username || "Seller"}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Active seller</p>
+              </div>
             </div>
-          )}
+
+            <button
+              onClick={handleSendMessage}
+              disabled={isOwnItem || !!vehicle.maGaday || messagingLoading}
+              className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all active:scale-[0.99] ${
+                isOwnItem || vehicle.maGaday ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : messagingLoading ? "bg-blue-400 text-white cursor-wait"
+                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-100"
+              }`}
+            >
+              <MessageSquare size={17} />
+              {vehicle.maGaday ? "Item sold" : messagingLoading ? "Opening…" : "Send Message"}
+            </button>
+
+            {itemUser?.phone && (
+              <button onClick={() => setShowPhone((p) => !p)}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.99]">
+                <Phone size={15} />
+                {showPhone ? itemUser.phone : "Show phone number"}
+              </button>
+            )}
+          </div>
 
           {vehicle.maGaday && (
             <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm uppercase tracking-widest">
@@ -355,66 +382,70 @@ export default function VehicleDetails() {
             </div>
           )}
 
-          <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-bold uppercase mb-4 border-b pb-2">{config.label} Details</h3>
-            <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-lg">
+          <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-5 border-b pb-3">
+              {config.label} Details
+            </h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
               {config.fields.map(({ key, label, format }) => {
                 const value = vehicle[key];
                 if (value === undefined || value === null || value === "") return null;
                 return (
                   <div key={key}>
-                    <span className="text-gray-400 font-bold uppercase text-xs block">{label}</span>
-                    <span className="font-bold capitalize">{format ? format(value) : String(value)}</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase block">{label}</span>
+                    <span className="font-bold text-gray-800 capitalize">{format ? format(value) : String(value)}</span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 border-b pb-2">Description</h2>
-            <div className="text-gray-700 leading-relaxed text-base">
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-gray-700 uppercase tracking-wider border-b pb-2">Description</h2>
+            <div className="text-gray-700 leading-relaxed text-sm">
               <p className="whitespace-pre-line">
                 {isExpanded || !shouldTruncate ? description : `${description.slice(0, 300)}...`}
               </p>
               {shouldTruncate && (
-                <button onClick={() => setIsExpanded((p) => !p)} className="text-blue-600 font-bold mt-2 hover:underline">
+                <button onClick={() => setIsExpanded((p) => !p)} className="text-blue-600 font-bold mt-2 hover:underline text-sm">
                   {isExpanded ? "Show Less" : "Read More"}
                 </button>
               )}
             </div>
           </div>
 
-          <div className="mt-8 p-6 border-2 border-gray-200 shadow-sm bg-white hover:border-red-200 transition-all duration-300">
-            <Link href={`/components/Report/${vehicle.id}`} className="flex items-center justify-center gap-2 text-red-600 text-xs font-black uppercase tracking-[0.15em] hover:text-red-800">
+          <div className="p-5 border border-gray-200 rounded-xl bg-white">
+            <Link href={`/components/Report/${vehicle.id}`} className="text-red-500 text-xs font-bold uppercase tracking-widest">
               Report this item
             </Link>
           </div>
         </div>
       </div>
 
-      {vehicle && !isOwnItem && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-lg">
-          <div className="flex-1 min-w-0">
-            <p className="text-xl font-extrabold text-blue-700 truncate">${Number(vehicle.price).toLocaleString()}</p>
-            <p className="text-xs text-gray-500 truncate">{vehicle.title}</p>
-          </div>
-          {itemUser?.phone && (
-            <button onClick={() => setShowPhone((p) => !p)} className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0">
-              <Phone size={15} />
-              <span className="text-xs">{showPhone ? itemUser.phone : "Phone"}</span>
-            </button>
-          )}
-          <button
-            onClick={handleSendMessage}
-            disabled={vehicle.maGaday || messagingLoading}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97] flex-shrink-0 ${vehicle.maGaday ? "bg-gray-100 text-gray-400 cursor-not-allowed" : messagingLoading ? "bg-blue-400 text-white cursor-wait" : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-200"}`}
-          >
-            <MessageSquare size={16} />
-            {vehicle.maGaday ? "Sold" : messagingLoading ? "Opening…" : "Message Seller"}
-          </button>
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-lg">
+        <div className="flex-1 min-w-0">
+          <p className="text-xl font-extrabold text-blue-700 truncate">${Number(vehicle.price).toLocaleString()}</p>
+          <p className="text-xs text-gray-500 truncate">{vehicle.title}</p>
         </div>
-      )}
+        {itemUser?.phone && (
+          <button onClick={() => setShowPhone((p) => !p)} className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0">
+            <Phone size={15} />
+            <span className="text-xs">{showPhone ? itemUser.phone : "Phone"}</span>
+          </button>
+        )}
+        <button
+          onClick={handleSendMessage}
+          disabled={isOwnItem || !!vehicle.maGaday || messagingLoading}
+          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97] flex-shrink-0 ${
+            isOwnItem || vehicle.maGaday ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : messagingLoading ? "bg-blue-400 text-white cursor-wait"
+              : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-200"
+          }`}
+        >
+          <MessageSquare size={16} />
+          {vehicle.maGaday ? "Sold" : messagingLoading ? "Opening…" : "Message Seller"}
+        </button>
+      </div>
 
       {showModal && (
         <SaveFavoriteModel
@@ -424,5 +455,13 @@ export default function VehicleDetails() {
         />
       )}
     </div>
+  );
+}
+
+export default function VehicleDetails() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loading /></div>}>
+      <VehicleDetailsContent />
+    </Suspense>
   );
 }

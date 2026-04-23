@@ -5,6 +5,7 @@ import {
   getPopularSearches,
 } from "@/actions/categories/searchActions";
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FiTrendingUp,
   FiTrash2,
@@ -25,6 +26,7 @@ interface ApiResponse {
 }
 
 const MostSavedSearch = () => {
+  const { t } = useTranslation();
   const [popularSearches, setPopularSearches] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,7 +112,7 @@ const MostSavedSearch = () => {
           <div>
             <h2 className="text-lg sm:text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2">
               <FiBarChart2 className="text-orange-500" size={20} />
-              Search Analytics
+              {t("adminTable.searchAnalytics")}
             </h2>
             <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
               Top performing keywords across the platform
@@ -118,7 +120,7 @@ const MostSavedSearch = () => {
           </div>
           <div className="text-right">
             <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase">
-              Top Performer
+              {t("adminTable.topPerformer")}
             </p>
             <p className="text-sm sm:text-base font-black text-orange-600 capitalize truncate max-w-[150px] sm:max-w-none">
               {topQuery}
@@ -129,7 +131,7 @@ const MostSavedSearch = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div className="bg-blue-600 p-4 sm:p-5 rounded-xl sm:rounded-2xl text-white">
             <p className="text-[8px] sm:text-[9px] font-black uppercase opacity-80">
-              Total Volume
+              {t("adminTable.totalVolume")}
             </p>
             <p className="text-xl sm:text-2xl font-black">
               {totalSearchVolume.toLocaleString()}
@@ -137,7 +139,7 @@ const MostSavedSearch = () => {
           </div>
           <div className="bg-gray-900 p-4 sm:p-5 rounded-xl sm:rounded-2xl text-white">
             <p className="text-[8px] sm:text-[9px] font-black uppercase opacity-80">
-              Unique Terms
+              {t("adminTable.uniqueTerms")}
             </p>
             <p className="text-xl sm:text-2xl font-black">
               {popularSearches.length}
@@ -154,7 +156,7 @@ const MostSavedSearch = () => {
             </div>
           ) : popularSearches.length === 0 ? (
             <div className="text-center py-8 text-gray-400 font-medium">
-              No search data available
+              {t("adminTable.noSearchData")}
             </div>
           ) : (
             popularSearches.slice(0, 10).map((item, idx) => {
@@ -184,7 +186,7 @@ const MostSavedSearch = () => {
                         )}
                       </div>
                       <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase">
-                        {item._count?.query.toLocaleString()} Total Hits
+                        {item._count?.query.toLocaleString()} {t("adminTable.totalHits")}
                       </p>
                     </div>
                   </div>
@@ -219,7 +221,7 @@ const MostSavedSearch = () => {
           className="inline-flex items-center gap-2 text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors disabled:opacity-50"
         >
           <FiRefreshCw className={refreshing ? "animate-spin" : ""} size={12} />
-          {refreshing ? "Refreshing..." : "Refresh Statistics"}
+          {refreshing ? t("adminTable.refreshing") : t("adminTable.refreshStats")}
         </button>
       </div>
     </div>

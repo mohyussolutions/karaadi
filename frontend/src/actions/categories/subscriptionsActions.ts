@@ -143,6 +143,14 @@ export async function getTotalSubscriptions(forceCache = true) {
   }
 }
 
+export async function deleteSubscription(id: string) {
+  try {
+    return await fetchApi(SUBS_ENDPOINTS.DELETE(id), { method: "DELETE" });
+  } catch {
+    return { success: false };
+  }
+}
+
 export async function triggerManualNotification(data: Record<string, unknown>) {
   try {
     return await fetchApi(SUBS_ENDPOINTS.ADMIN_NOTIFY, {

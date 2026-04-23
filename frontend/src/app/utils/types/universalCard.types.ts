@@ -16,5 +16,6 @@ export interface UniversalCardProps {
   isPremium90?: boolean;
   priority?: boolean;
   type?: string;
+  sellerName?: string;
   [key: string]: unknown;
 }

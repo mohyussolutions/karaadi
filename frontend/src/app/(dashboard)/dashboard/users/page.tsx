@@ -7,12 +7,12 @@ import {
   User,
 } from "@/actions/categories/usersAction";
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
 import {
   FiUser,
   FiMail,
-  FiCalendar,
   FiEdit2,
   FiTrash2,
   FiRefreshCw,
@@ -31,6 +31,7 @@ interface ExtendedUser extends User {
 const PAGE_SIZE = 20;
 
 export default function UserPage() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<ExtendedUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<ExtendedUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,10 +52,9 @@ export default function UserPage() {
     }, 300);
   }, []);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setRefreshing(true);
     const result = await fetchAllUsers();
-
     if (result.success) {
       setUsers(result.users);
       setFilteredUsers(result.users);
@@ -62,80 +62,59 @@ export default function UserPage() {
     } else {
       setError(result.error || "Failed to fetch users");
     }
-
     setRefreshing(false);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredUsers(users);
     } else {
       const term = searchTerm.toLowerCase();
-      const filtered = users.filter(
-        (user) =>
-          user.username.toLowerCase().includes(term) ||
-          user.email.toLowerCase().includes(term) ||
-          user.phone?.includes(searchTerm),
+      setFilteredUsers(
+        users.filter(
+          (user) =>
+            user.username.toLowerCase().includes(term) ||
+            user.email.toLowerCase().includes(term) ||
+            user.phone?.includes(searchTerm),
+        ),
       );
-      setFilteredUsers(filtered);
     }
     setVisibleCount(PAGE_SIZE);
   }, [searchTerm, users]);
 
-  const handleDelete = async (id: string, username: string) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete user "${username}"? This action cannot be undone.`,
-      )
-    ) {
-      const result = await deleteUserAction(id);
-
-      if (result.success) {
-        setUsers(users.filter((user) => user.id !== id));
-        alert("User deleted successfully");
-      } else {
-        alert(result.error || "Failed to delete user");
-      }
+  const handleDelete = useCallback(async (id: string, username: string) => {
+    if (!window.confirm(`${t("adminTable.delete")} "${username}"?`)) return;
+    const result = await deleteUserAction(id);
+    if (result.success) {
+      setUsers((prev) => prev.filter((u) => u.id !== id));
     }
-  };
+  }, [t]);
 
-  const handleUpdate = async (id: string, currentUsername: string) => {
-    const newUsername = prompt("Enter new username:", currentUsername);
+  const handleUpdate = useCallback(async (id: string, currentUsername: string) => {
+    const newUsername = prompt(t("adminTable.username") + ":", currentUsername);
     if (!newUsername || newUsername === currentUsername) return;
-
     const result = await updateUserAction(id, newUsername);
-
     if (result.success && result.user) {
-      setUsers(
-        users.map((user) =>
-          user.id === id ? { ...user, username: result.user.username } : user,
-        ),
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, username: result.user.username } : u)),
       );
-      alert("Username updated successfully");
-    } else {
-      alert(result.error || "Failed to update user");
     }
-  };
+  }, [t]);
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.onerror = null;
     e.currentTarget.style.display = "none";
-  };
+  }, []);
 
   const getProfileImageSrc = (profileImage?: string | null) => {
     if (!profileImage) return PLACEHOLDER_IMAGE;
-
     if (/^data:image\//.test(profileImage)) return profileImage;
-
-    if (/^[A-Za-z0-9+/=]{100,}$/.test(profileImage)) {
-      return `data:image/jpeg;base64,${profileImage}`;
-    }
-
+    if (/^[A-Za-z0-9+/=]{100,}$/.test(profileImage)) return `data:image/jpeg;base64,${profileImage}`;
     return profileImage;
   };
 
@@ -156,7 +135,7 @@ export default function UserPage() {
             onClick={loadUsers}
             className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
           >
-            Try Again
+            {t("adminTable.tryAgain")}
           </button>
         </div>
       </div>
@@ -167,43 +146,27 @@ export default function UserPage() {
     <div className="w-full min-h-screen bg-gray-50">
       <div className="w-full px-4 sm:px-6 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border">
-              <img
-                src={getProfileImageSrc(filteredUsers[0]?.profileImage)}
-                alt="User"
-                className="w-full h-full object-cover"
-                onError={handleImageError}
-              />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
-                <FiUser className="text-blue-600" size={24} />
-                User Management
-              </h1>
-              <p className="text-sm text-gray-500">
-                Manage all registered users
-              </p>
-            </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <FiUser className="text-blue-600" size={22} />
+              {t("adminTable.users")}
+            </h1>
+            <p className="text-sm text-gray-500">{t("adminTable.manageUsers")}</p>
           </div>
-
           <button
             onClick={loadUsers}
             disabled={refreshing}
-            className="p-2.5 hover:bg-gray-100 rounded-full border"
-            title="Refresh"
+            className="p-2.5 hover:bg-gray-100 rounded-full border self-start sm:self-auto"
+            title={t("adminTable.refresh")}
           >
-            <FiRefreshCw
-              className={refreshing ? "animate-spin" : ""}
-              size={18}
-            />
+            <FiRefreshCw className={refreshing ? "animate-spin" : ""} size={18} />
           </button>
         </div>
 
-        <div className="mb-6 relative">
+        <div className="mb-5 relative">
           <input
             type="text"
-            placeholder="Search by username, email or phone..."
+            placeholder={t("adminTable.search") + "..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-4 py-3 pl-11 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -219,36 +182,73 @@ export default function UserPage() {
           )}
         </div>
 
-        <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
-          <table className="w-full">
+        <div className="block md:hidden space-y-3">
+          {visibleUsers.length > 0 ? (
+            visibleUsers.map((user) => (
+              <div key={user.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border flex-shrink-0">
+                    <img
+                      src={getProfileImageSrc(user.profileImage)}
+                      alt={user.username}
+                      className="w-full h-full object-cover"
+                      onError={handleImageError}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-gray-900 truncate">{user.username}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div className="bg-gray-50 p-2 rounded">
+                    <span className="text-gray-400">{t("adminTable.phone")}</span>
+                    <p className="font-medium truncate">{user.phone || "—"}</p>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <span className="text-gray-400">{t("adminTable.created")}</span>
+                    <p className="font-medium">{new Date(user.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleUpdate(user.id, user.username)}
+                    className="flex-1 flex items-center justify-center gap-1 py-2 text-blue-600 bg-blue-50 border border-blue-100 rounded-lg text-xs font-medium"
+                  >
+                    <FiEdit2 size={12} /> {t("adminTable.edit")}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(user.id, user.username)}
+                    className="flex-1 flex items-center justify-center gap-1 py-2 text-red-600 bg-red-50 border border-red-100 rounded-lg text-xs font-medium"
+                  >
+                    <FiTrash2 size={12} /> {t("adminTable.delete")}
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-10 text-gray-400 text-sm">{t("adminTable.noItems")}</div>
+          )}
+        </div>
+
+        <div className="hidden md:block border border-gray-200 rounded-xl bg-white overflow-hidden">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 text-left">
-                  Profile
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 text-left">
-                  Email
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 text-left">
-                  Username
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 text-left">
-                  Phone
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 text-left">
-                  Created
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 text-left">
-                  Actions
-                </th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 text-left w-[10%]">{t("adminTable.profile")}</th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 text-left w-[25%]">{t("adminTable.email")}</th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 text-left w-[20%]">{t("adminTable.username")}</th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 text-left w-[18%]">{t("adminTable.phone")}</th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 text-left w-[15%]">{t("adminTable.created")}</th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 text-left w-[12%]">{t("adminTable.actions")}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-50">
               {visibleUsers.length > 0 ? (
                 visibleUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border">
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="w-9 h-9 rounded-full overflow-hidden border">
                         <img
                           src={getProfileImageSrc(user.profileImage)}
                           alt={user.username}
@@ -257,31 +257,33 @@ export default function UserPage() {
                         />
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {user.email}
+                    <td className="px-4 py-3 text-sm text-gray-700 truncate max-w-0">
+                      <span className="block truncate">{user.email}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {user.username}
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 truncate max-w-0">
+                      <span className="block truncate">{user.username}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-gray-600">
                       {user.phone || "—"}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-gray-500">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
                         <button
                           onClick={() => handleUpdate(user.id, user.username)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                          title={t("adminTable.edit")}
                         >
-                          <FiEdit2 size={16} />
+                          <FiEdit2 size={15} />
                         </button>
                         <button
                           onClick={() => handleDelete(user.id, user.username)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          title={t("adminTable.delete")}
                         >
-                          <FiTrash2 size={16} />
+                          <FiTrash2 size={15} />
                         </button>
                       </div>
                     </td>
@@ -289,22 +291,16 @@ export default function UserPage() {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-gray-400"
-                  >
-                    No users found
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm">
+                    {t("adminTable.noItems")}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <Pagination
-          hasMore={hasMore}
-          onSeeMore={handleLoadMore}
-          loading={loadingMore}
-        />
+
+        <Pagination hasMore={hasMore} onSeeMore={handleLoadMore} loading={loadingMore} />
       </div>
     </div>
   );

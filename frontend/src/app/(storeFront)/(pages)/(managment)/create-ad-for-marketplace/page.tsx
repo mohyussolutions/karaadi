@@ -50,7 +50,7 @@ function MarketplaceForm({ onNext }: { onNext: () => void }) {
   const dispatch = useAppDispatch();
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
-  const savedItem = useAppSelector((state) => state.listingDraft.item);
+  const savedItem = useAppSelector((state) => state.listingDraft.item) ?? {};
 
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);

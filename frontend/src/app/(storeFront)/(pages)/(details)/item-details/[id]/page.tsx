@@ -45,6 +45,10 @@ export default function ProductDetails() {
   const { user } = useAuth();
 
   useEffect(() => {
+    router.prefetch("/messages");
+  }, [router]);
+
+  useEffect(() => {
     if (!id) { setLoading(false); return; }
     let mounted = true;
     getMarketplaceItemById(id)

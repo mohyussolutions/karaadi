@@ -163,21 +163,17 @@ export const FEE_CATEGORIES = [
   {
     title: "Subscriptions (Is-diiwaangelin)",
     fees: [
-      {
-        key: "basic30",
-        label: "30-Day Basic",
-        type: LISTING_TYPE.SERVICE,
-      },
-      {
-        key: "standard60",
-        label: "60-Day Standard",
-        type: LISTING_TYPE.SERVICE,
-      },
-      {
-        key: "premium90",
-        label: "90-Day Premium",
-        type: LISTING_TYPE.SERVICE,
-      },
+      { key: "basic30", label: "30-Day Basic", type: LISTING_TYPE.SERVICE },
+      { key: "standard60", label: "60-Day Standard", type: LISTING_TYPE.SERVICE },
+      { key: "premium90", label: "90-Day Premium", type: LISTING_TYPE.SERVICE },
+    ],
+  },
+  {
+    title: "Business Plans (Qorshayaasha Ganacsiga)",
+    fees: [
+      { key: "bp30", label: "30-Day Plan", type: LISTING_TYPE.SERVICE },
+      { key: "bp60", label: "60-Day Plan", type: LISTING_TYPE.SERVICE },
+      { key: "bp90", label: "90-Day Plan", type: LISTING_TYPE.SERVICE },
     ],
   },
 ];

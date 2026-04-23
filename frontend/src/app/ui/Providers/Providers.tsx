@@ -25,9 +25,9 @@ function I18nSync({ children }: { children: React.ReactNode }) {
     const saved = (cookie === "so" || cookie === "en") ? cookie
       : (ls === "so" || ls === "en") ? ls as "en" | "so"
       : null;
-    if (saved) {
+    if (saved && i18n.language !== saved) {
       dispatch(hydrateLanguage(saved));
-      if (i18n.language !== saved) i18n.changeLanguage(saved);
+      i18n.changeLanguage(saved);
     }
     setHydrated(true);
   }, [dispatch]);

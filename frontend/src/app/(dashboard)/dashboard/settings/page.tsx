@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useTranslation } from "react-i18next";
 import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 import { useRouter } from "next/navigation";
 import { settingLinks } from "@/app/(links)/dashboardLinks/dashboardLinks";
@@ -61,6 +62,7 @@ const VisitorManager = dynamic(() => import("./deleteVisitors"), {
 });
 
 export default function Settings() {
+  const { t } = useTranslation();
   const [view, setView] = useState<"main" | "visitors">("main");
   const { user } = useAuth();
   const initializing = !user;
@@ -88,10 +90,8 @@ export default function Settings() {
   return (
     <div className="w-full p-6 flex flex-col gap-10">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-500 mt-1">
-          Manage essential marketplace and geographical settings.
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("adminTable.settingsTitle")}</h1>
+        <p className="text-gray-500 mt-1">{t("adminTable.settingsSubtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

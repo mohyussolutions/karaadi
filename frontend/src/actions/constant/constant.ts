@@ -46,6 +46,8 @@ const API_PATHS = {
   RECOMMENDATIONS: "/api/recommendations",
   ADVERTISEMENTS: "/api/advertisements",
   CONTACT_US: "/api/contactUs",
+  BUSINESSES: "/api/businesses",
+  BUSINESS_PLANS: "/api/business-plans",
 } as const;
 
 export const AUTH_ENDPOINTS = {
@@ -147,6 +149,7 @@ export const SUBSCRIPTION_ENDPOINTS = {
   ADMIN_UPDATE_STATUS: (id: string) =>
     createIdEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/${id}/status`, id),
   ADMIN_NOTIFY: createEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/notify`),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.SUBSCRIPTION, id),
 };
 
 export const PAYMENT_ENDPOINTS = {
@@ -237,6 +240,7 @@ export const REPORT_ENDPOINTS = {
   BASE: createEndpoint(API_PATHS.REPORTS),
   CREATE: createEndpoint(API_PATHS.REPORTS),
   GET_ALL: createEndpoint(API_PATHS.REPORTS),
+  SUMMARY: createEndpoint(`${API_PATHS.REPORTS}/summary`),
   STATS: createEndpoint(`${API_PATHS.REPORTS}/stats`),
   TOTAL: createEndpoint(`${API_PATHS.REPORTS}/total`),
   USER_REPORTS: (userId: string) =>
@@ -287,6 +291,41 @@ export const ADVERTISEMENT_ENDPOINTS = {
     createUserEndpoint(`${API_PATHS.ADVERTISEMENTS}/user`, userId),
 };
 
+export const BUSINESS_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.BUSINESSES),
+  CREATE: createEndpoint(API_PATHS.BUSINESSES),
+  MY: createEndpoint(`${API_PATHS.BUSINESSES}/my`),
+  STATS: createEndpoint(`${API_PATHS.BUSINESSES}/stats`),
+  TOTAL: createEndpoint(`${API_PATHS.BUSINESSES}/total`),
+  ADMIN_ALL: createEndpoint(`${API_PATHS.BUSINESSES}/admin/all`),
+  ADMIN_UPDATE_STATUS: (id: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/admin/${id}/status`),
+  ADMIN_TOGGLE_VISIBILITY: (id: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/admin/${id}/toggle-visibility`),
+  BY_ID: (id: string) => createIdEndpoint(API_PATHS.BUSINESSES, id),
+  UPDATE: (id: string) => createIdEndpoint(API_PATHS.BUSINESSES, id),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.BUSINESSES, id),
+  CAN_POST: createEndpoint(`${API_PATHS.BUSINESSES}/can-post`),
+  SELECT_PLAN: (id: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/${id}/select-plan`),
+  EXTEND_PLAN: (id: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/${id}/extend-plan`),
+  ADD_MEMBER: (id: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/${id}/members`),
+  REMOVE_MEMBER: (id: string, memberId: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/${id}/members/${memberId}`),
+};
+
+export const BUSINESS_PLAN_ENDPOINTS = {
+  BASE: createEndpoint(API_PATHS.BUSINESS_PLANS),
+  GET_ALL: createEndpoint(API_PATHS.BUSINESS_PLANS),
+  ADMIN_ALL: createEndpoint(`${API_PATHS.BUSINESS_PLANS}/admin/all`),
+  BY_ID: (id: string) => createIdEndpoint(API_PATHS.BUSINESS_PLANS, id),
+  CREATE: createEndpoint(API_PATHS.BUSINESS_PLANS),
+  UPDATE: (id: string) => createIdEndpoint(API_PATHS.BUSINESS_PLANS, id),
+  DELETE: (id: string) => createIdEndpoint(API_PATHS.BUSINESS_PLANS, id),
+};
+
 export const CONTACT_ENDPOINTS = {
   BASE: createEndpoint(API_PATHS.CONTACT_US),
   TICKETS: createEndpoint(`${API_PATHS.CONTACT_US}/tickets`),
@@ -329,6 +368,7 @@ export const FEE_ENDPOINTS = {
     UPDATE: (id: string) => createIdEndpoint(`${API_PATHS.FEE}/sub-plans`, id),
     DELETE: (id: string) => createIdEndpoint(`${API_PATHS.FEE}/sub-plans`, id),
   },
+  BUSINESS_PLANS: createFeeCategoryEndpoints("business-plans"),
 } as const;
 
 export const apiUrls = {

@@ -11,7 +11,6 @@ import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { setPlan } from "@/store/slices/reducers/listingDraftSlice";
 import { useRouter } from "next/navigation";
 import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
 
 const IconMap: Record<string, any> = {
   zap: HiOutlineLightningBolt,
@@ -28,38 +27,40 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const savedPlan = useAppSelector((state) => state.listingDraft.plan);
-  const savedItem = useAppSelector((state) => state.listingDraft.item);
+  const savedItem = useAppSelector((state) => state.listingDraft.item) ?? {};
 
-  const [plans, setPlans] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const initialPlans = SUBSCRIPTION_PLANS.map((item) => ({
+    ...item,
+    id: item.key,
+    price: 0,
+  }));
+
+  const [plans, setPlans] = useState<any[]>(initialPlans);
+  const [selectedPlan, setSelectedPlan] = useState<any>(() => {
+    if (savedPlan) {
+      const found = initialPlans.find((p) => p.id === savedPlan.id);
+      return found ?? null;
+    }
+    return null;
+  });
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const res = await getSubPlans();
-        const config = Array.isArray(res) ? res[0] : res;
-
-        const transformed = SUBSCRIPTION_PLANS.map((item) => ({
-          ...item,
-          id: item.key,
-          price: config ? Number(config[item.key]) || 0 : 0,
-        }));
-
-        setPlans(transformed);
-
-        if (savedPlan) {
-          const found = transformed.find((p) => p.id === savedPlan.id);
-          if (found) setSelectedPlan(found);
-        }
-      } catch {
-      } finally {
-        setLoading(false);
+    let cancelled = false;
+    getSubPlans().then((res) => {
+      if (cancelled) return;
+      const config = Array.isArray(res) ? res[0] : res;
+      if (!config) return;
+      setPlans((prev) =>
+        prev.map((p) => ({ ...p, price: Number(config[p.key]) || 0 })),
+      );
+      if (savedPlan) {
+        setSelectedPlan((prev: any) =>
+          prev ? { ...prev, price: Number(config[prev.key]) || 0 } : prev,
+        );
       }
-    };
-
-    init();
-  }, [savedPlan]);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSelect = (p: any) => {
     setSelectedPlan(p);
@@ -77,10 +78,6 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
   const totalCost = itemFeeAmount + planPrice;
 
   const maxPrice = plans.length > 0 ? Math.max(...plans.map((p) => p.price)) : 0;
-
-  if (loading) {
-    return <Loading />;
-  }
 
   return (
     <div className="py-8">

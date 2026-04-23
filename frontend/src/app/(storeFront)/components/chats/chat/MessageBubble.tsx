@@ -3,7 +3,7 @@
 import type { MessageBubbleProps } from "@/app/utils/types/chat.types"
 
 function formatTime(ts: string): string {
-  return new Date(ts).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })
+  return new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
 }
 
 export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {

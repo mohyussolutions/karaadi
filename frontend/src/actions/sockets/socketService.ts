@@ -14,7 +14,9 @@ class SocketService {
 
   private constructor() {
     this.socketUrl =
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:9000";
+      process.env.NEXT_PUBLIC_SOCKET_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8080";
   }
 
   static getInstance(): SocketService {

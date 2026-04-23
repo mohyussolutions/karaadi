@@ -1,6 +1,3 @@
-"use server";
-
-import { SEARCH_ENDPOINT } from "../constant/constant";
 import { SearchResultTypes } from "@/app/utils/types/SearchResult.types";
 
 export async function getGlobalSearchResults(
@@ -10,41 +7,23 @@ export async function getGlobalSearchResults(
   if (!q) return [];
 
   try {
-    const res = await fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}`, {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
     if (!res.ok) return [];
-    const results: SearchResultTypes[] = await res.json();
+    const results: any[] = await res.json();
 
     return results.map((item) => {
       let cat = "marketplace";
-
-      if (
-        item.source === "cars" ||
-        item.make ||
-        item.brand ||
-        item.vehicleModel
-      ) {
+      if (item.source === "cars" || item.make || item.brand || item.vehicleModel) {
         cat = "cars";
       } else if (item.source === "boats" || item.boatModel) {
         cat = "boats";
       } else if (item.source === "motorcycles" || item.modelName) {
         cat = "motorcycles";
-      } else if (
-        item.source === "realestate" ||
-        item.bedrooms !== undefined ||
-        item.squareFeet
-      ) {
+      } else if (item.source === "realestate" || item.bedrooms !== undefined || item.squareFeet) {
         cat = "real-estate";
       } else if (item.source === "jobs" || item.company || item.salary) {
         cat = "jobs";
-      } else if (
-        item.source === "farmequipment" ||
-        item.hours !== undefined ||
-        item.enginePower
-      ) {
+      } else if (item.source === "farmequipment" || item.hours !== undefined || item.enginePower) {
         cat = "farmequipment";
       } else if (item.mainCategory) {
         cat = item.mainCategory.toLowerCase();
@@ -52,7 +31,7 @@ export async function getGlobalSearchResults(
         cat = item.category.toLowerCase();
       }
 
-      return { ...item, category: cat };
+      return { ...item, category: cat } as SearchResultTypes;
     });
   } catch {
     return [];

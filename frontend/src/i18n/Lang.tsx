@@ -18,7 +18,7 @@ export default function Lang() {
         className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#06069C] text-white font-black text-[10px] sm:text-xs uppercase transition-all active:scale-95"
       >
         <GrLanguage className="text-sm sm:text-base text-white shrink-0" />
-        <span className="hidden sm:inline">
+        <span className="hidden sm:inline" suppressHydrationWarning>
           {displayLang}
         </span>
       </button>

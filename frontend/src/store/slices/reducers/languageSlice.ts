@@ -5,14 +5,16 @@ import type {
   LanguageState,
 } from "@/app/utils/types/language.types";
 
+export type { LanguageState };
+
 const COOKIE_NAME = "app_lang";
 const COOKIE_EXPIRY = 365;
 
 const getSavedLanguage = (): LanguageCode => {
-  if (typeof window === "undefined") return "en";
+  if (typeof window === "undefined") return "so";
   const saved = localStorage.getItem(COOKIE_NAME) || Cookies.get(COOKIE_NAME);
   if (saved === "en" || saved === "so") return saved;
-  return "en";
+  return "so";
 };
 
 const initialState: LanguageState = {

@@ -21,7 +21,7 @@ const startServer = async () => {
 
     socketServer(server, pub, sub);
 
-    server.listen(Number(process.env.PORT) || 8080, () => {
+    server.listen(Number(process.env.PORT) || 8080, "::", () => {
       console.log(
         chalk.green(
           `Server PID ${process.pid} ready on port ${process.env.PORT}`,

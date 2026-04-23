@@ -3,6 +3,7 @@ model Payment {
   userId          String
   transactionId   String?        @unique
   paymentMethod   String?
+  payerPhone      String?
   currency        String         @default("USD")
   feeAmount       Float          @default(0.00)
   planAmount      Float          @default(0.00)
@@ -22,7 +23,9 @@ model Payment {
   motorcycleId    String?
   farmequipmentId String?
   jobId           String?
-  subscriptionId  String?
+  subscriptionId   String?
+  businessId       String?
+  businessPlanId   String?
   marketplaceFeeId String?
   realEstateFeeId String?
   boatFeeId       String?
@@ -41,7 +44,8 @@ model Payment {
   farmequipment   Farmequipment? @relation("FarmPayments", fields: [farmequipmentId], references: [id])
   job             Job?           @relation("JobPayments", fields: [jobId], references: [id])
   subscription    Subscription?  @relation("SubscriptionPayments", fields: [subscriptionId], references: [id])
-  
+  businessPlan    BusinessPlan?  @relation("PaymentBusinessPlan", fields: [businessPlanId], references: [id])
+
   marketplaceFee  MarketplaceFee?   @relation("PaymentMarketplaceFee", fields: [marketplaceFeeId], references: [id])
   realEstateFee   RealEstateFee?    @relation("PaymentRealEstateFee", fields: [realEstateFeeId], references: [id])
   boatFee         BoatFee?          @relation("PaymentBoatFee", fields: [boatFeeId], references: [id])
@@ -69,6 +73,8 @@ model Payment {
   @@index([equipmentFeeId])
   @@index([jobFeeId])
   @@index([planConfigId])
+  @@index([businessId])
+  @@index([businessPlanId])
 }
 
 model MarketplaceFee {
@@ -180,6 +186,23 @@ model SystemConfig {
   updatedAt   DateTime @updatedAt
   changeLogs  FeeChangeLog[]
 }
+model BusinessPlan {
+  id           String     @id @default(cuid())
+  name         String
+  price        Float
+  durationDays Int        @default(30)
+  maxListings  Int        @default(10)
+  categories   String[]
+  features     String[]
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  businesses   Business[]
+  payments     Payment[]  @relation("PaymentBusinessPlan")
+
+  @@index([isActive])
+}
+
 model SubPlan {
   id             String   @id @default(cuid())
   basic30        Float    @default(0.0)

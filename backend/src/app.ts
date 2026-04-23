@@ -10,39 +10,6 @@ import redisServer from "./services/redisserver/redisServer.js";
 import { setupSecurity } from "./core/middelware/securityMiddleware.js";
 import { logger } from "./core/middelware/logger.js";
 
-import marketplaceRoutes from "./routers/categoryRoute/marketplaceRouter.js";
-import realEstateRouter from "./routers/categoryRoute/realEstateRouter.js";
-import boatsRoutes from "./routers/categoryRoute/boatsRouter.js";
-import carsRoutes from "./routers/categoryRoute/carsRouter.js";
-import motorcyclesRoutes from "./routers/categoryRoute/motorcyclesRouter.js";
-import myAdsRouter from "./routers/categoryRoute/myAdRoutes.js";
-import favoriteRoutes from "./routers/categoryRoute/favoriteRoutes.js";
-import recommendationRoutes from "./routers/categoryRoute/recommendationsRoute.js";
-import advertisementRouter from "./routers/categoryRoute/advertisementRoutes.js";
-import notificationRoutes from "./routers/userRoute/notificationRoute.js";
-import subscriptionRoute from "./routers/categoryRoute/subsRoute.js";
-import chatRoutes from "./routers/userRoute/chatRoute.js";
-import contactUsRouter from "./routers/userRoute/contactUsRoutes.js";
-import messageRoutes from "./routers/userRoute/messageRoute.js";
-import agencyRoutes from "./routers/agencyRoutes.js";
-import authRouters from "./routers/userRoute/authRoute.js";
-import paymentRoutes from "./routers/paymentRoute/paymentRoutes.js";
-import FeeRoutes from "./routers/paymentRoute/FeeRoutes.js";
-import customerSupportRoutes from "./routers/userRoute/customersupportRoute.js";
-import searchRouter from "./routers/userRoute/searchRouter.js";
-import filterRouter from "./routers/userRoute/filterRouter.js";
-import visitorRoute from "./routers/userRoute/vissedRoute.js";
-import locRoutes from "./routers/categoryRoute/locRoutes.js";
-import redisStatsRouter from "./routers/redisStatsRouter.js";
-import historySearchRoutes from "./routers/userRoute/historySearchRoutes.js";
-import traktorRoutes from "./routers/categoryRoute/FarmequipmentRouter.js";
-import jobsRouter from "./routers/categoryRoute/jobsRouter.js";
-import hageRouter from "./AI/hageRouter.js";
-import reportRoutes from "./routers/categoryRoute/reportRoute.js";
-import { setupServerUtils } from "./core/utils/serverUtils.ts";
-import { overloadMiddleware } from "./core/middelware/overloadMiddleware.js";
-import { SESSION_TIME_MS } from "./config/session-time.ts";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
@@ -100,6 +67,7 @@ apiRouter.use("/messages", messageRoutes);
 apiRouter.use("/contactUs", contactUsRouter);
 apiRouter.use("/agencies", agencyRoutes);
 apiRouter.use("/users", authRouters);
+apiRouter.use("/payments", initiateRouter);
 apiRouter.use("/payments", paymentRoutes);
 apiRouter.use("/Fee", FeeRoutes);
 apiRouter.use("/customers", customerSupportRoutes);
@@ -111,13 +79,58 @@ apiRouter.use("/locations", locRoutes);
 apiRouter.use("/redis", redisStatsRouter);
 apiRouter.use("/history-search", historySearchRoutes);
 apiRouter.use("/reports", reportRoutes);
+apiRouter.use("/businesses", businessRoute);
+apiRouter.use("/business-plans", businessPlanRoute);
+apiRouter.use("/feed", feedRouter);
+apiRouter.use("/social", socialRouter);
 apiRouter.use("/hage", hageRouter);
+
+import { getDashboardSummary } from "./controllers/dashboardController.ts";
+import { setupServerUtils } from "./core/utils/serverUtils.ts";
+import { SESSION_TIME_MS } from "./config/session-time.ts";
+import { overloadMiddleware } from "./core/middelware/overloadMiddleware.ts";
+import marketplaceRoutes from "./routers/marketplaceRouter.ts";
+import boatsRoutes from "./routers/boatsRouter.ts";
+import carsRoutes from "./routers/carsRouter.ts";
+import motorcyclesRoutes from "./routers/motorcyclesRouter.ts";
+import realEstateRouter from "./routers/realEstateRouter.ts";
+import traktorRoutes from "./routers/FarmequipmentRouter.ts";
+import myAdsRouter from "./routers/myAdRoutes.ts";
+import favoriteRoutes from "./routers/favoriteRoutes.ts";
+import recommendationRoutes from "./routers/recommendationsRoute.ts";
+import advertisementRouter from "./routers/advertisementRoutes.ts";
+import notificationRoutes from "./routers/notificationRoute.ts";
+import subscriptionRoute from "./routers/subsRoute.ts";
+import chatRoutes from "./routers/chatRoute.ts";
+import contactUsRouter from "./routers/contactUsRoutes.ts";
+import messageRoutes from "./routers/messageRoute.ts";
+import hageRouter from "./AI/hageRouter.ts";
+import socialRouter from "./routers/socialRouter.ts";
+import feedRouter from "./routers/feedRouter.ts";
+import businessPlanRoute from "./routers/businessPlanRoute.ts";
+import businessRoute from "./routers/businessRoute.ts";
+import reportRoutes from "./routers/reportRoute.ts";
+import historySearchRoutes from "./routers/historySearchRoutes.ts";
+import redisStatsRouter from "./routers/redisStatsRouter.ts";
+import locRoutes from "./routers/locRoutes.ts";
+import jobsRouter from "./routers/jobsRouter.ts";
+import filterRouter from "./routers/filterRouter.ts";
+import searchRouter from "./routers/searchRouter.ts";
+import visitorRoute from "./routers/vissedRoute.ts";
+import customerSupportRoutes from "./routers/customersupportRoute.ts";
+import paymentRoutes from "./routers/paymentRoutes.ts";
+import FeeRoutes from "./routers/FeeRoutes.ts";
+import initiateRouter from "./routers/initiateRouter.ts";
+import authRouters from "./routers/authRoute.ts";
+import agencyRoutes from "./routers/agencyRoutes.ts";
+apiRouter.get("/dashboard/summary", getDashboardSummary);
+
 app.use("/api", apiRouter);
 
 app.use(
   (
     err: unknown,
-    req: express.Request,
+    _req: express.Request,
     res: express.Response,
     _next: express.NextFunction,
   ) => {
@@ -125,8 +138,8 @@ app.use(
       logger.error((err as any)?.stack || err);
     } catch {}
     const msg =
-      typeof (req as any).t === "function"
-        ? (req as any).t("api_errors.server_error")
+      typeof (_req as any).t === "function"
+        ? (_req as any).t("api_errors.server_error")
         : "Server error";
     res.status(500).json({ message: msg });
   },

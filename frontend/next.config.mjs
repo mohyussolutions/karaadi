@@ -1,22 +1,18 @@
 const nextConfig = {
-  reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
+  reactStrictMode: false,
+  eslint: { ignoreDuringBuilds: true },
+  experimental: {
+    serverActions: { bodySizeLimit: "20mb" },
+    optimizePackageImports: [
+      "react-icons",
+      "lucide-react",
+      "framer-motion",
+      "recharts",
+      "react-i18next",
+      "i18next",
+      "date-fns",
+    ],
   },
-  serverActions: {
-    bodySizeLimit: "20mb",
-  },
-  experimental: {},
-  optimizePackageImports: [
-    "react-icons",
-    "lucide-react",
-    "framer-motion",
-    "recharts",
-    "react-i18next",
-    "i18next",
-    "@vis.gl/react-google-maps",
-    "date-fns",
-  ],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.istockphoto.com" },

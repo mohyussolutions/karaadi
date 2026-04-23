@@ -1,49 +1,25 @@
 import { Server, Socket } from "socket.io";
-import { EncryptionController } from "../../controllers/encryptionController/encryptionController.ts";
 import prisma from "../../core/utils/db.ts";
 
 export const chatHandler = (io: Server, socket: Socket, userId: string) => {
   socket.on("joinChat", async (chatId: number) => {
     try {
+      const numId = parseInt(chatId.toString(), 10);
+      if (!numId) return;
+
       const chat = await prisma.chat.findUnique({
-        where: { id: parseInt(chatId.toString()) },
+        where: { id: numId },
+        select: { senderId: true, receiverId: true },
       });
 
       if (!chat || (chat.senderId !== userId && chat.receiverId !== userId)) {
-        return socket.emit("chatError", {
-          error: "Access denied",
-        });
+        return socket.emit("chatError", { error: "Access denied" });
       }
 
-      socket.join(`chat_${chatId}`);
-
-      const messages = await prisma.message.findMany({
-        where: { chatId: parseInt(chatId.toString()) },
-        orderBy: { timestamp: "asc" },
-        include: {
-          sender: {
-            select: {
-              id: true,
-              username: true,
-              profileImage: true,
-            },
-          },
-        },
-      });
-
-      const decryptedMessages = messages.map((msg) => ({
-        ...msg,
-        content: EncryptionController.decrypt(msg.content),
-      }));
-
-      socket.emit("chatHistory", {
-        messages: decryptedMessages,
-        chatInfo: chat,
-      });
-    } catch (error) {
-      socket.emit("chatError", {
-        error: "Failed to load chat history",
-      });
+      // Join immediately — don't wait for message history
+      socket.join(`chat_${numId}`);
+    } catch {
+      socket.emit("chatError", { error: "Failed to join chat" });
     }
   });
 

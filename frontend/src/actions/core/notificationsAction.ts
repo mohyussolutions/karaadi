@@ -1,6 +1,7 @@
 "use server";
 
 import { API_ENDPOINTS } from "../constant/sockets";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export async function fetchNotifications(
   userId: string,
@@ -21,9 +22,10 @@ export async function fetchNotifications(
   const url = `${API_ENDPOINTS.NOTIFICATIONS.GET_NOTIFICATIONS_BY_USER(userId)}${qs ? `?${qs}` : ""}`;
 
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(url, {
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers,
       cache: "no-store",
     });
 
@@ -37,12 +39,13 @@ export async function fetchNotifications(
 
 export async function markNotificationAsRead(id: string) {
   if (!id) return;
+  const headers = await getAuthHeaders();
   const res = await fetch(
     API_ENDPOINTS.NOTIFICATIONS.MARK_NOTIFICATION_READ(id),
     {
       method: "PATCH",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     },
   );
   return res.ok ? res.json() : null;

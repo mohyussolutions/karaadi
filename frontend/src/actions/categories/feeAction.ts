@@ -13,6 +13,26 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
   });
 };
 
+export const getAllFees = async () => {
+  const { BASE_API_URL } = await import("../constant/BASE_API_URL");
+  const res = await fetchWithAuth(`${BASE_API_URL}/api/Fee/all`);
+  if (res.ok) {
+    const data = await res.json();
+    return {
+      marketplace: data.marketplace ?? [],
+      realEstate: data.realEstate ?? [],
+      cars: data.cars ?? [],
+      motorcycles: data.motorcycles ?? [],
+      boats: data.boats ?? {},
+      equipment: data.equipment ?? [],
+      subPlans: data.subPlans ?? [],
+      system: data.system ?? null,
+      businessPlans: data.businessPlans ?? [],
+    };
+  }
+  return { marketplace: [], realEstate: [], cars: [], motorcycles: [], boats: {}, equipment: [], subPlans: [], system: null, businessPlans: [] };
+};
+
 export const getMarketplaceFees = async () => {
   const response = await fetchWithAuth(FEE_ENDPOINTS.MARKETPLACE.GET_ALL);
   return response.ok ? await response.json() : [];
@@ -197,9 +217,20 @@ export const deleteSystemConfig = async (id: string) => {
   return response.ok ? { success: true } : { error: "Failed" };
 };
 
+let _subPlansCache: { data: any; at: number } | null = null;
+const SUB_PLANS_TTL = 60_000;
+
 export const getSubPlans = async () => {
+  if (_subPlansCache && Date.now() - _subPlansCache.at < SUB_PLANS_TTL) {
+    return _subPlansCache.data;
+  }
   const response = await fetchWithAuth(FEE_ENDPOINTS.SUB_PLANS.GET_ALL);
-  return response.ok ? await response.json() : [];
+  if (response.ok) {
+    const data = await response.json();
+    _subPlansCache = { data, at: Date.now() };
+    return data;
+  }
+  return [];
 };
 
 export const getSubPlanById = async (id: string) => {
@@ -232,6 +263,31 @@ export const deleteSubPlan = async (id: string) => {
     method: "DELETE",
   });
   return response.ok ? { success: true } : { error: "Failed" };
+};
+
+export const getBusinessPlanFees = async () => {
+  const response = await fetchWithAuth(FEE_ENDPOINTS.BUSINESS_PLANS.GET_ALL);
+  return response.ok ? await response.json() : [];
+};
+
+export const createBusinessPlanFees = async (data: Record<string, unknown>) => {
+  const response = await fetchWithAuth(FEE_ENDPOINTS.BUSINESS_PLANS.CREATE, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const result = await response.json();
+  return response.ok ? result : { error: result.error || "Failed" };
+};
+
+export const updateBusinessPlanFees = async (
+  id: string,
+  data: Record<string, unknown>,
+) => {
+  const response = await fetchWithAuth(FEE_ENDPOINTS.BUSINESS_PLANS.UPDATE(id), {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  return response.ok ? await response.json() : { error: "Failed" };
 };
 
 export const getCarFees = async () => {

@@ -2,15 +2,17 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   getAllRegions,
-  addCity,
+  updateCity,
   deleteCity,
 } from "@/actions/categories/geoAction";
 import type { Region, City } from "@/app/utils/types/geoTypes";
 import { FiEdit2, FiTrash2, FiArrowLeft } from "react-icons/fi";
 
 export default function Cities() {
+  const { t } = useTranslation();
   const [regions, setRegions] = useState<Region[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -24,8 +26,7 @@ export default function Cities() {
     try {
       const data = await getAllRegions();
       setRegions(data || []);
-    } catch (error) {
-      console.error(error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -38,18 +39,17 @@ export default function Cities() {
   const handleToggleDisable = async (city: City) => {
     setTogglingId(city.id);
     try {
-      const currentStatus = city.isActive !== false;
-      await addCity({ name: city.name, regionId: city.regionId });
+      const newActive = city.isActive === false;
+      await updateCity(city.id, { isActive: newActive });
       setRegions((prev) =>
         prev.map((region) => ({
           ...region,
           cities: region.cities?.map((c) =>
-            c.id === city.id ? { ...c, isActive: !currentStatus } : c,
+            c.id === city.id ? { ...c, isActive: newActive } : c,
           ),
         })),
       );
-    } catch (error) {
-      console.error(error);
+    } catch {
       await fetchData();
     } finally {
       setTogglingId(null);
@@ -59,7 +59,7 @@ export default function Cities() {
   const handleUpdate = async (city: City) => {
     if (!editName.trim()) return;
     try {
-      await addCity({ name: editName, regionId: city.regionId });
+      await updateCity(city.id, { name: editName });
       setRegions((prev) =>
         prev.map((region) => ({
           ...region,
@@ -69,8 +69,7 @@ export default function Cities() {
         })),
       );
       setEditingId(null);
-    } catch (error) {
-      console.error(error);
+    } catch {
       await fetchData();
     }
   };
@@ -85,8 +84,7 @@ export default function Cities() {
           cities: region.cities?.filter((city) => city.id !== id),
         })),
       );
-    } catch (error) {
-      console.error(error);
+    } catch {
       await fetchData();
     } finally {
       setDeletingId(null);
@@ -107,17 +105,17 @@ export default function Cities() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900">
-              Cities Management
+              {t("adminTable.citiesManagement")}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Manage cities and their availability across regions
+              {t("adminTable.citiesSubtitle")}
             </p>
           </div>
           <button
             onClick={() => router.push("/dashboard/settings")}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2 w-fit shadow-sm hover:shadow"
           >
-            <FiArrowLeft size={16} /> Back to Settings
+            <FiArrowLeft size={16} /> {t("adminTable.backToSettings")}
           </button>
         </div>
 
@@ -158,13 +156,13 @@ export default function Cities() {
                               : "bg-red-100 text-red-700"
                           }`}
                         >
-                          {isActive ? "Active" : "Disabled"}
+                          {isActive ? t("adminTable.active") : t("adminTable.disabled")}
                         </span>
                         <button
                           onClick={() => handleDelete(city.id)}
                           disabled={isDeleting}
                           className="p-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          aria-label="Delete city"
+                          aria-label={t("adminTable.delete")}
                         >
                           {isDeleting ? (
                             <div className="w-4 h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin" />
@@ -191,13 +189,13 @@ export default function Cities() {
                               onClick={() => handleUpdate(city)}
                               className="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition"
                             >
-                              Save
+                              {t("adminTable.save")}
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
                               className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-200 transition"
                             >
-                              Cancel
+                              {t("adminTable.cancel")}
                             </button>
                           </div>
                         </div>
@@ -234,9 +232,9 @@ export default function Cities() {
                               {isToggling ? (
                                 <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                               ) : isActive ? (
-                                "Disable"
+                                t("adminTable.disable")
                               ) : (
-                                "Enable"
+                                t("adminTable.enable")
                               )}
                             </button>
                           </div>
@@ -248,7 +246,7 @@ export default function Cities() {
 
                 {(!region.cities || region.cities.length === 0) && (
                   <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-xl border border-gray-200">
-                    <p className="text-sm">No cities found in this region</p>
+                    <p className="text-sm">{t("adminTable.noCitiesFound")}</p>
                   </div>
                 )}
               </div>
@@ -257,7 +255,7 @@ export default function Cities() {
 
           {regions.length === 0 && (
             <div className="text-center py-12 text-gray-400 bg-white rounded-xl border border-gray-200">
-              <p className="text-sm">No regions found</p>
+              <p className="text-sm">{t("adminTable.noRegions")}</p>
             </div>
           )}
         </div>

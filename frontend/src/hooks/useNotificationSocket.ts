@@ -41,8 +41,7 @@ const useNotificationSocket = () => {
           addNotification({
             id: d?.id || String(Date.now()),
             type: "i_have_this",
-            message:
-              d?.message || "Someone responded to your wanted post",
+            message: d?.message || "Someone responded to your wanted post",
             link: d?.link || "/wanted",
             read: false,
             createdAt: d?.createdAt || new Date().toISOString(),
@@ -51,9 +50,29 @@ const useNotificationSocket = () => {
       },
     );
 
+    const removeNewNotifications = socketService.on(
+      "newNotifications",
+      (data: unknown) => {
+        const notifications = Array.isArray(data) ? data : [data];
+        notifications.forEach((n: any) => {
+          dispatch(
+            addNotification({
+              id: n?.id || String(Date.now()),
+              type: n?.category || "subscription_alert",
+              message: n?.message || "A new item matches your alert",
+              link: "/notifications",
+              read: false,
+              createdAt: n?.createdAt || new Date().toISOString(),
+            }),
+          );
+        });
+      },
+    );
+
     return () => {
       removeWantedMatch();
       removeIHaveThis();
+      removeNewNotifications();
     };
   }, [user, dispatch]);
 };

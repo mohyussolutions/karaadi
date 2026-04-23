@@ -14,7 +14,7 @@ interface PlanDetails {
   [key: string]: any;
 }
 
-interface SellFlowState {
+export interface SellFlowState {
   currentStep: number;
   item: ListingItem;
   items: ListingItem[];

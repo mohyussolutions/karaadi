@@ -25,7 +25,7 @@ export default function DashboardSubNav({
 
   return (
     <div className="mb-6">
-      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-4">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-4" suppressHydrationWarning>
         {title}
       </h1>
       <div className="flex flex-wrap gap-2">

@@ -24,9 +24,9 @@ function formatDate(ts: string): string {
   const today = new Date()
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  if (d.toDateString() === today.toDateString()) return "I dag"
-  if (d.toDateString() === yesterday.toDateString()) return "I går"
-  return d.toLocaleDateString("nb-NO", { day: "numeric", month: "long" })
+  if (d.toDateString() === today.toDateString()) return "Today"
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday"
+  return d.toLocaleDateString("en-US", { day: "numeric", month: "long" })
 }
 
 function sameDay(a: string, b: string): boolean {
@@ -60,10 +60,28 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       setLoading(false)
       setTimeout(scrollToBottom, 80)
     })
+
     socketService.connect(currentUserId)
-    socketService.joinChat(chatId)
-    socketService.markAsRead(chatId)
-    return () => { socketService.leaveChat(chatId) }
+
+    const joinAndMark = () => {
+      socketService.joinChat(chatId)
+      socketService.markAsRead(chatId)
+    }
+
+    // Join immediately if already connected; otherwise wait for the connect event
+    if (socketService.isConnected()) {
+      joinAndMark()
+    }
+
+    // Re-join on (re)connect so the room is always joined after network recovery
+    const offConnect = socketService.on("connect", joinAndMark)
+
+    window.dispatchEvent(new CustomEvent("karaadi:messages-read"))
+
+    return () => {
+      offConnect()
+      socketService.leaveChat(chatId)
+    }
   }, [chatId, currentUserId, scrollToBottom])
 
   useEffect(() => {
@@ -95,12 +113,10 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     const handleNewMessage = (data: unknown) => {
       const { chatId: incomingId, message } = data as { chatId: string; message: any }
       addMessage({ ...message, chatId: incomingId }, true)
-      if (Number(incomingId) === chatId) socketService.markAsRead(chatId)
     }
 
     const handleReceiveMessage = (data: unknown) => {
       addMessage(data as any, true)
-      socketService.markAsRead(chatId)
     }
 
     const handleTyping = (data: unknown) => {
@@ -134,7 +150,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     const text = sanitize(input)
     if (!text || sending) return
     setInput("")
-    if (textareaRef.current) textareaRef.current.style.height = "40px"
+    if (textareaRef.current) textareaRef.current.style.height = "48px"
     setSending(true)
     const tempId = -Date.now()
     const optimistic: ChatMessage = {
@@ -180,7 +196,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
     // Auto-resize textarea
-    e.target.style.height = "40px"
+    e.target.style.height = "48px"
     e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
   }
 
@@ -216,7 +232,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
           {chatroom.itemTitle && (
             <p className="text-xs text-gray-500 truncate">
               {chatroom.itemTitle}
-              {chatroom.itemPrice ? ` · ${chatroom.itemPrice.toLocaleString("nb-NO")} kr` : ""}
+              {chatroom.itemPrice ? ` · ${chatroom.itemPrice.toLocaleString("en-US")} kr` : ""}
             </p>
           )}
         </div>
@@ -236,7 +252,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-gray-800 truncate">{chatroom.itemTitle}</p>
             {chatroom.itemPrice && (
-              <p className="text-xs text-[#0063fb] font-bold">{chatroom.itemPrice.toLocaleString("nb-NO")} kr</p>
+              <p className="text-xs text-[#0063fb] font-bold">{chatroom.itemPrice.toLocaleString("en-US")} kr</p>
             )}
           </div>
         </div>
@@ -252,7 +268,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
           ))
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-12 text-center">
-            <p className="text-sm text-gray-400">Ingen meldinger ennå. Si hei! 👋</p>
+            <p className="text-sm text-gray-400">No messages yet. Say hi! 👋</p>
           </div>
         ) : (
           <>
@@ -298,11 +314,11 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={`Skriv til ${otherName}…`}
+            placeholder={`Message ${otherName}…`}
             disabled={sending}
             rows={1}
-            className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all"
-            style={{ height: "40px", maxHeight: "120px", overflowY: "auto" }}
+            className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all"
+            style={{ height: "48px", maxHeight: "120px", overflowY: "auto" }}
           />
           <button
             onClick={handleSend}

@@ -52,13 +52,20 @@ export interface CreateCarBody {
   mainCategory: string;
   category: string[];
   subcategory: string[];
-  brand: string;
-  vehicleModel: string;
-  year?: number;
-  mileage?: number;
+  brand?: string;
+  vehicleModel?: string;
+  make?: string;
+  model?: string;
+  trim?: string;
+  year?: number | string;
+  mileage?: number | string;
   transmission?: string;
+  gearbox?: string;
   fuelType?: string;
-  color: string;
+  engineSize?: string;
+  condition?: string;
+  color?: string;
+  doors?: number | string;
   region: string;
   city: string;
   images: string[];
@@ -68,6 +75,7 @@ export interface CreateCarBody {
   planAmount?: number;
   feeId?: string;
   feeAmount?: number;
+  businessId?: string;
 }
 
 export interface CreateFarmequipmentBody {
@@ -105,6 +113,7 @@ export type ItemModels =
   | "boat"
   | "motorcycle"
   | "farmequipment"
+  | "job"
   | "advertisement";
 
 export interface ItemData {
@@ -139,6 +148,45 @@ export interface CreateSubscriptionBody {
 export interface UpdateStatusBody {
   status: "active" | "inactive" | "paused";
   isActive?: boolean;
+}
+
+export interface CreateBusinessPlanBody {
+  name: string;
+  price: number;
+  durationDays: number;
+  maxListings: number;
+  categories: string[];
+  features: string[];
+  isActive?: boolean;
+}
+
+export interface SelectBusinessPlanBody {
+  planId: string;
+}
+
+export interface CreateBusinessBody {
+  name: string;
+  email: string;
+  phone: string;
+  orgNumber?: string;
+  address?: string;
+  website?: string;
+  logo?: string;
+  images?: string[];
+  description?: string;
+  categories: string[];
+  contactName?: string;
+  planType?: string;
+  planId?: string;
+}
+
+export interface UpdateBusinessStatusBody {
+  status: "pending" | "active" | "inactive" | "suspended";
+  isVerified?: boolean;
+}
+
+export interface ExtendBusinessPlanBody {
+  planId: string;
 }
 
 export interface TriggerNotificationBody {

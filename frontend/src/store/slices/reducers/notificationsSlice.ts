@@ -9,7 +9,7 @@ export interface NotificationItem {
   createdAt: string;
 }
 
-interface NotificationsState {
+export interface NotificationsState {
   items: NotificationItem[];
   unreadCount: number;
 }

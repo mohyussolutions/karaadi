@@ -25,6 +25,7 @@ import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
 const PAGE_SIZE = 20;
 
 export default function BoatPages() {
+  const { t } = useTranslation();
   const [boats, setBoats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,13 +112,13 @@ export default function BoatPages() {
         <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
           <div className="w-full max-w-full">
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 sm:px-6 py-4 rounded-xl">
-              <p className="font-bold text-base sm:text-lg">Error</p>
+              <p className="font-bold text-base sm:text-lg">{t("adminTable.error")}</p>
               <p className="text-sm sm:text-base mt-1">{error}</p>
               <button
                 onClick={() => window.location.reload()}
                 className="mt-3 sm:mt-4 bg-red-600 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base hover:bg-red-700 transition w-full sm:w-auto"
               >
-                Try Again
+                {t("adminTable.tryAgain")}
               </button>
             </div>
           </div>
@@ -145,7 +146,7 @@ export default function BoatPages() {
 
           {!loading && (
             <div className="mt-6 w-full">
-              <div className="block md:hidden">
+              <div className="block lg:hidden">
                 <div className="space-y-4 w-full">
                   {visibleBoats.length > 0 ? (
                     visibleBoats.map((boat, index) => (
@@ -175,21 +176,21 @@ export default function BoatPages() {
 
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-gray-500">City</span>
+                            <span className="text-gray-500">{t("adminTable.city")}</span>
                             <p className="font-medium truncate">{boat.city}</p>
                           </div>
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-gray-500">Status</span>
+                            <span className="text-gray-500">{t("adminTable.status")}</span>
                             <p
                               className={`font-medium truncate ${boat.isPaid ? "text-green-600" : "text-red-600"}`}
                             >
-                              {boat.isPaid ? "Paid" : "Unpaid"}
+                              {boat.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                             </p>
                           </div>
                         </div>
 
                         <div className="mt-3 bg-gray-50 p-3 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Seller</p>
+                          <p className="text-xs text-gray-500 mb-1">{t("adminTable.seller")}</p>
                           <p className="font-medium text-sm truncate">
                             {boat.user?.username || "N/A"}
                           </p>
@@ -218,7 +219,7 @@ export default function BoatPages() {
                               <FaCheckCircle size={12} />
                             )}
                             <span className="truncate">
-                              {boat.isPaid ? "Unpaid" : "Paid"}
+                              {boat.isPaid ? t("adminTable.markUnpaid") : t("adminTable.markPaid")}
                             </span>
                           </button>
 
@@ -226,52 +227,34 @@ export default function BoatPages() {
                             onClick={() => handleDelete(boat.id)}
                             className="flex-1 py-2 px-2 bg-red-500 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-red-600 transition"
                           >
-                            <FaTrashAlt size={12} />{" "}
-                            <span className="truncate">Delete</span>
+                            <FaTrashAlt size={12} />
+                            <span className="truncate">{t("adminTable.delete")}</span>
                           </button>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-10 text-gray-500 border border-dashed rounded-lg">
-                      No boats found in the database
+                      {t("adminTable.noItems")}
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="hidden md:block w-full">
+              <div className="hidden lg:block w-full">
                 <div className="border border-gray-300 rounded-xl bg-white overflow-hidden">
                   <table className="w-full table-fixed">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">
-                          Image
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">
-                          Title
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
-                          Category
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
-                          Subcategory
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
-                          Price
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
-                          City
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">
-                          Seller
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">
-                          Paid
-                        </th>
-                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">
-                          Actions
-                        </th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">{t("adminTable.image")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">{t("adminTable.title")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.category")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.subcategory")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.price")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.city")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[15%]">{t("adminTable.seller")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.paid")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.actions")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -359,19 +342,13 @@ export default function BoatPages() {
                             <td className="border-b p-3">
                               {boat.isPaid ? (
                                 <span className="text-green-600 font-semibold flex items-center text-xs">
-                                  <FaCheckCircle
-                                    className="mr-1 flex-shrink-0"
-                                    size={10}
-                                  />{" "}
-                                  PAID
+                                  <FaCheckCircle className="mr-1 flex-shrink-0" size={10} />
+                                  {t("adminTable.paid")}
                                 </span>
                               ) : (
                                 <span className="text-red-600 font-semibold flex items-center text-xs">
-                                  <FaTimesCircle
-                                    className="mr-1 flex-shrink-0"
-                                    size={10}
-                                  />{" "}
-                                  UNPAID
+                                  <FaTimesCircle className="mr-1 flex-shrink-0" size={10} />
+                                  {t("adminTable.unpaid")}
                                 </span>
                               )}
                             </td>
@@ -412,11 +389,8 @@ export default function BoatPages() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={9}
-                            className="text-center py-10 text-gray-500"
-                          >
-                            No boats found in the database
+                          <td colSpan={9} className="text-center py-10 text-gray-500">
+                            {t("adminTable.noItems")}
                           </td>
                         </tr>
                       )}

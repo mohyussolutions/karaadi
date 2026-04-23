@@ -96,6 +96,14 @@ export async function sendChatMessage(data: {
   return mapMessage(await res.json())
 }
 
+export async function deleteChatroom(chatId: number, userId: string): Promise<boolean> {
+  const res = await fetch(`${BASE_API_URL}/api/chats/${chatId}?userId=${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+    credentials: "include",
+  })
+  return res.ok
+}
+
 export async function getUnreadMessageCount(userId: string): Promise<number> {
   const res = await fetch(`${BASE_API_URL}/api/messages/unread/${encodeURIComponent(userId)}`, {
     credentials: "include",

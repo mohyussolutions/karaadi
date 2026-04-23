@@ -1,7 +1,18 @@
-import { IoAddCircleOutline, IoNotificationsOutline } from "react-icons/io5";
+import {
+  IoAddCircleOutline,
+  IoNotificationsOutline,
+  IoBusinessOutline,
+} from "react-icons/io5";
 import { FaRegMessage } from "react-icons/fa6";
 
 export const STATIC_NAV_ITEMS = [
+  {
+    labelKey: "nav.business",
+    href: "/business",
+    icon: IoBusinessOutline,
+    iconSize: 22,
+    hasBadge: false,
+  },
   {
     labelKey: "nav.notifications",
     href: "/notifications",

@@ -128,6 +128,31 @@ export async function getTotalReports(): Promise<{ data: number }> {
   return res.ok ? res.json() : { data: 0 };
 }
 
+export async function getReportsSummary(
+  params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    itemType?: string;
+    search?: string;
+    fromDate?: string;
+    toDate?: string;
+  } = {},
+) {
+  const headers = await getAuthHeaders();
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) queryParams.append(key, value.toString());
+  });
+  const url = queryParams.toString()
+    ? `${REPORT_ENDPOINTS.SUMMARY}?${queryParams.toString()}`
+    : REPORT_ENDPOINTS.SUMMARY;
+  const res = await fetch(url, { headers: headers as HeadersInit, cache: "no-store" });
+  return res.ok
+    ? res.json()
+    : { success: false, data: { reports: [], pagination: { page: 1, limit: 10, total: 0, pages: 1 }, stats: null } };
+}
+
 export async function getTotalReportsForAdmin() {
   const [reportsData, statsData, totalData] = await Promise.all([
     getAllReports({ limit: 100 }),

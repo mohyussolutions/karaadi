@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Download,
   RefreshCw,
@@ -94,6 +95,7 @@ function computeStats(subscriptions: Subscription[]) {
 }
 
 export default function AdminSubscriptionsPageComponent() {
+  const { t } = useTranslation();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -262,10 +264,10 @@ export default function AdminSubscriptionsPageComponent() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-800 uppercase tracking-tight">
-                Subscriptions
+                {t("adminTable.subscriptions")}
               </h1>
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                Manage automated user alerts and preferences
+                {t("adminTable.manageSubscriptions")}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -273,7 +275,7 @@ export default function AdminSubscriptionsPageComponent() {
                 onClick={clearFilters}
                 className="px-3 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition text-xs sm:text-sm"
               >
-                Clear
+                {t("adminTable.clear")}
               </button>
               <button
                 onClick={fetchSubscriptions}
@@ -286,7 +288,7 @@ export default function AdminSubscriptionsPageComponent() {
                 className="sm:hidden flex items-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
               >
                 <Filter className="h-3 w-3" />
-                {mobileFiltersOpen ? "Hide" : "Filters"}
+                {mobileFiltersOpen ? t("adminTable.hide") : t("adminTable.filters")}
               </button>
               <button
                 onClick={handleExportCSV}
@@ -300,28 +302,28 @@ export default function AdminSubscriptionsPageComponent() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
             <StatsCard
-              title="Total"
+              title={t("adminTable.total")}
               value={stats.total}
               icon={Users}
               gradientFrom="from-blue-600"
               gradientTo="to-blue-800"
             />
             <StatsCard
-              title="Active"
+              title={t("adminTable.active")}
               value={stats.active}
               icon={Activity}
               gradientFrom="from-emerald-500"
               gradientTo="to-emerald-700"
             />
             <StatsCard
-              title="Inactive"
+              title={t("adminTable.inactive")}
               value={stats.inactive}
               icon={Bell}
               gradientFrom="from-rose-500"
               gradientTo="to-rose-700"
             />
             <StatsCard
-              title="This Week"
+              title={t("adminTable.thisWeek")}
               value={stats.recent}
               icon={TrendingUp}
               gradientFrom="from-indigo-500"

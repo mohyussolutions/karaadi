@@ -19,7 +19,9 @@ export default function DashboardShell({
       <Sidebar isOpen={sidebarOpen} toggleSidebar={closeSidebar} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar toggleSidebar={openSidebar} />
-        <main className="flex-1 overflow-y-auto mt-16 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto mt-16 p-2 sm:p-4 lg:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

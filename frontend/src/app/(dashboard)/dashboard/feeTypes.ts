@@ -7,6 +7,7 @@ export interface FeeIds {
   e: string;
   s: string;
   sys: string;
+  bp: string;
 }
 
 interface FieldMappings {
@@ -18,6 +19,7 @@ interface FieldMappings {
   equipment: string[];
   subPlans: string[];
   system: string[];
+  businessPlans: string[];
 }
 
 export const fieldMappings: FieldMappings = {
@@ -44,4 +46,5 @@ export const fieldMappings: FieldMappings = {
   ],
   subPlans: ["basic30", "standard60", "premium90"],
   system: ["taxRate", "platformFee", "waafiFee", "currency"],
+  businessPlans: ["bp30", "bp60", "bp90"],
 };

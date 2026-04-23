@@ -17,7 +17,7 @@ export interface WantedPost {
   active: boolean;
 }
 
-interface WantedState {
+export interface WantedState {
   items: WantedPost[];
   myPosts: WantedPost[];
   status: "idle" | "loading" | "succeeded" | "failed";

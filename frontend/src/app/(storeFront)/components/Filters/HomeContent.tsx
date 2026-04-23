@@ -6,19 +6,50 @@ import Pagination from "@/app/ui/invoices/pagination";
 import { useGetRoute } from "../hooks/useGetRoute";
 import { groupByPriorityAndRandomize } from "../hooks/RandomizedItemShowcase";
 
+function parseQuery(query: string) {
+  const parts = query.split("/").map((p) => p.trim()).filter(Boolean);
+  return {
+    text: parts[0] ?? "",
+    location: parts.slice(1).join(" ").toLowerCase(),
+  };
+}
+
 export default function HomeContent({
   serverSearchResults,
   query,
+  minPrice,
+  maxPrice,
 }: {
   serverSearchResults: any[];
   query: string;
+  minPrice?: number;
+  maxPrice?: number;
 }) {
   const [visibleCount, setVisibleCount] = useState(20);
   const { getRoute } = useGetRoute();
 
+  const { location } = parseQuery(query);
+
   const displayItems = useMemo(() => {
-    return groupByPriorityAndRandomize(serverSearchResults || []);
-  }, [serverSearchResults]);
+    let items = groupByPriorityAndRandomize(serverSearchResults || []);
+
+    if (location) {
+      items = items.filter((item: any) => {
+        const city = (item.city ?? item.region ?? "").toLowerCase();
+        return city.includes(location);
+      });
+    }
+
+    if (minPrice !== undefined && minPrice > 0) {
+      items = items.filter((item: any) => Number(item.price ?? 0) >= minPrice);
+    }
+
+    if (maxPrice !== undefined && maxPrice > 0) {
+      items = items.filter((item: any) => Number(item.price ?? 0) <= maxPrice);
+    }
+
+    return items;
+  }, [serverSearchResults, location, minPrice, maxPrice]);
 
   const itemsToShow = useMemo(() => {
     return displayItems.slice(0, visibleCount);

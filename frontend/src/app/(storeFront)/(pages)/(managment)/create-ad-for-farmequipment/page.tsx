@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -20,12 +19,7 @@ import { updateItem } from "@/store/slices/reducers/listingDraftSlice";
 import { getEquipmentFees } from "@/actions/categories/feeAction";
 import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps";
 
-const EQUIPMENT_CATEGORIES = [
-  { key: "tractorForSale", label: "Tractor For Sale" },
-  { key: "farmTools", label: "Farm Tools" },
-  { key: "fertilizerSpreader", label: "Fertilizer Spreader" },
-  { key: "grainHarvester", label: "Grain Harvester" },
-];
+const EQUIPMENT_CATEGORY_KEYS = ["tractorForSale", "farmTools", "fertilizerSpreader", "grainHarvester"] as const;
 
 const EQUIPMENT_FEE_MAPPING: Record<string, string> = {
   tractorForSale: "tractorSale",
@@ -34,7 +28,7 @@ const EQUIPMENT_FEE_MAPPING: Record<string, string> = {
   grainHarvester: "harvester",
 };
 
-const CONDITION_OPTIONS = ["New", "Used", "Refurbished"];
+const CONDITION_KEYS = ["new", "used", "refurbished"] as const;
 
 export default function CreateAdForFarmEquipmentPage() {
   const router = useRouter();
@@ -46,7 +40,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
   const dispatch = useAppDispatch();
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
-  const savedItem = useAppSelector((state) => state.listingDraft.item);
+  const savedItem = useAppSelector((state) => state.listingDraft.item) ?? {};
 
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -82,7 +76,6 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
     equipmentType: savedItem.equipmentType || "",
     brand: savedItem.brand || "",
     hoursUsed: savedItem.hoursUsed || "",
-    lastServiceDate: savedItem.lastServiceDate || "",
     condition: savedItem.condition || "",
     attachmentsIncluded: savedItem.attachmentsIncluded || "",
   });
@@ -137,26 +130,15 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
     e.preventDefault();
     if (!user || isLoading) return;
 
-    const requiredFields = [
-      "category",
-      "subCategory",
-      "price",
-      "title",
-      "description",
-      "brand",
-      "condition",
-      "region",
-      "city",
-    ];
-    const isMissing =
-      requiredFields.some((key) => !(formData as any)[key]) || images.length === 0;
+    const requiredFields = ["category", "subCategory", "price", "title", "description", "brand", "condition", "region", "city"];
+    const isMissing = requiredFields.some((key) => !(formData as any)[key]) || images.length === 0;
 
     if (isMissing) {
-      return toast.error(t("createMotorcycle.fillRequired"));
+      return toast.error(t("createFarmequipment.fillRequired"));
     }
 
     setIsLoading(true);
-    const toastId = toast.loading(t("createMotorcycle.registering"));
+    const toastId = toast.loading(t("createFarmequipment.registering"));
 
     try {
       let finalCity = formData.city;
@@ -166,7 +148,6 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
       }
 
       const imagesBase64 = await toBase64();
-
       const fee = getFeeForCategory(formData.category);
 
       const payload = {
@@ -181,9 +162,11 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
         subcategory: formData.subCategory ? [formData.subCategory] : [],
         year: formData.year,
         equipmentType: formData.equipmentType,
+        type: formData.equipmentType,
         brand: formData.brand,
+        make: formData.brand,
         hoursUsed: formData.hoursUsed,
-        lastServiceDate: formData.lastServiceDate,
+        hours: formData.hoursUsed,
         condition: formData.condition,
         attachmentsIncluded: formData.attachmentsIncluded,
         region: formData.region,
@@ -193,14 +176,11 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
         feeAmount: fee,
       };
 
-      const result: any = await createTraktor(
-        payload as any,
-        user.token || (user as any).accessToken,
-      );
+      const result: any = await createTraktor(payload as any, user.token || (user as any).accessToken);
 
       if (result.success) {
         toast.update(toastId, {
-          render: t("createMotorcycle.successMessage"),
+          render: t("createFarmequipment.successMessage"),
           type: "success",
           isLoading: false,
           autoClose: 2000,
@@ -210,7 +190,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
         setTimeout(() => onNext(), 1200);
       } else {
         toast.update(toastId, {
-          render: result.message || t("createMotorcycle.errorMessage"),
+          render: result.message || t("createFarmequipment.errorMessage"),
           type: "error",
           isLoading: false,
           autoClose: 3000,
@@ -218,7 +198,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
       }
     } catch {
       toast.update(toastId, {
-        render: t("createMotorcycle.errorMessage"),
+        render: t("createFarmequipment.errorMessage"),
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -238,8 +218,6 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
-
-
       <CheckoutSteps step1 step2 />
 
       <div className="text-center mb-10">
@@ -247,14 +225,14 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
           <FaLeaf className="text-4xl text-blue-600" />
         </div>
         <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
-          Create Farm Equipment Listing
+          {t("createFarmequipment.pageTitle")}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Main Category
+            {t("createFarmequipment.mainCategoryLabel")}
           </label>
           <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
             <FaLeaf className="text-blue-500" />
@@ -270,20 +248,18 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Category
+              {t("createFarmequipment.categoryLabel")}
             </label>
             <select
               value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value, subCategory: "" })
-              }
+              onChange={(e) => setFormData({ ...formData, category: e.target.value, subCategory: "" })}
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
               required
             >
-              <option value="">Select Category</option>
-              {EQUIPMENT_CATEGORIES.map((cat) => (
-                <option key={cat.key} value={cat.key}>
-                  {cat.label}
+              <option value="">{t("createFarmequipment.selectCategory")}</option>
+              {EQUIPMENT_CATEGORY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`createFarmequipment.categories.${key}`)}
                 </option>
               ))}
             </select>
@@ -291,7 +267,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Subcategory
+              {t("createFarmequipment.subcategoryLabel")}
             </label>
             <select
               value={formData.subCategory}
@@ -300,7 +276,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
               required
             >
-              <option value="">Select Subcategory</option>
+              <option value="">{t("createFarmequipment.selectSubcategory")}</option>
               {getNestedSubcategories().map((sub: any, idx: number) => (
                 <option key={idx} value={sub.labelKey || sub.key || sub}>
                   {t(sub.labelKey || sub.name || sub)}
@@ -312,10 +288,10 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-            Title
+            {t("createFarmequipment.titleLabel")}
           </label>
           <input
-            placeholder="e.g. John Deere 5075E Tractor 2020"
+            placeholder={t("createFarmequipment.titlePlaceholder")}
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
@@ -325,9 +301,11 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Year</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createFarmequipment.yearLabel")}
+            </label>
             <input
-              placeholder="e.g. 2020"
+              placeholder={t("createFarmequipment.yearPlaceholder")}
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -335,19 +313,21 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Equipment Type
+              {t("createFarmequipment.equipmentTypeLabel")}
             </label>
             <input
-              placeholder="e.g. Tractor"
+              placeholder={t("createFarmequipment.equipmentTypePlaceholder")}
               value={formData.equipmentType}
               onChange={(e) => setFormData({ ...formData, equipmentType: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Brand</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase">
+              {t("createFarmequipment.brandLabel")}
+            </label>
             <input
-              placeholder="e.g. John Deere"
+              placeholder={t("createFarmequipment.brandPlaceholder")}
               value={formData.brand}
               onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -356,11 +336,11 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Hours Used
+              {t("createFarmequipment.hoursUsedLabel")}
             </label>
             <input
               type="number"
-              placeholder="e.g. 1200"
+              placeholder={t("createFarmequipment.hoursUsedPlaceholder")}
               value={formData.hoursUsed}
               onChange={(e) => setFormData({ ...formData, hoursUsed: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
@@ -368,44 +348,33 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Last Service Date
+              {t("createFarmequipment.conditionLabel")}
             </label>
-            <input
-              type="date"
-              value={formData.lastServiceDate}
-              onChange={(e) => setFormData({ ...formData, lastServiceDate: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase">Condition</label>
             <select
               value={formData.condition}
               onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             >
-              <option value="">Select</option>
-              {CONDITION_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">{t("createFarmequipment.selectCondition")}</option>
+              {CONDITION_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`createFarmequipment.conditions.${key}`)}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
-              Attachments Included
+              {t("createFarmequipment.attachmentsLabel")}
             </label>
             <input
-              placeholder="e.g. Plow, Loader"
+              placeholder={t("createFarmequipment.attachmentsPlaceholder")}
               value={formData.attachmentsIncluded}
-              onChange={(e) =>
-                setFormData({ ...formData, attachmentsIncluded: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, attachmentsIncluded: e.target.value })}
               className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
@@ -414,10 +383,10 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Description
+              {t("createFarmequipment.descriptionLabel")}
             </label>
             <textarea
-              placeholder="Describe the equipment condition, usage history..."
+              placeholder={t("createFarmequipment.descriptionPlaceholder")}
               rows={5}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -428,17 +397,15 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
-              Region
+              {t("createFarmequipment.regionLabel")}
             </label>
             <select
               value={formData.region}
-              onChange={(e) =>
-                setFormData({ ...formData, region: e.target.value, city: "" })
-              }
+              onChange={(e) => setFormData({ ...formData, region: e.target.value, city: "" })}
               className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             >
-              <option value="">Select Region</option>
+              <option value="">{t("createFarmequipment.selectRegion")}</option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
                   {i18n.language === "so" ? r.so || r.name : r.name}
@@ -450,7 +417,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            City
+            {t("createFarmequipment.cityLabel")}
           </label>
           <div className="relative">
             <button
@@ -459,7 +426,9 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
               disabled={!formData.region}
               className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
             >
-              {showNewCityInputs ? "Adding city..." : formData.city || "Select City"}
+              {showNewCityInputs
+                ? t("createFarmequipment.addingCity")
+                : formData.city || t("createFarmequipment.selectCity")}
               <span>▾</span>
             </button>
             {showCityDropdown && (
@@ -486,7 +455,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
                   }}
                   className="w-full text-left p-4 text-blue-600 font-black text-xs"
                 >
-                  + ADD NEW CITY
+                  {t("createFarmequipment.addNewCity")}
                 </button>
               </div>
             )}
@@ -495,7 +464,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
         {showNewCityInputs && (
           <input
-            placeholder="Enter new city name"
+            placeholder={t("createFarmequipment.newCityPlaceholder")}
             value={newCity}
             onChange={(e) => setNewCity(e.target.value)}
             className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
@@ -504,7 +473,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            Price ($)
+            {t("createFarmequipment.priceLabel")}
           </label>
           <div className="relative">
             <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
@@ -523,7 +492,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
             images={images}
             onAdd={addImages}
             onRemove={removeImage}
-            label={t("createMotorcycle.upload")}
+            label={t("createFarmequipment.upload")}
           />
         </div>
 
@@ -535,7 +504,7 @@ function FarmEquipmentForm({ onNext }: { onNext: () => void }) {
           {isLoading ? (
             <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" />
           ) : (
-            t("createMotorcycle.submit")
+            t("createFarmequipment.submit")
           )}
         </button>
       </form>

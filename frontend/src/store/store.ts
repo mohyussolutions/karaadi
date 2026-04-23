@@ -3,6 +3,7 @@ import languageReducer from "./slices/reducers/languageSlice";
 import listingDraftReducer from "./slices/reducers/listingDraftSlice";
 import notificationsReducer from "./slices/reducers/notificationsSlice";
 import wantedReducer from "./slices/reducers/wantedSlice";
+
 import {
   persistStore,
   persistReducer,
@@ -14,6 +15,7 @@ import {
   REGISTER,
 } from "redux-persist";
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
+import listingDraftTransform from "./listingDraftTransform";
 
 function createNoopStorage() {
   return {
@@ -29,9 +31,10 @@ const storage =
     : createNoopStorage();
 
 const persistConfig = {
-  key: "karaadi-root-v3",
+  key: "karaadi-root-v4",
   storage,
   whitelist: ["listingDraft", "language"],
+  transforms: [listingDraftTransform],
 };
 
 const rootReducer = combineReducers({
@@ -41,7 +44,11 @@ const rootReducer = combineReducers({
   wanted: wantedReducer,
 });
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+type RootReducerState = ReturnType<typeof rootReducer>;
+const persistedReducer = persistReducer<RootReducerState>(
+  persistConfig,
+  rootReducer as any,
+);
 
 export const store = configureStore({
   reducer: persistedReducer,

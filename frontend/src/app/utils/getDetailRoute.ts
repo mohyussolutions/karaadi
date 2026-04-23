@@ -3,6 +3,8 @@ import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
 const VEHICLE_CATEGORIES = [
   "car",
   "cars",
+  "motor",
+  "motors",
   "motorcycle",
   "motorcycles",
   "boat",
@@ -31,6 +33,8 @@ const REAL_ESTATE_CATEGORIES = [
   "house",
   "houses",
   "land",
+  "sale",
+  "rent",
   "commercial property",
   "commercial",
   "real estate",
@@ -57,10 +61,16 @@ export const CATEGORY_ROUTE_MAP = [
 
 export function getDetailRoute(listing: UniversalCardProps): string {
   const raw = listing.category;
-  const category = (typeof raw === "string" ? raw : "").toLowerCase();
   const id = listing._id || listing.id;
+
+  const candidates: string[] = Array.isArray(raw)
+    ? raw.map((c) => String(c).toLowerCase())
+    : typeof raw === "string"
+      ? [raw.toLowerCase()]
+      : [];
+
   for (const { categories, route } of CATEGORY_ROUTE_MAP) {
-    if (categories.includes(category)) {
+    if (candidates.some((c) => categories.includes(c))) {
       return `${route}/${id}`;
     }
   }

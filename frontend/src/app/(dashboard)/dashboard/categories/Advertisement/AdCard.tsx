@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
 import type { AdItem } from "./types";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 
@@ -20,6 +21,7 @@ export default function AdCard({
   onToggle,
   loading,
 }: AdCardProps) {
+  const { t } = useTranslation();
   const isSidebar = ad.position === "sidebar";
 
   return (
@@ -51,7 +53,7 @@ export default function AdCard({
           <span
             className={`text-[10px] px-2 py-0.5 rounded-full ${ad.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
           >
-            {ad.isActive ? "Active" : "Inactive"}
+            {ad.isActive ? t("adminTable.active") : t("adminTable.inactive")}
           </span>
           <span className="font-semibold text-sm text-gray-800 truncate">
             {ad.title}
@@ -81,21 +83,21 @@ export default function AdCard({
           disabled={loading}
           className="text-xs px-3 py-1 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50"
         >
-          Edit
+          {t("adminTable.edit")}
         </button>
         <button
           onClick={() => onToggle(ad.id, ad.isActive)}
           disabled={loading}
           className={`text-xs px-3 py-1 border rounded-lg ${ad.isActive ? "border-yellow-200 text-yellow-600 hover:bg-yellow-50" : "border-green-200 text-green-600 hover:bg-green-50"}`}
         >
-          {ad.isActive ? "Pause" : "Activate"}
+          {ad.isActive ? t("adminTable.pause") : t("adminTable.activate")}
         </button>
         <button
           onClick={() => onDelete(ad.id)}
           disabled={loading}
           className="text-xs px-3 py-1 border border-red-200 text-red-500 rounded-lg hover:bg-red-50"
         >
-          Delete
+          {t("adminTable.delete")}
         </button>
       </div>
     </div>
