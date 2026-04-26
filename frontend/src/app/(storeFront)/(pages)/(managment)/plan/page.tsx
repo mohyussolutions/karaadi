@@ -46,20 +46,24 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
 
   useEffect(() => {
     let cancelled = false;
-    getSubPlans().then((res) => {
-      if (cancelled) return;
-      const config = Array.isArray(res) ? res[0] : res;
-      if (!config) return;
-      setPlans((prev) =>
-        prev.map((p) => ({ ...p, price: Number(config[p.key]) || 0 })),
-      );
-      if (savedPlan) {
-        setSelectedPlan((prev: any) =>
-          prev ? { ...prev, price: Number(config[prev.key]) || 0 } : prev,
+    getSubPlans()
+      .then((res) => {
+        if (cancelled) return;
+        const config = Array.isArray(res) ? res[0] : res;
+        if (!config) return;
+        setPlans((prev) =>
+          prev.map((p) => ({ ...p, price: Number(config[p.key]) || 0 })),
         );
-      }
-    }).catch(() => {});
-    return () => { cancelled = true; };
+        if (savedPlan) {
+          setSelectedPlan((prev: any) =>
+            prev ? { ...prev, price: Number(config[prev.key]) || 0 } : prev,
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSelect = (p: any) => {
@@ -77,7 +81,8 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
   const planPrice = selectedPlan?.price || 0;
   const totalCost = itemFeeAmount + planPrice;
 
-  const maxPrice = plans.length > 0 ? Math.max(...plans.map((p) => p.price)) : 0;
+  const maxPrice =
+    plans.length > 0 ? Math.max(...plans.map((p) => p.price)) : 0;
 
   return (
     <div className="py-8">
@@ -133,11 +138,15 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
               </div>
 
               <h3 className="font-black text-lg text-gray-900">{p.label}</h3>
-              <p className={`text-xs font-bold mt-1 ${isSelected ? "text-blue-600" : "text-gray-400"}`}>
+              <p
+                className={`text-xs font-bold mt-1 ${isSelected ? "text-blue-600" : "text-gray-400"}`}
+              >
                 {p.days} {t("plan.days", "days")}
               </p>
 
-              <div className={`text-3xl font-black mt-4 ${isSelected ? "text-blue-600" : "text-gray-900"}`}>
+              <div
+                className={`text-3xl font-black mt-4 ${isSelected ? "text-blue-600" : "text-gray-900"}`}
+              >
                 ${p.price}{" "}
                 <span className="text-sm font-bold text-gray-400">
                   {t("plan.currency", "USD")}
@@ -151,7 +160,9 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
                       className={`flex-shrink-0 mt-0.5 ${isSelected ? "text-blue-500" : "text-gray-300"}`}
                       size={16}
                     />
-                    <span className="text-sm text-gray-600 font-medium">{f}</span>
+                    <span className="text-sm text-gray-600 font-medium">
+                      {f}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -253,3 +264,5 @@ const PlanPage = () => {
 };
 
 export default PlanPage;
+
+//

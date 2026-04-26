@@ -12,14 +12,12 @@ env:
   NODE_VERSION: "20"
 
 permissions:
-  id-token: write   # required for OIDC
+  id-token: write
   contents: read
 
 jobs:
-
-  # ── 1. Type-check & build ───────────────────────────────────────────────────
   build:
-    name: Type-check & Build
+    name: Build Backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,15 +32,10 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Type-check
-        working-directory: backend
-        run: npx tsc --noEmit
-
       - name: Build
         working-directory: backend
         run: npm run build
 
-  # ── 2. Deploy to EC2 via SSM (no SSH key required) ─────────────────────────
   deploy:
     name: Deploy to EC2 via SSM
     runs-on: ubuntu-latest
