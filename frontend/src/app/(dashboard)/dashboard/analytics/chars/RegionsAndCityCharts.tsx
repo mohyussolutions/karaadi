@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -30,6 +30,9 @@ function VerticalBarCard({
   data: ChartData[];
   color: string;
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const sorted = [...data]
     .filter((d) => typeof d.buyers === "number" && d.buyers > 0)
     .sort((a, b) => (b.buyers as number) - (a.buyers as number))
@@ -55,6 +58,9 @@ function VerticalBarCard({
         {title}
       </p>
       <p className="text-xs text-slate-300 mb-3 sm:mb-5">All time</p>
+      {!mounted ? (
+        <div style={{ height: Math.max(280, sorted.length * 26) }} />
+      ) : (
       <ResponsiveContainer
         width="100%"
         height={Math.max(280, sorted.length * 26)}
@@ -116,6 +122,7 @@ function VerticalBarCard({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      )}
     </div>
   );
 }

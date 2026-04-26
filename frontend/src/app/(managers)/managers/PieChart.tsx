@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const resourceData = [
@@ -12,19 +13,26 @@ const resourceData = [
 const COLORS = ["#6366f1", "#22c55e", "#f97316", "#06b6d4"];
 
 export function ResourceAllocationChart() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
     <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-gray-200 h-80">
       <h3 className="text-lg font-semibold mb-4">Resource Allocation</h3>
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie data={resourceData} dataKey="value" outerRadius={110} label>
-            {resourceData.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
+      {mounted ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={resourceData} dataKey="value" outerRadius={110} label>
+              {resourceData.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="h-full" />
+      )}
     </div>
   );
 }

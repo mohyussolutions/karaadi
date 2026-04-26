@@ -6,6 +6,7 @@ import { FaCheckCircle, FaMobileAlt, FaLock } from "react-icons/fa";
 import { PAYMENT_METHODS, MAX_POLL_ATTEMPTS } from "./constants";
 import type { PaymentMethod, PaymentStatus } from "./constants";
 import { useIsValidPhone } from "@/app/(storeFront)/components/hooks/useIsValidPhone";
+import { useIsFree } from "@/app/(storeFront)/components/hooks/useIsFree";
 
 interface Props {
   processing: boolean;
@@ -38,16 +39,21 @@ export default function PaymentPanel({
   handleBack,
   handlePayment,
 }: Props) {
+  const isFree = useIsFree(total);
   return (
     <div className="lg:w-1/3 bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
       <PollingOverlay processing={processing} paymentStatus={paymentStatus} pollAttempt={pollAttempt} handleRetry={handleRetry} />
-      <SuccessOverlay paymentStatus={paymentStatus} />
-      <PanelHeader />
+      <SuccessOverlay paymentStatus={paymentStatus} isFree={isFree} />
+      <PanelHeader isFree={isFree} />
       <div className="p-5 space-y-5">
         <TotalDisplay total={total} />
-        <PaymentMethodSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
-        <PhoneInput phoneNumber={phoneNumber} setPhoneNumber={setPhoneNumber} phoneError={phoneError} setPhoneError={setPhoneError} />
-        <FailedRetry paymentStatus={paymentStatus} handleRetry={handleRetry} />
+        {!isFree && (
+          <>
+            <PaymentMethodSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
+            <PhoneInput phoneNumber={phoneNumber} setPhoneNumber={setPhoneNumber} phoneError={phoneError} setPhoneError={setPhoneError} />
+          </>
+        )}
+        <FailedRetry paymentStatus={paymentStatus} isFree={isFree} handleRetry={handleRetry} />
       </div>
       <PaymentActions processing={processing} paymentStatus={paymentStatus} total={total} handleBack={handleBack} handlePayment={handlePayment} />
     </div>
@@ -81,7 +87,7 @@ function PollingOverlay({ processing, paymentStatus, pollAttempt, handleRetry }:
   );
 }
 
-function SuccessOverlay({ paymentStatus }: { paymentStatus: PaymentStatus }) {
+function SuccessOverlay({ paymentStatus, isFree }: { paymentStatus: PaymentStatus; isFree: boolean }) {
   const { t } = useTranslation();
   if (paymentStatus !== "success") return null;
   return (
@@ -89,19 +95,25 @@ function SuccessOverlay({ paymentStatus }: { paymentStatus: PaymentStatus }) {
       <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-3">
         <FaCheckCircle className="text-green-500" size={36} />
       </div>
-      <p className="font-bold text-green-600 text-lg">{t("payment.successTitle", "Payment Successful!")}</p>
+      <p className="font-bold text-green-600 text-lg">
+        {isFree
+          ? t("payment.confirmedTitle", "Listing Confirmed!")
+          : t("payment.successTitle", "Payment Successful!")}
+      </p>
       <p className="mt-1 text-xs text-gray-400">{t("payment.redirecting", "Redirecting...")}</p>
     </div>
   );
 }
 
-function PanelHeader() {
+function PanelHeader({ isFree }: { isFree: boolean }) {
   const { t } = useTranslation();
   return (
     <div className="px-5 py-4 border-b border-gray-100">
       <h2 className="font-bold text-base text-gray-900 flex items-center gap-2">
         <FaMobileAlt className="text-blue-500" size={15} />
-        {t("payment.paymentDetails", "Payment Details")}
+        {isFree
+          ? t("payment.confirmDetails", "Confirm Listing")
+          : t("payment.paymentDetails", "Payment Details")}
       </h2>
     </div>
   );
@@ -109,12 +121,19 @@ function PanelHeader() {
 
 function TotalDisplay({ total }: { total: number }) {
   const { t } = useTranslation();
+  const isFree = useIsFree(total);
   return (
-    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
-      <p className="text-xs text-blue-400 uppercase tracking-widest font-semibold mb-1">
+    <div className={`border rounded-xl p-4 text-center ${isFree ? "bg-green-50 border-green-100" : "bg-blue-50 border-blue-100"}`}>
+      <p className={`text-xs uppercase tracking-widest font-semibold mb-1 ${isFree ? "text-green-500" : "text-blue-400"}`}>
         {t("payment.totalAmount", "Total Amount")}
       </p>
-      <p className="text-3xl font-extrabold text-blue-600">${total.toLocaleString()}</p>
+      {isFree ? (
+        <p className="text-3xl font-extrabold text-green-600">
+          {t("payment.free", "Free")}
+        </p>
+      ) : (
+        <p className="text-3xl font-extrabold text-blue-600">${total.toLocaleString()}</p>
+      )}
     </div>
   );
 }
@@ -199,19 +218,21 @@ function PhoneInput({ phoneNumber, setPhoneNumber, phoneError, setPhoneError }: 
   );
 }
 
-function FailedRetry({ paymentStatus, handleRetry }: { paymentStatus: PaymentStatus; handleRetry: () => void }) {
+function FailedRetry({ paymentStatus, isFree, handleRetry }: { paymentStatus: PaymentStatus; isFree: boolean; handleRetry: () => void }) {
   const { t } = useTranslation();
   if (paymentStatus !== "failed") return null;
   return (
     <div className="bg-red-50 border border-red-200 rounded-xl p-4">
       <p className="text-red-700 font-semibold text-sm mb-3">
-        {t("payment.failedMessage", "Payment failed. Please check your phone and try again.")}
+        {isFree
+          ? t("payment.freeFailedMessage", "Failed to confirm your listing. Please try again.")
+          : t("payment.failedMessage", "Payment failed. Please check your phone and try again.")}
       </p>
       <button
         onClick={handleRetry}
         className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-lg transition"
       >
-        {t("payment.retry", "Retry Payment")}
+        {isFree ? t("payment.tryAgain", "Try Again") : t("payment.retry", "Retry Payment")}
       </button>
     </div>
   );
@@ -237,13 +258,19 @@ function PaymentActions({ processing, paymentStatus, total, handleBack, handlePa
         <button
           onClick={handlePayment}
           disabled={processing || paymentStatus === "success"}
-          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className={`flex-1 py-2.5 active:scale-[0.98] text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed text-sm ${
+            total === 0
+              ? "bg-green-600 hover:bg-green-700"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
           {processing ? (
             <span className="flex items-center justify-center gap-2">
               <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
               {t("payment.processing", "Processing...")}
             </span>
+          ) : total === 0 ? (
+            t("payment.confirmListing", "Confirm Free Listing")
           ) : (
             `${t("payment.pay", "Pay")} $${total.toLocaleString()}`
           )}

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -31,6 +31,9 @@ export const LineChartBlock = <T extends Record<string, any>>({
   stroke,
   isCurrency = false,
 }: LineChartBlockProps<T>) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const formatValue = isCurrency ? fmtCurrency : fmtNumber;
   if (!data || data.length === 0) {
     return (
@@ -54,6 +57,9 @@ export const LineChartBlock = <T extends Record<string, any>>({
         {title}
       </p>
       <p className="text-xs text-slate-300 mb-3 sm:mb-5">{subtitle}</p>
+      {!mounted ? (
+        <div style={{ height: 220 }} />
+      ) : (
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart
           data={data}
@@ -111,6 +117,7 @@ export const LineChartBlock = <T extends Record<string, any>>({
           />
         </AreaChart>
       </ResponsiveContainer>
+      )}
     </div>
   );
 };

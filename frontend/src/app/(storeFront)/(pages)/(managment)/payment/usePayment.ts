@@ -61,6 +61,7 @@ export function usePayment({
       try {
         const res = await fetch(AD_PATCH_URL(item.id), {
           method: "PATCH",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isPaid: true, planId: plan?.id }),
         });
@@ -117,6 +118,7 @@ export function usePayment({
 
       const initiateRes = await fetch(initiateEndpoint, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(initiateBody),
       });

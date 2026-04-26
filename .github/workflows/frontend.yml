@@ -5,14 +5,19 @@ on:
     branches: [main]
     paths:
       - "frontend/**"
+      - ".github/workflows/frontend.yml"
   workflow_dispatch:
 
 env:
   NODE_VERSION: "20"
 
+permissions:
+  id-token: write # required for OIDC
+  contents: read
+
 jobs:
-  test:
-    name: Type-check & lint
+  build:
+    name: Type-check & Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,46 +28,70 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - run: npm ci
+      - name: Install
         working-directory: frontend
+        run: npm ci
 
-      - run: npx tsc --noEmit
+      - name: Type-check
         working-directory: frontend
+        run: npx tsc --noEmit
 
-  deploy:
-    name: Deploy to Amplify
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install & build
+      - name: Build
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
           NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
-        run: |
-          npm ci
-          npm run build
+        run: npm run build
 
-      - name: Configure AWS credentials
+  # ── 2. Trigger Amplify deployment ──────────────────────────────────────────
+  deploy:
+    name: Deploy to Amplify
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.FRONTEND_DEPLOY_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Start Amplify deployment
+      - name: Start Amplify release job
+        id: amplify
         run: |
-          aws amplify start-job \
-            --app-id ${{ secrets.AMPLIFY_APP_ID }} \
+          JOB_ID=$(aws amplify start-job \
+            --app-id "${{ secrets.AMPLIFY_APP_ID }}" \
             --branch-name main \
-            --job-type RELEASE
+            --job-type RELEASE \
+            --commit-id "${{ github.sha }}" \
+            --commit-message "Deploy from GitHub Actions — ${{ github.sha }}" \
+            --output text \
+            --query "jobSummary.jobId")
+          echo "job_id=$JOB_ID" >> "$GITHUB_OUTPUT"
+          echo "Amplify job started: $JOB_ID"
+
+      - name: Wait for Amplify job to complete
+        run: |
+          while true; do
+            STATUS=$(aws amplify get-job \
+              --app-id "${{ secrets.AMPLIFY_APP_ID }}" \
+              --branch-name main \
+              --job-id "${{ steps.amplify.outputs.job_id }}" \
+              --query "job.summary.status" \
+              --output text)
+            echo "Amplify status: $STATUS"
+            case "$STATUS" in
+              SUCCEED)
+                echo "Deployment succeeded"
+                exit 0
+                ;;
+              FAILED|CANCELLED)
+                echo "Deployment $STATUS"
+                exit 1
+                ;;
+              *)
+                sleep 20
+                ;;
+            esac
+          done

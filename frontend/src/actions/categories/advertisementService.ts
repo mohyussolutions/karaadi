@@ -11,6 +11,14 @@ const addCacheBuster = (url: string): string => {
 
 async function getSessionUserId(): Promise<string> {
   try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    const token =
+      jar.get("idToken")?.value ||
+      jar.get("accessToken")?.value ||
+      jar.get("token")?.value;
+    if (!token) return "";
+
     const headers = await getAuthHeaders();
     const res = await fetch(AUTH_ENDPOINTS.VERIFY_SESSION, {
       method: "POST",

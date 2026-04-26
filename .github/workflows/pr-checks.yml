@@ -8,7 +8,8 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  backend-check:
+
+  backend:
     name: Backend — type-check & build
     runs-on: ubuntu-latest
     steps:
@@ -29,7 +30,7 @@ jobs:
       - run: npm run build
         working-directory: backend
 
-  frontend-check:
+  frontend:
     name: Frontend — type-check & build
     runs-on: ubuntu-latest
     steps:
@@ -52,3 +53,16 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
         run: npm run build
+
+  infra:
+    name: CloudFormation — lint template
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.changed_files, 'production/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cfn-lint
+        run: pip install cfn-lint
+
+      - name: Lint CloudFormation template
+        run: cfn-lint production/production.yaml

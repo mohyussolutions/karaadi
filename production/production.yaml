@@ -1,7 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Karaadi full stack — VPC, EC2, RDS, ElastiCache, S3, CloudFront, Cognito
+Description: >
+  Karaadi — VPC · Subnets · NAT · EC2 · Security Groups ·
+  Internal ALB · API Gateway (HTTP) · Amplify · RDS · ElastiCache ·
+  S3/CloudFront · Cognito · GitHub OIDC CI/CD roles
+
+# ─── PARAMETERS ───────────────────────────────────────────────────────────────
 
 Parameters:
+
   AppName:
     Type: String
     Default: karaadi
@@ -11,14 +17,23 @@ Parameters:
     Default: production
     AllowedValues: [production, staging]
 
+  # ── Compute ──────────────────────────────────────────────────────────────────
+
   EC2InstanceType:
     Type: String
     Default: t3.small
     AllowedValues: [t3.micro, t3.small, t3.medium, t3.large]
 
   EC2KeyName:
-    Type: AWS::EC2::KeyPair::KeyName
-    Description: EC2 Key Pair for SSH access
+    Type: String
+    Default: ""
+    Description: EC2 Key Pair name for emergency SSH (leave blank to disable)
+
+  EC2AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+  # ── Database ─────────────────────────────────────────────────────────────────
 
   DBInstanceClass:
     Type: String
@@ -40,30 +55,67 @@ Parameters:
     MinLength: 12
     Description: RDS master password (min 12 chars)
 
+  # ── Cache ─────────────────────────────────────────────────────────────────────
+
   CacheNodeType:
     Type: String
     Default: cache.t3.micro
     AllowedValues: [cache.t3.micro, cache.t3.small, cache.t3.medium]
 
-  EC2AmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+  # ── DNS / Domain ──────────────────────────────────────────────────────────────
+
+  DomainName:
+    Type: String
+    Description: Root domain, e.g. karaadi.com
+    Default: example.com
+
+  HostedZoneId:
+    Type: String
+    Description: Route 53 Hosted Zone ID for DomainName
+    Default: ""
+
+  # ── GitHub (OIDC + Amplify) ───────────────────────────────────────────────────
+
+  GitHubOrg:
+    Type: String
+    Description: GitHub username or organisation, e.g. myorg
+    Default: myorg
+
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name, e.g. karaadi
+    Default: karaadi
+
+  AmplifyGitHubToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub Personal Access Token for Amplify (repo scope)
+    Default: ""
+
+# ─── CONDITIONS ───────────────────────────────────────────────────────────────
+
+Conditions:
+  HasKeyPair: !Not [!Equals [!Ref EC2KeyName, ""]]
+  HasHostedZone: !Not [!Equals [!Ref HostedZoneId, ""]]
+  HasAmplifyToken: !Not [!Equals [!Ref AmplifyGitHubToken, ""]]
+
+# ─── MAPPINGS ─────────────────────────────────────────────────────────────────
 
 Mappings:
   SubnetConfig:
-    VPC:
-      CIDR: 10.0.0.0/16
-    PublicA:
-      CIDR: 10.0.1.0/24
-    PublicB:
-      CIDR: 10.0.2.0/24
-    PrivateA:
-      CIDR: 10.0.3.0/24
-    PrivateB:
-      CIDR: 10.0.4.0/24
+    VPC:     { CIDR: "10.0.0.0/16" }
+    PublicA:  { CIDR: "10.0.1.0/24" }
+    PublicB:  { CIDR: "10.0.2.0/24" }
+    PrivateA: { CIDR: "10.0.3.0/24" }
+    PrivateB: { CIDR: "10.0.4.0/24" }
+
+# ─── RESOURCES ────────────────────────────────────────────────────────────────
 
 Resources:
-  # ─── VPC ────────────────────────────────────────────────────────────────────
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # 10. VPC — Virtual Private Cloud
+  # ══════════════════════════════════════════════════════════════════════════════
 
   VPC:
     Type: AWS::EC2::VPC
@@ -72,21 +124,23 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-vpc
+        - { Key: Name, Value: !Sub "${AppName}-vpc" }
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-igw
+        - { Key: Name, Value: !Sub "${AppName}-igw" }
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # 11. Subnets and Availability Zones
+  # ══════════════════════════════════════════════════════════════════════════════
 
   PublicSubnetA:
     Type: AWS::EC2::Subnet
@@ -96,8 +150,7 @@ Resources:
       AvailabilityZone: !Select [0, !GetAZs ""]
       MapPublicIpOnLaunch: true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-public-a
+        - { Key: Name, Value: !Sub "${AppName}-public-a" }
 
   PublicSubnetB:
     Type: AWS::EC2::Subnet
@@ -107,8 +160,7 @@ Resources:
       AvailabilityZone: !Select [1, !GetAZs ""]
       MapPublicIpOnLaunch: true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-public-b
+        - { Key: Name, Value: !Sub "${AppName}-public-b" }
 
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
@@ -117,8 +169,7 @@ Resources:
       CidrBlock: !FindInMap [SubnetConfig, PrivateA, CIDR]
       AvailabilityZone: !Select [0, !GetAZs ""]
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-private-a
+        - { Key: Name, Value: !Sub "${AppName}-private-a" }
 
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
@@ -127,23 +178,22 @@ Resources:
       CidrBlock: !FindInMap [SubnetConfig, PrivateB, CIDR]
       AvailabilityZone: !Select [1, !GetAZs ""]
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-private-b
+        - { Key: Name, Value: !Sub "${AppName}-private-b" }
 
+  # Public route table → Internet Gateway
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-public-rt
+        - { Key: Name, Value: !Sub "${AppName}-public-rt" }
 
   PublicRoute:
     Type: AWS::EC2::Route
     DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref PublicRouteTable
-      DestinationCidrBlock: 0.0.0.0/0
+      DestinationCidrBlock: "0.0.0.0/0"
       GatewayId: !Ref InternetGateway
 
   PublicSubnetARouteAssoc:
@@ -158,38 +208,97 @@ Resources:
       SubnetId: !Ref PublicSubnetB
       RouteTableId: !Ref PublicRouteTable
 
-  # ─── SECURITY GROUPS ────────────────────────────────────────────────────────
+  # NAT Gateway — private subnets reach the internet for npm/git
+  NatEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-nat-eip" }
 
-  EC2SecurityGroup:
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-nat" }
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-private-rt" }
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnetARouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetBRouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTable
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # 12. Security Groups
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  # Internal ALB — receives traffic from API Gateway VPC Link
+  ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: EC2 backend — HTTP, HTTPS, SSH
+      GroupDescription: Internal ALB — accepts from VPC Link
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !FindInMap [SubnetConfig, VPC, CIDR]
+      SecurityGroupEgress:
         - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
-          CidrIp: 0.0.0.0/0
+          CidrIp: !FindInMap [SubnetConfig, VPC, CIDR]
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-ec2-sg
+        - { Key: Name, Value: !Sub "${AppName}-alb-sg" }
+
+  # EC2 — port 8080 only from internal ALB; SSH only when key pair present
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 backend — 8080 from ALB; optional SSH
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - !If
+          - HasKeyPair
+          - IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: "0.0.0.0/0"
+          - !Ref AWS::NoValue
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-ec2-sg" }
 
   RDSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: RDS — allow from EC2 only
+      GroupDescription: RDS — Postgres from EC2 only
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -197,13 +306,12 @@ Resources:
           ToPort: 5432
           SourceSecurityGroupId: !Ref EC2SecurityGroup
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-rds-sg
+        - { Key: Name, Value: !Sub "${AppName}-rds-sg" }
 
   ElastiCacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: ElastiCache — allow from EC2 only
+      GroupDescription: ElastiCache — Redis from EC2 only
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -211,21 +319,21 @@ Resources:
           ToPort: 6379
           SourceSecurityGroupId: !Ref EC2SecurityGroup
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-redis-sg
+        - { Key: Name, Value: !Sub "${AppName}-redis-sg" }
 
-  # ─── EC2 ─────────────────────────────────────────────────────────────────────
+  # ══════════════════════════════════════════════════════════════════════════════
+  # 8. AWS EC2
+  # ══════════════════════════════════════════════════════════════════════════════
 
   EC2IAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AppName}-ec2-role
+      RoleName: !Sub "${AppName}-ec2-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
+            Principal: { Service: ec2.amazonaws.com }
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
@@ -235,46 +343,50 @@ Resources:
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      Roles:
-        - !Ref EC2IAMRole
+      Roles: [!Ref EC2IAMRole]
 
   EC2ElasticIP:
     Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
     Properties:
       Domain: vpc
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-eip
+        - { Key: Name, Value: !Sub "${AppName}-eip" }
 
   EC2Instance:
     Type: AWS::EC2::Instance
     DependsOn: VPCGatewayAttachment
     Properties:
       InstanceType: !Ref EC2InstanceType
-      KeyName: !Ref EC2KeyName
       ImageId: !Ref EC2AmiId
       IamInstanceProfile: !Ref EC2InstanceProfile
+      KeyName: !If [HasKeyPair, !Ref EC2KeyName, !Ref AWS::NoValue]
       SubnetId: !Ref PublicSubnetA
-      SecurityGroupIds:
-        - !Ref EC2SecurityGroup
+      SecurityGroupIds: [!Ref EC2SecurityGroup]
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
             VolumeSize: 20
             VolumeType: gp3
             DeleteOnTermination: true
+            Encrypted: true
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
+          set -e
           yum update -y
           curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
           yum install -y nodejs git
           npm install -g pm2
-          pm2 startup systemd -u ec2-user --hp /home/ec2-user
-          systemctl enable pm2-ec2-user
+          sudo -u ec2-user bash -c "pm2 startup systemd -u ec2-user --hp /home/ec2-user" || true
+          systemctl enable pm2-ec2-user || true
+          # CloudWatch agent
+          yum install -y amazon-cloudwatch-agent
+          /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+            -a fetch-config -m ec2 -s \
+            -c "ssm:/cloudwatch-config/${AppName}" || true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-backend
+        - { Key: Name, Value: !Sub "${AppName}-backend" }
 
   EC2EIPAssociation:
     Type: AWS::EC2::EIPAssociation
@@ -282,24 +394,341 @@ Resources:
       InstanceId: !Ref EC2Instance
       EIP: !Ref EC2ElasticIP
 
-  # ─── RDS ─────────────────────────────────────────────────────────────────────
+  # ── Internal ALB (API Gateway → VPC Link → ALB → EC2) ────────────────────────
+
+  BackendALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${AppName}-internal-alb"
+      Type: application
+      Scheme: internal
+      Subnets: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+      SecurityGroups: [!Ref ALBSecurityGroup]
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-internal-alb" }
+
+  BackendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${AppName}-ec2-tg"
+      VpcId: !Ref VPC
+      Protocol: HTTP
+      Port: 8080
+      TargetType: instance
+      Targets:
+        - Id: !Ref EC2Instance
+          Port: 8080
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-ec2-tg" }
+
+  BackendALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref BackendALB
+      Protocol: HTTP
+      Port: 8080
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # API Gateway (HTTP API) + VPC Link — protected by Cognito JWT
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  APIGatewayVpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: !Sub "${AppName}-vpc-link"
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+      SecurityGroupIds: [!Ref ALBSecurityGroup]
+
+  APIGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${AppName}-api"
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Sub "https://${DomainName}"
+          - !Sub "https://www.${DomainName}"
+        AllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Requested-With
+        AllowCredentials: true
+        MaxAge: 86400
+      Tags:
+        Name: !Sub "${AppName}-api"
+
+  APIGatewayCognitoAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref APIGateway
+      AuthorizerType: JWT
+      Name: !Sub "${AppName}-cognito-auth"
+      IdentitySource: "$request.header.Authorization"
+      JwtConfiguration:
+        Audience: [!Ref CognitoUserPoolClient]
+        Issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}"
+
+  APIGatewayIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref APIGateway
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Ref BackendALBListener
+      IntegrationMethod: ANY
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref APIGatewayVpcLink
+      PayloadFormatVersion: "1.0"
+      TimeoutInMillis: 29000
+
+  # Public routes — no auth (health, login, register, public listings)
+  APIGatewayPublicRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref APIGateway
+      RouteKey: "ANY /api/public/{proxy+}"
+      Target: !Sub "integrations/${APIGatewayIntegration}"
+      AuthorizationType: NONE
+
+  # All other routes — require valid Cognito JWT
+  APIGatewayProtectedRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref APIGateway
+      RouteKey: "ANY /{proxy+}"
+      Target: !Sub "integrations/${APIGatewayIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref APIGatewayCognitoAuthorizer
+
+  APIGatewayStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref APIGateway
+      StageName: "$default"
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 500
+        ThrottlingRateLimit: 1000
+
+  # API Gateway custom domain (optional, requires HostedZone)
+  APIGatewayDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Condition: HasHostedZone
+    Properties:
+      DomainName: !Sub "api.${DomainName}"
+      DomainNameConfigurations:
+        - CertificateArn: !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/REPLACE_WITH_ACM_ARN"
+          EndpointType: REGIONAL
+
+  APIGatewayApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Condition: HasHostedZone
+    DependsOn: APIGatewayStage
+    Properties:
+      ApiId: !Ref APIGateway
+      DomainName: !Ref APIGatewayDomainName
+      Stage: "$default"
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # AWS Amplify — Next.js SSR frontend
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  AmplifyServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AppName}-amplify-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess-Amplify
+
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Condition: HasAmplifyToken
+    Properties:
+      Name: !Sub "${AppName}-frontend"
+      Repository: !Sub "https://github.com/${GitHubOrg}/${GitHubRepo}"
+      AccessToken: !Ref AmplifyGitHubToken
+      Platform: WEB_COMPUTE
+      IAMServiceRole: !GetAtt AmplifyServiceRole.Arn
+      EnvironmentVariables:
+        - Name: NEXT_PUBLIC_API_URL
+          Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com"
+        - Name: AMPLIFY_MONOREPO_APP_ROOT
+          Value: frontend
+        - Name: _LIVE_UPDATES
+          Value: '[{"name":"Next.js version","pkg":"next","type":"npm","version":"latest"}]'
+      BuildSpec: |
+        version: 1
+        appRoot: frontend
+        frontend:
+          phases:
+            preBuild:
+              commands:
+                - npm ci
+            build:
+              commands:
+                - npm run build
+          artifacts:
+            baseDirectory: .next
+            files:
+              - '**/*'
+          cache:
+            paths:
+              - node_modules/**/*
+              - .next/cache/**/*
+      CustomRules:
+        - Source: "/<*>"
+          Target: "/index.html"
+          Status: "404-200"
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-frontend" }
+
+  AmplifyBranch:
+    Type: AWS::Amplify::Branch
+    Condition: HasAmplifyToken
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      BranchName: main
+      EnableAutoBuild: true
+      Framework: "Next.js - SSR"
+      Stage: PRODUCTION
+      EnvironmentVariables:
+        - Name: NEXT_PUBLIC_API_URL
+          Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com"
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # GitHub OIDC — CI/CD roles (no stored IAM keys needed)
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  # Role assumed by backend.yml (SSM deploy to EC2)
+  BackendDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AppName}-backend-deploy"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !GetAtt GitHubOIDCProvider.Arn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  !Sub "repo:${GitHubOrg}/${GitHubRepo}:*"
+      Policies:
+        - PolicyName: SSMDeploy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommands
+                  - ssm:ListCommandInvocations
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                Resource: "*"
+
+  # Role assumed by frontend.yml (Amplify deploy)
+  FrontendDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AppName}-frontend-deploy"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !GetAtt GitHubOIDCProvider.Arn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  !Sub "repo:${GitHubOrg}/${GitHubRepo}:*"
+      Policies:
+        - PolicyName: AmplifyDeploy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - amplify:StartJob
+                  - amplify:GetApp
+                  - amplify:GetBranch
+                  - amplify:GetJob
+                  - amplify:ListJobs
+                  - amplify:StopJob
+                Resource: "*"
+
+  # Role assumed by infra.yml (CloudFormation stack update)
+  InfraDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AppName}-infra-deploy"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !GetAtt GitHubOIDCProvider.Arn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  !Sub "repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/PowerUserAccess
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # RDS (PostgreSQL) — private subnets
+  # ══════════════════════════════════════════════════════════════════════════════
 
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: !Sub ${AppName} RDS subnet group
-      SubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
+      DBSubnetGroupDescription: !Sub "${AppName} RDS subnet group"
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-rds-subnet-group
+        - { Key: Name, Value: !Sub "${AppName}-rds-subnet-group" }
 
   RDSInstance:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
     Properties:
-      DBInstanceIdentifier: !Sub ${AppName}-db
+      DBInstanceIdentifier: !Sub "${AppName}-db"
       DBInstanceClass: !Ref DBInstanceClass
       Engine: postgres
       EngineVersion: "15.4"
@@ -312,53 +741,83 @@ Resources:
       MultiAZ: false
       PubliclyAccessible: false
       DBSubnetGroupName: !Ref RDSSubnetGroup
-      VPCSecurityGroups:
-        - !Ref RDSSecurityGroup
+      VPCSecurityGroups: [!Ref RDSSecurityGroup]
       BackupRetentionPeriod: 7
       DeletionProtection: true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-db
+        - { Key: Name, Value: !Sub "${AppName}-db" }
 
-  # ─── ELASTICACHE (REDIS) ─────────────────────────────────────────────────────
+  # ══════════════════════════════════════════════════════════════════════════════
+  # ElastiCache (Redis) — private subnets
+  # ══════════════════════════════════════════════════════════════════════════════
 
   ElastiCacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
-      Description: !Sub ${AppName} Redis subnet group
-      SubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
+      Description: !Sub "${AppName} Redis subnet group"
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
 
   ElastiCacheCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
-      ClusterName: !Sub ${AppName}-redis
+      ClusterName: !Sub "${AppName}-redis"
       Engine: redis
       CacheNodeType: !Ref CacheNodeType
       NumCacheNodes: 1
       CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
-      VpcSecurityGroupIds:
-        - !Ref ElastiCacheSecurityGroup
+      VpcSecurityGroupIds: [!Ref ElastiCacheSecurityGroup]
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-redis
+        - { Key: Name, Value: !Sub "${AppName}-redis" }
 
-  # ─── S3 + CLOUDFRONT ─────────────────────────────────────────────────────────
+  # ══════════════════════════════════════════════════════════════════════════════
+  # S3 + CloudFront — static assets CDN
+  # ══════════════════════════════════════════════════════════════════════════════
 
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AppName}-assets-${AWS::AccountId}
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders: ["*"]
-            AllowedMethods: [GET, PUT, POST, DELETE]
-            AllowedOrigins: [!Sub "https://${DomainName}"]
-            MaxAge: 3600
+      BucketName: !Sub "${AppName}-assets-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-assets
+        - { Key: Name, Value: !Sub "${AppName}-assets" }
+
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AppName}-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${AppName} assets CDN"
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt S3Bucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+        PriceClass: PriceClass_100
+        HttpVersion: http2and3
+      Tags:
+        - { Key: Name, Value: !Sub "${AppName}-cdn" }
 
   S3BucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -370,81 +829,40 @@ Resources:
             Principal:
               Service: cloudfront.amazonaws.com
             Action: s3:GetObject
-            Resource: !Sub ${S3Bucket.Arn}/*
+            Resource: !Sub "${S3Bucket.Arn}/*"
             Condition:
               StringEquals:
-                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+                AWS:SourceArn:
+                  !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
 
-  CloudFrontOriginAccessControl:
-    Type: AWS::CloudFront::OriginAccessControl
-    Properties:
-      OriginAccessControlConfig:
-        Name: !Sub ${AppName}-oac
-        OriginAccessControlOriginType: s3
-        SigningBehavior: always
-        SigningProtocol: sigv4
-
-  CloudFrontDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Enabled: true
-        Comment: !Sub ${AppName} assets CDN
-        DefaultRootObject: index.html
-        Origins:
-          - Id: S3Origin
-            DomainName: !GetAtt S3Bucket.RegionalDomainName
-            OriginAccessControlId: !Ref CloudFrontOriginAccessControl
-            S3OriginConfig:
-              OriginAccessIdentity: ""
-        DefaultCacheBehavior:
-          TargetOriginId: S3Origin
-          ViewerProtocolPolicy: redirect-to-https
-          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
-          AllowedMethods: [GET, HEAD]
-          CachedMethods: [GET, HEAD]
-        PriceClass: PriceClass_100
-      Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-cdn
-
-  # ─── COGNITO ─────────────────────────────────────────────────────────────────
+  # ══════════════════════════════════════════════════════════════════════════════
+  # Cognito — user pool + app client
+  # ══════════════════════════════════════════════════════════════════════════════
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub ${AppName}-users
-      UsernameAttributes:
-        - email
-      AutoVerifiedAttributes:
-        - email
+      UserPoolName: !Sub "${AppName}-users"
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
       PasswordPolicy:
         MinimumLength: 8
         RequireUppercase: true
         RequireLowercase: true
         RequireNumbers: true
         RequireSymbols: false
-      Schema:
-        - Name: email
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-        - Name: name
-          AttributeDataType: String
-          Required: false
-          Mutable: true
       AccountRecoverySetting:
         RecoveryMechanisms:
-          - Name: verified_email
-            Priority: 1
+          - { Name: verified_email, Priority: 1 }
+      UserPoolAddOns:
+        AdvancedSecurityMode: ENFORCED
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-userpool
+        - { Key: Name, Value: !Sub "${AppName}-userpool" }
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub ${AppName}-client
+      ClientName: !Sub "${AppName}-client"
       UserPoolId: !Ref CognitoUserPool
       GenerateSecret: false
       ExplicitAuthFlows:
@@ -458,24 +876,30 @@ Resources:
         AccessToken: hours
         IdToken: hours
         RefreshToken: days
+      PreventUserExistenceErrors: ENABLED
 
-  # ─── ROUTE 53 ────────────────────────────────────────────────────────────────
+  # ══════════════════════════════════════════════════════════════════════════════
+  # Route 53 — DNS records (only when HostedZoneId is provided)
+  # ══════════════════════════════════════════════════════════════════════════════
 
   APIRecord:
     Type: AWS::Route53::RecordSet
+    Condition: HasHostedZone
     Properties:
       HostedZoneId: !Ref HostedZoneId
-      Name: !Sub api.${DomainName}
+      Name: !Sub "api.${DomainName}"
       Type: A
-      TTL: 300
-      ResourceRecords:
-        - !Ref EC2ElasticIP
+      AliasTarget:
+        DNSName: !GetAtt APIGatewayDomainName.RegionalDomainName
+        EvaluateTargetHealth: false
+        HostedZoneId: !GetAtt APIGatewayDomainName.RegionalHostedZoneId
 
   AssetsRecord:
     Type: AWS::Route53::RecordSet
+    Condition: HasHostedZone
     Properties:
       HostedZoneId: !Ref HostedZoneId
-      Name: !Sub assets.${DomainName}
+      Name: !Sub "assets.${DomainName}"
       Type: CNAME
       TTL: 300
       ResourceRecords:
@@ -484,17 +908,65 @@ Resources:
 # ─── OUTPUTS ──────────────────────────────────────────────────────────────────
 
 Outputs:
+
   VPCId:
     Value: !Ref VPC
     Export:
-      Name: !Sub ${AppName}-vpc-id
+      Name: !Sub "${AppName}-vpc-id"
+
+  PublicSubnetAId:
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: !Sub "${AppName}-public-subnet-a"
+
+  PublicSubnetBId:
+    Value: !Ref PublicSubnetB
+    Export:
+      Name: !Sub "${AppName}-public-subnet-b"
+
+  PrivateSubnetAId:
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: !Sub "${AppName}-private-subnet-a"
+
+  PrivateSubnetBId:
+    Value: !Ref PrivateSubnetB
+    Export:
+      Name: !Sub "${AppName}-private-subnet-b"
 
   EC2PublicIP:
     Value: !Ref EC2ElasticIP
-    Description: Backend server public IP
+    Description: Backend EC2 elastic IP
 
   EC2InstanceId:
     Value: !Ref EC2Instance
+    Description: EC2 instance ID (used by SSM deploy in CI/CD)
+    Export:
+      Name: !Sub "${AppName}-ec2-instance-id"
+
+  APIGatewayURL:
+    Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com"
+    Description: API Gateway invoke URL
+
+  AmplifyAppId:
+    Value: !If [HasAmplifyToken, !GetAtt AmplifyApp.AppId, "not-created"]
+    Description: Amplify App ID (used by frontend CI/CD)
+
+  AmplifyDefaultDomain:
+    Value: !If [HasAmplifyToken, !GetAtt AmplifyApp.DefaultDomain, "not-created"]
+    Description: Amplify default domain
+
+  BackendDeployRoleARN:
+    Value: !GetAtt BackendDeployRole.Arn
+    Description: IAM role ARN for backend GitHub Actions workflow
+
+  FrontendDeployRoleARN:
+    Value: !GetAtt FrontendDeployRole.Arn
+    Description: IAM role ARN for frontend GitHub Actions workflow
+
+  InfraDeployRoleARN:
+    Value: !GetAtt InfraDeployRole.Arn
+    Description: IAM role ARN for infra GitHub Actions workflow
 
   RDSEndpoint:
     Value: !GetAtt RDSInstance.Endpoint.Address
@@ -508,13 +980,14 @@ Outputs:
     Value: !Ref S3Bucket
 
   CloudFrontURL:
-    Value: !Sub https://${CloudFrontDistribution.DomainName}
+    Value: !Sub "https://${CloudFrontDistribution.DomainName}"
 
   CognitoUserPoolId:
     Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub "${AppName}-user-pool-id"
 
   CognitoClientId:
     Value: !Ref CognitoUserPoolClient
-
-  APIURL:
-    Value: !Sub https://api.${DomainName}
+    Export:
+      Name: !Sub "${AppName}-user-pool-client-id"

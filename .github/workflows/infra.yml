@@ -1,0 +1,109 @@
+name: Infrastructure — Deploy CloudFormation Stack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "production/**"
+      - ".github/workflows/infra.yml"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "deploy = create/update stack | destroy = delete stack"
+        required: true
+        default: deploy
+        type: choice
+        options: [deploy, destroy]
+
+env:
+  STACK_NAME: karaadi-production
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  validate:
+    name: Validate Template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.INFRA_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://production/production.yaml
+
+  deploy:
+    name: Deploy Stack
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.action != 'destroy'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.INFRA_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy / update CloudFormation stack
+        run: |
+          aws cloudformation deploy \
+            --template-file production/production.yaml \
+            --stack-name "${{ env.STACK_NAME }}" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              AppName=karaadi \
+              Environment=production \
+              EC2InstanceType=${{ secrets.CF_EC2_INSTANCE_TYPE || 't3.small' }} \
+              EC2KeyName=${{ secrets.CF_EC2_KEY_NAME || '' }} \
+              DBName=karaadi \
+              DBUsername=${{ secrets.CF_DB_USERNAME }} \
+              DBPassword=${{ secrets.CF_DB_PASSWORD }} \
+              DomainName=${{ secrets.CF_DOMAIN_NAME }} \
+              HostedZoneId=${{ secrets.CF_HOSTED_ZONE_ID || '' }} \
+              GitHubOrg=${{ secrets.CF_GITHUB_ORG }} \
+              GitHubRepo=${{ secrets.CF_GITHUB_REPO }} \
+              AmplifyGitHubToken=${{ secrets.AMPLIFY_GITHUB_TOKEN || '' }}
+
+      - name: Print stack outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "${{ env.STACK_NAME }}" \
+            --query "Stacks[0].Outputs" \
+            --output table
+
+  destroy:
+    name: Destroy Stack
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.action == 'destroy'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.INFRA_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete CloudFormation stack
+        run: |
+          aws cloudformation delete-stack \
+            --stack-name "${{ env.STACK_NAME }}"
+          aws cloudformation wait stack-delete-complete \
+            --stack-name "${{ env.STACK_NAME }}"
+          echo "Stack deleted"

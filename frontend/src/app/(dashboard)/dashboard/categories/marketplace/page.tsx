@@ -17,6 +17,23 @@ import {
 import { PLACEHOLDER_IMAGE, CATEGORY_ENDPOINTS } from "@/actions/constant/constant";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 
+// Build flat key→name and labelKey→name lookups from the static category trees
+const ALL_NESTED_ENTRIES = Object.values(categories.marketplaceNestedMap).flat();
+
+function resolveCatName(raw: string): string {
+  if (!raw) return "";
+  const hit =
+    marketplaceSubCategories.find((s) => s.key === raw || s.labelKey === raw || s.name === raw) ||
+    ALL_NESTED_ENTRIES.find((n) => n.key === raw || n.labelKey === raw || n.name === raw);
+  return hit?.name ?? raw.split(".").pop() ?? raw;
+}
+
+function resolveSubcatName(raw: string): string {
+  if (!raw) return "";
+  const hit = ALL_NESTED_ENTRIES.find((n) => n.key === raw || n.labelKey === raw || n.name === raw);
+  return hit?.name ?? raw.split(".").pop() ?? raw;
+}
+
 export default function MarketplacePage() {
   const { t } = useTranslation();
   const [items, setItems] = useState<AdminMarketplaceItem[]>([]);
@@ -179,10 +196,10 @@ export default function MarketplacePage() {
                             <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">{item.mainCategory}</span>
                           )}
                           {(Array.isArray(item.category) ? item.category : [item.category]).filter(Boolean).map((c, i) => (
-                            <span key={i} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">{c}</span>
+                            <span key={i} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">{resolveCatName(c)}</span>
                           ))}
                           {(Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory]).filter(Boolean).map((s, i) => (
-                            <span key={i} className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">{s}</span>
+                            <span key={i} className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">{resolveSubcatName(s)}</span>
                           ))}
                         </div>
                         <p className="text-base font-bold text-blue-600 mt-1">${item.price}</p>
@@ -280,10 +297,10 @@ export default function MarketplacePage() {
                               <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{item.mainCategory}</span>
                             )}
                             {(Array.isArray(item.category) ? item.category : [item.category]).filter(Boolean).map((c, i) => (
-                              <span key={i} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{c}</span>
+                              <span key={i} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{resolveCatName(c)}</span>
                             ))}
                             {(Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory]).filter(Boolean).map((s, i) => (
-                              <span key={i} className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{s}</span>
+                              <span key={i} className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{resolveSubcatName(s)}</span>
                             ))}
                           </div>
                         </td>

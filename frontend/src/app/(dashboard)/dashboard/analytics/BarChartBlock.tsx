@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -39,6 +39,9 @@ export const BarChartBlock: React.FC<BarChartBlockProps> = ({
   secondaryLabel = "Total",
   secondaryColor = "#f59e0b",
 }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   if (!data || data.length === 0) {
     return (
       <div className="flex flex-col p-6 h-full">
@@ -59,6 +62,9 @@ export const BarChartBlock: React.FC<BarChartBlockProps> = ({
         {title}
       </p>
       <p className="text-xs text-slate-300 mb-3 sm:mb-5">{subtitle}</p>
+      {!mounted ? (
+        <div style={{ height: 220 }} />
+      ) : (
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart
           data={data}
@@ -139,6 +145,7 @@ export const BarChartBlock: React.FC<BarChartBlockProps> = ({
           )}
         </ComposedChart>
       </ResponsiveContainer>
+      )}
     </div>
   );
 };

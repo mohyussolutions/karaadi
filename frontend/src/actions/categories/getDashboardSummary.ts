@@ -41,7 +41,7 @@ export async function getDashboardSummary(): Promise<DashboardSummaryData> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${BASE_API_URL}/api/dashboard/summary`, {
       headers: headers as HeadersInit,
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     return res.ok ? await res.json() : EMPTY;
   } catch {
