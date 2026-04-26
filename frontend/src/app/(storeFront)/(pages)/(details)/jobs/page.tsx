@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
-import { jobQuickLinks } from "@/app/(links)/storeFrontLinks/subCategories";
+import { jobQuickLinks } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import JobCard from "@/app/(storeFront)/components/Cards/categoriesCards/JobCard";
 
 interface ApiJob {
@@ -43,17 +43,9 @@ const Jobs = () => {
         <nav className="mb-10 -mx-2 px-2 overflow-x-auto no-scrollbar flex flex-nowrap gap-3 pb-4">
           {jobQuickLinks.map((link) => {
             if (!link.href) return null;
-            const slug = link.href.replace(/^\/jobs\//, "").replace(/^\//, "");
-            let label = t(`jobs.links.${slug}`);
-
-            if (slug === "it") label = t("jobsPage.itLink");
-            if (slug === "airports") label = t("jobsPage.airportsLink");
-            if (slug === "public") label = t("jobsPage.publicLink");
-            if (slug === "seaport") label = t("jobsPage.seaportLink");
-
+            const label = t(link.labelKey);
             const linkTextClass =
               i18n.language === "so" ? "text-base sm:text-lg" : "text-sm";
-
             return (
               <Link
                 key={link.key}

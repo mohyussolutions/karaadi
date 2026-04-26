@@ -10,7 +10,7 @@ import {
   updateBusiness,
   type Business,
 } from "@/actions/categories/businessActions";
-import Loading from "../../components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { IoBusiness } from "react-icons/io5";
 import { MdEdit, MdDelete, MdClose, MdCheck } from "react-icons/md";
 import { toast } from "react-toastify";

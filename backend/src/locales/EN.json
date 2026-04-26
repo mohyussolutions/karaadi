@@ -15,5 +15,16 @@
     "not_found": "The requested item was not found.",
     "validation_failed": "Please check your input and try again.",
     "server_error": "Something went wrong on our end."
+  },
+  "jobs": {
+    "links": {
+      "it": "IT",
+      "airport": "Airport",
+      "public": "Public",
+      "seaport": "Seaport",
+      "construction": "Construction",
+      "agriculture": "Agriculture",
+      "transportation": "Transportation"
+    }
   }
 }

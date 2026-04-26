@@ -6,13 +6,10 @@ import {
 } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
-export async function getMarketplaceItems(page = 1, pageSize = 20) {
-  const res = await fetch(
-    `${apiUrlsForCategoryTotals.Marketplace}?paid=true&page=${page}&pageSize=${pageSize}`,
-    {
-      next: { revalidate: 60 },
-    },
-  );
+export async function getMarketplaceItems() {
+  const res = await fetch(apiUrlsForCategoryTotals.Marketplace, {
+    next: { revalidate: 60 },
+  });
 
   if (!res.ok) return [];
   const result = await res.json();
@@ -141,7 +138,7 @@ export async function getTotalMarketplaceItemsCount() {
     const headers = await getAuthHeaders();
     const res = await fetch(apiUrlsForCategoryTotals.TotalMarketplace, {
       headers: headers as HeadersInit,
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return 0;
     const result = await res.json();

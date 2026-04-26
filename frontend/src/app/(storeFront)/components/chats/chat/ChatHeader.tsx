@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useGetRoute } from "../../hooks/useGetRoute";
-import Loading from "../../shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useTranslation } from "react-i18next";
 
 interface ChatHeaderProps {

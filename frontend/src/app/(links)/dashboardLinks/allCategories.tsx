@@ -69,11 +69,6 @@ export const allCategoriesDashbaord: SidebarLink[] = [
     icon: IoBusinessOutline,
     link: "/dashboard/categories/businesses",
   },
-  {
-    name: "Agencies",
-    icon: CiMoneyBill,
-    link: "/dashboard/categories/Agencies",
-  },
   { name: "Reports", icon: FiBarChart2, link: "/dashboard/categories/Reports" },
   {
     name: "Most Search",

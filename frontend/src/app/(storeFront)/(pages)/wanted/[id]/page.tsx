@@ -9,7 +9,7 @@ import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import Image from "next/image";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 
 function daysLeft(expiresAt: string): number {
   const diff = new Date(expiresAt).getTime() - Date.now();

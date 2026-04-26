@@ -8,7 +8,7 @@ import {
 } from "@/actions/categories/usersAction";
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
 import {
   FiUser,

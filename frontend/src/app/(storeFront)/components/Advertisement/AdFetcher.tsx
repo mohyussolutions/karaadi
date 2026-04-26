@@ -1,22 +1,22 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { getAdvertisements } from "@/actions/categories/advertisementService";
 import BackgroundAdWrapper from "./BackgroundAdWrapper";
 import SideAds from "./SideAds";
 
-const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> =>
-  Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
+export default function AdFetcher({ children }: { children: React.ReactNode }) {
+  const [backgroundAd, setBackgroundAd] = useState<any>(null);
+  const [sidebarAd, setSidebarAd] = useState<any>(null);
 
-export default async function AdFetcher({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [bgAds, sideAds] = await Promise.all([
-    withTimeout(getAdvertisements("background", 1), 2000, []),
-    withTimeout(getAdvertisements("sidebar", 1), 2000, []),
-  ]);
-
-  const backgroundAd = bgAds?.[0] ?? null;
-  const sidebarAd = sideAds?.[0] ?? null;
+  useEffect(() => {
+    getAdvertisements("background", 1)
+      .then((ads) => setBackgroundAd(ads?.[0] ?? null))
+      .catch(() => {});
+    getAdvertisements("sidebar", 1)
+      .then((ads) => setSidebarAd(ads?.[0] ?? null))
+      .catch(() => {});
+  }, []);
 
   return (
     <BackgroundAdWrapper ad={backgroundAd}>

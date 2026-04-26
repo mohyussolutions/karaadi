@@ -3,13 +3,13 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { getRealEstateListings } from "@/actions/categories/realEstateActions";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { categories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
 import SearchInput from "@/app/ui/search/SearchInput";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
@@ -158,7 +158,7 @@ export default function LandForSale({ initialData = [] }: { initialData?: any[] 
 
       <ContainerLinks>
         <CommonSubCategoryLinks
-          items={nesCategories.RealEstateLandForSaleNestedSub || []}
+          items={categories.RealEstateLandForSaleNestedSub || []}
           selectedId={selectedSubcategory}
           onSelect={(id) =>
             setSelectedSubcategory((prev) => (prev === id ? null : id))

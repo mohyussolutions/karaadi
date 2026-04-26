@@ -25,8 +25,8 @@ export interface EquipmentItem {
   userId: string;
 }
 
-const USER_A = "64d4a43c9a8b0e6e8c4a5678";
-const USER_B = "64d4a43c9a8b0e6e8c4a5679";
+const USER_A = "550e8400-e29b-41d4-a716-446655440001";
+const USER_B = "550e8400-e29b-41d4-a716-446655440002";
 
 export const equipmentItems: EquipmentItem[] = [
   {

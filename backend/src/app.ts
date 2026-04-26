@@ -65,7 +65,6 @@ apiRouter.use("/subscription", subscriptionRoute);
 apiRouter.use("/chats", chatRoutes);
 apiRouter.use("/messages", messageRoutes);
 apiRouter.use("/contactUs", contactUsRouter);
-apiRouter.use("/agencies", agencyRoutes);
 apiRouter.use("/users", authRouters);
 apiRouter.use("/payments", initiateRouter);
 apiRouter.use("/payments", paymentRoutes);
@@ -122,7 +121,6 @@ import paymentRoutes from "./routers/paymentRoutes.ts";
 import FeeRoutes from "./routers/FeeRoutes.ts";
 import initiateRouter from "./routers/initiateRouter.ts";
 import authRouters from "./routers/authRoute.ts";
-import agencyRoutes from "./routers/agencyRoutes.ts";
 apiRouter.get("/dashboard/summary", getDashboardSummary);
 
 app.use("/api", apiRouter);

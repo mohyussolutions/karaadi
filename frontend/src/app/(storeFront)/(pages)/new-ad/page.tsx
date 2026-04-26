@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
-import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
+import { allCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import {
   marketplaceSubCategories,
   realEstateSubCategories,
@@ -12,7 +12,7 @@ import {
   motorcycleSubCategories,
   boatSubCategories,
   farmEquipmentSubCategories,
-} from "@/app/(links)/storeFrontLinks/subCategories";
+} from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { CategoryOption } from "@/app/utils/types/categoriestype";
 import { CategoryItem } from "../../components/shared/buttons/CategoryItem";
 import { OptionButton } from "../../components/shared/buttons/OptionButton";

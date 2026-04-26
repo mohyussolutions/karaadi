@@ -1,40 +1,49 @@
 import { z } from "zod";
+import * as s from "../core/utils/sanitize.ts";
 
-export const updateRealEstateSchema = z.object({
-  userId: z.string().min(1).optional(),
-  title: z.string().min(1).optional(),
-  description: z.string().min(1).optional(),
-  price: z.number().optional(),
-  mainCategory: z.string().min(1).optional(),
-  category: z.array(z.string()).optional(),
-  subcategory: z.array(z.string()).optional(),
-  region: z.string().min(1).optional(),
-  city: z.string().min(1).optional(),
-  images: z.array(z.string()).optional(),
+const commonFields = {
+  userId: z.string().min(1).max(128).optional(),
+  title: s.title.optional(),
+  description: s.description.optional(),
+  price: z.coerce.number().min(0).max(s.LIMITS.PRICE_MAX).optional(),
+  mainCategory: s.optShortStr(),
+  category: z.array(s.shortStr()).max(5).optional(),
+  subcategory: z.array(s.shortStr()).max(5).optional(),
+  region: s.optShortStr(),
+  city: s.optShortStr(),
+  images: s.images.optional(),
   isPaid: z.boolean().optional(),
-  planId: z.string().optional(),
-  planAmount: z.number().optional(),
-  feeId: z.string().optional(),
-  feeAmount: z.number().optional(),
-  bedrooms: z.number().optional(),
-  bathrooms: z.number().optional(),
-  area: z.number().optional(),
-  propertyType: z.string().optional(),
+  planId: z.string().max(128).optional(),
+  planAmount: z.number().min(0).max(s.LIMITS.PRICE_MAX).optional(),
+  feeId: z.string().max(128).optional(),
+  feeAmount: z.number().min(0).max(s.LIMITS.PRICE_MAX).optional(),
+  bedrooms: z.number().int().min(0).max(100).optional(),
+  bathrooms: z.number().int().min(0).max(100).optional(),
+  floor: z.number().int().min(-10).max(300).optional(),
+  totalFloors: z.number().int().min(0).max(300).optional(),
+  sizeSqm: z.union([z.number().min(0).max(1_000_000), z.string().max(20)]).optional(),
+  area: z.number().min(0).max(1_000_000).optional(),
+  propertyType: s.optShortStr(),
   furnished: z.boolean().optional(),
-  yearBuilt: z.number().optional(),
-});
+  parking: z.boolean().optional(),
+  hasGarage: z.boolean().optional(),
+  hasGarden: z.boolean().optional(),
+  amenities: z.array(z.string().max(100)).max(20).optional(),
+  address: z.string().max(500).transform(s.strip).optional(),
+  yearBuilt: z.number().int().min(1800).max(2100).optional(),
+};
 
-export const createRealEstateSchema = z
-  .object({
-    userId: z.string().min(1),
-    title: z.string().min(1),
-    description: z.string().min(1),
-    price: z.coerce.number(),
-    mainCategory: z.string().min(1),
-    category: z.array(z.string()),
-    subcategory: z.array(z.string()),
-    region: z.string().min(1),
-    city: z.string().min(1),
-    images: z.array(z.string()),
-  })
-  .passthrough();
+export const updateRealEstateSchema = z.object(commonFields);
+
+export const createRealEstateSchema = z.object({
+  ...commonFields,
+  userId: z.string().min(1).max(128),
+  title: s.title,
+  description: s.description,
+  price: z.coerce.number().min(0).max(s.LIMITS.PRICE_MAX),
+  region: s.shortStr("Region"),
+  city: s.shortStr("City"),
+  images: s.images,
+  category: z.array(s.shortStr()).max(5),
+  subcategory: z.array(s.shortStr()).max(5),
+});

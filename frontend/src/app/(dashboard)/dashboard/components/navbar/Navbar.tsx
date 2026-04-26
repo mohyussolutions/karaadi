@@ -29,7 +29,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
     sessionStorage.removeItem("user");
     setUser(null);
     router.push("/login");
-    logout().catch(() => {});
+    logout();
   }, [router, setUser]);
 
   const toggleDropdown = useCallback(

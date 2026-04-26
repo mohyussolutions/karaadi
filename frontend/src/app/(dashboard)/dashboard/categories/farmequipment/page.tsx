@@ -16,11 +16,11 @@ import {
 } from "@/actions/categories/FarmequipmentAction";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { FarmEquipment } from "@/app/utils/types/farmequipment.types";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 import Pagination from "../../components/Pagination";
-import { farmEquipmentSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import { farmEquipmentSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 
 export default function TraktorsPage() {

@@ -9,7 +9,7 @@ export async function getTotalRealEstateCount(): Promise<number> {
     const headers = await getAuthHeaders();
     const res = await fetch(REAL_ESTATE_ENDPOINTS.TOTAL, {
       headers: headers as HeadersInit,
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return 0;
     const result = await res.json();

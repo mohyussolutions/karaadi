@@ -15,6 +15,8 @@ import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 import { Request, Response } from "express";
 import prisma from "./db.ts";
+import { createHash } from "crypto";
+import cacheManager from "src/services/redisserver/cacheManager.ts";
 import {
   VerifiedTokenData,
   RoleUpdateData,
@@ -265,6 +267,10 @@ export const verifySession = async (
 
   if (!token) return res.status(401).json({ message: "Not authenticated" });
 
+  const cacheKey = `session:${createHash("sha256").update(token).digest("hex").slice(0, 40)}`;
+  const cached = await cacheManager.get(cacheKey).catch(() => null);
+  if (cached) return res.status(200).json(cached);
+
   return new Promise<Response>((resolve) => {
     jwt.verify(
       token,
@@ -285,27 +291,22 @@ export const verifySession = async (
 
         try {
           const payload = decoded as any;
-          const userRecord = await prisma.user.findUnique({
-            where: { cognitoId: payload.sub },
-          });
+          const [userRecord, session] = await Promise.all([
+            prisma.user.findUnique({ where: { cognitoId: payload.sub } }),
+            prisma.cookie.findFirst({ where: { user: { cognitoId: payload.sub } } }),
+          ]);
 
           if (!userRecord) {
             return resolve(res.status(404).json({ message: "User not found" }));
           }
 
-          const session = await prisma.cookie.findUnique({
-            where: { userId: userRecord.id },
-          });
-
           if (!session || session.expiresAt < new Date()) {
             if (session)
-              await prisma.cookie.delete({ where: { id: session.id } });
+              prisma.cookie.delete({ where: { id: session.id } }).catch(() => {});
             res.clearCookie("idToken");
             res.clearCookie("refreshToken");
             res.clearCookie("accessToken");
-            return resolve(
-              res.status(401).json({ message: "Session expired" }),
-            );
+            return resolve(res.status(401).json({ message: "Session expired" }));
           }
 
           const cleanField = (val: any) =>
@@ -318,22 +319,15 @@ export const verifySession = async (
             phone: cleanField(userRecord.phone),
             profileImage: cleanField(userRecord.profileImage),
             isAdmin: userRecord.isAdmin || payload["custom:isAdmin"] === "true",
-            isManager:
-              userRecord.isManager || payload["custom:isManager"] === "true",
-            isSupport:
-              userRecord.isSupport || payload["custom:isSupport"] === "true",
+            isManager: userRecord.isManager || payload["custom:isManager"] === "true",
+            isSupport: userRecord.isSupport || payload["custom:isSupport"] === "true",
             token: token,
             accessToken: accessToken,
           };
 
-          return resolve(
-            res.status(200).json({
-              message: "Session valid",
-              user: responseUser,
-              token,
-              accessToken,
-            }),
-          );
+          const body = { message: "Session valid", user: responseUser, token, accessToken };
+          cacheManager.set(cacheKey, body, 60).catch(() => {});
+          return resolve(res.status(200).json(body));
         } catch {
           res.clearCookie("idToken");
           res.clearCookie("refreshToken");

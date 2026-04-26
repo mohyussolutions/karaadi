@@ -1,12 +1,11 @@
 "use server";
 
 import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
-
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { FEED_ENDPOINTS } from "../constant/constant";
 
 export async function loadFeedPage(page: number): Promise<UniversalCardProps[]> {
   try {
-    const res = await fetch(`${BACKEND}/api/feed?page=${page}&pageSize=70`, {
+    const res = await fetch(FEED_ENDPOINTS.PAGE(page), {
       next: { revalidate: 30 },
     });
     if (!res.ok) return [];

@@ -16,7 +16,7 @@ async function fetchApi<T>(
       ...headers,
       ...options?.headers,
     } as HeadersInit,
-    cache: "no-store",
+    ...(forceCache ? { next: { revalidate: 60 } } : { cache: "no-store" }),
   });
   if (!res.ok) throw new Error(`Status: ${res.status}`);
   return res.json();

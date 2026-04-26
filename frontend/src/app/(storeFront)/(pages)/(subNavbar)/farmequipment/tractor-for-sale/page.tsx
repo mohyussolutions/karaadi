@@ -6,13 +6,13 @@ import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisp
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
 import { getFarmequipment } from "@/actions/categories/FarmequipmentAction";
-import { categories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { categories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { TraktorSubCategoryItem } from "@/app/utils/types/nesSubCategoryTypes";
 import SearchInput from "@/app/ui/search/SearchInput";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
 import LinksStyleCard from "@/app/(storeFront)/components/Cards/containerCards/linksstyleCard";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";

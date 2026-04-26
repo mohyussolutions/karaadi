@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { FiEdit2, FiLogOut, FiPhone, FiCheckCircle } from "@/app/utils/icons";
 import { useTranslation } from "react-i18next";
 import { logout, clearAuthCookies } from "@/actions/core/authAction";
-import LoginLoading from "../components/shared/Loading/LoginLoading";
 import { NormalizedUser } from "@/app/utils/types/user.types";
 
 interface ProfileCardProps {
@@ -17,25 +16,11 @@ interface ProfileCardProps {
 const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout(accessToken || user?.token || "");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      clearAuthCookies();
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("refreshToken");
-      }
-      window.location.href = "/";
-    }
+  const handleLogout = () => {
+    logout(accessToken || user?.token || "");
+    window.location.href = "/";
   };
 
   const handleEditProfile = () => {
@@ -121,21 +106,10 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
         <div className="flex justify-center w-full lg:w-auto mt-6 lg:mt-0">
           <button
             onClick={handleLogout}
-            disabled={isLoggingOut}
-            className={`px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 border-2 min-w-[140px] ${
-              isLoggingOut
-                ? "bg-gray-100 text-gray-400 border-transparent"
-                : "bg-white text-red-500 border-red-50 hover:bg-red-500 hover:text-white hover:border-red-500"
-            }`}
+            className="px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 border-2 min-w-[140px] bg-white text-red-500 border-red-50 hover:bg-red-500 hover:text-white hover:border-red-500"
           >
-            {isLoggingOut ? (
-              <LoginLoading />
-            ) : (
-              <>
-                <FiLogOut size={18} />
-                <span>{t("mine.profile.logout")}</span>
-              </>
-            )}
+            <FiLogOut size={18} />
+            <span>{t("mine.profile.logout")}</span>
           </button>
         </div>
       </div>

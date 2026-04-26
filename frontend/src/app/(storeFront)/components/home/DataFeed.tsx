@@ -1,14 +1,6 @@
 import { Suspense } from "react";
-import { fetchAgencies } from "@/actions/categories/actionsAgency";
 import { loadFeedPage } from "@/actions/categories/feedActions";
-import AgenciesCarousel from "@/app/(agencies)/agencies/AgenciesCarousel";
 import FeedClient from "./FeedClient";
-
-async function AgenciesSection() {
-  const agencies = await fetchAgencies().catch(() => []);
-  if (!agencies.length) return null;
-  return <AgenciesCarousel initialAgencies={agencies} />;
-}
 
 async function Feed() {
   const items = await loadFeedPage(1);
@@ -27,13 +19,8 @@ function FeedSkeleton() {
 
 export default function DataFeed() {
   return (
-    <div className="space-y-4">
-      <Suspense fallback={null}>
-        <AgenciesSection />
-      </Suspense>
-      <Suspense fallback={<FeedSkeleton />}>
-        <Feed />
-      </Suspense>
-    </div>
+    <Suspense fallback={<FeedSkeleton />}>
+      <Feed />
+    </Suspense>
   );
 }

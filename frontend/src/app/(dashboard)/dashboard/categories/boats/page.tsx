@@ -11,14 +11,14 @@ import {
   FaUser,
   FaPhoneAlt,
 } from "@/app/utils/icons/dashboardIcons";
-import { boatSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import { boatSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 import {
   getAllBoatsAdminAction,
   toggleBoatPaymentAction,
   deleteBoatAction,
 } from "@/actions/categories/boatActions";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
 

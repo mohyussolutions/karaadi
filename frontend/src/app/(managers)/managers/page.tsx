@@ -1,8 +1,21 @@
+"use client";
+
 import Link from "next/link";
-import { TeamPerformanceChart } from "./LineChart";
-import { ProjectProgressChart } from "./BarChart";
-import { DocumentActivityChart } from "./AreaChart";
+import dynamic from "next/dynamic";
 import { managerTotalLinks } from "@/app/(links)/management/managerLinks";
+
+const TeamPerformanceChart = dynamic(
+  () => import("./LineChart").then((m) => ({ default: m.TeamPerformanceChart })),
+  { ssr: false },
+);
+const ProjectProgressChart = dynamic(
+  () => import("./BarChart").then((m) => ({ default: m.ProjectProgressChart })),
+  { ssr: false },
+);
+const DocumentActivityChart = dynamic(
+  () => import("./AreaChart").then((m) => ({ default: m.DocumentActivityChart })),
+  { ssr: false },
+);
 
 export default function ManagerPage() {
   const managementLinks = managerTotalLinks.filter(

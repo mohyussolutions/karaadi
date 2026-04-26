@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import UserCard from "@/app/(storeFront)/components/Cards/NormalCards/UserProfileCard";
 import { ImageControls } from "@/app/ui/invoices/ImageControls";
 

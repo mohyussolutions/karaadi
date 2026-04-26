@@ -88,8 +88,10 @@ export interface CreateFarmequipmentBody {
   region: string;
   city: string;
   make: string;
+  brand?: string;
   farmequipmentModel: string;
   type: string;
+  equipmentType?: string;
   condition: string;
   enginePower: string;
   fuelType: string;

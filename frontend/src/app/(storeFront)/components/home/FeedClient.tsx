@@ -4,11 +4,12 @@ import { useState, useTransition, useEffect, useRef } from "react";
 import UniversalCard from "../Cards/categoriesCards/UniversalCard";
 import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
 import { loadFeedPage } from "@/actions/categories/feedActions";
-import { parseSearchQuery } from "@/app/utils/parseSearchQuery";
+import { parseSearchQuery } from "@/app/ui/search/parseSearchQuery";
 import { SEARCH_EVENT } from "@/app/ui/search/SearchInput";
-
-const INITIAL_DISPLAY = 50;
-const DISPLAY_INCREMENT = 20;
+import {
+  DISPLAY_INCREMENT,
+  INITIAL_DISPLAY,
+} from "@/actions/constant/constant";
 
 function dedupById(items: UniversalCardProps[]): UniversalCardProps[] {
   const seen = new Set<string>();
@@ -39,7 +40,7 @@ function normalizeItem(item: any): UniversalCardProps {
     category:
       typeof item.category === "string" && item.category
         ? item.category
-        : item.mainCategory ?? "",
+        : (item.mainCategory ?? ""),
     subcategory: item.subcategory,
     maGaday: !!item.maGaday,
     isBasic30: !!item.isBasic30,
@@ -66,11 +67,15 @@ export default function FeedClient({
   initialItems: UniversalCardProps[];
 }) {
   const [pool, setPool] = useState(() => dedupById(initialItems));
-  const [displayed, setDisplayed] = useState(Math.min(INITIAL_DISPLAY, initialItems.length));
+  const [displayed, setDisplayed] = useState(
+    Math.min(INITIAL_DISPLAY, initialItems.length),
+  );
   const [serverPage, setServerPage] = useState(2);
   const [exhausted, setExhausted] = useState(initialItems.length === 0);
   const [pending, startTransition] = useTransition();
-  const [searchResults, setSearchResults] = useState<UniversalCardProps[] | null>(null);
+  const [searchResults, setSearchResults] = useState<
+    UniversalCardProps[] | null
+  >(null);
   const [searching, setSearching] = useState(false);
   const lastQueryRef = useRef<string>("");
 
@@ -110,9 +115,7 @@ export default function FeedClient({
         }
 
         if (parsed.price && parsed.price > 0) {
-          items = items.filter(
-            (i) => Number(i.price ?? 0) <= parsed.price!,
-          );
+          items = items.filter((i) => Number(i.price ?? 0) <= parsed.price!);
         }
 
         setSearchResults(items);
@@ -164,7 +167,9 @@ export default function FeedClient({
         ) : searchResults!.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <p className="text-lg font-medium">No results found.</p>
-            <p className="text-sm mt-1">Try a different name, city, or price.</p>
+            <p className="text-sm mt-1">
+              Try a different name, city, or price.
+            </p>
           </div>
         ) : (
           <>
@@ -218,7 +223,10 @@ function FeedSkeleton({ count }: { count: number }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="aspect-[4/3] rounded-xl bg-gray-100 animate-pulse" />
+        <div
+          key={i}
+          className="aspect-[4/3] rounded-xl bg-gray-100 animate-pulse"
+        />
       ))}
     </div>
   );

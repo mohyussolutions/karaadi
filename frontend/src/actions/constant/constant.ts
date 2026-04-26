@@ -5,8 +5,12 @@ export const AUTH_TOKEN_KEY = "auth_token";
 export const PLACEHOLDER_IMAGE =
   "https://placehold.co/80x80/9ca3af/ffffff?text=No+Image";
 export const PLACEHOLDER = "/placeholder.png";
+export const INITIAL_DISPLAY = 50;
+export const DISPLAY_INCREMENT = 20;
 
-export const SEARCH_ENDPOINT = `${BASE_API_URL}/api/search`;
+export const INITIAL_COUNT = 52;
+export const INCREMENT = 20;
+export const MAX_COUNT = 110;
 
 export const GRID_CONFIG: GridConfiguration = {
   PAGE_SIZE: 20,
@@ -36,19 +40,21 @@ const API_PATHS = {
   JOBS: "/api/jobs",
   SUBSCRIPTION: "/api/subscription",
   PAYMENTS: "/api/payments",
-  AGENCIES: "/api/agencies",
   FILTERING: "/api/filtering",
   SUPPORT: "/api/support",
   LOCATIONS: "/api/locations",
   HISTORY_SEARCH: "/api/history-search",
   REPORTS: "/api/reports",
   FEE: "/api/Fee",
+  FEED: "/api/feed",
   RECOMMENDATIONS: "/api/recommendations",
   ADVERTISEMENTS: "/api/advertisements",
   CONTACT_US: "/api/contactUs",
   BUSINESSES: "/api/businesses",
   BUSINESS_PLANS: "/api/business-plans",
 } as const;
+
+export const SEARCH_ENDPOINT = createEndpoint("/api/search");
 
 export const AUTH_ENDPOINTS = {
   USERS_BASE: createEndpoint(API_PATHS.USERS),
@@ -78,6 +84,7 @@ export const ADS_ENDPOINTS = {
   MY_ADS: createEndpoint(`${API_PATHS.ADS}/my-ads`),
   UPDATE: createEndpoint(`${API_PATHS.ADS}/update`),
   DELETE: createEndpoint(`${API_PATHS.ADS}/delete`),
+  PATCH: (id: string) => createIdEndpoint(API_PATHS.ADS, id),
 };
 
 export const CATEGORY_ENDPOINTS = {
@@ -87,7 +94,6 @@ export const CATEGORY_ENDPOINTS = {
   REAL_ESTATE: createEndpoint(API_PATHS.REAL_ESTATE),
   TRAKTOR: createEndpoint(API_PATHS.TRAKTOR),
   MARKETPLACE: createEndpoint(API_PATHS.MARKETPLACE),
-
   CARS_ADMIN: createEndpoint(`${API_PATHS.CARS}/all-including-unpaid`),
   BOATS_ADMIN: createEndpoint(`${API_PATHS.BOATS}/all-including-unpaid`),
   MOTORCYCLES_ADMIN: createEndpoint(
@@ -100,10 +106,8 @@ export const CATEGORY_ENDPOINTS = {
   MARKETPLACE_ADMIN: createEndpoint(
     `${API_PATHS.MARKETPLACE}/all-including-unpaid`,
   ),
-
   DELETE_ITEM: (id: string) => createIdEndpoint(API_PATHS.MARKETPLACE, id),
   UPDATE_ITEM: (id: string) => createIdEndpoint(API_PATHS.MARKETPLACE, id),
-
   TOTAL_CARS: createEndpoint(`${API_PATHS.CARS}/total`),
   TOTAL_BOATS: createEndpoint(`${API_PATHS.BOATS}/total`),
   TOTAL_MOTORCYCLES: createEndpoint(`${API_PATHS.MOTORCYCLES}/total`),
@@ -147,7 +151,7 @@ export const SUBSCRIPTION_ENDPOINTS = {
   ADMIN_DELETE: (id: string) =>
     createIdEndpoint(`${API_PATHS.SUBSCRIPTION}/admin`, id),
   ADMIN_UPDATE_STATUS: (id: string) =>
-    createIdEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/${id}/status`, id),
+    createEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/${id}/status`),
   ADMIN_NOTIFY: createEndpoint(`${API_PATHS.SUBSCRIPTION}/admin/notify`),
   DELETE: (id: string) => createIdEndpoint(API_PATHS.SUBSCRIPTION, id),
 };
@@ -162,17 +166,21 @@ export const PAYMENT_ENDPOINTS = {
   TRANSACTIONS: createEndpoint("/api/finance/transactions"),
   GET_BY_ID: (id: string) => createIdEndpoint(API_PATHS.PAYMENTS, id),
   UPDATE_STATUS: (id: string) =>
-    createIdEndpoint(`${API_PATHS.PAYMENTS}/${id}/status`, id),
+    createEndpoint(`${API_PATHS.PAYMENTS}/${id}/status`),
   DELETE: (id: string) => createIdEndpoint(API_PATHS.PAYMENTS, id),
   GET_ITEM_DETAIL: (id: string) =>
     createIdEndpoint(`${API_PATHS.PAYMENTS}/item`, id),
+  WAAFI_INITIATE: createEndpoint(`${API_PATHS.PAYMENTS}/waafi/initiate`),
+  WAAFI_STATUS: (ref: string) =>
+    createEndpoint(`${API_PATHS.PAYMENTS}/waafi/status/${ref}`),
+  MOBILE_INITIATE: createEndpoint(`${API_PATHS.PAYMENTS}/mobile/initiate`),
+  MOBILE_STATUS: (ref: string) =>
+    createEndpoint(`${API_PATHS.PAYMENTS}/mobile/status/${ref}`),
 };
 
-export const AGENCY_ENDPOINTS = {
-  BASE: createEndpoint(API_PATHS.AGENCIES),
-  STATS: createEndpoint(`${API_PATHS.AGENCIES}/stats`),
-  ADD_MEMBER: createEndpoint(`${API_PATHS.AGENCIES}/add-user`),
-  BY_ID: (id: string) => createIdEndpoint(API_PATHS.AGENCIES, id),
+export const FEED_ENDPOINTS = {
+  PAGE: (page: number, pageSize = 70) =>
+    createEndpoint(`${API_PATHS.FEED}?page=${page}&pageSize=${pageSize}`),
 };
 
 export const FILTERING_ENDPOINTS = {
@@ -189,9 +197,9 @@ export const SUPPORT_ENDPOINTS = {
   GET_TICKET_BY_ID: (id: string) =>
     createIdEndpoint(`${API_PATHS.SUPPORT}/tickets`, id),
   ADD_MESSAGE: (id: string) =>
-    createIdEndpoint(`${API_PATHS.SUPPORT}/tickets/${id}/messages`, id),
+    createEndpoint(`${API_PATHS.SUPPORT}/tickets/${id}/messages`),
   CLOSE_TICKET: (id: string) =>
-    createIdEndpoint(`${API_PATHS.SUPPORT}/tickets/${id}/close`, id),
+    createEndpoint(`${API_PATHS.SUPPORT}/tickets/${id}/close`),
 };
 
 export const REAL_ESTATE_ENDPOINTS = {
@@ -205,7 +213,6 @@ export const GEO_ENDPOINTS = {
   GET_ALL_REGIONS: createEndpoint(`${API_PATHS.LOCATIONS}/regions`),
   GET_ALL_CITIES: createEndpoint(`${API_PATHS.LOCATIONS}/cities`),
   GET_GEO_STATS: createEndpoint(`${API_PATHS.LOCATIONS}/stats`),
-  TOTAL_STATS: createEndpoint(`${API_PATHS.LOCATIONS}/stats`),
   SYNC_DATA: createEndpoint("/sync"),
   GET_REGION_BY_ID: (id: string) =>
     createIdEndpoint(`${API_PATHS.LOCATIONS}/regions`, id),
@@ -252,7 +259,6 @@ export const REPORT_ENDPOINTS = {
 
 export const RECOMMENDATION_ENDPOINTS = {
   BASE: createEndpoint(API_PATHS.RECOMMENDATIONS),
-  RECOMMENDATIONS: createEndpoint(API_PATHS.RECOMMENDATIONS),
   TRACK_VIEW: createEndpoint(`${API_PATHS.RECOMMENDATIONS}/track-view`),
   MOST_VIEWED_CATEGORIES: createEndpoint(
     `${API_PATHS.RECOMMENDATIONS}/categories/most-viewed`,
@@ -286,7 +292,7 @@ export const ADVERTISEMENT_ENDPOINTS = {
   UPDATE: (id: string) => createIdEndpoint(API_PATHS.ADVERTISEMENTS, id),
   DELETE: (id: string) => createIdEndpoint(API_PATHS.ADVERTISEMENTS, id),
   CLICK: (id: string) =>
-    createIdEndpoint(`${API_PATHS.ADVERTISEMENTS}/${id}/click`, id),
+    createEndpoint(`${API_PATHS.ADVERTISEMENTS}/${id}/click`),
   USER_ADS: (userId: string) =>
     createUserEndpoint(`${API_PATHS.ADVERTISEMENTS}/user`, userId),
 };
@@ -333,7 +339,7 @@ export const CONTACT_ENDPOINTS = {
   TICKET_BY_ID: (id: string | number) =>
     createIdEndpoint(`${API_PATHS.CONTACT_US}/tickets`, id),
   MESSAGES: (id: string | number) =>
-    createIdEndpoint(`${API_PATHS.CONTACT_US}/tickets/${id}/messages`, id),
+    createEndpoint(`${API_PATHS.CONTACT_US}/tickets/${id}/messages`),
 };
 
 const createFeeCategoryEndpoints = (category: string) => ({
@@ -417,8 +423,16 @@ export const SUBS_ENDPOINTS = SUBSCRIPTION_ENDPOINTS;
 export const FAVORITE_ROUTES = FAVORITE_ENDPOINTS;
 export const geoEndpoints = GEO_ENDPOINTS;
 export const apiUrlsForCharts = {
-  GetRegionData: `${BASE_API_URL}/api/locations/analytics/regions-with-most-item-listings`,
-  GetCityData: `${BASE_API_URL}/api/locations/analytics/cities-with-most-item-listings`,
-  GetUserSignupData: `${BASE_API_URL}/api/users/analytics/user-signups-by-month`,
-  GetRevenueData: `${BASE_API_URL}/api/payments/analytics/revenue-by-month`,
+  GetRegionData: createEndpoint(
+    `${API_PATHS.LOCATIONS}/analytics/regions-with-most-item-listings`,
+  ),
+  GetCityData: createEndpoint(
+    `${API_PATHS.LOCATIONS}/analytics/cities-with-most-item-listings`,
+  ),
+  GetUserSignupData: createEndpoint(
+    `${API_PATHS.USERS}/analytics/user-signups-by-month`,
+  ),
+  GetRevenueData: createEndpoint(
+    `${API_PATHS.PAYMENTS}/analytics/revenue-by-month`,
+  ),
 };

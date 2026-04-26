@@ -8,7 +8,7 @@ import {
   respondToWantedPost,
 } from "@/store/slices/reducers/wantedSlice";
 import WantedCard from "./WantedCard";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 
 const WantedPage = () => {
   const { user } = useAuth();

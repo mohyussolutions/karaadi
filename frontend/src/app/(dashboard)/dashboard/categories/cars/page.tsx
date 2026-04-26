@@ -13,11 +13,11 @@ import {
   toggleCarPayment,
   getAllCarsAdmin,
 } from "@/actions/categories/carActions";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { Car } from "@/app/utils/types/cars.types";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 import Pagination from "../../components/Pagination";
-import { vehicleSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import { vehicleSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 
 export default function CarManagement() {

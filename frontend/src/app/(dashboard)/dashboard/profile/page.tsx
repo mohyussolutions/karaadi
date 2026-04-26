@@ -13,7 +13,7 @@ import {
 } from "@/actions/core/authAction";
 import { toast } from "react-toastify";
 import Image from "next/image";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useRouter } from "next/navigation";
 import {
   FiUser,

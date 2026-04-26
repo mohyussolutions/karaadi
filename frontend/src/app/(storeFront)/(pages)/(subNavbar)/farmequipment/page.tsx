@@ -8,7 +8,7 @@ import { getFarmequipment } from "@/actions/categories/FarmequipmentAction";
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import SearchInput from "@/app/ui/search/SearchInput";
 import WantSell from "@/app/(storeFront)/components/shared/WantToSell/page";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
@@ -16,7 +16,7 @@ import SubCategoryList from "@/app/(storeFront)/components/navbar/categories/Sub
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import { FarmEquipment } from "@/app/utils/types/farmequipment.types";
-import { farmEquipmentSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import { farmEquipmentSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
 import Pagination from "@/app/(storeFront)/components/shared/Pagination";
 

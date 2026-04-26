@@ -28,7 +28,7 @@ import {
 import { FEE_CATEGORIES } from "@/actions/common/FEE_CATEGORIES";
 
 import FeeModal from "@/app/(storeFront)/components/shared/modals/feeModel";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { fieldMappings, FeeIds } from "../feeTypes";
 
 const FeeManagement = () => {

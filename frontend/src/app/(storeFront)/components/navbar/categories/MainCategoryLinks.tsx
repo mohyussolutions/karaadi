@@ -4,7 +4,7 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import Image from "next/image";
-import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
+
 import LinksStyleCard from "../../Cards/containerCards/linksstyleCard";
 import {
   Category,
@@ -12,6 +12,7 @@ import {
   IMAGE_SIZES,
   EXTERNAL_LINK_REGEX,
 } from "./types";
+import { allCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
 const CategoryLinks = memo(function CategoryLinks() {
   const { t, i18n } = useTranslation();
@@ -25,7 +26,7 @@ const CategoryLinks = memo(function CategoryLinks() {
 
         const translatedTitle = category.labelKey
           ? t(category.labelKey, { defaultValue: category.name })
-          : (currentLang === "so" && category.so) || category.name || "";
+          : category.name || "";
 
         const iconContent = category.logo ? (
           <div className="relative w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">

@@ -9,10 +9,12 @@ import {
   deleteNotification,
 } from "@/actions/core/notificationsAction";
 import NotificationCard from "@/app/(storeFront)/components/Cards/NormalCards/NotificationCard";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useAuth } from "@/context/AuthContext";
 import { getCategoryRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import Pagination from "@/app/(storeFront)/components/shared/Pagination";
+import { useAppDispatch } from "@/store/slices/hooks/hooks";
+import { setUnreadCount, decrementUnread } from "@/store/slices/reducers/notificationsSlice";
 
 const PAGE_SIZE = 20;
 
@@ -20,6 +22,7 @@ const NotificationsComponent = () => {
   const { i18n } = useTranslation();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const dispatch = useAppDispatch();
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isFetching, setIsFetching] = useState(false);
@@ -33,15 +36,15 @@ const NotificationsComponent = () => {
     try {
       const response = await fetchNotifications(userId);
       const data = Array.isArray(response) ? response : [];
-      setNotifications(
-        data.map((n: any) => ({
-          ...n,
-          id: n.id || n._id || "",
-          isSubscriptionAlert: n.category === "subscription_alert",
-          isUrgent: n.category === "subscription_alert" && !n.isRead,
-          priority: n.category === "subscription_alert" ? 1 : 0,
-        })),
-      );
+      const mapped = data.map((n: any) => ({
+        ...n,
+        id: n.id || n._id || "",
+        isSubscriptionAlert: n.category === "subscription_alert",
+        isUrgent: n.category === "subscription_alert" && !n.isRead,
+        priority: n.category === "subscription_alert" ? 1 : 0,
+      }));
+      setNotifications(mapped);
+      dispatch(setUnreadCount(mapped.filter((n: any) => !n.isRead).length));
     } catch {
       setNotifications([]);
     } finally {
@@ -80,6 +83,7 @@ const NotificationsComponent = () => {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
+      dispatch(decrementUnread());
       window.dispatchEvent(new CustomEvent("notification-read"));
     } catch {}
   };

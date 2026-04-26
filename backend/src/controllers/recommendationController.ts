@@ -3,6 +3,15 @@ import { CACHE_TTL } from "src/config/config.constants.ts";
 import prisma from "src/core/utils/db.ts";
 import cacheManager from "src/services/redisserver/cacheManager.ts";
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const CACHE_KEYS = {
   RECOMMENDATIONS: (userId: string, limit: number) =>
     userId
@@ -122,7 +131,7 @@ const recommendationService = {
       new Map(allItems.map((item) => [item.externalId, item])).values(),
     );
 
-    return uniqueItems.slice(0, limit);
+    return shuffle(uniqueItems).slice(0, limit);
   },
 
   async getCollaborativeFiltering(
@@ -174,22 +183,24 @@ const recommendationService = {
     excludeIds: string[],
     limit: number,
   ) {
-    return await prisma.recommendation.findMany({
+    const pool = await prisma.recommendation.findMany({
       where: {
         category: { in: categories },
         externalId: { notIn: excludeIds },
       },
       orderBy: { views: "desc" },
-      take: limit,
+      take: limit * 4,
     });
+    return shuffle(pool).slice(0, limit);
   },
 
   async getTrending(limit: number) {
-    return await prisma.recommendation.findMany({
+    const pool = await prisma.recommendation.findMany({
       where: { views: { gt: 0 } },
       orderBy: { views: "desc" },
-      take: limit,
+      take: limit * 4,
     });
+    return shuffle(pool).slice(0, limit);
   },
 
   async create(data: any) {
@@ -224,23 +235,24 @@ export async function getRecommendations(req: Request, res: Response) {
   try {
     const limit = parseInt((req.query.limit as string) || "6", 10);
     const userId = (req as any).user?.id || (req.query.userId as string);
+    const excludeId = (req.query.excludeId as string) || null;
+    const category = (req.query.category as string) || null;
+
     let items;
 
     if (userId) {
-      items = await cacheManager.withCache(
-        CACHE_KEYS.RECOMMENDATIONS(userId, limit),
-        () => recommendationService.getHybridRecommendations(userId, limit),
-        CACHE_TTL.LIST,
-      );
+      items = await recommendationService.getHybridRecommendations(userId, limit + 1);
     } else {
-      items = await cacheManager.withCache(
-        CACHE_KEYS.RECOMMENDATIONS("global", limit),
-        () => recommendationService.getTrending(limit),
-        CACHE_TTL.LIST,
-      );
+      items = category
+        ? await recommendationService.getContentBased([category], [], limit + 1)
+        : await recommendationService.getTrending(limit + 1);
     }
 
-    return res.json(items);
+    if (excludeId) {
+      items = (items as any[]).filter((i: any) => i.externalId !== excludeId);
+    }
+
+    return res.json((items as any[]).slice(0, limit));
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch" });
   }

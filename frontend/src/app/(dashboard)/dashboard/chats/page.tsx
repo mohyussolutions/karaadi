@@ -13,7 +13,7 @@ import {
   MdClose,
 } from "react-icons/md";
 import { FiUser, FiMessageSquare, FiMail } from "react-icons/fi";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import {
   getAllChats,
   getChatMessages,

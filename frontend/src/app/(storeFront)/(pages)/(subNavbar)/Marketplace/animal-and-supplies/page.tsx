@@ -8,9 +8,8 @@ import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regio
 import { getMarketplaceItems } from "@/actions/categories/marketplaceActions";
 import SearchInput from "@/app/ui/search/SearchInput";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
@@ -18,6 +17,7 @@ import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedU
 import { MarketplaceItem } from "@/app/utils/types/marketplace.types";
 import { ITEM_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { AnimalAndSuppliesNestedSub } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
 export default function AnimalAndSupplies() {
   const { t } = useTranslation();
@@ -185,7 +185,7 @@ export default function AnimalAndSupplies() {
 
       <ContainerLinks>
         <CommonSubCategoryLinks
-          items={nesCategories.AnimalAndSuppliesNestedSub || []}
+          items={AnimalAndSuppliesNestedSub || []}
           selectedId={selectedSubcategory}
           onSelect={(id) =>
             setSelectedSubcategory((prev) => (prev === id ? null : id))

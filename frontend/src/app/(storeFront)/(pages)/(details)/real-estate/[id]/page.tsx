@@ -7,18 +7,33 @@ import { IoIosArrowForward, IoIosArrowBack } from "@/app/utils/icons";
 import Image from "next/image";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { getRealEstateById } from "@/actions/categories/realEstateActions";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { ImageControls } from "@/app/ui/invoices/ImageControls";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 import { MessageSquare, Phone } from "lucide-react";
+import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
+import { trackItemView } from "@/actions/categories/RecommendationActions";
 import {
-  FaBed, FaBath, FaRulerCombined, FaBuilding, FaLayerGroup,
-  FaCouch, FaCar, FaWarehouse, FaSeedling, FaSwimmingPool,
-  FaDumbbell, FaShieldAlt, FaBolt, FaTint,
-  FaWind, FaTree, FaHome,
+  FaBed,
+  FaBath,
+  FaRulerCombined,
+  FaBuilding,
+  FaLayerGroup,
+  FaCouch,
+  FaCar,
+  FaWarehouse,
+  FaSeedling,
+  FaSwimmingPool,
+  FaDumbbell,
+  FaShieldAlt,
+  FaBolt,
+  FaTint,
+  FaWind,
+  FaTree,
+  FaHome,
 } from "react-icons/fa";
 import { MdBalcony, MdElevator } from "react-icons/md";
 
@@ -54,15 +69,15 @@ interface RealEstateItem {
 
 const AMENITY_ICONS: Record<string, React.ReactNode> = {
   "Swimming Pool": <FaSwimmingPool size={14} />,
-  "Gym": <FaDumbbell size={14} />,
-  "Security": <FaShieldAlt size={14} />,
-  "Elevator": <MdElevator size={14} />,
-  "Generator": <FaBolt size={14} />,
+  Gym: <FaDumbbell size={14} />,
+  Security: <FaShieldAlt size={14} />,
+  Elevator: <MdElevator size={14} />,
+  Generator: <FaBolt size={14} />,
   "Water Supply": <FaTint size={14} />,
   "Air Conditioning": <FaWind size={14} />,
-  "Garden": <FaTree size={14} />,
-  "Balcony": <MdBalcony size={14} />,
-  "Parking": <FaCar size={14} />,
+  Garden: <FaTree size={14} />,
+  Balcony: <MdBalcony size={14} />,
+  Parking: <FaCar size={14} />,
 };
 
 const isValidImageUrl = (url: any): url is string =>
@@ -85,12 +100,21 @@ function RealEstateDetails() {
   const [showModal, setShowModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messagingLoading, setMessagingLoading] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [showPhone, setShowPhone] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+
+  const handleZoomClick = () => {
+    setIsZoomed(true);
+  };
+
+  const handleCloseZoom = () => {
+    setIsZoomed(false);
+  };
 
   useEffect(() => {
     router.prefetch("/messages");
   }, [router]);
-  const [showPhone, setShowPhone] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -98,19 +122,25 @@ function RealEstateDetails() {
       try {
         const data = await getRealEstateById(id);
         if (data) {
+          const resolvedId =
+            typeof data._id === "string"
+              ? data._id
+              : typeof data.id === "string"
+                ? data.id
+                : "";
           setRealEstate({
             ...data,
-            id:
-              typeof data._id === "string"
-                ? data._id
-                : typeof data.id === "string"
-                  ? data.id
-                  : "",
+            id: resolvedId,
             title: data.title ?? "",
             description: data.description ?? "",
             price: data.price ?? "",
             images: data.images ?? [],
           });
+          if (resolvedId) {
+            const cat =
+              data.mainCategory ?? (data.category as any)?.[0] ?? "real-estate";
+            trackItemView(resolvedId, cat, currentUser?.id ?? null);
+          }
         }
       } catch {
       } finally {
@@ -141,8 +171,7 @@ function RealEstateDetails() {
 
   const sellerId = itemUser?.id || "";
   const buyerId = String(currentUser?._id || currentUser?.id || "");
-  const isOwnItem =
-    !!sellerId && !!buyerId && sellerId === buyerId;
+  const isOwnItem = !!sellerId && !!buyerId && sellerId === buyerId;
 
   const handleSendMessage = () => {
     if (!currentUser) {
@@ -210,10 +239,12 @@ function RealEstateDetails() {
 
   const translateSubcategory = (raw: string) => {
     if (!raw) return "";
-    // stored as full key e.g. "subcategories.realEstateNested.landForSale.commercialLand"
-    if (raw.startsWith("subcategories.")) return t(raw, { defaultValue: raw.split(".").pop() });
-    // stored as short key e.g. "commercialLand" — look under current category
-    const fromNested = t(`subcategories.realEstateNested.${categoryKey}.${raw}`, { defaultValue: "" });
+    if (raw.startsWith("subcategories."))
+      return t(raw, { defaultValue: raw.split(".").pop() });
+    const fromNested = t(
+      `subcategories.realEstateNested.${categoryKey}.${raw}`,
+      { defaultValue: "" },
+    );
     if (fromNested) return fromNested;
     return raw;
   };
@@ -230,23 +261,12 @@ function RealEstateDetails() {
   return (
     <div className="my-12 px-4 md:px-6 min-h-screen pb-24 md:pb-0">
       <div className="max-w-7xl mx-auto mb-5 font-mono text-sm flex items-center gap-1 flex-wrap text-gray-400">
-        {category && <span className="text-blue-600 font-bold">{category}</span>}
-        {realEstate.region && (
-          <>
-            {category && <span>/</span>}
-            <span>{realEstate.region}</span>
-          </>
-        )}
-        {realEstate.city && (
-          <>
-            <span>/</span>
-            <span>{realEstate.city}</span>
-          </>
+        {category && (
+          <span className="text-blue-600 font-bold">{category}</span>
         )}
       </div>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        {/* Images */}
         <div className="space-y-4">
           <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
             {images[selectedImageIndex] ? (
@@ -262,7 +282,7 @@ function RealEstateDetails() {
                   onHeartClick={() =>
                     currentUser ? setShowModal(true) : router.push("/login")
                   }
-                  onZoomClick={() => {}}
+                  onZoomClick={handleZoomClick}
                 />
               </>
             ) : (
@@ -297,6 +317,29 @@ function RealEstateDetails() {
             )}
           </div>
 
+          {isZoomed && images[selectedImageIndex] && (
+            <div
+              className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center cursor-pointer"
+              onClick={handleCloseZoom}
+            >
+              <div className="relative w-full max-w-6xl h-full max-h-[90vh] m-4">
+                <Image
+                  src={images[selectedImageIndex]}
+                  alt={realEstate.title}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+                <button
+                  onClick={handleCloseZoom}
+                  className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {images.length > 1 && (
             <div className="flex gap-3 overflow-x-auto py-1 scrollbar-hide">
               {images.map((src, i) => (
@@ -322,7 +365,6 @@ function RealEstateDetails() {
           )}
         </div>
 
-        {/* Details */}
         <div className="space-y-7">
           <div className="space-y-2">
             <GoBackBtn />
@@ -341,7 +383,6 @@ function RealEstateDetails() {
             )}
           </div>
 
-          {/* Seller card */}
           <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -398,14 +439,12 @@ function RealEstateDetails() {
             )}
           </div>
 
-          {/* Sold banner */}
           {realEstate.maGaday && (
             <div className="bg-yellow-400 text-gray-900 font-black text-center py-4 rounded-xl shadow-sm uppercase tracking-widest">
               {t("realEstateDetail.waaLaGatay")}
             </div>
           )}
 
-          {/* Property Details grid */}
           <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
             <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-5 border-b pb-3">
               {t("realEstateDetail.propertyDetails")}
@@ -413,13 +452,19 @@ function RealEstateDetails() {
             <div className="grid grid-cols-2 gap-x-6 gap-y-5">
               {realEstate.propertyType && (
                 <div className="flex items-start gap-2">
-                  <FaBuilding className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
+                  <FaBuilding
+                    className="text-blue-400 mt-0.5 flex-shrink-0"
+                    size={15}
+                  />
                   <div>
                     <span className="text-[10px] font-black text-gray-400 uppercase block">
                       {t("realEstateDetail.propertyTypeLabel")}
                     </span>
                     <span className="font-bold text-gray-800 capitalize">
-                      {t(`createRealEstate.propertyTypes.${realEstate.propertyType}`, { defaultValue: realEstate.propertyType })}
+                      {t(
+                        `createRealEstate.propertyTypes.${realEstate.propertyType}`,
+                        { defaultValue: realEstate.propertyType },
+                      )}
                     </span>
                   </div>
                 </div>
@@ -427,7 +472,10 @@ function RealEstateDetails() {
 
               {category && (
                 <div className="flex items-start gap-2">
-                  <FaHome className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
+                  <FaHome
+                    className="text-blue-400 mt-0.5 flex-shrink-0"
+                    size={15}
+                  />
                   <div>
                     <span className="text-[10px] font-black text-gray-400 uppercase block">
                       {t("realEstateDetail.categoryLabel")}
@@ -441,7 +489,10 @@ function RealEstateDetails() {
 
               {subcategory && (
                 <div className="flex items-start gap-2">
-                  <FaHome className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
+                  <FaHome
+                    className="text-blue-400 mt-0.5 flex-shrink-0"
+                    size={15}
+                  />
                   <div>
                     <span className="text-[10px] font-black text-gray-400 uppercase block">
                       {t("realEstateDetail.subcategoryLabel")}
@@ -455,7 +506,10 @@ function RealEstateDetails() {
 
               {(realEstate.sizeSqm || realEstate.squareFeet) && (
                 <div className="flex items-start gap-2">
-                  <FaRulerCombined className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
+                  <FaRulerCombined
+                    className="text-blue-400 mt-0.5 flex-shrink-0"
+                    size={15}
+                  />
                   <div>
                     <span className="text-[10px] font-black text-gray-400 uppercase block">
                       {t("realEstateDetail.sizeSqmLabel")}
@@ -468,37 +522,48 @@ function RealEstateDetails() {
                 </div>
               )}
 
-              {realEstate.bedrooms !== undefined && realEstate.bedrooms !== null && (
-                <div className="flex items-start gap-2">
-                  <FaBed className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
-                  <div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase block">
-                      {t("realEstateDetail.bedroomsLabel")}
-                    </span>
-                    <span className="font-bold text-gray-800">
-                      {realEstate.bedrooms}
-                    </span>
+              {realEstate.bedrooms !== undefined &&
+                realEstate.bedrooms !== null && (
+                  <div className="flex items-start gap-2">
+                    <FaBed
+                      className="text-blue-400 mt-0.5 flex-shrink-0"
+                      size={15}
+                    />
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase block">
+                        {t("realEstateDetail.bedroomsLabel")}
+                      </span>
+                      <span className="font-bold text-gray-800">
+                        {realEstate.bedrooms}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {realEstate.bathrooms !== undefined && realEstate.bathrooms !== null && (
-                <div className="flex items-start gap-2">
-                  <FaBath className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
-                  <div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase block">
-                      {t("realEstateDetail.bathroomsLabel")}
-                    </span>
-                    <span className="font-bold text-gray-800">
-                      {realEstate.bathrooms}
-                    </span>
+              {realEstate.bathrooms !== undefined &&
+                realEstate.bathrooms !== null && (
+                  <div className="flex items-start gap-2">
+                    <FaBath
+                      className="text-blue-400 mt-0.5 flex-shrink-0"
+                      size={15}
+                    />
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase block">
+                        {t("realEstateDetail.bathroomsLabel")}
+                      </span>
+                      <span className="font-bold text-gray-800">
+                        {realEstate.bathrooms}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {realEstate.floor !== undefined && realEstate.floor !== null && (
                 <div className="flex items-start gap-2">
-                  <FaLayerGroup className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
+                  <FaLayerGroup
+                    className="text-blue-400 mt-0.5 flex-shrink-0"
+                    size={15}
+                  />
                   <div>
                     <span className="text-[10px] font-black text-gray-400 uppercase block">
                       {t("realEstateDetail.floorLabel")}
@@ -513,23 +578,27 @@ function RealEstateDetails() {
                 </div>
               )}
 
-              {!realEstate.floor && realEstate.totalFloors !== undefined && realEstate.totalFloors !== null && (
-                <div className="flex items-start gap-2">
-                  <FaLayerGroup className="text-blue-400 mt-0.5 flex-shrink-0" size={15} />
-                  <div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase block">
-                      {t("realEstateDetail.totalFloorsLabel")}
-                    </span>
-                    <span className="font-bold text-gray-800">
-                      {realEstate.totalFloors}
-                    </span>
+              {!realEstate.floor &&
+                realEstate.totalFloors !== undefined &&
+                realEstate.totalFloors !== null && (
+                  <div className="flex items-start gap-2">
+                    <FaLayerGroup
+                      className="text-blue-400 mt-0.5 flex-shrink-0"
+                      size={15}
+                    />
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase block">
+                        {t("realEstateDetail.totalFloorsLabel")}
+                      </span>
+                      <span className="font-bold text-gray-800">
+                        {realEstate.totalFloors}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
 
-          {/* Features (Furnished / Parking / Garage / Garden) */}
           {hasFeatures && (
             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
               <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 border-b pb-3">
@@ -564,7 +633,6 @@ function RealEstateDetails() {
             </div>
           )}
 
-          {/* Amenities */}
           {amenities.length > 0 && (
             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
               <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 border-b pb-3">
@@ -586,7 +654,6 @@ function RealEstateDetails() {
             </div>
           )}
 
-          {/* Description */}
           <div className="space-y-3">
             <h2 className="text-lg font-black text-gray-700 uppercase tracking-wider border-b pb-2">
               {t("realEstateDetail.descriptionLabel")}
@@ -621,44 +688,43 @@ function RealEstateDetails() {
         </div>
       </div>
 
-      {/* Mobile bottom bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-lg">
-          <div className="flex-1 min-w-0">
-            <p className="text-xl font-extrabold text-blue-700 truncate">
-              ${Number(realEstate.price).toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500 truncate">{realEstate.title}</p>
-          </div>
-          {itemUser?.phone && (
-            <button
-              onClick={() => setShowPhone((p) => !p)}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
-            >
-              <Phone size={15} />
-              <span className="text-xs">
-                {showPhone ? itemUser.phone : "Phone"}
-              </span>
-            </button>
-          )}
-          <button
-            onClick={handleSendMessage}
-            disabled={isOwnItem || realEstate.maGaday || messagingLoading}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97] flex-shrink-0 ${
-              isOwnItem || realEstate.maGaday
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : messagingLoading
-                  ? "bg-blue-400 text-white cursor-wait"
-                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-200"
-            }`}
-          >
-            <MessageSquare size={16} />
-            {realEstate.maGaday
-              ? t("realEstateDetail.sold")
-              : messagingLoading
-                ? t("realEstateDetail.opening")
-                : t("realEstateDetail.sendMessage")}
-          </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-xl font-extrabold text-blue-700 truncate">
+            ${Number(realEstate.price).toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-500 truncate">{realEstate.title}</p>
         </div>
+        {itemUser?.phone && (
+          <button
+            onClick={() => setShowPhone((p) => !p)}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
+          >
+            <Phone size={15} />
+            <span className="text-xs">
+              {showPhone ? itemUser.phone : "Phone"}
+            </span>
+          </button>
+        )}
+        <button
+          onClick={handleSendMessage}
+          disabled={isOwnItem || realEstate.maGaday || messagingLoading}
+          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97] flex-shrink-0 ${
+            isOwnItem || realEstate.maGaday
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : messagingLoading
+                ? "bg-blue-400 text-white cursor-wait"
+                : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-200"
+          }`}
+        >
+          <MessageSquare size={16} />
+          {realEstate.maGaday
+            ? t("realEstateDetail.sold")
+            : messagingLoading
+              ? t("realEstateDetail.opening")
+              : t("realEstateDetail.sendMessage")}
+        </button>
+      </div>
 
       {showModal && (
         <SaveFavoriteModel
@@ -667,6 +733,15 @@ function RealEstateDetails() {
           backgroundImage={images[0]}
         />
       )}
+
+      <Recommendations
+        userId={currentUser?.id}
+        excludeId={realEstate?.id}
+        category={
+          realEstate?.mainCategory ?? realEstate?.category?.[0] ?? undefined
+        }
+        limit={4}
+      />
     </div>
   );
 }

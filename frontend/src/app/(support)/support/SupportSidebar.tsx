@@ -22,12 +22,8 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
 
   const isActive = (href: string) => pathname === href;
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch {}
-    clearAuthCookies();
-    sessionStorage.removeItem("user");
+  const handleLogout = () => {
+    logout();
     setUser(null);
     router.push("/login");
   };

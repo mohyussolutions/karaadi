@@ -23,7 +23,7 @@ export async function fetchVisitors(): Promise<Visitor[]> {
   const headers = await getAuthHeaders();
   const res = await fetch(`${API_BASE}/visitors/all`, {
     headers: headers as HeadersInit,
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   if (!res.ok) return [];
   const data = await res.json();

@@ -11,12 +11,18 @@ import { RECOMMENDATION_ENDPOINTS } from "../constant/constant";
 export async function fetchRecommendations(
   userId?: string | null,
   limit: number = 6,
+  excludeId?: string | null,
+  category?: string | null,
 ): Promise<RecommendationItem[]> {
-  const url = userId
-    ? `${RECOMMENDATION_ENDPOINTS.RECOMMENDATIONS}?limit=${limit}&userId=${userId}`
-    : `${RECOMMENDATION_ENDPOINTS.RECOMMENDATIONS}?limit=${limit}`;
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (userId) params.set("userId", userId);
+  if (excludeId) params.set("excludeId", excludeId);
+  if (category) params.set("category", category);
 
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(
+    `${RECOMMENDATION_ENDPOINTS.BASE}?${params}`,
+    { cache: "no-store" },
+  );
   return res.ok ? await res.json() : [];
 }
 
@@ -82,6 +88,7 @@ export async function trackItemView(
   const res = await fetch(RECOMMENDATION_ENDPOINTS.TRACK_VIEW, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ externalId, category, userId }),
     cache: "no-store",
   });
@@ -91,7 +98,7 @@ export async function trackItemView(
 export async function createRecommendation(
   data: CreateRecommendationData,
 ): Promise<{ success: boolean; id?: number; error?: string }> {
-  const res = await fetch(RECOMMENDATION_ENDPOINTS.RECOMMENDATIONS, {
+  const res = await fetch(RECOMMENDATION_ENDPOINTS.BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

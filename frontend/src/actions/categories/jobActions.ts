@@ -4,15 +4,18 @@ import { jobsEndpoint } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export interface CreateJobData {
+  userId?: string;
   title: string;
   description: string;
-  company: string;
-  location: string;
-  salary: number;
-  type: string;
+  company?: string;
+  location?: string;
+  salary?: number;
+  employmentType?: string;
+  experienceLevel?: string;
   city: string;
   region: string;
-  isPaid: boolean;
+  isPaid?: boolean;
+  type?: string;
 }
 
 export interface Job {

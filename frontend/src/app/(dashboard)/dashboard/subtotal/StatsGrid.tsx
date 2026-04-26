@@ -4,7 +4,6 @@ import TotalVisited from "./TotalVisited";
 import TotalMessages from "./TotalMessages";
 import TotalAdvertisements from "./TotalAdvertisements";
 import TotalSubscriptions from "./TotalSubscriptions";
-import TotalAgencies from "./TotalAgencies";
 import TotalRegions from "./TotalRegions";
 import TotalCities from "./TotalCities";
 
@@ -44,11 +43,6 @@ export default function StatsGrid() {
       <Card>
         <Suspense fallback={<Skeleton />}>
           <TotalSubscriptions />
-        </Suspense>
-      </Card>
-      <Card>
-        <Suspense fallback={<Skeleton />}>
-          <TotalAgencies />
         </Suspense>
       </Card>
       <Card>

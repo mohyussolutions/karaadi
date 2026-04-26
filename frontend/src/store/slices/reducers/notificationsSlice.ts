@@ -29,6 +29,12 @@ const notificationsSlice = createSlice({
         state.unreadCount += 1;
       }
     },
+    setUnreadCount: (state, action: PayloadAction<number>) => {
+      state.unreadCount = action.payload;
+    },
+    decrementUnread: (state) => {
+      state.unreadCount = Math.max(0, state.unreadCount - 1);
+    },
     markAllRead: (state) => {
       state.items = state.items.map((item) => ({ ...item, read: true }));
       state.unreadCount = 0;
@@ -40,6 +46,11 @@ const notificationsSlice = createSlice({
   },
 });
 
-export const { addNotification, markAllRead, clearNotifications } =
-  notificationsSlice.actions;
+export const {
+  addNotification,
+  setUnreadCount,
+  decrementUnread,
+  markAllRead,
+  clearNotifications,
+} = notificationsSlice.actions;
 export default notificationsSlice.reducer;

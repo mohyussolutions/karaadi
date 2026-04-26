@@ -1,7 +1,7 @@
 export const notificationItems = [
   {
-    userId: "64d4a43c9a8b0e6e8c4a5678",
-    senderId: "64d4a43c9a8b0e6e8c4a5679",
+    userId: "550e8400-e29b-41d4-a716-446655440001",
+    senderId: "550e8400-e29b-41d4-a716-446655440002",
     title: "New Subscription",
     message: "You have successfully subscribed to the newsletter",
     category: "service",
@@ -15,8 +15,8 @@ export const notificationItems = [
     metadata: null,
   },
   {
-    userId: "64d4a43c9a8b0e6e8c4a5679",
-    senderId: "64d4a43c9a8b0e6e8c4a5678",
+    userId: "550e8400-e29b-41d4-a716-446655440002",
+    senderId: "550e8400-e29b-41d4-a716-446655440001",
     title: "Price Drop",
     message: "Price dropped on Toyota Corolla 2020",
     category: "vehicle",
@@ -30,8 +30,8 @@ export const notificationItems = [
     metadata: null,
   },
   {
-    userId: "64d4a43c9a8b0e6e8c4a5678",
-    senderId: "64d4a43c9a8b0e6e8c4a5678",
+    userId: "550e8400-e29b-41d4-a716-446655440001",
+    senderId: "550e8400-e29b-41d4-a716-446655440001",
     title: "New Message",
     message: "You have a new message from Ahmed",
     category: "communication",
@@ -45,8 +45,8 @@ export const notificationItems = [
     metadata: null,
   },
   {
-    userId: "64d4a43c9a8b0e6e8c4a5679",
-    senderId: "64d4a43c9a8b0e6e8c4a5679",
+    userId: "550e8400-e29b-41d4-a716-446655440002",
+    senderId: "550e8400-e29b-41d4-a716-446655440002",
     title: "Listing Expiring",
     message: "Your motorcycle listing expires in 3 days",
     category: "vehicle",

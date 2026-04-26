@@ -1,9 +1,9 @@
 import { getCars } from "@/actions/categories/carActions";
 import TrailersClient from "./TrailersClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function TrailersPage() {
-  const data = await getCars(1, 40).catch(() => []);
-  return <TrailersClient initialData={data ?? []} />;
+
+  return <TrailersClient initialData={[]} />;
 }

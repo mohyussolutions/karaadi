@@ -27,8 +27,9 @@ export default function ManagerSidebar({ open, onClose }: ManagerSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/";
   };
 
   return (

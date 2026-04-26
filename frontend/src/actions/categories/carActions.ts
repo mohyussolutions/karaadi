@@ -155,7 +155,7 @@ export async function getTotalCars(token?: string): Promise<number> {
     const res = await fetch(apiUrlsForCategoryTotals.TotalCars, {
       method: "GET",
       headers: headers as HeadersInit,
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return 0;
     const data = await res.json();

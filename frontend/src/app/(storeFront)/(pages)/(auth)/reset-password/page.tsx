@@ -6,7 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import Link from "next/link";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { apiUrls } from "@/actions/constant/constant";
 
 export default function ResetCode() {

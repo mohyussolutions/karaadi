@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useRouter } from "next/navigation";
 import { settingLinks } from "@/app/(links)/dashboardLinks/dashboardLinks";
 import { SettingLink } from "@/app/utils/types/categoriestype";

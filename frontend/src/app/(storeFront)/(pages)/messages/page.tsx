@@ -4,7 +4,7 @@ import { useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import dynamic from "next/dynamic"
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading"
+import Loading from "@/app/ui/loading/Loading"
 
 const ChatInbox = dynamic(
   () => import("@/app/(storeFront)/components/chats/chat/ChatInbox"),

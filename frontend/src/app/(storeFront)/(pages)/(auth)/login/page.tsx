@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import LoginForm from "./LoginForm";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 

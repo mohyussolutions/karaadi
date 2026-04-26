@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { getMyPayments } from "@/actions/categories/paymentActions";
 import { useAuth } from "@/context/AuthContext";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback } from "react";
 import {
@@ -105,12 +105,16 @@ export default function PaymentPage() {
 
       <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
         {user.profileImage ? (
-          <Image
-            src={user.profileImage}
+          <img
+            src={
+              user.profileImage.startsWith("http") || user.profileImage.startsWith("/")
+                ? user.profileImage
+                : `data:image/png;base64,${user.profileImage}`
+            }
             alt={user.username || "User"}
             width={56}
             height={56}
-            className="rounded-full object-cover border border-gray-200"
+            className="w-14 h-14 rounded-full object-cover border border-gray-200"
           />
         ) : (
           <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">

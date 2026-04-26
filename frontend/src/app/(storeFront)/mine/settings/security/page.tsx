@@ -51,15 +51,10 @@ const Security: React.FC = () => {
     }
   }, [user, authLoading, router, fetchActiveDevices]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      clearAuthCookies();
-      setActiveDevices([]);
-      window.location.reload();
-    } catch {
-      alert("Cilad ayaa dhacday markaad ka baxaysay");
-    }
+  const handleLogout = () => {
+    logout();
+    setActiveDevices([]);
+    window.location.href = "/";
   };
 
   const handleLogoutAllDevices = async () => {
@@ -70,8 +65,7 @@ const Security: React.FC = () => {
     try {
       const token = user?.accessToken || user?.token;
       const logoutAllSuccess = await logoutAllSessions(token);
-      await logout();
-      clearAuthCookies();
+      logout();
 
       if (logoutAllSuccess) {
         alert("Waxaad ka baxday dhammaan qalabka");

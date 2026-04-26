@@ -1,9 +1,9 @@
 import { getCars } from "@/actions/categories/carActions";
 import CarPartsClient from "./CarPartsClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function CarPartsPage() {
-  const data = await getCars(1, 40).catch(() => []);
-  return <CarPartsClient initialData={data ?? []} />;
+
+  return <CarPartsClient initialData={[]} />;
 }

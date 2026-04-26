@@ -241,7 +241,7 @@ import {
   boatSubCategories,
   farmEquipmentSubCategories,
   jobSubCategories,
-} from "@/app/(links)/storeFrontLinks/subCategories";
+} from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import {
   MainCategory,
   SettingLink,
@@ -378,11 +378,6 @@ export const sidebarLinks: SidebarLink[] = [
     link: "/dashboard/FeeManagement",
   },
   { name: "Jobs", icon: MdWork, link: "/dashboard/categories/jobs" },
-  {
-    name: "Agencies",
-    icon: CiMoneyBill,
-    link: "/dashboard/categories/Agencies",
-  },
   { name: "Reports", icon: FiBarChart2, link: "/dashboard/categories/Reports" },
   {
     name: "Most Search",

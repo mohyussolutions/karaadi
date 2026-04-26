@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from "uuid";
+import { USER_A, USER_B } from "./seederConstants.ts";
+
 export interface BoatItem {
   id: string;
   userId: string;
@@ -26,12 +29,9 @@ export interface BoatItem {
   planAmount: number;
 }
 
-const USER_A = "64d4a43c9a8b0e6e8c4a5678";
-const USER_B = "64d4a43c9a8b0e6e8c4a5679";
-
 export const boatItems = [
   {
-    id: "boat_001",
+    id: uuidv4(),
     userId: USER_A,
     title: "Commercial Fishing Dhow",
     mainCategory: "Boats" as const,
@@ -59,7 +59,7 @@ export const boatItems = [
     planAmount: 0,
   },
   {
-    id: "boat_002",
+    id: uuidv4(),
     userId: USER_B,
     title: "Modern Fiberglass Boat",
     mainCategory: "Boats" as const,
@@ -87,7 +87,7 @@ export const boatItems = [
     planAmount: 0,
   },
   {
-    id: "boat_003",
+    id: uuidv4(),
     userId: USER_B,
     title: "Luxury Leisure Yacht",
     mainCategory: "Boats" as const,
@@ -115,7 +115,7 @@ export const boatItems = [
     planAmount: 0,
   },
   {
-    id: "boat_004",
+    id: uuidv4(),
     userId: USER_A,
     title: "Daily Fishing Boat Rental",
     mainCategory: "Boats" as const,
@@ -143,7 +143,7 @@ export const boatItems = [
     planAmount: 0,
   },
   {
-    id: "boat_005",
+    id: uuidv4(),
     userId: USER_A,
     title: "Yamaha 200HP Outboard Engine",
     mainCategory: "Boats" as const,
@@ -171,7 +171,7 @@ export const boatItems = [
     planAmount: 0,
   },
   {
-    id: "boat_006",
+    id: uuidv4(),
     userId: USER_A,
     title: "Stainless Steel Propeller",
     mainCategory: "Boats" as const,

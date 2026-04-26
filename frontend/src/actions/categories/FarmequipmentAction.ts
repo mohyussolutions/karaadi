@@ -125,7 +125,7 @@ export async function getFarmEquipmentTotal(): Promise<number> {
   const headers = await getAuthHeaders();
   const res = await fetch(apiUrlsForCategoryTotals.TotalFarmEquipment, {
     headers: headers as HeadersInit,
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   if (!res.ok) return 0;
   const data = await res.json();

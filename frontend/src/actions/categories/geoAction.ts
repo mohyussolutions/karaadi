@@ -114,7 +114,7 @@ export const getGeoStats = async () => {
   const headers = await getAuthHeaders();
   const res = await fetch(geoEndpoints.GET_GEO_STATS, {
     headers: headers as HeadersInit,
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   return res.ok
     ? await res.json()

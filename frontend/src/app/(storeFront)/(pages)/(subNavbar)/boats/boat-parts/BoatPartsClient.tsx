@@ -5,13 +5,13 @@ import { useTranslation } from "react-i18next";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { categories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { getBoats } from "@/actions/categories/boatActions";
 import type { BoatItem } from "@/app/utils/types/boats.types";
 import SearchInput from "@/app/ui/search/SearchInput";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
@@ -159,7 +159,7 @@ export default function BoatParts({ initialData = [] }: { initialData?: any[] })
 
       <ContainerLinks>
         <CommonSubCategoryLinks
-          items={[...(nesCategories.BoatPartsNestedSub || [])]}
+          items={[...(categories.BoatPartsNestedSub || [])]}
           selectedId={selectedSubcategory}
           onSelect={(id) =>
             setSelectedSubcategory((prev) => (prev === id ? null : id))

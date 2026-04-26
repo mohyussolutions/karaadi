@@ -1,11 +1,11 @@
 "use server";
 
 import { FEE_ENDPOINTS } from "../constant/constant";
+import { BASE_API_URL } from "../constant/BASE_API_URL";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 const fetchWithAuth = async (url: string, options?: RequestInit) => {
   const headers = await getAuthHeaders();
-  const isWrite = options?.method && options.method !== "GET";
   return fetch(url, {
     ...options,
     headers: { ...headers, ...options?.headers } as HeadersInit,
@@ -14,7 +14,6 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
 };
 
 export const getAllFees = async () => {
-  const { BASE_API_URL } = await import("../constant/BASE_API_URL");
   const res = await fetchWithAuth(`${BASE_API_URL}/api/Fee/all`);
   if (res.ok) {
     const data = await res.json();

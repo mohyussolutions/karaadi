@@ -9,7 +9,6 @@ interface Stats {
   messages: number;
   ads: number;
   subscriptions: number;
-  agencies: number;
   regions: number;
   cities: number;
 }
@@ -37,7 +36,6 @@ export const StatsCards = ({ stats }: { stats: Stats }) => {
     { label: t("adminTable.messages"),       value: stats.messages },
     { label: t("adminTable.advertisements"), value: stats.ads },
     { label: t("adminTable.subscriptions"),  value: stats.subscriptions },
-    { label: t("adminTable.agencies"),       value: stats.agencies },
     { label: t("adminTable.regionsTitle"),   value: stats.regions },
     { label: t("adminTable.citiesLinked"),   value: stats.cities },
   ];

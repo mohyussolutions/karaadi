@@ -13,7 +13,7 @@ import {
   MdSend,
   MdLockOutline,
 } from "react-icons/md";
-import Loading from "../../components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import {

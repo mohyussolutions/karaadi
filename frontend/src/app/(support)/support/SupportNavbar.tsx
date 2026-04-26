@@ -32,17 +32,9 @@ export default function SupportNavbar({ toggleSidebar }: SupportNavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-
-    clearAuthCookies();
-    sessionStorage.removeItem("user");
+  const handleLogout = () => {
+    logout();
     setUser(null);
-
     router.push("/login");
   };
 

@@ -20,13 +20,24 @@ export async function postToTikTok(
   payload: SocialPostPayload,
 ): Promise<SocialPostResult> {
   const accessToken = process.env.TIKTOK_ACCESS_TOKEN;
-  const openId = process.env.TIKTOK_OPEN_ID;
 
-  if (!accessToken || !openId) {
-    return { platform: "tiktok", success: false, error: "TikTok credentials not configured" };
+  if (!accessToken) {
+    return { platform: "tiktok", success: false, error: "TikTok access token not configured" };
   }
 
-  const caption = `${payload.title}\n$${payload.price}\n${payload.description}\n\n${payload.listingUrl}`;
+  if (!payload.imageUrl) {
+    return { platform: "tiktok", success: false, error: "No image URL provided for photo post" };
+  }
+
+  const caption = [
+    payload.title,
+    `$${payload.price}`,
+    payload.description,
+    payload.listingUrl,
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 2200);
 
   try {
     const res = await fetch("https://open.tiktokapis.com/v2/post/publish/content/init/", {
@@ -36,16 +47,17 @@ export async function postToTikTok(
         "Content-Type": "application/json; charset=UTF-8",
       },
       body: JSON.stringify({
+        post_mode: "DIRECT_POST",
+        media_type: "PHOTO",
         post_info: {
-          title: caption.slice(0, 150),
+          title: caption,
           privacy_level: "PUBLIC_TO_EVERYONE",
-          disable_duet: false,
           disable_comment: false,
-          disable_stitch: false,
         },
         source_info: {
           source: "PULL_FROM_URL",
-          video_url: payload.imageUrl ?? payload.listingUrl,
+          photo_images: [payload.imageUrl],
+          photo_cover_index: 0,
         },
       }),
     });
@@ -72,21 +84,39 @@ export async function postToFacebook(
     return { platform: "facebook", success: false, error: "Facebook credentials not configured" };
   }
 
-  const message = `${payload.title}\n$${payload.price}\n${payload.description}\n\n${payload.listingUrl}`;
+  const caption = [
+    payload.title,
+    `$${payload.price}`,
+    payload.description,
+    payload.listingUrl,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   try {
-    const body: Record<string, string> = {
-      message,
-      access_token: accessToken,
-    };
+    let endpoint: string;
+    let body: Record<string, string>;
 
     if (payload.imageUrl) {
-      body.link = payload.listingUrl;
+      endpoint = `https://graph.facebook.com/v19.0/${pageId}/photos`;
+      body = {
+        url: payload.imageUrl,
+        caption,
+      };
+    } else {
+      endpoint = `https://graph.facebook.com/v19.0/${pageId}/feed`;
+      body = {
+        message: caption,
+        link: payload.listingUrl,
+      };
     }
 
-    const res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
+    const res = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify(body),
     });
 
@@ -96,7 +126,7 @@ export async function postToFacebook(
       return { platform: "facebook", success: false, error: data?.error?.message ?? "Facebook API error" };
     }
 
-    return { platform: "facebook", success: true, postId: data?.id };
+    return { platform: "facebook", success: true, postId: data?.id ?? data?.post_id };
   } catch (err: any) {
     return { platform: "facebook", success: false, error: err?.message ?? "Network error" };
   }

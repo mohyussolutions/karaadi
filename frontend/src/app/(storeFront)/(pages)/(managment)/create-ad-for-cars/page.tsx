@@ -10,14 +10,11 @@ import { MdAttachMoney } from "@/app/utils/icons";
 import { useImageUpload } from "@/app/(storeFront)/components/shared/ImageUpload/useImageUpload";
 import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageUpload";
 import { FaCar } from "react-icons/fa";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { createCar } from "@/actions/categories/carActions";
-import {
-  getAllRegions,
-  getAllCities,
-  addCity,
-} from "@/actions/categories/geoAction";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { getAllRegions, getAllCities } from "@/actions/categories/geoAction";
+import CitySelect from "@/app/(storeFront)/components/shared/CitySelect/CitySelect";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { useAuth } from "@/context/AuthContext";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { updateItem } from "@/store/slices/reducers/listingDraftSlice";
@@ -69,11 +66,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
   const [dataLoading, setDataLoading] = useState(true);
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
-  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+
   const { images, addImages, removeImage, toBase64 } = useImageUpload();
-  const [newCity, setNewCity] = useState("");
-  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
 
   const [formData, setFormData] = useState({
@@ -134,15 +128,6 @@ function CarForm({ onNext }: { onNext: () => void }) {
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (formData.region) {
-      setFilteredCities(
-        allCities.filter((c) => c.regionId === formData.region),
-      );
-    } else {
-      setFilteredCities([]);
-    }
-  }, [formData.region, allCities]);
 
   const getFeeForCategory = useCallback(
     (categoryKey: string): number => {
@@ -189,14 +174,6 @@ function CarForm({ onNext }: { onNext: () => void }) {
     const toastId = toast.loading(t("createCars.registering"));
 
     try {
-      let finalCity = formData.city;
-      if (showNewCityInputs && newCity.trim()) {
-        const res: any = await addCity({
-          name: newCity.trim(),
-          regionId: formData.region,
-        });
-        if (res?.success) finalCity = res.data.name;
-      }
 
       const imagesBase64 = await toBase64();
 
@@ -208,7 +185,6 @@ function CarForm({ onNext }: { onNext: () => void }) {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
-        so: formData.title,
         mainCategory: "Cars",
         category: formData.category ? [formData.category] : [],
         subcategory: formData.subCategory ? [formData.subCategory] : [],
@@ -224,7 +200,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
         color: formData.color,
         doors: formData.doors,
         region: formData.region,
-        city: finalCity,
+        city: formData.city,
         images: imagesBase64,
         isPaid: false,
         feeAmount: fee,
@@ -297,7 +273,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               type="text"
               readOnly
               value={formData.mainCategory}
-              className="bg-transparent outline-none font-black text-blue-700 w-full"
+              maxLength={100}
+            className="bg-transparent outline-none font-black text-blue-700 w-full"
             />
           </div>
         </div>
@@ -355,6 +332,7 @@ function CarForm({ onNext }: { onNext: () => void }) {
             placeholder={t("createCars.titlePlaceholder")}
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            maxLength={200}
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
             required
           />
@@ -369,7 +347,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               placeholder={t("createCars.yearPlaceholder")}
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+              maxLength={100}
+            className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -381,7 +360,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               placeholder={t("createCars.makePlaceholder")}
               value={formData.make}
               onChange={(e) => setFormData({ ...formData, make: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+              maxLength={100}
+            className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -393,7 +373,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               placeholder={t("createCars.modelPlaceholder")}
               value={formData.model}
               onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+              maxLength={100}
+            className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -405,7 +386,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               placeholder={t("createCars.trimPlaceholder")}
               value={formData.trim}
               onChange={(e) => setFormData({ ...formData, trim: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+              maxLength={100}
+            className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
         </div>
@@ -465,7 +447,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               placeholder={t("createCars.engineSizePlaceholder")}
               value={formData.engineSize}
               onChange={(e) => setFormData({ ...formData, engineSize: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+              maxLength={100}
+            className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
         </div>
@@ -497,7 +480,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               placeholder={t("createCars.colorPlaceholder")}
               value={formData.color}
               onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+              maxLength={100}
+            className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
             />
           </div>
           <div className="space-y-1">
@@ -524,7 +508,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               rows={5}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
+              maxLength={5000}
+            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             />
           </div>
@@ -544,68 +529,22 @@ function CarForm({ onNext }: { onNext: () => void }) {
               <option value="">{t("createCars.selectRegion")}</option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {i18n.language === "so" ? r.so || r.name : r.name}
+                  {r.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            {t("createCars.cityLabel")}
-          </label>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowCityDropdown(!showCityDropdown)}
-              disabled={!formData.region}
-              className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
-            >
-              {showNewCityInputs
-                ? t("createCars.addingCity")
-                : formData.city || t("createCars.selectCity")}
-              <span>▾</span>
-            </button>
-            {showCityDropdown && (
-              <div className="absolute z-30 left-0 right-0 mt-2 bg-white border rounded-2xl shadow-xl max-h-56 overflow-auto">
-                {filteredCities.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, city: c.name });
-                      setShowCityDropdown(false);
-                      setShowNewCityInputs(false);
-                    }}
-                    className="w-full text-left p-4 hover:bg-blue-50 font-bold border-b last:border-0"
-                  >
-                    {i18n.language === "so" ? c.so || c.name : c.name}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNewCityInputs(true);
-                    setShowCityDropdown(false);
-                  }}
-                  className="w-full text-left p-4 text-blue-600 font-black text-xs"
-                >
-                  {t("createCars.addNewCity")}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {showNewCityInputs && (
-          <input
-            placeholder={t("createCars.newCityPlaceholder")}
-            value={newCity}
-            onChange={(e) => setNewCity(e.target.value)}
-            className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
-          />
-        )}
+        <CitySelect
+          regionId={formData.region}
+          cities={allCities}
+          value={formData.city}
+          onChange={(name) => setFormData({ ...formData, city: name })}
+          onCitiesUpdate={(updated) => setAllCities(updated)}
+          disabled={!formData.region}
+          label={t("createCars.cityLabel")}
+        />
 
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
@@ -617,6 +556,8 @@ function CarForm({ onNext }: { onNext: () => void }) {
               type="number"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              min={0}
+              max={100000000}
               className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500"
               required
             />

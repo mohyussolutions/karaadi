@@ -22,6 +22,7 @@ import { Request, Response } from "express";
 
 import {
   registerUserSchema,
+  loginUserSchema,
   updatePhoneSchema,
   confirmUserSignUpSchema,
   resendCodeSchema,
@@ -50,7 +51,7 @@ authRouters.get(
 authRouters.post(
   "/auth",
   loginLimiter,
-  validateRequest(registerUserSchema),
+  validateRequest(loginUserSchema),
   async (req: Request, res: Response) => {
     const { email, password } = req.body;
     try {

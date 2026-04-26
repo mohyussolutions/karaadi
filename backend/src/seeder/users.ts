@@ -1,6 +1,8 @@
+import { USER_A, USER_B } from "./seederConstants.ts";
+
 export const userItems = [
   {
-    id: "64d4a43c9a8b0e6e8c4a5678",
+    id: USER_A,
     username: "john_doe",
     password: "password123",
     email: "john@example.com",
@@ -11,7 +13,7 @@ export const userItems = [
     lastSeenAt: new Date("2025-12-13T12:00:00Z"),
   },
   {
-    id: "64d4a43c9a8b0e6e8c4a5679",
+    id: USER_B,
     username: "jane_doe",
     password: "password123",
     email: "jane@example.com",

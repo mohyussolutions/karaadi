@@ -12,6 +12,8 @@ import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { useAuth } from "@/context/AuthContext";
 import { MessageSquare, Phone } from "lucide-react";
+import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
+import { trackItemView } from "@/actions/categories/RecommendationActions";
 
 interface ItemData {
   _id?: string;
@@ -53,7 +55,14 @@ export default function ProductDetails() {
     let mounted = true;
     getMarketplaceItemById(id)
       .then((data) => {
-        if (mounted) setItem(data ? { ...data, id: data._id || data.id } : null);
+        if (mounted) {
+          const resolved = data ? { ...data, id: data._id || data.id } : null;
+          setItem(resolved);
+          if (resolved) {
+            const cat = Array.isArray(resolved.category) ? resolved.category[0] : resolved.category ?? "marketplace";
+            trackItemView(resolved.id!, cat, user?.id ?? null);
+          }
+        }
       })
       .catch(() => { if (mounted) setItem(null); })
       .finally(() => { if (mounted) setLoading(false); });
@@ -159,8 +168,10 @@ export default function ProductDetails() {
 
   return (
     <div className="my-12 px-6 min-h-screen max-w-7xl mx-auto pb-24 md:pb-0">
-      <div className="mb-6 font-mono text-blue-600 text-sm h-5">
-        <p>{item.region}, {item.city}</p>
+      <div className="mb-6 font-mono text-sm flex items-center gap-1 flex-wrap text-gray-400">
+        <span className="text-blue-600 font-bold capitalize">
+          {Array.isArray(item?.category) ? item.category[0] : item?.category ?? "Marketplace"}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
@@ -312,6 +323,13 @@ export default function ProductDetails() {
           backgroundImage={images[0]}
         />
       )}
+
+      <Recommendations
+        userId={user?.id}
+        excludeId={item?.id}
+        category={Array.isArray(item?.category) ? item.category[0] : item?.category ?? undefined}
+        limit={4}
+      />
     </div>
   );
 }

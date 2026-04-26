@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthRequest } from "src/types/user.types.ts";
 import { CACHE_KEYS, CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import prisma from "src/core/utils/db.ts";
@@ -224,9 +225,10 @@ export const getJobById = async (req: Request, res: Response) => {
   }
 };
 
-export const createJob = async (req: Request, res: Response) => {
+export const createJob = async (req: AuthRequest, res: Response) => {
   try {
-    const { planId, planAmount, category, subcategory, ...jobData } = req.body;
+    const { planId, planAmount, category, subcategory, userId: _ignored, ...jobData } = req.body;
+    const userId = req.user!.id;
 
     let expiryDate = null;
     let finalPlanAmount = 0;
@@ -239,9 +241,12 @@ export const createJob = async (req: Request, res: Response) => {
       }
     }
 
+    const { company: _company, location: _location, isPaid: _isPaid, ...prismaData } = jobData;
+
     const newJob = await prisma.job.create({
       data: {
-        ...jobData,
+        ...prismaData,
+        userId,
         [FIELD_NAMES.CATEGORY]: Array.isArray(category)
           ? category
           : category
@@ -268,12 +273,12 @@ export const createJob = async (req: Request, res: Response) => {
 
     notifyMatchingSubscribers("job", newJob.id, {
       title: jobData.title,
-      price: parseFloat(jobData.price) || 0,
+      price: 0,
       mainCategory: jobData.mainCategory ?? "Jobs",
       subCategory: Array.isArray(subcategory) ? subcategory[0] : subcategory,
       region: jobData.region,
       city: jobData.city,
-      posterId: jobData.userId,
+      posterId: userId,
     }).catch(console.error);
 
     return res.status(201).json(newJob);

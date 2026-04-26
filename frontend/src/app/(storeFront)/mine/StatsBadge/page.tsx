@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Loading from "../../components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 
 const CartContent = dynamic(() => import("./CartContent"), {
   ssr: false,

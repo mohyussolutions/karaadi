@@ -1,9 +1,9 @@
 import { getBoats } from "@/actions/categories/boatActions";
 import BoatsForRentClient from "./BoatsForRentClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function BoatsForRentPage() {
-  const data = await getBoats(1, 40).catch(() => []);
-  return <BoatsForRentClient initialData={data ?? []} />;
+
+  return <BoatsForRentClient initialData={[]} />;
 }

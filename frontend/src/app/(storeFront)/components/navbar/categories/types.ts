@@ -5,7 +5,6 @@ export interface Category {
   href: string;
   name: string;
   labelKey?: string;
-  so?: string;
   logo?: string;
   icon?: React.ReactNode;
 }

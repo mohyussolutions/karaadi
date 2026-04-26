@@ -102,8 +102,7 @@ const CACHE_KEYS = {
   TOTAL: "marketplace:total",
   PAID_TOTAL: "marketplace:paid:total",
   UNPAID_TOTAL: "marketplace:unpaid:total",
-  ALL_PAID: (page: number, limit: number) =>
-    `marketplace:paid:page:${page}:limit:${limit}`,
+  ALL_PAID: () => `marketplace:all:v2`,
   DETAIL: (id: string) => `marketplace:detail:${id}`,
 };
 
@@ -124,7 +123,6 @@ export const getAllMarketplaceItemsAdmin = async (
   res: Response,
 ) => {
   try {
-    const { sizeNum, skip } = getPageAndSkip(req.query);
     const items = await prisma.marketplace.findMany({
       select: {
         [FIELD_NAMES.ID]: true,
@@ -148,8 +146,6 @@ export const getAllMarketplaceItemsAdmin = async (
         [FIELD_NAMES.REGION]: true,
       },
       orderBy: { [FIELD_NAMES.CREATED_AT]: SORT_DIRECTION.DESC },
-      skip,
-      take: sizeNum,
     });
 
     return res.json(items);
@@ -226,16 +222,11 @@ export const getUnpaidTotalMarketplaceItems = async (
 
 export const getAllMarketplaceItems = async (req: Request, res: Response) => {
   try {
-    const { page, limit, skip } = getPaginationParams(
-      req.query.page as string,
-      req.query.pageSize as string,
-    );
     const items = await cacheManager.withCache(
-      CACHE_KEYS.ALL_PAID(page, limit),
+      CACHE_KEYS.ALL_PAID(),
       async () => {
         return await prisma.marketplace.findMany({
           where: {
-            [FIELD_NAMES.IS_PAID]: true,
             OR: [
               { [FIELD_NAMES.EXPIRY_DATE]: null },
               { [FIELD_NAMES.EXPIRY_DATE]: { gt: new Date() } },
@@ -248,8 +239,6 @@ export const getAllMarketplaceItems = async (req: Request, res: Response) => {
             { [FIELD_NAMES.MA_GADAY]: SORT_DIRECTION.DESC },
             { [FIELD_NAMES.CREATED_AT]: SORT_DIRECTION.DESC },
           ],
-          skip,
-          take: limit,
           select: {
             [FIELD_NAMES.ID]: true,
             [FIELD_NAMES.TITLE]: true,
@@ -265,6 +254,9 @@ export const getAllMarketplaceItems = async (req: Request, res: Response) => {
             [FIELD_NAMES.MA_GADAY]: true,
             [FIELD_NAMES.CITY]: true,
             [FIELD_NAMES.REGION]: true,
+            [FIELD_NAMES.CATEGORY]: true,
+            [FIELD_NAMES.SUBCATEGORY]: true,
+            [FIELD_NAMES.MAIN_CATEGORY]: true,
           },
         });
       },

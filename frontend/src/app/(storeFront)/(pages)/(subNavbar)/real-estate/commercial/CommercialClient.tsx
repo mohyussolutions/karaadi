@@ -3,13 +3,12 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { getRealEstateListings } from "@/actions/categories/realEstateActions";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
 import SearchInput from "@/app/ui/search/SearchInput";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
@@ -17,8 +16,13 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/U
 import { RealEstate } from "@/app/utils/types/realestate.types";
 import { REAL_ESTATE_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { categories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
-export default function Commercial({ initialData = [] }: { initialData?: any[] }) {
+export default function Commercial({
+  initialData = [],
+}: {
+  initialData?: any[];
+}) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { renderError } = useError();
@@ -38,7 +42,10 @@ export default function Commercial({ initialData = [] }: { initialData?: any[] }
   );
 
   useEffect(() => {
-    if (initialData.length > 0) { setIsLoading(false); return; }
+    if (initialData.length > 0) {
+      setIsLoading(false);
+      return;
+    }
     async function loadData() {
       try {
         const data = await getRealEstateListings();
@@ -158,7 +165,7 @@ export default function Commercial({ initialData = [] }: { initialData?: any[] }
 
       <ContainerLinks>
         <CommonSubCategoryLinks
-          items={nesCategories.RealEstateCommercialNestedSub || []}
+          items={categories.RealEstateCommercialNestedSub || []}
           selectedId={selectedSubcategory}
           onSelect={(id) =>
             setSelectedSubcategory((prev) => (prev === id ? null : id))

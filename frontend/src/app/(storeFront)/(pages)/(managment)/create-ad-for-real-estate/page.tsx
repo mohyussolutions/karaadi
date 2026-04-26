@@ -10,14 +10,11 @@ import { MdAttachMoney } from "@/app/utils/icons";
 import { useImageUpload } from "@/app/(storeFront)/components/shared/ImageUpload/useImageUpload";
 import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageUpload";
 import { FaHome } from "react-icons/fa";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { createRealEstate } from "@/actions/categories/realEstateActions";
-import {
-  getAllRegions,
-  getAllCities,
-  addCity,
-} from "@/actions/categories/geoAction";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { getAllRegions, getAllCities } from "@/actions/categories/geoAction";
+import CitySelect from "@/app/(storeFront)/components/shared/CitySelect/CitySelect";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { useAuth } from "@/context/AuthContext";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { updateItem } from "@/store/slices/reducers/listingDraftSlice";
@@ -82,11 +79,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
   const [dataLoading, setDataLoading] = useState(true);
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
-  const [filteredCities, setFilteredCities] = useState<any[]>([]);
   const { images, addImages, removeImage, toBase64 } = useImageUpload();
-  const [newCity, setNewCity] = useState("");
-  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
 
   const [formData, setFormData] = useState({
@@ -148,15 +141,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (formData.region) {
-      setFilteredCities(
-        allCities.filter((c) => c.regionId === formData.region),
-      );
-    } else {
-      setFilteredCities([]);
-    }
-  }, [formData.region, allCities]);
 
   const getFeeForCategory = useCallback(
     (categoryKey: string): number => {
@@ -206,15 +190,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
     const toastId = toast.loading(t("createRealEstate.submitting"));
 
     try {
-      let finalCity = formData.city;
-      if (showNewCityInputs && newCity.trim()) {
-        const res: any = await addCity({
-          name: newCity.trim(),
-          regionId: formData.region,
-        });
-        if (res?.success) finalCity = res.data.name;
-      }
-
       const imagesBase64 = await toBase64();
       const fee = getFeeForCategory(formData.category);
 
@@ -224,7 +199,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
-        so: formData.title,
         mainCategory: "Real Estate",
         category: formData.category ? [formData.category] : [],
         subcategory: formData.subCategory ? [formData.subCategory] : [],
@@ -245,7 +219,7 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
         address: formData.address,
         county: formData.region,
         region: formData.region,
-        city: finalCity,
+        city: formData.city,
         images: imagesBase64,
         isPaid: false,
         feeAmount: fee,
@@ -308,7 +282,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Main Category */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
             {t("createRealEstate.mainCategory")}
@@ -324,7 +297,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        {/* Category + Subcategory */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
@@ -373,7 +345,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        {/* Title */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
             {t("createRealEstate.titleLabel")}
@@ -384,12 +355,12 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
+            maxLength={200}
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
             required
           />
         </div>
 
-        {/* Property Type + Size */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
@@ -426,7 +397,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        {/* Bedrooms / Bathrooms / Floor / Total Floors */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase">
@@ -486,7 +456,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        {/* Furnished / Parking / Garage / Garden — optional */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-gray-400 uppercase tracking-wider">
@@ -523,7 +492,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        {/* Amenities — optional */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider">
@@ -547,7 +515,8 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
                   type="checkbox"
                   checked={formData.amenities.includes(key)}
                   onChange={() => toggleAmenity(key)}
-                  className="w-4 h-4 accent-blue-600"
+                  maxLength={100}
+            className="w-4 h-4 accent-blue-600"
                 />
                 <span className="text-xs font-bold text-gray-700">
                   {t(tKey)}
@@ -557,7 +526,6 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
           </div>
         </div>
 
-        {/* Description + Region */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
@@ -570,7 +538,8 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
+              maxLength={5000}
+            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
               required
             />
           </div>
@@ -590,71 +559,23 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
               <option value="">{t("createRealEstate.selectRegion")}</option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {i18n.language === "so" ? r.so || r.name : r.name}
+                  {r.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* City */}
-        <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-            {t("createRealEstate.cityLabel")}
-          </label>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowCityDropdown(!showCityDropdown)}
-              disabled={!formData.region}
-              className="w-full text-left border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl font-bold flex justify-between items-center disabled:opacity-50"
-            >
-              {showNewCityInputs
-                ? t("createRealEstate.newCityLabel")
-                : formData.city || t("createRealEstate.selectCity")}
-              <span>▾</span>
-            </button>
-            {showCityDropdown && (
-              <div className="absolute z-30 left-0 right-0 mt-2 bg-white border rounded-2xl shadow-xl max-h-56 overflow-auto">
-                {filteredCities.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, city: c.name });
-                      setShowCityDropdown(false);
-                      setShowNewCityInputs(false);
-                    }}
-                    className="w-full text-left p-4 hover:bg-blue-50 font-bold border-b last:border-0"
-                  >
-                    {i18n.language === "so" ? c.so || c.name : c.name}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNewCityInputs(true);
-                    setShowCityDropdown(false);
-                  }}
-                  className="w-full text-left p-4 text-blue-600 font-black text-xs"
-                >
-                  {t("createRealEstate.addNewCity")}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <CitySelect
+          regionId={formData.region}
+          cities={allCities}
+          value={formData.city}
+          onChange={(name) => setFormData({ ...formData, city: name })}
+          onCitiesUpdate={(updated) => setAllCities(updated)}
+          disabled={!formData.region}
+          label={t("createRealEstate.cityLabel")}
+        />
 
-        {showNewCityInputs && (
-          <input
-            placeholder={t("createRealEstate.newCityPlaceholder")}
-            value={newCity}
-            onChange={(e) => setNewCity(e.target.value)}
-            className="w-full border-2 border-blue-200 bg-blue-50 p-4 rounded-2xl font-bold outline-none"
-          />
-        )}
-
-        {/* Address */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
             {t("createRealEstate.addressLabel")}
@@ -665,11 +586,11 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
             onChange={(e) =>
               setFormData({ ...formData, address: e.target.value })
             }
+            maxLength={100}
             className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
           />
         </div>
 
-        {/* Price */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
             {t("createRealEstate.priceLabel")}
@@ -683,13 +604,14 @@ function RealEstateForm({ onNext }: { onNext: () => void }) {
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
+              min={0}
+              max={100000000}
               className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500"
               required
             />
           </div>
         </div>
 
-        {/* Images */}
         <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
           <ImageUpload
             images={images}

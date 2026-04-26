@@ -5,11 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "next/navigation";
 import { getMarketplaceItems } from "@/actions/categories/marketplaceActions";
 import { MarketplaceItem } from "@/app/utils/types/marketplace.types";
-import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import SearchInput from "@/app/ui/search/SearchInput";
 import WantSell from "@/app/(storeFront)/components/shared/WantToSell/page";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
@@ -18,6 +17,7 @@ import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedU
 import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
 import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import Pagination from "@/app/(storeFront)/components/shared/Pagination";
+import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
 const PAGE_SIZE = 12;
 
@@ -41,7 +41,6 @@ function MarketplaceLinks() {
     setIsLoading(true);
     try {
       const data = await getMarketplaceItems();
-      console.log(data);
       setItems(data || []);
     } catch {
       setIsError(true);

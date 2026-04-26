@@ -521,7 +521,9 @@
       "tractorForSale": "Tractor Iibka",
       "farmTools": "Qalabka Beeraha",
       "fertilizerSpreader": "Mishiinka Xashiidhka",
-      "grainHarvester": "Mishiinka Goosashada"
+      "grainHarvester": "Mishiinka Goosashada",
+      "plow": "Qalabka Qodidda",
+      "irrigationSystem": "Nidaamka Waraabinta"
     }
   },
   "createBoats": {
@@ -713,14 +715,18 @@
       "tractorForSale": "Cagaf Iibka",
       "farmTools": "Qalabka Beeraha",
       "fertilizerSpreader": "Faafiyaha Bacriminta",
-      "grainHarvester": "Makiinada Goosashada"
+      "grainHarvester": "Makiinada Goosashada",
+      "plow": "Qalabka Qodidda",
+      "irrigationSystem": "Nidaamka Waraabinta"
     },
     "traktorNested": {
       "top": {
         "tractorForSale": "Cagaf Iibka",
         "farmTools": "Qalabka Beeraha",
         "fertilizerSpreader": "Faafiyaha Bacriminta",
-        "grainHarvester": "Makiinada Goosashada"
+        "grainHarvester": "Makiinada Goosashada",
+        "plow": "Qalabka Qodidda",
+        "irrigation": "Nidaamka Waraabinta"
       },
       "tractorForSale": {
         "newTractor": "Cagaf Cusub",
@@ -738,6 +744,17 @@
       "grainHarvester": {
         "selfPropelledHarvester": "Harvester Isu Wada",
         "pullTypeHarvester": "Harvester Jiidan"
+      },
+      "plow": {
+        "moldboardPlow": "Qalabka Moldboard",
+        "discPlow": "Qalabka Disc",
+        "subsoilPlow": "Qalabka Subsoil"
+      },
+      "irrigation": {
+        "dripIrrigation": "Waraabinta Dhibicda",
+        "sprinklerIrrigation": "Waraabinta Sprinkler",
+        "floodIrrigation": "Waraabinta Roobka",
+        "waterPumps": "Bambooyin Biyo"
       }
     },
     "jobs": {
@@ -1248,18 +1265,32 @@
   },
   "subscription": {
     "title": "Dejinta Ku Biiritaanka",
+    "liveScanner": "Raadinta Tooska ah Firfircoon",
+    "createNewAlert": "Samee Digniin Cusub",
+    "createNewAlertSub": "Waxaa lagugu xaqiijin doonaa markii shay la mid ah la daabaco",
+    "alertTitle": "Cinwaanka Digniinaadda",
+    "subcategoryLabel": "Hoosta Qaybta",
+    "description": "Xusuus-qor",
+    "descriptionPlaceholder": "Ikhtiyaari: ku qor waxa aad raadinayso...",
+    "myAlerts": "Digniimadayda",
+    "noAlerts": "Weli digniin ma jirto",
+    "match": "waafaqsi",
+    "matches": "waafaqsiyo",
+    "refresh": "Cusboonaysii",
+    "deleteAlert": "Tirtir digniinaadda",
+    "notifyHint": "Waxa lagugu xaqiijin doonaa /notifications marka qof daabaco shay ku habboon shuruudahaaga.",
     "add": "Ku dar Ku Biiritaan",
     "edit": "Tafatir Ku Biiritaan",
     "delete": "Tirtir Ku Biiritaan",
     "category": "Qayb",
     "region": "Gobol",
-    "cities": "Magaalooyinka",
+    "cities": "Magaalada",
     "priceRange": "Xadka Qiimaha",
     "minPrice": "Qiimaha ugu yar",
     "maxPrice": "Qiimaha ugu badan",
-    "submit": "Gudbi",
-    "submitting": "Gudbinaya...",
-    "success": "Ku biiritaanka si guul leh ayaa loo keydiyay!",
+    "submit": "Samee Digniin",
+    "submitting": "Keydisanaya...",
+    "success": "Digniinaadda si guul leh ayaa loo abuuray!",
     "error": "Cillad ayaa dhacday. Fadlan isku day mar kale.",
     "required": "Fadlan buuxi dhammaan meelaha muhiimka ah.",
     "selectCategory": "Dooro qayb",
@@ -1502,6 +1533,22 @@
     "boats": "Doonyaha",
     "farmEquipment": "Qaladka Beerta",
     "totalListings": "Wadarta Liisaska"
+  },
+  "citySelect": {
+    "search": "Raadi magaalo...",
+    "noResults": "Magaalo lama helin",
+    "addNew": "KU DAR MAGAALO CUSUB",
+    "newPlaceholder": "Magaca magaalada cusub...",
+    "save": "Keydi"
+  },
+  "recommendations": {
+    "title": "Talooyin Ku Saabsan Adiga",
+    "subtitleLoggedIn": "Waxaan kuu talinaynaa iyadoo lagu salaynayo waxaad danaynayso",
+    "subtitleGuest": "Ku soo gal si aad u hesho talooyin shaqsiyeed",
+    "noDescription": "Faahfaahin lama helin",
+    "viewDetails": "Faahfaahin Eeg →",
+    "error": "Wax qalad ayaa dhacay markii la raadinayay talooyinka",
+    "retry": "Isku Day Mar Kale"
   },
   "realEstateDetail": {
     "propertyDetails": "Faahfaahinta Hantida",

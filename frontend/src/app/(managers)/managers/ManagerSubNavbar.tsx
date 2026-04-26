@@ -22,7 +22,6 @@ export default function ManagerSidebar() {
   const { user, loading: authLoading } = useAuth();
 
   const [hasMounted, setHasMounted] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [openSections, setOpenSections] = useState({
     management: true,
     auth: false,
@@ -36,16 +35,9 @@ export default function ManagerSidebar() {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      router.push("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setIsLoggingOut(false);
-    }
+  const handleLogout = () => {
+    logout();
+    router.push("/");
   };
 
   if (!hasMounted) return null;
@@ -145,15 +137,10 @@ export default function ManagerSidebar() {
       <div className="p-6 border-t border-slate-800/50 bg-[#0c1222]">
         <button
           onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="flex items-center gap-4 w-full p-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all font-bold text-sm disabled:opacity-50 group"
+          className="flex items-center gap-4 w-full p-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all font-bold text-sm group"
         >
           <div className="p-2 rounded-lg bg-red-400/10 group-hover:bg-red-400/20 transition-colors">
-            {isLoggingOut ? (
-              <FaSpinner className="animate-spin size-5" />
-            ) : (
-              <FaSignOutAlt className="size-5" />
-            )}
+            <FaSignOutAlt className="size-5" />
           </div>
           <div className="flex flex-col items-start">
             <span className="text-white">Sign Out</span>

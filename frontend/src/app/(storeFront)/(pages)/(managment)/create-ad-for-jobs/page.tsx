@@ -6,13 +6,10 @@ import { useTranslation } from "react-i18next";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
-import {
-  getAllRegions,
-  getAllCities,
-  addCity,
-} from "@/actions/categories/geoAction";
+import { getAllRegions, getAllCities } from "@/actions/categories/geoAction";
+import CitySelect from "@/app/(storeFront)/components/shared/CitySelect/CitySelect";
 import { useAuth } from "@/context/AuthContext";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
 import type { CreateJobData } from "@/actions/categories/jobActions";
 import { createJob } from "@/actions/categories/jobActions";
@@ -20,14 +17,12 @@ import { createJob } from "@/actions/categories/jobActions";
 type Region = {
   id: string;
   name: string;
-  so?: string;
 };
 
 type City = {
   id: string;
   name: string;
   regionId: string;
-  so?: string;
 };
 
 type ExperienceLevel = {
@@ -52,7 +47,6 @@ const CreateAdForJobs = () => {
   const { user: currentUser } = useAuth();
   const [regions, setRegions] = useState<Region[]>([]);
   const [allCities, setAllCities] = useState<City[]>([]);
-  const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -66,11 +60,7 @@ const CreateAdForJobs = () => {
     experienceLevel: "",
     educationLevel: "",
     applicationDeadline: "",
-    newCityName: "",
-    newCitySo: "",
   });
-
-  const [showNewCityInputs, setShowNewCityInputs] = useState(false);
 
   useEffect(() => {
     const initPage = async () => {
@@ -86,15 +76,6 @@ const CreateAdForJobs = () => {
     initPage();
   }, [currentUser, router]);
 
-  useEffect(() => {
-    if (formData.region) {
-      const filtered = allCities.filter((c) => c.regionId === formData.region);
-      setFilteredCities(filtered);
-    } else {
-      setFilteredCities([]);
-    }
-  }, [formData.region, allCities]);
-
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -104,38 +85,11 @@ const CreateAdForJobs = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCityChange = (value: string) => {
-    if (value === "custom") {
-      setShowNewCityInputs(true);
-      setFormData((prev) => ({ ...prev, city: "" }));
-    } else {
-      setShowNewCityInputs(false);
-      setFormData((prev) => ({
-        ...prev,
-        city: value,
-        newCityName: "",
-        newCitySo: "",
-      }));
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      let finalCity = formData.city;
-      if (showNewCityInputs) {
-        const cityPayload = {
-          id: formData.newCityName.trim().toLowerCase().replace(/\s+/g, "-"),
-          name: formData.newCityName,
-          regionId: formData.region,
-          isActive: true,
-        };
-        await addCity(cityPayload);
-        finalCity = formData.newCityName;
-      }
-
       const selectedRegion = regions.find((r) => r.id === formData.region);
 
       const salaryAmount =
@@ -145,10 +99,10 @@ const CreateAdForJobs = () => {
         title: formData.title,
         description: formData.description,
         company: formData.companyName,
-        location: `${selectedRegion?.name || formData.region}, ${finalCity}`,
+        location: `${selectedRegion?.name || formData.region}, ${formData.city}`,
         salary: salaryAmount,
         type: formData.jobType || "Full-time",
-        city: finalCity,
+        city: formData.city,
         region: selectedRegion?.name || formData.region,
         isPaid: true,
       };
@@ -191,7 +145,8 @@ const CreateAdForJobs = () => {
               value={formData.companyName}
               onChange={handleChange}
               required
-              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              maxLength={100}
+            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder={t(
                 "jobsPage.application.companyName",
                 "Company Name",
@@ -207,7 +162,8 @@ const CreateAdForJobs = () => {
               value={formData.title}
               onChange={handleChange}
               required
-              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              maxLength={200}
+            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder={t("jobsPage.application.jobTitle", "Job Title")}
             />
           </div>
@@ -278,56 +234,21 @@ const CreateAdForJobs = () => {
               </option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {i18n.language === "so" ? r.so || r.name : r.name}
+                  {r.name}
                 </option>
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {t("createAd.selectCity", "City")}
-            </label>
-            <select
-              value={formData.city}
-              onChange={(e) => handleCityChange(e.target.value)}
-              required={!showNewCityInputs}
-              disabled={!formData.region}
-              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
-            >
-              <option value="">
-                {t("createAd.selectCity", "Select City")}
-              </option>
-              {filteredCities.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {i18n.language === "so" ? c.so || c.name : c.name}
-                </option>
-              ))}
-              <option value="custom" className="text-blue-600 font-bold">
-                {t("createAd.addCity", "+ Add New City")}
-              </option>
-            </select>
-          </div>
+          <CitySelect
+            regionId={formData.region}
+            cities={allCities}
+            value={formData.city}
+            onChange={(name) => setFormData((prev) => ({ ...prev, city: name }))}
+            onCitiesUpdate={(updated) => setAllCities(updated as City[])}
+            disabled={!formData.region}
+            label={t("createAd.selectCity", "City")}
+          />
         </div>
-
-        {showNewCityInputs && (
-          <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-dashed border-blue-300">
-            <input
-              name="newCityName"
-              placeholder={t("createAd.newCityPlaceholder", "City Name (EN)")}
-              value={formData.newCityName}
-              onChange={handleChange}
-              required
-              className="border p-2 rounded outline-none focus:border-blue-500"
-            />
-            <input
-              name="newCitySo"
-              placeholder={t("createAd.newCitySoPlaceholder", "City Name (SO)")}
-              value={formData.newCitySo}
-              onChange={handleChange}
-              className="border p-2 rounded outline-none focus:border-blue-500"
-            />
-          </div>
-        )}
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -342,7 +263,8 @@ const CreateAdForJobs = () => {
               )}
               value={formData.salaryRange}
               onChange={handleChange}
-              className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              maxLength={100}
+            className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -358,7 +280,8 @@ const CreateAdForJobs = () => {
               value={formData.applicationDeadline}
               onChange={handleChange}
               required
-              className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              maxLength={100}
+            className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -372,6 +295,7 @@ const CreateAdForJobs = () => {
             value={formData.description}
             onChange={handleChange}
             rows={5}
+            maxLength={5000}
             className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             required
             placeholder={t(

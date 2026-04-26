@@ -5,7 +5,7 @@ import {
   deleteVisitor,
   Visitor,
 } from "@/actions/categories/visitorActions";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { FaTrash } from "react-icons/fa";

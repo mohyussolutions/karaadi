@@ -148,7 +148,7 @@ export async function getTicketStats() {
     const headers = await getAuthHeaders();
     const res = await fetch(CONTACT_ENDPOINTS.STATS, {
       headers: headers as HeadersInit,
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     return res.ok ? await res.json() : { total: 0, today: 0 };
   } catch {

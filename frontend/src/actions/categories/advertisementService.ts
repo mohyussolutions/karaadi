@@ -164,7 +164,7 @@ export const getAdStats = async (): Promise<{ totalAds: number } | null> => {
     const headers = await getAuthHeaders();
     const response = await fetch(ADVERTISEMENT_ENDPOINTS.STATS, {
       headers: headers as HeadersInit,
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!response.ok) return null;
     const data = await response.json();

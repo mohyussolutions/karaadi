@@ -18,7 +18,6 @@ export interface DashboardSummaryData {
     messages: number;
     ads: number;
     subscriptions: number;
-    agencies: number;
     regions: number;
     cities: number;
   };
@@ -30,7 +29,7 @@ export interface DashboardSummaryData {
 
 const EMPTY: DashboardSummaryData = {
   categoryTotals: { marketplace: 0, cars: 0, boats: 0, motorcycles: 0, realEstate: 0, farmEquipment: 0 },
-  stats: { users: 0, visitors: 0, messages: 0, ads: 0, subscriptions: 0, agencies: 0, regions: 0, cities: 0 },
+  stats: { users: 0, visitors: 0, messages: 0, ads: 0, subscriptions: 0, regions: 0, cities: 0 },
   revenue: [],
   signups: [],
   regionListings: [],
@@ -42,7 +41,7 @@ export async function getDashboardSummary(): Promise<DashboardSummaryData> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${BASE_API_URL}/api/dashboard/summary`, {
       headers: headers as HeadersInit,
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     return res.ok ? await res.json() : EMPTY;
   } catch {

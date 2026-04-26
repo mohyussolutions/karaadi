@@ -170,7 +170,7 @@ export const getAds = async (req: AuthRequest, res: Response) => {
         );
         return results.flat();
       },
-      CACHE_TTL.LIST,
+      CACHE_TTL.USER,
     );
 
     res.status(200).json(ads);

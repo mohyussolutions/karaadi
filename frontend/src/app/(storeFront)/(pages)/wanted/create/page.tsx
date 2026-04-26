@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppDispatch } from "@/store/slices/hooks/hooks";
 import { createWantedPost } from "@/store/slices/reducers/wantedSlice";
 import { useRouter } from "next/navigation";
-import { allCategories } from "@/app/(links)/storeFrontLinks/categories";
+import { allCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
 const EXPIRY_OPTIONS = [
   { label: "7 days", value: 7 },

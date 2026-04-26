@@ -66,21 +66,17 @@ export const ProtectRoute = async (
     const user = await loadUserAndSession(decoded.sub, res);
     if (!user) return res.status(401).json({ message: "Session expired or not found" });
 
-    const tokenIsAdmin = decoded["custom:isAdmin"] === "true";
-    const tokenIsManager = decoded["custom:isManager"] === "true";
-    const tokenIsSupport = decoded["custom:isSupport"] === "true";
-
     req.user = {
       ...user,
       id: user.id,
-      email: user.email || decoded.email || null,
-      username: user.username || decoded.preferred_username || "",
-      "custom:isAdmin": tokenIsAdmin ? "true" : "false",
-      "custom:isManager": tokenIsManager ? "true" : "false",
-      "custom:isSupport": tokenIsSupport ? "true" : "false",
-      isAdmin: tokenIsAdmin,
-      isManager: tokenIsManager,
-      isSupport: tokenIsSupport,
+      email: user.email || null,
+      username: user.username || "",
+      isAdmin: user.isAdmin === true,
+      isManager: user.isManager === true,
+      isSupport: user.isSupport === true,
+      "custom:isAdmin": user.isAdmin ? "true" : "false",
+      "custom:isManager": user.isManager ? "true" : "false",
+      "custom:isSupport": user.isSupport ? "true" : "false",
     };
 
     next();

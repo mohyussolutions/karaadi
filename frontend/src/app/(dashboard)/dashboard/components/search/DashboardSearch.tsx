@@ -17,7 +17,6 @@ const PAGE_PLACEHOLDERS: Record<string, string> = {
   "/dashboard/categories/farmequipment": "Search farm equipment...",
   "/dashboard/categories/subscription":
     "Search subscriptions by user or plan...",
-  "/dashboard/categories/Agencies": "Search agencies by name or type...",
   "/dashboard/categories/Reports": "Search reports by type or reason...",
   "/dashboard/payments": "Search payments by user or status...",
   "/dashboard/chats": "Search chats by user...",

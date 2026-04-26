@@ -14,9 +14,9 @@ import {
   updatePaidStatus,
   getAllRealEstatesAdmin,
 } from "@/actions/categories/realEstateActions";
-import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/subCategories";
+import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import Pagination from "../../components/Pagination";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 

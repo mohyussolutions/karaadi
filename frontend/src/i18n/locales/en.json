@@ -448,7 +448,9 @@
       "tractorForSale": "Tractor For Sale",
       "farmTools": "Farm Tools",
       "fertilizerSpreader": "Fertilizer Spreader",
-      "grainHarvester": "Grain Harvester"
+      "grainHarvester": "Grain Harvester",
+      "plow": "Plow",
+      "irrigationSystem": "Irrigation System"
     }
   },
   "createBoats": {
@@ -595,7 +597,9 @@
       "tractorForSale": "Tractor for Sale",
       "farmTools": "Farm Tools",
       "fertilizerSpreader": "Fertilizer Spreader",
-      "grainHarvester": "Grain Harvester"
+      "grainHarvester": "Grain Harvester",
+      "plow": "Plow",
+      "irrigationSystem": "Irrigation System"
     },
     "carsNested": {
       "carsForSale": {
@@ -647,7 +651,9 @@
         "tractorForSale": "Tractor for Sale",
         "farmTools": "Farm Tools",
         "fertilizerSpreader": "Fertilizer Spreader",
-        "grainHarvester": "Grain Harvester"
+        "grainHarvester": "Grain Harvester",
+        "plow": "Plow",
+        "irrigation": "Irrigation System"
       },
       "tractorForSale": {
         "newTractor": "New Tractor",
@@ -665,6 +671,17 @@
       "grainHarvester": {
         "selfPropelledHarvester": "Self-Propelled Harvester",
         "pullTypeHarvester": "Pull-Type Harvester"
+      },
+      "plow": {
+        "moldboardPlow": "Moldboard Plow",
+        "discPlow": "Disc Plow",
+        "subsoilPlow": "Subsoil Plow"
+      },
+      "irrigation": {
+        "dripIrrigation": "Drip Irrigation",
+        "sprinklerIrrigation": "Sprinkler Irrigation",
+        "floodIrrigation": "Flood Irrigation",
+        "waterPumps": "Water Pumps"
       }
     },
     "jobs": {
@@ -1077,18 +1094,32 @@
   },
   "subscription": {
     "title": "Subscription Settings",
+    "liveScanner": "Live Scanner Active",
+    "createNewAlert": "Create New Alert",
+    "createNewAlertSub": "Get notified when a matching item is posted",
+    "alertTitle": "Alert Title",
+    "subcategoryLabel": "Subcategory",
+    "description": "Notes",
+    "descriptionPlaceholder": "Optional: describe what you're looking for...",
+    "myAlerts": "My Alerts",
+    "noAlerts": "No alerts yet",
+    "match": "match",
+    "matches": "matches",
+    "refresh": "Refresh",
+    "deleteAlert": "Delete alert",
+    "notifyHint": "You will be notified in /notifications whenever someone posts an item that matches your alert criteria.",
     "add": "Add Subscription",
     "edit": "Edit Subscription",
     "delete": "Delete Subscription",
     "category": "Category",
     "region": "Region",
-    "cities": "Cities",
+    "cities": "City",
     "priceRange": "Price Range",
     "minPrice": "Min Price",
     "maxPrice": "Max Price",
-    "submit": "Submit",
-    "submitting": "Submitting...",
-    "success": "Subscription saved successfully!",
+    "submit": "Create Alert",
+    "submitting": "Saving...",
+    "success": "Alert created successfully!",
     "error": "An error occurred. Please try again.",
     "required": "Please fill all required fields.",
     "selectCategory": "Select category",
@@ -1386,6 +1417,22 @@
     "boats": "Boats",
     "farmEquipment": "Farm Equipment",
     "totalListings": "Total Listings"
+  },
+  "citySelect": {
+    "search": "Search city...",
+    "noResults": "No cities found",
+    "addNew": "ADD NEW CITY",
+    "newPlaceholder": "New city name...",
+    "save": "Save"
+  },
+  "recommendations": {
+    "title": "Recommended for You",
+    "subtitleLoggedIn": "Recommended based on your interests",
+    "subtitleGuest": "Log in for personalized recommendations",
+    "noDescription": "No description available",
+    "viewDetails": "View Details →",
+    "error": "Something went wrong while loading recommendations",
+    "retry": "Try Again"
   },
   "realEstateDetail": {
     "propertyDetails": "Property Details",

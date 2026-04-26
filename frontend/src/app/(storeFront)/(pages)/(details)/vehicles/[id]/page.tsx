@@ -8,7 +8,7 @@ import Image from "next/image";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import { ImageControls } from "@/app/ui/invoices/ImageControls";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useAuth } from "@/context/AuthContext";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { getCarById } from "@/actions/categories/carActions";
@@ -16,6 +16,8 @@ import { getBoatById } from "@/actions/categories/boatActions";
 import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
 import { getFarmEquipmentById } from "@/actions/categories/FarmequipmentAction";
 import { MessageSquare, Phone } from "lucide-react";
+import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
+import { trackItemView } from "@/actions/categories/RecommendationActions";
 
 export type VehicleType = "car" | "boat" | "motorcycle" | "farmequipment";
 
@@ -213,6 +215,13 @@ function VehicleDetailsContent() {
     return () => { cancelled = true; };
   }, [id, searchParams]);
 
+  useEffect(() => {
+    if (vehicle && id) {
+      const cat = vehicle.mainCategory ?? vehicle.category?.[0] ?? vehicleType;
+      trackItemView(id, cat, user?.id ?? user?._id ?? null);
+    }
+  }, [vehicle, id, vehicleType, user]);
+
   const config = VEHICLE_CONFIG[vehicleType];
   const images = useMemo(() => (vehicle?.images ?? []).filter(isValidImageUrl), [vehicle?.images]);
 
@@ -279,9 +288,6 @@ function VehicleDetailsContent() {
       <div className="mb-5 font-mono text-sm flex items-center gap-1 flex-wrap text-gray-400">
         <span className="text-blue-600 font-bold capitalize">{config.label}</span>
         {category && <><span>/</span><span className="capitalize">{category}</span></>}
-        {subcategory && <><span>/</span><span className="capitalize">{subcategory}</span></>}
-        {vehicle.region && <><span>·</span><span>{vehicle.region}</span></>}
-        {vehicle.city && <><span>/</span><span>{vehicle.city}</span></>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
@@ -454,6 +460,13 @@ function VehicleDetailsContent() {
           backgroundImage={images[0]}
         />
       )}
+
+      <Recommendations
+        userId={user?.id ?? user?._id}
+        excludeId={vehicle?.id}
+        category={vehicle?.mainCategory ?? vehicle?.category?.[0] ?? vehicleType}
+        limit={4}
+      />
     </div>
   );
 }

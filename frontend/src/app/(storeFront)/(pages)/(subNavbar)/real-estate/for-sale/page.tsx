@@ -1,9 +1,9 @@
 import { getMarketplaceItems } from "@/actions/categories/marketplaceActions";
 import FashionAndAccessoriesClient from "./FashionAndAccessoriesClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function ForSalePage() {
-  const data = await getMarketplaceItems(1, 40).catch(() => []);
-  return <FashionAndAccessoriesClient initialData={data ?? []} />;
+
+  return <FashionAndAccessoriesClient initialData={[]} />;
 }

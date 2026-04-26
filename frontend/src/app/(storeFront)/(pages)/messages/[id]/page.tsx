@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import ChatSystem from "@/app/(storeFront)/components/chats/chat/ChatSystem";
 import { useRef, useState, RefObject } from "react";
 import { ChatMessage } from "@/app/utils/types/chat";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useAuth } from "@/context/AuthContext";
 
 export default function MessagesInbox() {

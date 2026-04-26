@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { IoIosArrowBack } from "react-icons/io";
 import { useAuth } from "@/context/AuthContext";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { createReport } from "@/actions/categories/reportAction";
 
 export default function ReportPage() {

@@ -4,7 +4,7 @@ import React, { useRef, useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { FaChevronLeft, FaChevronRight } from "@/app/utils/icons";
 import { getMotorcycles } from "@/actions/categories/motorcycleActions";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { categories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
@@ -12,7 +12,7 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/U
 import SearchInput from "@/app/ui/search/SearchInput";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
 import LinksStyleCard from "@/app/(storeFront)/components/Cards/containerCards/linksstyleCard";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { VEHICLES_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
@@ -167,7 +167,7 @@ export default function SpareParts({ initialData = [] }: { initialData?: any[] }
               ref={scrollRef}
               className="flex overflow-x-auto space-x-3 scrollbar-hide px-8 py-2 w-full"
             >
-              {(nesCategories.MCPartsNestedSub || []).map((category, idx) => {
+              {(categories.MCPartsNestedSub || []).map((category, idx) => {
                 const id = category.labelKey ?? String(idx);
                 const isActive = selectedCategory === id;
                 return (

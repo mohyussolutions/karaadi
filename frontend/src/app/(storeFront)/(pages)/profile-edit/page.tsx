@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { updateProfile } from "@/actions/core/accountAction";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 
 const ProfileEditPage = () => {
   const router = useRouter();

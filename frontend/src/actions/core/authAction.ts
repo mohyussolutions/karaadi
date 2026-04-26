@@ -48,7 +48,7 @@ export async function login(email: string, password: string): Promise<User> {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, username: email }),
+    body: JSON.stringify({ email, password }),
   });
 
   if (!response.ok) throw new Error("Login failed");
@@ -57,16 +57,25 @@ export async function login(email: string, password: string): Promise<User> {
   return normalizeUser(u) as unknown as User;
 }
 
-export async function logout(token?: string): Promise<void> {
+export function logout(token?: string): void {
+  clearAuthCookies();
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+  }
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("user");
+  }
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  await fetch(apiUrls.LOGOUT, {
+  fetch(apiUrls.LOGOUT, {
     method: "POST",
     headers,
     credentials: "include",
-  });
-  clearAuthCookies();
+    keepalive: true,
+  }).catch(() => {});
 }
 
 export async function register(

@@ -71,7 +71,7 @@ export async function getTotalUsersAction(accessToken?: string) {
     const headers = await getAuthHeaders(accessToken);
     const res = await fetch(`${apiUrls.USERS.BASE}/total-users`, {
       headers: headers as HeadersInit,
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
 
     if (!res.ok) return { data: 0, error: "Failed to fetch total" };

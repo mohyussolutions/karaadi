@@ -2,7 +2,13 @@ import prisma from "../core/utils/db.ts";
 import cacheManager from "../services/redisserver/cacheManager.ts";
 import { Request, Response } from "express";
 
-const FEED_TTL = 30;
+const FEED_TTL = 300;
+const BASE_SELECT = {
+  id: true, title: true, description: true, maGaday: true,
+  isBasic30: true, isStandard60: true, isPremium90: true, expiryDate: true,
+};
+const SPATIAL = { price: true, city: true, region: true, images: true };
+const JOB_SELECT = { ...BASE_SELECT, salary: true, mainCategory: true, category: true, subcategory: true };
 
 function rank(item: any): number {
   if (item.isPremium90) return 0;
@@ -30,7 +36,7 @@ function normalize(item: any, category: string) {
   return {
     id,
     title: item.title || item.name || "",
-    price: item.price ?? null,
+    price: item.price ?? item.salary ?? null,
     city: item.city || item.region || "",
     images,
     description: item.description || "",
@@ -40,7 +46,7 @@ function normalize(item: any, category: string) {
     isBasic30: !!item.isBasic30,
     isStandard60: !!item.isStandard60,
     isPremium90: !!item.isPremium90,
-    type: item.type || item.vehicleModel || "",
+    type: item.vehicleModel || item.type || "",
   };
 }
 
@@ -59,24 +65,29 @@ export const getFeed = async (req: Request, res: Response) => {
     const now = new Date();
     const active = { OR: [{ expiryDate: null }, { expiryDate: { gt: now } }] };
 
+    const q = (model: any, extra?: object) =>
+      model.findMany({ where: { isPaid: true, ...active }, select: { ...BASE_SELECT, ...SPATIAL, ...extra }, take: perCategory, skip, orderBy: { createdAt: "desc" } });
+
+    const opts = { where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" as const } };
+
     const [market, real, cars, boats, motos, farm, jobs] = await Promise.all([
-      prisma.marketplace.findMany({ where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" } }),
-      prisma.realEstate.findMany({ where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" } }),
-      prisma.car.findMany({ where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" } }),
-      prisma.boat.findMany({ where: { isPaid: true, ...active }, take: Math.max(1, Math.floor(perCategory / 2)), skip, orderBy: { createdAt: "desc" } }),
-      prisma.motorcycle.findMany({ where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" } }),
-      prisma.farmequipment.findMany({ where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" } }),
-      prisma.job.findMany({ where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" } }),
+      q(prisma.marketplace, { category: true, subcategory: true }),
+      q(prisma.realEstate, { mainCategory: true }),
+      q(prisma.car, { mainCategory: true, vehicleModel: true }),
+      q(prisma.boat, { type: true }),
+      q(prisma.motorcycle, { type: true }),
+      q(prisma.farmequipment, {}),
+      prisma.job.findMany({ ...opts, select: JOB_SELECT }),
     ]);
 
     const all = [
-      ...market.map((i) => normalize(i, "marketplace")),
-      ...real.map((i) => normalize(i, "real-estate")),
-      ...cars.map((i) => normalize(i, "cars")),
-      ...boats.map((i) => normalize(i, "boats")),
-      ...motos.map((i) => normalize(i, "motorcycles")),
-      ...farm.map((i) => normalize(i, "traktor")),
-      ...jobs.map((i) => normalize(i, "jobs")),
+      ...market.map((i: any) => normalize(i, "marketplace")),
+      ...real.map((i: any) => normalize(i, "real-estate")),
+      ...cars.map((i: any) => normalize(i, "cars")),
+      ...boats.map((i: any) => normalize(i, "boats")),
+      ...motos.map((i: any) => normalize(i, "motorcycles")),
+      ...farm.map((i: any) => normalize(i, "traktor")),
+      ...jobs.map((i: any) => normalize(i, "jobs")),
     ];
 
     const seen = new Set<string>();

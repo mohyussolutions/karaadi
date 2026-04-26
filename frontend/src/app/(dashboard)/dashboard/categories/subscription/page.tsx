@@ -26,7 +26,7 @@ import {
   getAllSubscriptionsAdmin,
   updateSubscriptionStatus,
 } from "@/actions/categories/subscriptionsActions";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
 import {
   Subscription,

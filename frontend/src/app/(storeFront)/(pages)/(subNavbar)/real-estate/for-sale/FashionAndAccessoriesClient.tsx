@@ -10,21 +10,27 @@ import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import SearchInput from "@/app/ui/search/SearchInput";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { categories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { REAL_ESTATE_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
 
-export default function FashionAndAccessories({ initialData = [] }: { initialData?: any[] }) {
+export default function FashionAndAccessories({
+  initialData = [],
+}: {
+  initialData?: any[];
+}) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { renderError } = useError();
   const { scroll } = usehandleHorizontalScroll(scrollRef);
 
-  const [items, setItems] = useState<MarketplaceItem[]>(initialData as MarketplaceItem[]);
+  const [items, setItems] = useState<MarketplaceItem[]>(
+    initialData as MarketplaceItem[],
+  );
   const [isLoading, setIsLoading] = useState(initialData.length === 0);
   const [isError, setIsError] = useState(false);
   const [query, setQuery] = useState("");
@@ -37,7 +43,10 @@ export default function FashionAndAccessories({ initialData = [] }: { initialDat
   );
 
   useEffect(() => {
-    if (initialData.length > 0) { setIsLoading(false); return; }
+    if (initialData.length > 0) {
+      setIsLoading(false);
+      return;
+    }
     async function loadItems() {
       try {
         const data = await getMarketplaceItems();
@@ -128,7 +137,7 @@ export default function FashionAndAccessories({ initialData = [] }: { initialDat
 
       <ContainerLinks>
         <CommonSubCategoryLinks
-          items={nesCategories.FashionNestedSub || []}
+          items={categories.RealEstateForSaleNestedSub || []}
           selectedId={selectedSubcategory}
           onSelect={(id) =>
             setSelectedSubcategory((prev) => (prev === id ? null : id))

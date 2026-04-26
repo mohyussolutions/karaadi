@@ -9,14 +9,14 @@ import {
   FaTimesCircle,
   FaUser,
 } from "@/app/utils/icons/dashboardIcons";
-import { motorcycleSubCategories } from "../../../../(links)/storeFrontLinks/subCategories";
+import { motorcycleSubCategories } from "../../../../(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 import {
   getAllMotorcyclesAdminAction,
   toggleMotorcyclePaidAction,
   deleteMotorcycleAction,
 } from "@/actions/categories/motorcycleActions";
-import Loading from "@/app/(storeFront)/components/shared/Loading/Loading";
+import Loading from "@/app/ui/loading/Loading";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

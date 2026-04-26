@@ -34,7 +34,6 @@ export default function PathSegmentsDisplay() {
   const pathname = usePathname();
   const segments = pathname?.slice(1).split("/") || [];
 
-  // Prevent hydration mismatch: only render after i18n is initialized and language is set
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
     setMounted(true);

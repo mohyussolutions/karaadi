@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import NavItems from "./main/MainLinks";
@@ -14,19 +13,6 @@ const Navbar = () => {
         className="flex justify-between items-center max-w-[64.5rem] w-full mx-auto px-4 md:px-6"
         style={{ height: "48px" }}
       >
-        <Link href="/" className="flex items-center shrink-0">
-          <Image
-            src="/logo.jpg"
-            alt="Logo"
-            width={110}
-            height={36}
-            className="object-contain w-auto h-8"
-            priority
-            placeholder="blur"
-            blurDataURL="/placeholder.png"
-          />
-        </Link>
-
         <div className="flex items-center">
           <NavItems user={user as any} />
         </div>

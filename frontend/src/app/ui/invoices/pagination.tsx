@@ -1,4 +1,4 @@
-import LoginLoading from "@/app/(storeFront)/components/shared/Loading/LoginLoading";
+import LoginLoading from "@/app/ui/loading/LoginLoading";
 import React from "react";
 
 interface SeeMorePaginationProps {

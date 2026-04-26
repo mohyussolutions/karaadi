@@ -80,81 +80,82 @@ const getPaginationParams = (page?: string, limit?: string) => {
   return { page: pageNum, limit: limitNum, skip };
 };
 
+const CATEGORY_GROUPS: string[][] = [
+  ["car", "cars", "vehicle", "vehicles", "baabuur", "baaskeelada"],
+  ["boat", "boats", "doon", "doons"],
+  ["motorcycle", "motorcycles", "motor"],
+  ["farmequipment", "farm equipment", "tractor", "tractors", "farm"],
+  ["marketplace", "alaabooyin", "market", "alaab"],
+  ["realestate", "real estate", "realestate", "guryo", "property"],
+  ["job", "jobs", "shaqo"],
+];
+
+function getCategoryVariants(category: string): string[] {
+  const lower = (category ?? "").toLowerCase().trim();
+  for (const group of CATEGORY_GROUPS) {
+    if (group.some((v) => lower.includes(v) || v.includes(lower))) return group;
+  }
+  return [lower];
+}
+
 export const notifyMatchingSubscribers = async (
   itemType: ItemModels,
   itemId: string,
   itemData: ItemData,
 ): Promise<number> => {
   try {
-    const {
-      title,
-      price,
-      mainCategory,
-      subCategory,
-      region,
-      city,
-      brand,
-      model,
-      condition,
-      posterId,
-    } = itemData;
+    const { title, price, mainCategory, region, city, posterId } = itemData;
 
-    const cityRecord = city
-      ? await prisma.city
-          .findFirst({
-            where: { name: { equals: city, mode: "insensitive" } },
-            select: { id: true },
-          })
-          .catch(() => null)
-      : null;
-
-    const cityMatchConditions: any[] = [
-      { cities: { isEmpty: true } },
-      { cities: { has: city } },
-    ];
-    if (cityRecord?.id) {
-      cityMatchConditions.push({ cities: { has: String(cityRecord.id) } });
-    }
+    const categoryVariants = getCategoryVariants(mainCategory ?? itemType);
+    const itemTitleLower = (title ?? "").toLowerCase();
 
     const matchingSubscriptions = await prisma.subscription.findMany({
       where: {
         isActive: true,
-        userId: { not: posterId },
+        ...(posterId ? { userId: { not: posterId } } : {}),
         AND: [
           {
-            OR: [
-              { category: { equals: mainCategory, mode: "insensitive" } },
-              { category: { contains: mainCategory, mode: "insensitive" } },
-            ],
+            OR: categoryVariants.map((v) => ({
+              category: { equals: v, mode: "insensitive" },
+            })),
           },
-          {
-            OR: [{ region: { equals: region, mode: "insensitive" } }],
-          },
-          { OR: cityMatchConditions },
-          {
-            OR: [{ priceMin: null }, { priceMin: { lte: price } }],
-          },
-          {
-            OR: [{ priceMax: null }, { priceMax: { gte: price } }],
-          },
+          region ? { region: { equals: region, mode: "insensitive" } } : {},
+          { OR: [{ priceMin: null }, { priceMin: { lte: price } }] },
+          { OR: [{ priceMax: null }, { priceMax: { gte: price } }] },
         ],
       },
-      select: {
-        id: true,
-        userId: true,
-        title: true,
-      },
+      select: { id: true, userId: true, title: true, cities: true },
       take: 1000,
     });
 
-    if (!matchingSubscriptions.length) return 0;
+    // Post-filter: city match + keyword match
+    const filtered = matchingSubscriptions.filter((sub) => {
+      // If subscription has city filters and item has a city, city must be in the list
+      if (city && sub.cities?.length) {
+        const citiesLower = sub.cities.map((c) => c.toLowerCase());
+        if (!citiesLower.includes(city.toLowerCase())) return false;
+      }
+      // If subscription has keyword(s), at least one must appear in the item title
+      const keywords = (sub.title ?? "")
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((k) => k.length > 2);
+      if (keywords.length && !keywords.some((kw) => itemTitleLower.includes(kw))) return false;
+      return true;
+    });
 
-    const notificationsData = matchingSubscriptions.map((sub) => ({
+    console.log(
+      `[notify] ${itemType} "${title}" cat=${mainCategory} region=${region} city=${city} price=${price} → ${filtered.length}/${matchingSubscriptions.length} subscriptions matched`,
+    );
+
+    if (!filtered.length) return 0;
+
+    const notificationsData = filtered.map((sub) => ({
       userId: sub.userId,
-      senderId: posterId,
+      senderId: posterId ?? null,
       subscriptionId: sub.id,
-      title: `New ${itemType} matches your search: ${sub.title}`,
-      message: `A new ${itemType} "${title}" is available in ${city}${price ? ` for $${price}` : ""}`,
+      title: `New ${mainCategory} matches your subscription: ${sub.title}`,
+      message: `"${title}" in ${region}${city ? `, ${city}` : ""}${price ? ` — $${price}` : ""}`,
       category: "subscription_alert",
       subCategory: mainCategory,
       itemId,
@@ -164,8 +165,7 @@ export const notifyMatchingSubscribers = async (
       metadata: {
         itemTitle: title,
         itemPrice: price,
-        itemBrand: brand,
-        itemModel: model,
+        itemCity: city,
         subscriptionTitle: sub.title,
       },
     }));
@@ -176,13 +176,8 @@ export const notifyMatchingSubscribers = async (
     });
 
     await prisma.subscription.updateMany({
-      where: {
-        id: { in: matchingSubscriptions.map((s) => s.id) },
-      },
-      data: {
-        notificationCount: { increment: 1 },
-        lastNotified: new Date(),
-      },
+      where: { id: { in: filtered.map((s) => s.id) } },
+      data: { notificationCount: { increment: 1 }, lastNotified: new Date() },
     });
 
     const io = getIO();
@@ -190,58 +185,60 @@ export const notifyMatchingSubscribers = async (
       const createdNotifications = await prisma.notification.findMany({
         where: {
           itemId,
-          subscriptionId: { in: matchingSubscriptions.map((s) => s.id) },
+          subscriptionId: { in: filtered.map((s) => s.id) },
           createdAt: { gte: new Date(Date.now() - 5000) },
         },
         include: {
-          sender: {
-            select: { id: true, username: true, profileImage: true },
-          },
-          subscription: {
-            select: {
-              id: true,
-              title: true,
-              category: true,
-              subCategory: true,
-            },
-          },
+          sender: { select: { id: true, username: true, profileImage: true } },
+          subscription: { select: { id: true, title: true, category: true, subCategory: true } },
         },
       });
 
       const notificationsByUser = createdNotifications.reduce(
         (acc, notification) => {
-          if (!acc[notification.userId]) {
-            acc[notification.userId] = [];
-          }
+          if (!acc[notification.userId]) acc[notification.userId] = [];
           acc[notification.userId].push(notification);
           return acc;
         },
         {} as Record<string, typeof createdNotifications>,
       );
 
-      Object.entries(notificationsByUser).forEach(([userId, notifications]) => {
-        io.to(`user_${userId}`).emit("newNotifications", notifications);
+      Object.entries(notificationsByUser).forEach(([uid, notifications]) => {
+        io.to(`user_${uid}`).emit("newNotifications", notifications);
       });
     }
 
-    return matchingSubscriptions.length;
+    return filtered.length;
   } catch (error) {
-    console.error("Notification error:", error);
+    console.error("[notify] Error in notifyMatchingSubscribers:", error);
     return 0;
   }
 };
 const ITEM_MODEL_MAP: Record<string, { model: any; type: ItemModels }> = {
   car: { model: () => prisma.car, type: "car" },
   cars: { model: () => prisma.car, type: "car" },
+  vehicle: { model: () => prisma.car, type: "car" },
+  vehicles: { model: () => prisma.car, type: "car" },
+  baabuur: { model: () => prisma.car, type: "car" },
   boat: { model: () => prisma.boat, type: "boat" },
   boats: { model: () => prisma.boat, type: "boat" },
+  doon: { model: () => prisma.boat, type: "boat" },
   motorcycle: { model: () => prisma.motorcycle, type: "motorcycle" },
   motorcycles: { model: () => prisma.motorcycle, type: "motorcycle" },
+  motor: { model: () => prisma.motorcycle, type: "motorcycle" },
   realestate: { model: () => prisma.realEstate, type: "realestate" },
+  "real estate": { model: () => prisma.realEstate, type: "realestate" },
+  guryo: { model: () => prisma.realEstate, type: "realestate" },
+  property: { model: () => prisma.realEstate, type: "realestate" },
   marketplace: { model: () => prisma.marketplace, type: "marketplace" },
+  alaabooyin: { model: () => prisma.marketplace, type: "marketplace" },
+  market: { model: () => prisma.marketplace, type: "marketplace" },
   farmequipment: { model: () => prisma.farmequipment, type: "farmequipment" },
+  "farm equipment": { model: () => prisma.farmequipment, type: "farmequipment" },
+  tractor: { model: () => prisma.farmequipment, type: "farmequipment" },
   job: { model: () => prisma.job, type: "job" },
   jobs: { model: () => prisma.job, type: "job" },
+  shaqo: { model: () => prisma.job, type: "job" },
 };
 
 const notifyNewSubscriberWithExistingItems = async (subscription: {
@@ -255,99 +252,111 @@ const notifyNewSubscriberWithExistingItems = async (subscription: {
   priceMax: number | null;
 }): Promise<void> => {
   try {
-    const {
-      id: subscriptionId,
-      userId,
-      category,
-      region,
-      cities,
-      priceMin,
-      priceMax,
-    } = subscription;
-    const config = ITEM_MODEL_MAP[category.toLowerCase()];
-    if (!config) return;
+    const { id: subscriptionId, userId, title, category, region, cities, priceMin, priceMax } = subscription;
 
-    const where: any = {
-      userId: { not: userId },
-      region: { equals: region, mode: "insensitive" },
-      createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-    };
+    const variants = getCategoryVariants(category);
+    const seen = new Set<string>();
+    const configs = Object.entries(ITEM_MODEL_MAP)
+      .filter(([key]) => variants.some((v) => key === v || key.startsWith(v) || v.startsWith(key)))
+      .map(([, cfg]) => cfg)
+      .filter((cfg) => { if (seen.has(cfg.type)) return false; seen.add(cfg.type); return true; });
 
-    if (cities.length > 0) {
-      where.OR = cities.map((c) => ({
-        city: { equals: c, mode: "insensitive" },
-      }));
+    if (!configs.length) {
+      console.log(`[notify-existing] No model for category="${category}" variants=[${variants}]`);
+      return;
     }
-    if (priceMin !== null)
-      where.price = { ...(where.price ?? {}), gte: priceMin };
-    if (priceMax !== null)
-      where.price = { ...(where.price ?? {}), lte: priceMax };
 
-    const items: any[] = await config.model().findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        price: true,
-        region: true,
-        city: true,
-        userId: true,
-      },
-      take: 20,
-      orderBy: { createdAt: "desc" },
-    });
+    // Use the first meaningful word as the primary DB keyword filter
+    const keywords = title.trim().split(/\s+/).filter((k) => k.length > 1);
+    const primaryKeyword = keywords[0] ?? "";
 
-    if (!items.length) return;
+    const allItems: any[] = [];
 
-    const notificationsData = items.map((item) => ({
-      userId,
-      senderId: item.userId,
-      subscriptionId,
-      title: `New ${config.type} matches your alert: ${subscription.title}`,
-      message: `"${item.title}" is available in ${item.city}${item.price ? ` for $${item.price}` : ""}`,
-      category: "subscription_alert",
-      subCategory: category,
-      itemId: item.id,
-      itemType: config.type,
-      region: item.region,
-      city: item.city,
-      metadata: {
-        itemTitle: item.title,
-        itemPrice: item.price,
-        subscriptionTitle: subscription.title,
-      },
-    }));
+    for (const cfg of configs) {
+      const isJob = cfg.type === "job";
+
+      const where: any = {
+        isPaid: true,
+        userId: { not: userId },
+      };
+
+      // Title keyword search
+      if (primaryKeyword) {
+        where.title = { contains: primaryKeyword, mode: "insensitive" };
+      }
+
+      // Region + city filters — Job model has neither field
+      if (!isJob) {
+        if (region) where.region = { equals: region, mode: "insensitive" };
+        if (cities?.length) where.city = { in: cities };
+        if (priceMin !== null) where.price = { ...(where.price ?? {}), gte: priceMin };
+        if (priceMax !== null) where.price = { ...(where.price ?? {}), lte: priceMax };
+      } else {
+        if (priceMin !== null) where.salary = { ...(where.salary ?? {}), gte: priceMin };
+        if (priceMax !== null) where.salary = { ...(where.salary ?? {}), lte: priceMax };
+      }
+
+      const select = isJob
+        ? { id: true, title: true, salary: true, userId: true }
+        : { id: true, title: true, price: true, region: true, city: true, userId: true };
+
+      const rows = await (cfg.model() as any)
+        .findMany({ where, select, take: 10, orderBy: { createdAt: "desc" } })
+        .catch(() => []);
+
+      rows.forEach((r: any) =>
+        allItems.push({
+          ...r,
+          itemType: cfg.type,
+          price: r.price ?? r.salary ?? null,
+          region: r.region ?? region ?? null,
+          city: r.city ?? null,
+        }),
+      );
+    }
+
+    console.log(
+      `[notify-existing] sub="${subscriptionId}" cat="${category}" region="${region}" cities=[${cities}] keyword="${primaryKeyword}" → ${allItems.length} existing items`,
+    );
+
+    if (!allItems.length) return;
 
     await prisma.notification.createMany({
-      data: notificationsData,
+      data: allItems.map((item) => ({
+        userId,
+        senderId: item.userId ?? null,
+        subscriptionId,
+        title: `${item.itemType} matches your subscription: ${subscription.title}`,
+        message: `"${item.title}"${item.region ? ` in ${item.region}` : ""}${item.city ? `, ${item.city}` : ""}${item.price ? ` — $${item.price}` : ""}`,
+        category: "subscription_alert",
+        subCategory: category,
+        itemId: item.id,
+        itemType: item.itemType,
+        region: item.region ?? null,
+        city: item.city ?? null,
+        metadata: { itemTitle: item.title, itemPrice: item.price, itemCity: item.city, subscriptionTitle: subscription.title },
+      })),
       skipDuplicates: true,
     });
+
     await prisma.subscription.update({
       where: { id: subscriptionId },
-      data: {
-        notificationCount: { increment: items.length },
-        lastNotified: new Date(),
-      },
+      data: { notificationCount: { increment: allItems.length }, lastNotified: new Date() },
     });
 
     const io = getIO();
     if (io) {
       const created = await prisma.notification.findMany({
-        where: {
-          subscriptionId,
-          userId,
-          createdAt: { gte: new Date(Date.now() - 5000) },
-        },
+        where: { subscriptionId, userId, createdAt: { gte: new Date(Date.now() - 5000) } },
         include: {
           sender: { select: { id: true, username: true, profileImage: true } },
           subscription: { select: { id: true, title: true, category: true } },
         },
       });
-      if (created.length)
-        io.to(`user_${userId}`).emit("newNotifications", created);
+      if (created.length) io.to(`user_${userId}`).emit("newNotifications", created);
     }
   } catch (err) {
-    console.error("notifyNewSubscriber error:", err);
+    console.error("[notify-existing] Error:", err);
   }
 };
 
@@ -500,19 +509,27 @@ export const getMySubscriptions = async (req: AuthRequest, res: Response) => {
         const subs = await prisma.subscription.findMany({
           where: { userId },
           orderBy: { createdAt: "desc" },
-          include: includeUser,
+          select: {
+            id: true,
+            title: true,
+            category: true,
+            subCategory: true,
+            region: true,
+            cities: true,
+            priceMin: true,
+            priceMax: true,
+            isActive: true,
+            status: true,
+            notificationCount: true,
+            lastNotified: true,
+            createdAt: true,
+          },
           take: 100,
         });
 
-        return subs.map((sub) => ({
-          ...sub,
-          isExpired: isExpired(sub.expiryDate),
-          daysUntilExpiry: getDaysUntilExpiry(sub.expiryDate),
-          formattedExpiry: formatExpiryDate(sub.expiryDate),
-          status: isExpired(sub.expiryDate) ? "expired" : sub.status,
-        }));
+        return subs;
       },
-      CACHE_TTL.LIST,
+      CACHE_TTL.USER,
     );
 
     res.json({ success: true, subscriptions });

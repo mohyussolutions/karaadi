@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from "uuid";
+import { USER_A, USER_B } from "./seederConstants.ts";
+
 export interface CarItem {
   id: string;
   title: string;
@@ -29,12 +32,9 @@ export interface CarItem {
   expiryDate?: Date | string | null;
 }
 
-const USER_A = "64d4a43c9a8b0e6e8c4a5678";
-const USER_B = "64d4a43c9a8b0e6e8c4a5679";
-
 export const carItems = [
   {
-    id: "car_001",
+    id: uuidv4(),
     title: "Toyota Camry 2020 - Low Mileage",
     description:
       "Clean title, well maintained, single owner vehicle in excellent condition with all service records. This Camry has been driven mostly on highways and regularly serviced at authorized Toyota dealerships. Features include leather seats, sunroof, premium sound system, and advanced safety features. The 2.5L 4-cylinder engine delivers exceptional fuel economy while providing smooth and responsive performance. Recent oil change, new tires, and fresh inspection. Never been in any accident. Interior is spotless with no stains or tears. A perfect family sedan that combines reliability, comfort, and efficiency.",
@@ -59,7 +59,7 @@ export const carItems = [
     userId: USER_A,
   },
   {
-    id: "car_003",
+    id: uuidv4(),
     title: "BMW 3 Series 2020 - Luxury",
     description:
       "Premium package with M Sport trim, excellent condition with very low mileage. This BMW 330i features a 2.0L TwinPower Turbo engine producing 255 horsepower. Includes leather sports seats, Harman Kardon surround sound, panoramic sunroof, and BMW's latest iDrive system with navigation. The car has been meticulously maintained with all service records available. Features adaptive LED headlights, parking assist, and a 360-degree camera system. The interior is immaculate with ambient lighting and heated front seats. A true driver's car that offers both luxury and performance.",
@@ -85,7 +85,7 @@ export const carItems = [
     userId: USER_B,
   },
   {
-    id: "car_004",
+    id: uuidv4(),
     title: "Mercedes C-Class 2021",
     description:
       "Executive luxury sedan with AMG line package in pristine condition. The C300 features a 2.0L turbocharged engine with 255 horsepower and 295 lb-ft of torque. Includes leather upholstery, Burmester premium sound system, 64-color ambient lighting, and a 12.3-inch digital instrument cluster. The car has driver assistance package including adaptive cruise control, lane keeping assist, and blind spot monitoring. Only 20,000 miles with full service history at Mercedes-Benz dealership. Still under factory warranty. A perfect blend of comfort, technology, and prestige.",
@@ -111,7 +111,7 @@ export const carItems = [
     userId: USER_A,
   },
   {
-    id: "car_005",
+    id: uuidv4(),
     title: "Toyota Land Cruiser 2021",
     description:
       "V8 engine with 4WD system and premium package. This legendary off-road vehicle is perfect for Somali roads and terrain. Features include leather interior, triple-zone climate control, cooled front seats, rear-seat entertainment system, and a premium JBL sound system. The 5.7L V8 produces 381 horsepower and 401 lb-ft of torque. Includes crawl control, multi-terrain select, and kinetic dynamic suspension system. The vehicle has full service records and is in excellent mechanical condition. Comes with brand new all-terrain tires. A true icon of reliability and capability.",
@@ -137,7 +137,7 @@ export const carItems = [
     userId: USER_B,
   },
   {
-    id: "car_006",
+    id: uuidv4(),
     title: "Nissan Patrol 2020 - V8",
     description:
       "Leather seats with navigation system in excellent condition. The Patrol features a powerful 5.6L V8 engine producing 400 horsepower. Includes hydraulic body motion control system, intelligent 4x4 system, and a luxurious interior with premium materials. The vehicle has a rear-seat entertainment system, cooled front seats, and a Bose premium audio system. Perfect for both city driving and off-road adventures. Recent service completed including oil change and brake inspection. Clean interior and exterior with no accidents reported. A true flagship SUV.",
@@ -163,7 +163,7 @@ export const carItems = [
     userId: USER_A,
   },
   {
-    id: "car_007",
+    id: uuidv4(),
     title: "Mitsubishi Pajero Sport 2020",
     description:
       "7-seater 4WD SUV perfect for family use. The Pajero Sport features a 2.4L turbo diesel engine with 178 horsepower and 430 Nm of torque. Includes super select 4WD system, 8-speed automatic transmission, and seven airbags for safety. The interior has leather seats, touchscreen infotainment with Apple CarPlay, and automatic climate control. This vehicle is in great condition with regular maintenance at authorized service center. Spacious third-row seating that folds flat for extra cargo space. Excellent fuel economy for its class. A reliable and capable family SUV.",
@@ -189,7 +189,7 @@ export const carItems = [
     userId: USER_B,
   },
   {
-    id: "car_008",
+    id: uuidv4(),
     title: "Hyundai Tucson 2022 - Like New",
     description:
       "Only 10,000km driven, still under factory warranty in perfect condition. The Tucson features a 2.5L 4-cylinder engine with 187 horsepower. Includes panoramic sunroof, leather seats, heated and ventilated front seats, and a 10.25-inch touchscreen with navigation. The vehicle has Hyundai's SmartSense safety suite including forward collision avoidance, blind spot monitoring, and rear cross-traffic alert. Apple CarPlay and Android Auto compatible. Excellent fuel economy for a compact SUV. The interior is immaculate and the exterior has no scratches or dents. A like-new vehicle at a fraction of the original price.",
@@ -215,7 +215,7 @@ export const carItems = [
     userId: USER_A,
   },
   {
-    id: "car_009",
+    id: uuidv4(),
     title: "Toyota Yaris 2018 - Economical",
     description:
       "Great fuel efficiency perfect for city driving and well maintained. The Yaris features a 1.5L 4-cylinder engine that delivers excellent fuel economy at 30/36 MPG city/highway. Includes power windows, air conditioning, Bluetooth connectivity, and a backup camera. This reliable subcompact car has been regularly serviced with all records available. New tires installed at 55,000 miles. The interior is clean with no rips or stains. Perfect for a first-time car buyer, student, or anyone looking for an economical daily driver. Toyota reliability at an affordable price.",
@@ -241,7 +241,7 @@ export const carItems = [
     userId: USER_B,
   },
   {
-    id: "car_010",
+    id: uuidv4(),
     title: "Volkswagen Golf 2019",
     description:
       "German engineering with fuel efficient and reliable hatchback performance. The Golf features a 1.4L turbocharged engine with 147 horsepower. Includes leatherette seats, touchscreen infotainment with Apple CarPlay, and automatic emergency braking. The car is known for its solid build quality, responsive handling, and comfortable ride. Recent maintenance including oil change, brake pads, and tire rotation. The interior is in great condition with no damage. A perfect balance of fun-to-drive dynamics and practical daily usability.",
@@ -267,7 +267,7 @@ export const carItems = [
     userId: USER_A,
   },
   {
-    id: "car_011",
+    id: uuidv4(),
     title: "Ford Mustang Convertible 2018",
     description:
       "American muscle car with V8 engine and automatic transmission. The Mustang GT features a 5.0L V8 producing 460 horsepower and 420 lb-ft of torque. Includes premium leather seats, touchscreen with navigation, premium audio system, and a power-retractable soft top. The car has launch control, selectable drive modes, and a limited-slip differential. This iconic convertible turns heads wherever it goes. Recent service completed including oil change and new tires. The interior is in excellent condition and the convertible top operates smoothly. A true American classic.",
@@ -293,7 +293,7 @@ export const carItems = [
     userId: USER_B,
   },
   {
-    id: "car_012",
+    id: uuidv4(),
     title: "BMW 4 Series Convertible 2020",
     description:
       "Luxury convertible in excellent condition with low mileage. The 430i features a 2.0L TwinPower Turbo engine with 248 horsepower. Includes leather sports seats, Harman Kardon sound system, and BMW's latest technology package. The power-retractable hardtop provides year-round usability. Features include adaptive LED headlights, parking assist, and a 360-degree camera. The car has been meticulously maintained with all service records. Interior is immaculate with ambient lighting. A perfect combination of luxury, performance, and open-air driving enjoyment.",
@@ -319,7 +319,7 @@ export const carItems = [
     userId: USER_A,
   },
   {
-    id: "car_013",
+    id: uuidv4(),
     title: "Toyota Hiace Minivan 2020",
     description:
       "15-seater minivan perfect for transport business and well maintained. The Hiace features a reliable 3.0L turbo diesel engine known for longevity and fuel efficiency. Includes comfortable seating for 15 passengers, air conditioning throughout, and a premium sound system. The vehicle has been regularly serviced and is in excellent mechanical condition. Interior is clean and well-maintained with no damage. Perfect for airport transfers, group tours, or shuttle services. Toyota Hiace is renowned for its durability and low maintenance costs, making it an excellent investment for transportation business.",

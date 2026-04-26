@@ -22,10 +22,10 @@ export interface MainCategory {
   logo?: string;
   href: string;
   icon: ReactNode;
-  so?: string;
   dashboardIcon?: import("react-icons").IconType;
   dashboardLink?: string;
   subCategories: any[];
   title?: string;
   labelKey?: string;
+  so?: string;
 }

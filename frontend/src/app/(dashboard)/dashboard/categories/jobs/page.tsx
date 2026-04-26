@@ -11,23 +11,20 @@ import {
   getAllCities,
   addCity,
 } from "@/actions/categories/geoAction";
-import { useAuth } from "@/context/AuthContext";
-import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/nesSubCategoryLinks";
+import { categories as nesCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
-import type { CreateJobData } from "@/actions/categories/jobActions";
-import { createJob } from "@/actions/categories/jobActions";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+import { jobsEndpoint } from "@/actions/constant/constant";
 
 type Region = {
   id: string;
   name: string;
-  so?: string;
 };
 
 type City = {
   id: string;
   name: string;
   regionId: string;
-  so?: string;
 };
 
 type ExperienceLevel = {
@@ -54,13 +51,13 @@ const CreateAdForJobs = () => {
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState<CreateJobData>({
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     company: "",
     location: "",
     salary: 0,
-    type: "Full-time",
+    employmentType: "Full-time",
     city: "",
     region: "",
     isPaid: true,
@@ -141,25 +138,29 @@ const CreateAdForJobs = () => {
       const salaryAmount =
         parseInt(additionalData.salaryRange.replace(/[^0-9]/g, "")) || 0;
 
-      const jobData: CreateJobData = {
+      const payload = {
         title: formData.title,
         description: formData.description,
-        company: formData.company,
-        location: `${selectedRegion?.name || formData.region}, ${finalCity}`,
         salary: salaryAmount,
-        type: formData.type,
+        employmentType: formData.employmentType,
+        experienceLevel: additionalData.experienceLevel,
         city: finalCity,
         region: selectedRegion?.name || formData.region,
-        isPaid: formData.isPaid,
       };
 
-      const res = await createJob(jobData);
+      const headers = await getAuthHeaders();
+      const res = await fetch(jobsEndpoint.CREATE, {
+        method: "POST",
+        headers: headers as HeadersInit,
+        body: JSON.stringify(payload),
+      });
 
-      if (res.success) {
+      if (res.ok) {
         toast.success("Job advertisement posted successfully!");
         router.push("/jobs");
       } else {
-        toast.error(res.message || "Failed to post job.");
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.message || "Failed to post job.");
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
@@ -276,7 +277,7 @@ const CreateAdForJobs = () => {
               </option>
               {regions.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {i18n.language === "so" ? r.so || r.name : r.name}
+                  {r.name}
                 </option>
               ))}
             </select>
@@ -297,7 +298,7 @@ const CreateAdForJobs = () => {
               </option>
               {filteredCities.map((c) => (
                 <option key={c.id} value={c.name}>
-                  {i18n.language === "so" ? c.so || c.name : c.name}
+                  {c.name}
                 </option>
               ))}
               <option value="custom" className="text-blue-600 font-bold">
@@ -364,8 +365,8 @@ const CreateAdForJobs = () => {
             {t("jobsPage.application.jobType", "Job Type")}
           </label>
           <select
-            name="type"
-            value={formData.type}
+            name="employmentType"
+            value={formData.employmentType}
             onChange={handleChange}
             required
             className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"

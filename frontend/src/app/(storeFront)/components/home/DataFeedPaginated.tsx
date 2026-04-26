@@ -3,10 +3,11 @@
 import { useState } from "react";
 import UniversalCard from "../Cards/categoriesCards/UniversalCard";
 import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
-
-const INITIAL_COUNT = 52;
-const INCREMENT = 20;
-const MAX_COUNT = 110;
+import {
+  INCREMENT,
+  INITIAL_COUNT,
+  MAX_COUNT,
+} from "@/actions/constant/constant";
 
 export default function DataFeedPaginated({
   items,
@@ -33,7 +34,7 @@ export default function DataFeedPaginated({
           <button
             onClick={() =>
               setVisible((v) =>
-                Math.min(v + INCREMENT, MAX_COUNT, items.length)
+                Math.min(v + INCREMENT, MAX_COUNT, items.length),
               )
             }
             className="px-10 py-3 bg-[#1d3557] text-white rounded-xl font-semibold text-sm hover:bg-[#16294a] transition-colors duration-200 shadow-sm"

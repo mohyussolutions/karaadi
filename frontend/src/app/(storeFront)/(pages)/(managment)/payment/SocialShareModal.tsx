@@ -1,6 +1,6 @@
 "use client";
 
-import { postToAllPlatforms } from "@/actions/categories/socialPostAction";
+import { postToTikTok } from "@/actions/categories/socialPostAction";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaFacebook, FaTiktok, FaCheckCircle } from "react-icons/fa";
@@ -28,22 +28,15 @@ export default function SocialShareModal({
 }: Props) {
   const { t } = useTranslation();
   const [tiktok, setTiktok] = useState(false);
-  const [facebook, setFacebook] = useState(false);
   const [queued, setQueued] = useState(false);
 
-  const noneSelected = !tiktok && !facebook;
-
   const handlePost = () => {
-    if (noneSelected) {
+    if (!tiktok) {
       onDone();
       return;
     }
 
     setQueued(true);
-
-    const platforms: ("tiktok" | "facebook")[] = [];
-    if (tiktok) platforms.push("tiktok");
-    if (facebook) platforms.push("facebook");
 
     const payload = {
       title: itemTitle,
@@ -54,7 +47,7 @@ export default function SocialShareModal({
       category: itemCategory,
     };
 
-    postToAllPlatforms(payload, platforms);
+    postToTikTok(payload);
     onDone();
   };
 
@@ -91,12 +84,17 @@ export default function SocialShareModal({
               "Share on our official social accounts for free?",
             )}
           </p>
-          <p className="text-xs text-blue-500 mt-1 font-medium">
-            {t("social.selectBoth", "Select both")}
-          </p>
         </div>
 
         <div className="space-y-3 mb-6">
+          <div className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-blue-100 bg-blue-50 text-blue-700">
+            <FaFacebook size={20} className="text-blue-600" />
+            <span className="font-bold flex-1">
+              {t("social.facebookAuto", "Posted to Facebook automatically")}
+            </span>
+            <FaCheckCircle className="text-blue-500" size={18} />
+          </div>
+
           <button
             type="button"
             onClick={() => setTiktok((v) => !v)}
@@ -109,20 +107,6 @@ export default function SocialShareModal({
             <FaTiktok size={20} />
             <span>{t("social.postTiktok", "Post to TikTok")}</span>
             {tiktok && <FaCheckCircle className="ml-auto" size={18} />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFacebook((v) => !v)}
-            className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 font-bold transition-all ${
-              facebook
-                ? "border-blue-600 bg-blue-600 text-white"
-                : "border-gray-200 text-gray-700 hover:border-blue-300"
-            }`}
-          >
-            <FaFacebook size={20} />
-            <span>{t("social.postFacebook", "Post to Facebook")}</span>
-            {facebook && <FaCheckCircle className="ml-auto" size={18} />}
           </button>
         </div>
 
@@ -139,9 +123,7 @@ export default function SocialShareModal({
             onClick={handlePost}
             className="flex-1 py-3 bg-[#0063fb] text-white rounded-2xl font-black hover:bg-blue-700 transition"
           >
-            {noneSelected
-              ? t("common.continue", "Continue")
-              : t("social.post", "Post!")}
+            {tiktok ? t("social.post", "Post!") : t("common.continue", "Continue")}
           </button>
         </div>
       </div>
