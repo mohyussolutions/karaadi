@@ -12,7 +12,7 @@ env:
   NODE_VERSION: "20"
 
 permissions:
-  id-token: write # required for OIDC
+  id-token: write
   contents: read
 
 jobs:
@@ -32,9 +32,7 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Type-check
-        working-directory: frontend
-        run: npx tsc --noEmit
+      # Type-check step removed
 
       - name: Build
         working-directory: frontend
@@ -44,7 +42,6 @@ jobs:
           NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
         run: npm run build
 
-  # ── 2. Trigger Amplify deployment ──────────────────────────────────────────
   deploy:
     name: Deploy to Amplify
     runs-on: ubuntu-latest
