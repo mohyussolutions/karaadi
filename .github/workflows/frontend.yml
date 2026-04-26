@@ -32,6 +32,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Type-check
+        working-directory: frontend
+        run: npm run type-check
+
       - name: Build
         working-directory: frontend
         env:
@@ -46,7 +50,7 @@ jobs:
     needs: build
 
     steps:
-      - name: Configure AWS credentials (OIDC)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.FRONTEND_DEPLOY_ROLE_ARN }}
