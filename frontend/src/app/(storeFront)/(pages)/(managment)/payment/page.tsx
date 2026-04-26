@@ -33,7 +33,9 @@ export default function SummaryPaymentPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("waafi");
   const userPhone: string = (user as any)?.phone || "";
   const [phoneNumber, setPhoneNumber] = useState(
-    userPhone && (userPhone.startsWith("+252") || userPhone.startsWith("6")) ? userPhone : "",
+    userPhone && (userPhone.startsWith("+252") || userPhone.startsWith("6"))
+      ? userPhone
+      : "",
   );
   const [phoneError, setPhoneError] = useState("");
 
@@ -68,10 +70,14 @@ export default function SummaryPaymentPage() {
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 text-white">
               <FaListAlt size={18} />
             </span>
-            {t("summary.review", "Review")} &amp; {t("payment.payment", "Payment")}
+            {t("summary.review", "Review")} &amp;{" "}
+            {t("payment.payment", "Payment")}
           </h1>
           <p className="text-gray-500 mt-2 text-sm">
-            {t("summary.verifyDetails", "Verify your listing and complete payment")}
+            {t(
+              "summary.verifyDetails",
+              "Verify your listing and complete payment",
+            )}
           </p>
         </header>
 
@@ -103,3 +109,5 @@ export default function SummaryPaymentPage() {
     </div>
   );
 }
+
+//

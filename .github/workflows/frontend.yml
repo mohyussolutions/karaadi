@@ -32,8 +32,6 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      # Type-check step removed
-
       - name: Build
         working-directory: frontend
         env:
