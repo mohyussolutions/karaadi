@@ -43,7 +43,7 @@ const CreateWantedPage = () => {
     e.preventDefault();
     if (!user) return;
 
-    const userId: string = user.id || user._id || user.sub;
+    const userId: string | undefined = user.id || user._id || user.sub;
     const userName: string = user.name || user.username || "";
     const userAvatar: string = user.avatar || user.profileImage || "";
 

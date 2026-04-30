@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import prisma from "src/core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -241,7 +241,10 @@ export async function getRecommendations(req: Request, res: Response) {
     let items;
 
     if (userId) {
-      items = await recommendationService.getHybridRecommendations(userId, limit + 1);
+      items = await recommendationService.getHybridRecommendations(
+        userId,
+        limit + 1,
+      );
     } else {
       items = category
         ? await recommendationService.getContentBased([category], [], limit + 1)

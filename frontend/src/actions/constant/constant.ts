@@ -1,5 +1,5 @@
 import { GridConfiguration } from "@/app/utils/types/GridConfiguration";
-import { BASE_API_URL } from "./BASE_API_URL";
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export const AUTH_TOKEN_KEY = "auth_token";
 export const PLACEHOLDER_IMAGE =
@@ -7,6 +7,26 @@ export const PLACEHOLDER_IMAGE =
 export const PLACEHOLDER = "/placeholder.png";
 export const INITIAL_DISPLAY = 50;
 export const DISPLAY_INCREMENT = 20;
+
+export const PRIORITY_CONFIG = {
+  PREMIUM: { label: "PREMIUM", color: "bg-amber-500" },
+  STANDARD: { label: "STANDARD", color: "bg-blue-500" },
+  BASIC: { label: "BASIC", color: "bg-gray-500" },
+} as const;
+export const OPTION = {
+  Public: "Public",
+  Private: "Private",
+} as const;
+export const getPriorityBadge = (
+  isPremium90?: boolean,
+  isStandard60?: boolean,
+  isBasic30?: boolean,
+) => {
+  if (isPremium90) return PRIORITY_CONFIG.PREMIUM;
+  if (isStandard60) return PRIORITY_CONFIG.STANDARD;
+  if (isBasic30) return PRIORITY_CONFIG.BASIC;
+  return null;
+};
 
 export const INITIAL_COUNT = 52;
 export const INCREMENT = 20;
@@ -308,6 +328,10 @@ export const BUSINESS_ENDPOINTS = {
     createEndpoint(`${API_PATHS.BUSINESSES}/admin/${id}/status`),
   ADMIN_TOGGLE_VISIBILITY: (id: string) =>
     createEndpoint(`${API_PATHS.BUSINESSES}/admin/${id}/toggle-visibility`),
+  ADMIN_ASSIGN_PLAN: (id: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/admin/${id}/assign-plan`),
+  ADMIN_SET_POST_LIMIT: (id: string) =>
+    createEndpoint(`${API_PATHS.BUSINESSES}/admin/${id}/post-limit`),
   BY_ID: (id: string) => createIdEndpoint(API_PATHS.BUSINESSES, id),
   UPDATE: (id: string) => createIdEndpoint(API_PATHS.BUSINESSES, id),
   DELETE: (id: string) => createIdEndpoint(API_PATHS.BUSINESSES, id),

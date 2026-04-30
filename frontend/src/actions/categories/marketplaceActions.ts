@@ -8,7 +8,7 @@ import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheade
 
 export async function getMarketplaceItems() {
   const res = await fetch(apiUrlsForCategoryTotals.Marketplace, {
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) return [];
@@ -24,7 +24,7 @@ export async function getMarketplaceItems() {
 
 export async function getMarketplaceItemById(id: string) {
   const res = await fetch(`${apiUrlsForCategoryTotals.Marketplace}/${id}`, {
-    cache: "no-store",
+    next: { revalidate: 30 },
   });
 
   if (!res.ok) return null;

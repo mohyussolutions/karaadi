@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { Prisma } from "@prisma/client";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 
 import { CACHE_TTL, getPaginationParams } from "src/config/config.constants.ts";
 import { AdQuery } from "src/types/advertisement.types.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const selectUser = {
   select: { id: true, username: true, profileImage: true },

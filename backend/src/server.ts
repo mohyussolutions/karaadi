@@ -4,10 +4,10 @@ import process from "node:process";
 import chalk from "chalk";
 
 import app from "./app.js";
-import redisServer from "./services/redisserver/redisServer.js";
 import prisma from "./core/utils/db.js";
 import { socketServer } from "./services/sockets/socketServer.js";
 import setupGracefulShutdown from "./core/utils/gracefulShutdown.js";
+import redisServer from "./services/redis/redisServer.ts";
 
 const server = http.createServer(app);
 
@@ -30,6 +30,19 @@ const startServer = async () => {
     });
 
     setupGracefulShutdown({ server, prisma, redisServer });
+
+    setInterval(async () => {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+      } catch (e) {
+        console.warn(
+          chalk.yellow("[Keepalive] DB ping failed — reconnecting…"),
+        );
+        try {
+          await prisma.$connect();
+        } catch {}
+      }
+    }, 60_000);
   } catch (err) {
     console.error(chalk.red("Startup failed:"), err);
     process.exit(1);

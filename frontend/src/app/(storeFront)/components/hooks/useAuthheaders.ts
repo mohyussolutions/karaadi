@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { getClientCookie } from "@/app/ui/invoices/slugify";
 
 export type HeadersWithAuth = {
@@ -16,15 +15,15 @@ const BASE_HEADERS = {
   Expires: "0",
 };
 
-const getServerToken = cache(async (): Promise<string | undefined> => {
-  const { cookies } = await import("next/headers");
-  const cookieStore = await cookies();
-  return (
-    cookieStore.get("idToken")?.value ||
-    cookieStore.get("accessToken")?.value ||
-    cookieStore.get("token")?.value
-  );
-});
+async function getServerToken(): Promise<string | undefined> {
+  try {
+    const { cookies } = await import("next/headers");
+    const store = await cookies();
+    return store.get("idToken")?.value || store.get("accessToken")?.value || store.get("token")?.value;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function getAuthHeaders(token?: string): Promise<HeadersWithAuth> {
   let authToken = token;

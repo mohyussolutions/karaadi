@@ -16,6 +16,7 @@ import {
 import { CategoryOption } from "@/app/utils/types/categoriestype";
 import { CategoryItem } from "../../components/shared/buttons/CategoryItem";
 import { OptionButton } from "../../components/shared/buttons/OptionButton";
+import { OPTION } from "@/actions/constant/constant";
 
 const CATEGORIES = {
   Marketplace: "Marketplace",
@@ -24,11 +25,6 @@ const CATEGORIES = {
   Motorcycles: "Motorcycles",
   Boats: "Boats",
   Farmequipment: "Farmequipment",
-} as const;
-
-const OPTION = {
-  Public: "Public",
-  Private: "Private",
 } as const;
 
 const categoryOptions: Record<string, readonly CategoryOption[]> = {
@@ -136,7 +132,7 @@ function Ads() {
       if (!selectedCategory) return;
 
       if (selectedOptionTitle === OPTION.Public) {
-        router.push("/business-customer");
+        router.push("/businesss");
         return;
       }
 

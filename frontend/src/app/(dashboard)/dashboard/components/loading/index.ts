@@ -4,4 +4,4 @@ export {
   TableRowSkeleton,
   CardSkeleton,
   PageSkeleton,
-} from "./Skeletons";
+} from "@/app/ui/loading";

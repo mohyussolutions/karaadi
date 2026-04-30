@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { API_ENDPOINTS } from "@/actions/constant/sockets";
-import { socketService } from "@/actions/sockets/socketService";
 import { useAppDispatch } from "@/store/slices/hooks/hooks";
-import { setUnreadCount, decrementUnread } from "@/store/slices/reducers/notificationsSlice";
+import {
+  setUnreadCount,
+  decrementUnread,
+} from "@/store/slices/reducers/notificationsSlice";
+import { socketService } from "@/actions/sockets/socketServiceAction";
 
 export function useNavNotificationCount(userId: string | undefined) {
   const [notificationCount, setNotificationCount] = useState(0);
@@ -52,16 +55,19 @@ export function useNavNotificationCount(userId: string | undefined) {
       }
     });
 
-    const offNewNotifs = socketService.on("newNotifications", (data: unknown) => {
-      const arr = Array.isArray(data) ? data : [data];
-      if (active) {
-        setNotificationCount((prev) => {
-          const next = prev + arr.length;
-          dispatch(setUnreadCount(next));
-          return next;
-        });
-      }
-    });
+    const offNewNotifs = socketService.on(
+      "newNotifications",
+      (data: unknown) => {
+        const arr = Array.isArray(data) ? data : [data];
+        if (active) {
+          setNotificationCount((prev) => {
+            const next = prev + arr.length;
+            dispatch(setUnreadCount(next));
+            return next;
+          });
+        }
+      },
+    );
 
     return () => {
       active = false;

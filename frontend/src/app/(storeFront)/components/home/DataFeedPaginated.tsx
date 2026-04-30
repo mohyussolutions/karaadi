@@ -3,11 +3,9 @@
 import { useState } from "react";
 import UniversalCard from "../Cards/categoriesCards/UniversalCard";
 import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
-import {
-  INCREMENT,
-  INITIAL_COUNT,
-  MAX_COUNT,
-} from "@/actions/constant/constant";
+const INITIAL_COUNT = 52;
+const INCREMENT = 20;
+const MAX_COUNT = 110;
 
 export default function DataFeedPaginated({
   items,

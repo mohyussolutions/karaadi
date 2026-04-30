@@ -995,7 +995,11 @@
         "marketplace": "Marketplace",
         "marketplaceDesc": "Sale of items"
       },
-      "choosePlan": "Choose a plan to start posting listings"
+      "choosePlan": "Choose a plan to start posting listings",
+      "stepApply": "Apply",
+      "stepApproval": "Approval",
+      "stepPlan": "Plan",
+      "stepPost": "Post"
     },
     "myAds": {
       "deleteFailed": "Delete ad failed.",

@@ -17,6 +17,8 @@ import {
   toggleAdminEnabled,
   getBusinessFeed,
   getAllBusinesses,
+  adminAssignPlan,
+  adminSetPostLimit,
 } from "src/controllers/businessController.ts";
 import {
   adminAndManager,
@@ -63,6 +65,18 @@ businessRoute.patch(
   adminAndManager,
   validateRequest(toggleAdminEnabledSchema),
   toggleAdminEnabled,
+);
+businessRoute.patch(
+  "/admin/:id/assign-plan",
+  ProtectRoute,
+  adminAndManager,
+  adminAssignPlan,
+);
+businessRoute.patch(
+  "/admin/:id/post-limit",
+  ProtectRoute,
+  adminAndManager,
+  adminSetPostLimit,
 );
 businessRoute.get("/:id", ProtectRoute, getBusinessById);
 businessRoute.patch("/:id", ProtectRoute, updateBusiness);

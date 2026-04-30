@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import redisServer from "../redisserver/redisServer.ts";
+import redisServer from "../redis/redisServer.ts";
 
 export async function createSession(user: {
   id?: any;

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 export const globalFiltering = async (req: Request, res: Response) => {
   const { q, region, city, minPrice, maxPrice } = req.query;
   const cacheKey = `filter:${JSON.stringify(req.query).toLowerCase()}`;

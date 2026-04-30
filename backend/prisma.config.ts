@@ -1,5 +1,8 @@
 import dotenv from "dotenv";
-dotenv.config({ debug: false });
+
+const envFile = process.env.NODE_ENV === "production" ? "../.env.production" : "../.env.local";
+dotenv.config({ path: envFile, debug: false });
+
 import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({

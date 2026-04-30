@@ -17,8 +17,8 @@ export const getTotalOfRegions = async (): Promise<number> => {
 export const getAllRegions = async (): Promise<Region[]> => {
   const headers = await getAuthHeaders();
   const [regRes, cityRes] = await Promise.all([
-    fetch(geoEndpoints.GET_ALL_REGIONS, { headers: headers as HeadersInit, cache: "no-store" }),
-    fetch(geoEndpoints.GET_ALL_CITIES, { headers: headers as HeadersInit, cache: "no-store" }),
+    fetch(geoEndpoints.GET_ALL_REGIONS, { headers: headers as HeadersInit, next: { revalidate: 300 } }),
+    fetch(geoEndpoints.GET_ALL_CITIES, { headers: headers as HeadersInit, next: { revalidate: 300 } }),
   ]);
   if (!regRes.ok) return [];
   const regions: Region[] = await regRes.json();

@@ -9,10 +9,10 @@ import {
   formatExpiryDate,
   isExpired,
 } from "src/hooks/useExpire.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { getBusinessListingFlags } from "src/core/utils/businessListingFlags.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",
@@ -362,7 +362,8 @@ export const createRealEstate = async (req: Request, res: Response) => {
       businessId,
     } = req.body;
 
-    if (!title || !price || !mainCategory || !region || !city || !userId) {
+    const finalUserId = (req as any).user?.id || userId;
+    if (!title || price === undefined || price === null || price === "" || !mainCategory || !region || !city || !finalUserId) {
       return res.status(400).json({ message: ERROR_MESSAGES.MISSING_FIELDS });
     }
 
@@ -377,7 +378,7 @@ export const createRealEstate = async (req: Request, res: Response) => {
       }
     }
 
-    const biz = await getBusinessListingFlags(businessId);
+    const biz = await getBusinessListingFlags(businessId || null);
     if (biz.isPaidByBusiness) expiryDate = expiryDate ?? biz.expiryDate;
 
     const newProperty = await prisma.realEstate.create({
@@ -386,7 +387,7 @@ export const createRealEstate = async (req: Request, res: Response) => {
         description: description || "",
         price: Number(price),
         mainCategory,
-        businessId: businessId ?? null,
+        businessId: businessId || null,
         [FIELD_NAMES.CATEGORY]: Array.isArray(category)
           ? category
           : [category].filter(Boolean),
@@ -408,7 +409,7 @@ export const createRealEstate = async (req: Request, res: Response) => {
         city,
         county: county || region,
         [FIELD_NAMES.IMAGES]: Array.isArray(images) ? images : [],
-        [FIELD_NAMES.USER_ID]: userId,
+        [FIELD_NAMES.USER_ID]: finalUserId,
         [FIELD_NAMES.PLAN_ID]: planId || null,
         [FIELD_NAMES.PLAN_AMOUNT]: finalPlanAmount,
         [FIELD_NAMES.EXPIRY_DATE]: expiryDate,
@@ -418,6 +419,7 @@ export const createRealEstate = async (req: Request, res: Response) => {
 
     res.status(201).json(newProperty);
     cacheManager.deletePattern("realestate:*").catch(() => {});
+    cacheManager.deletePattern(`businesses:my:${finalUserId}*`).catch(() => {});
     notifyMatchingSubscribers("realestate", newProperty.id, {
       title,
       price: Number(price) ?? 0,
@@ -426,7 +428,7 @@ export const createRealEstate = async (req: Request, res: Response) => {
       region,
       city,
       posterId: userId,
-    }).catch(console.error);
+    }).catch(() => {});
   } catch (error) {
     return res.status(400).json({
       message: ERROR_MESSAGES.CREATION_FAILED,

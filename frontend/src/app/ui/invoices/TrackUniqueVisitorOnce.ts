@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 import Cookies from "js-cookie";
 
 export default function TrackVisitor() {

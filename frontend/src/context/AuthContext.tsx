@@ -2,11 +2,12 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getAuthenticatedUser } from "@/actions/core/authAction";
+import { RawUserData } from "@/app/utils/types/user.types";
 
 type AuthContextType = {
-  user: any;
+  user: RawUserData | null;
   loading: boolean;
-  setUser: (user: any) => void;
+  setUser: (user: RawUserData | null) => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,10 +17,10 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 let _cachedSession: { data: any } | null = null;
-let _pendingSession: Promise<any> | null = null;
+let _pendingSession: Promise<RawUserData | null> | null = null;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(
+  const [user, setUser] = useState<RawUserData | null>(
     _cachedSession ? _cachedSession.data : null,
   );
   const [loading, setLoading] = useState(!_cachedSession);

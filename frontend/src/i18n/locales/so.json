@@ -1063,7 +1063,11 @@
         "marketplace": "Suuqa",
         "marketplaceDesc": "Iibinta alaabta"
       },
-      "choosePlan": "Dooro qorshe si aad u bilowdo daabicaadda liistooyin"
+      "choosePlan": "Dooro qorshe si aad u bilowdo daabicaadda liistooyin",
+      "stepApply": "Codsiga",
+      "stepApproval": "Ansixin",
+      "stepPlan": "Qorshe",
+      "stepPost": "Nooca dooro"
     },
     "myAds": {
       "deleteFailed": "Tirtirka xayeysiiska wuu fashilmay.",

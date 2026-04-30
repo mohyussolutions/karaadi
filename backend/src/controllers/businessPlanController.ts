@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const CACHE_KEY = "business-plans:all";
 
@@ -36,11 +36,9 @@ export const createBusinessPlan = async (req: Request, res: Response) => {
     const { name, price, durationDays, maxListings, categories, features } =
       req.body;
     if (!name || price === undefined || !durationDays || !maxListings) {
-      return res
-        .status(400)
-        .json({
-          error: "name, price, durationDays and maxListings are required",
-        });
+      return res.status(400).json({
+        error: "name, price, durationDays and maxListings are required",
+      });
     }
 
     const plan = await (prisma as any).businessPlan.create({

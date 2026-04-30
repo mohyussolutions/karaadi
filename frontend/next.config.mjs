@@ -1,6 +1,16 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
+  output: "standalone",
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
   eslint: { ignoreDuringBuilds: true },
+
+  // Reuse TCP connections between Next.js server and Express backend.
+  // Without this, each of the 6 parallel server-action fetches opens a fresh
+  // socket, adding ~10-30ms RTT overhead per request.
+  httpAgentOptions: { keepAlive: true },
+
   experimental: {
     serverActions: { bodySizeLimit: "20mb" },
     optimizePackageImports: [
@@ -13,7 +23,41 @@ const nextConfig = {
       "date-fns",
     ],
   },
+
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+        ],
+      },
+      {
+        source: "/api/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+        ],
+      },
+      {
+        source: "/_next/static/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+    ];
+  },
+
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 3600,
     remotePatterns: [
       { protocol: "https", hostname: "**.istockphoto.com" },
       { protocol: "https", hostname: "images.pexels.com" },

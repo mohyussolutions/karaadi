@@ -8,9 +8,9 @@ import {
   formatExpiryDate,
   isExpired,
 } from "src/hooks/useExpire.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",
@@ -435,13 +435,16 @@ export const createMotorcycle = async (req: Request, res: Response) => {
         [FIELD_NAMES.EXPIRY_DATE]: expiryDate,
         [FIELD_NAMES.TYPE]: extra.type || DEFAULT_VALUES.TYPE,
         [FIELD_NAMES.MAKE]: extra.make || extra.brand || DEFAULT_VALUES.MAKE,
-        [FIELD_NAMES.MODEL_NAME]: extra.modelName || extra.model || DEFAULT_VALUES.MODEL_NAME,
+        [FIELD_NAMES.MODEL_NAME]:
+          extra.modelName || extra.model || DEFAULT_VALUES.MODEL_NAME,
         [FIELD_NAMES.YEAR]: parseInt(extra.year) || 0,
         [FIELD_NAMES.MILEAGE]: parseInt(extra.mileage) || 0,
-        [FIELD_NAMES.ENGINE_SIZE]: extra.engineSize || extra.engineCc || DEFAULT_VALUES.ENGINE_SIZE,
+        [FIELD_NAMES.ENGINE_SIZE]:
+          extra.engineSize || extra.engineCc || DEFAULT_VALUES.ENGINE_SIZE,
         [FIELD_NAMES.FUEL_TYPE]: extra.fuelType || DEFAULT_VALUES.FUEL_TYPE,
         [FIELD_NAMES.COLOR]: extra.color || DEFAULT_VALUES.COLOR,
-        [FIELD_NAMES.TRANSMISSION]: extra.transmission || extra.gearbox || DEFAULT_VALUES.TRANSMISSION,
+        [FIELD_NAMES.TRANSMISSION]:
+          extra.transmission || extra.gearbox || DEFAULT_VALUES.TRANSMISSION,
       },
       select: {
         [FIELD_NAMES.ID]: true,

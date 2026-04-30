@@ -21,7 +21,7 @@ export const SECURITY_CONFIG = {
   AUTH_LIMIT_MAX: isProd ? 50 : 500,
 
   LOGIN_FAIL_WINDOW: 15 * 60 * 1000,
-  LOGIN_FAIL_MAX: getEnvNumber("LOGIN_FAIL_MAX", 5),
+  LOGIN_FAIL_MAX: getEnvNumber("LOGIN_FAIL_MAX", isProd ? 5 : 50),
 
   SPEED_LIMIT_WINDOW: 15 * 60 * 1000,
   SPEED_LIMIT_COUNT: getEnvNumber("SPEED_LIMIT_COUNT", 50),

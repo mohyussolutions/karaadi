@@ -8,6 +8,7 @@ export interface SubscriptionPlan {
   price?: number;
 }
 import { LISTING_TYPE } from "@/app/utils/types/fee.types";
+import { Building2, CheckCircle, Clock, XCircle, Zap } from "lucide-react";
 
 export const FEE_CATEGORIES = [
   {
@@ -164,7 +165,11 @@ export const FEE_CATEGORIES = [
     title: "Subscriptions (Is-diiwaangelin)",
     fees: [
       { key: "basic30", label: "30-Day Basic", type: LISTING_TYPE.SERVICE },
-      { key: "standard60", label: "60-Day Standard", type: LISTING_TYPE.SERVICE },
+      {
+        key: "standard60",
+        label: "60-Day Standard",
+        type: LISTING_TYPE.SERVICE,
+      },
       { key: "premium90", label: "90-Day Premium", type: LISTING_TYPE.SERVICE },
     ],
   },
@@ -221,3 +226,48 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     ],
   },
 ];
+
+export const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  active: "bg-green-100 text-green-800 border-green-200",
+  inactive: "bg-gray-100 text-gray-700 border-gray-200",
+  suspended: "bg-red-100 text-red-800 border-red-200",
+};
+
+export const STAT_CARDS = [
+  {
+    key: "total",
+    so: "Wadarta",
+    en: "Total",
+    Icon: Building2,
+    color: "from-indigo-600 to-indigo-800",
+  },
+  {
+    key: "pending",
+    so: "Sugitaanka",
+    en: "Pending",
+    Icon: Clock,
+    color: "from-yellow-500 to-yellow-700",
+  },
+  {
+    key: "active",
+    so: "Firfircoon",
+    en: "Active",
+    Icon: CheckCircle,
+    color: "from-emerald-500 to-emerald-700",
+  },
+  {
+    key: "suspended",
+    so: "Xanniday",
+    en: "Suspended",
+    Icon: XCircle,
+    color: "from-red-500 to-red-700",
+  },
+  {
+    key: "canPost",
+    so: "Daabici kara",
+    en: "Can Post",
+    Icon: Zap,
+    color: "from-teal-500 to-teal-700",
+  },
+] as const;

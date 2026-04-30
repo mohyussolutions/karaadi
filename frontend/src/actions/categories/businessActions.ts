@@ -1,14 +1,22 @@
 "use server";
-
-import { BUSINESS_ENDPOINTS, CATEGORY_ENDPOINTS, REAL_ESTATE_ENDPOINTS } from "../constant/constant";
+import { BUSINESS_PLAN_ENDPOINTS } from "../constant/constant";
+import { BUSINESS_ENDPOINTS } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import { BASE_API_URL } from "../constant/BASE_API_URL";
-
+import { BusinessPlan } from "@/app/utils/types/business";
 async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
   const headers = await getAuthHeaders();
+  const hasContentType =
+    options?.headers &&
+    ("Content-Type" in options.headers || "content-type" in options.headers);
+
   const res = await fetch(url, {
     ...options,
-    headers: { ...headers, ...options?.headers } as HeadersInit,
+    headers: {
+      ...(hasContentType ? {} : { "Content-Type": "application/json" }),
+      ...headers,
+      ...options?.headers,
+    } as HeadersInit,
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Status: ${res.status}`);
@@ -44,7 +52,10 @@ export async function getBusinessById(id: string) {
   }
 }
 
-export async function updateBusiness(id: string, data: Record<string, unknown>) {
+export async function updateBusiness(
+  id: string,
+  data: Record<string, unknown>,
+) {
   try {
     return await fetchApi(BUSINESS_ENDPOINTS.UPDATE(id), {
       method: "PATCH",
@@ -85,7 +96,10 @@ export async function selectBusinessPlan(businessId: string, planId: string) {
   }
 }
 
-export async function removeBusinessMember(businessId: string, memberId: string) {
+export async function removeBusinessMember(
+  businessId: string,
+  memberId: string,
+) {
   try {
     return await fetchApi(
       BUSINESS_ENDPOINTS.REMOVE_MEMBER(businessId, memberId),
@@ -131,11 +145,42 @@ export async function extendBusinessPlan(businessId: string, planId: string) {
   }
 }
 
-export async function toggleAdminEnabled(businessId: string, isAdminEnabled: boolean) {
+export async function toggleAdminEnabled(
+  businessId: string,
+  isAdminEnabled: boolean,
+) {
   try {
-    return await fetchApi(BUSINESS_ENDPOINTS.ADMIN_TOGGLE_VISIBILITY(businessId), {
+    return await fetchApi(
+      BUSINESS_ENDPOINTS.ADMIN_TOGGLE_VISIBILITY(businessId),
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isAdminEnabled }),
+      },
+    );
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function adminAssignPlan(businessId: string, planId: string) {
+  try {
+    return await fetchApi(BUSINESS_ENDPOINTS.ADMIN_ASSIGN_PLAN(businessId), {
       method: "PATCH",
-      body: JSON.stringify({ isAdminEnabled }),
+      body: JSON.stringify({ planId }),
+    });
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function adminSetPostLimit(
+  businessId: string,
+  maxListingsOverride: number | null,
+) {
+  try {
+    return await fetchApi(BUSINESS_ENDPOINTS.ADMIN_SET_POST_LIMIT(businessId), {
+      method: "PATCH",
+      body: JSON.stringify({ maxListingsOverride }),
     });
   } catch {
     return { success: false };
@@ -144,10 +189,10 @@ export async function toggleAdminEnabled(businessId: string, isAdminEnabled: boo
 
 const CATEGORY_ENDPOINTS_MAP: Record<string, string> = {
   realestate: `${BASE_API_URL}/api/real-estate`,
-  schools:    `${BASE_API_URL}/api/marketplace`,
-  motor:      `${BASE_API_URL}/api/cars`,
+  schools: `${BASE_API_URL}/api/marketplace`,
+  motor: `${BASE_API_URL}/api/cars`,
   motorcycle: `${BASE_API_URL}/api/motorcycles`,
-  marketplace:`${BASE_API_URL}/api/marketplace`,
+  marketplace: `${BASE_API_URL}/api/marketplace`,
 };
 
 export async function createBusinessPost(
@@ -155,7 +200,8 @@ export async function createBusinessPost(
   data: Record<string, unknown>,
 ) {
   try {
-    const url = CATEGORY_ENDPOINTS_MAP[category] ?? `${BASE_API_URL}/api/marketplace`;
+    const url =
+      CATEGORY_ENDPOINTS_MAP[category] ?? `${BASE_API_URL}/api/marketplace`;
     return await fetchApi(url, {
       method: "POST",
       body: JSON.stringify(data),
@@ -198,7 +244,12 @@ export async function getBusinessStats() {
   try {
     return await fetchApi<{
       success: boolean;
-      stats: { total: number; active: number; pending: number; verified: number };
+      stats: {
+        total: number;
+        active: number;
+        pending: number;
+        verified: number;
+      };
     }>(BUSINESS_ENDPOINTS.STATS);
   } catch {
     return {
@@ -228,9 +279,101 @@ export type Business = {
   status: string;
   isVerified: boolean;
   isPaid: boolean;
+  isAdminEnabled: boolean;
   expiryDate?: string;
   createdAt: string;
   updatedAt: string;
-  owner?: { id: string; username: string; email: string; phone?: string; profileImage?: string };
+  currentListings?: number;
+  maxListingsOverride?: number | null;
+  plan?: {
+    id: string;
+    name: string;
+    price: number;
+    durationDays: number;
+    features: string[];
+    maxListings: number;
+  };
+  owner?: {
+    id: string;
+    username: string;
+    email: string;
+    phone?: string;
+    profileImage?: string;
+  };
   members?: { id: string; username: string; email: string }[];
 };
+
+async function fetchPlan<T>(url: string, options?: RequestInit): Promise<T> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...headers, ...options?.headers } as HeadersInit,
+    ...(options?.method ? {} : { next: { revalidate: 300 } }),
+  });
+  if (!res.ok) throw new Error(`Status: ${res.status}`);
+  return res.json();
+}
+
+export async function getAllBusinessPlans() {
+  try {
+    return await fetchPlan<{ success: boolean; plans: BusinessPlan[] }>(
+      BUSINESS_PLAN_ENDPOINTS.GET_ALL,
+    );
+  } catch {
+    return { success: false, plans: [] };
+  }
+}
+
+export async function getBusinessPlanById(id: string) {
+  try {
+    return await fetchPlan<{ success: boolean; plan: BusinessPlan }>(
+      BUSINESS_PLAN_ENDPOINTS.BY_ID(id),
+    );
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function createBusinessPlan(data: Record<string, unknown>) {
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(BUSINESS_PLAN_ENDPOINTS.CREATE, {
+      method: "POST",
+      headers: headers as HeadersInit,
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function updateBusinessPlan(
+  id: string,
+  data: Record<string, unknown>,
+) {
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(BUSINESS_PLAN_ENDPOINTS.UPDATE(id), {
+      method: "PATCH",
+      headers: headers as HeadersInit,
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function deleteBusinessPlan(id: string) {
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(BUSINESS_PLAN_ENDPOINTS.DELETE(id), {
+      method: "DELETE",
+      headers: headers as HeadersInit,
+    });
+    return res.json();
+  } catch {
+    return { success: false };
+  }
+}

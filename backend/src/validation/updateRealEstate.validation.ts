@@ -31,6 +31,8 @@ const commonFields = {
   amenities: z.array(z.string().max(100)).max(20).optional(),
   address: z.string().max(500).transform(s.strip).optional(),
   yearBuilt: z.number().int().min(1800).max(2100).optional(),
+  squareFeet: z.number().min(0).max(1_000_000).optional(),
+  county: s.optShortStr(),
 };
 
 export const updateRealEstateSchema = z.object(commonFields);

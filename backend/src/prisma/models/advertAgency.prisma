@@ -51,8 +51,9 @@ model Business {
   description      String?
   categories       String[]
   contactName      String?
-  planType         String?
-  status           String    @default("pending")
+  planType             String?
+  maxListingsOverride  Int?
+  status               String    @default("pending")
   isVerified       Boolean   @default(false)
   isPaid           Boolean   @default(false)
   isAdminEnabled   Boolean   @default(true)

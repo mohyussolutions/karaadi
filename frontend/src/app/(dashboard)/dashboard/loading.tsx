@@ -1,5 +1,1 @@
-import { PageSkeleton } from "./components/loading";
-
-export default function DashboardLoading() {
-  return <PageSkeleton />;
-}
+export { PageSkeleton as default } from "@/app/ui/loading";

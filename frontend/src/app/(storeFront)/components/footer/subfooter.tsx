@@ -30,7 +30,6 @@ export default function SubFooter() {
             >
               <FaTiktok />
             </a>
-            {/* Instagram removed as requested */}
           </div>
         </div>
 

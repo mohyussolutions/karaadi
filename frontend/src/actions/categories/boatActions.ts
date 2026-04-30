@@ -58,7 +58,7 @@ export async function getBoats(page = 1, pageSize = 20): Promise<BoatItem[] | nu
 
 export async function getBoatById(id: string): Promise<BoatItem | null> {
   const res = await fetch(`${apiUrlsForCategoryTotals.Boats}/${id}`, {
-    cache: "no-store",
+    next: { revalidate: 30 },
   });
 
   if (!res.ok) return null;

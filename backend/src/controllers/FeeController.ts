@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import type { Prisma } from "@prisma/client";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const BUSINESS_PLANS_CACHE_KEY = "business-plans:all";
 

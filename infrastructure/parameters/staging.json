@@ -1,0 +1,26 @@
+{
+  "Parameters": {
+    "AppName": "karaadi-staging",
+    "Environment": "staging",
+    "EC2InstanceType": "t3.micro",
+    "EC2KeyName": "",
+    "DesiredCapacity": "1",
+    "MinSize": "1",
+    "MaxSize": "3",
+    "DBInstanceClass": "db.t3.micro",
+    "DBName": "karaadi_staging",
+    "DBUsername": "karaadi_staging_admin",
+    "CacheNodeType": "cache.t3.micro",
+    "DomainName": "karaadi.com",
+    "HostedZoneId": "",
+    "ApiCertificateArn": "",
+    "AmplifyCertificateArn": "",
+    "GitHubOrg": "your-organization",
+    "GitHubRepo": "karaadi"
+  },
+  "Tags": {
+    "Project": "Karaadi",
+    "Environment": "Staging",
+    "ManagedBy": "CloudFormation"
+  }
+}

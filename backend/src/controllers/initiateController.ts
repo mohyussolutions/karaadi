@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { WaafiService } from "src/config/waafiConfig.ts";
 import { validateAccountNumber } from "src/core/utils/payment.utils.ts";
 import {
@@ -15,6 +13,7 @@ import {
   calculateExpiryDate,
   getDefaultExpiryDate,
 } from "src/hooks/useExpire.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const isDev = process.env.USE_WAAFIPAY_PROD !== "true";
 

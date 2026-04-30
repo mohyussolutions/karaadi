@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { EncryptionController } from "./encryptionController.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { getIO } from "src/services/sockets/socketServer.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const chatCacheKey = (userId: string) => `chats:user:${userId}`;
 

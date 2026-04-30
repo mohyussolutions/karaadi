@@ -1,10 +1,15 @@
 import { Suspense } from "react";
 import { loadFeedPage } from "@/actions/categories/feedActions";
-import FeedClient from "./FeedClient";
+import { getDetailRoute } from "@/app/utils/getDetailRoute";
+import FeedClientWrapper from "./FeedClientWrapper";
 
 async function Feed() {
-  const items = await loadFeedPage(1);
-  return <FeedClient initialItems={items} />;
+  const raw = await loadFeedPage(1);
+  const items = raw.map((item) => ({
+    ...item,
+    linkHref: getDetailRoute(item),
+  }));
+  return <FeedClientWrapper initialItems={items} />;
 }
 
 function FeedSkeleton() {

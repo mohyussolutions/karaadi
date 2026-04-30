@@ -4,15 +4,19 @@ import AdFetcher from "./components/Advertisement/AdFetcher";
 import Container from "./components/Cards/containerCards/ContainerCard";
 import TrackVisitor from "../ui/invoices/TrackUniqueVisitorOnce";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 
-export default function StoreFrontLayout({
+export default async function StoreFrontLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const initialIsAuthenticated = cookieStore.has("idToken");
+
   return (
     <>
-      <Navbar />
+      <Navbar initialIsAuthenticated={initialIsAuthenticated} />
       <div className="h-14" />
       <main className="flex-grow">
         <TrackVisitor />

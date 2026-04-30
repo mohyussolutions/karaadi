@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const POPULAR_SEARCH_CACHE_KEY = "search:popular";
 const ADMIN_LOGS_CACHE_KEY = "search:admin_logs";

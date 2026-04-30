@@ -1,4 +1,4 @@
-import { CardSkeleton } from "../components/loading";
+import { CardSkeleton } from "@/app/ui/loading";
 
 export const CirclesSkeleton = () => (
   <div className="grid grid-cols-4 md:grid-cols-7 gap-3 sm:gap-4 md:gap-6 place-items-center py-3 sm:py-6">

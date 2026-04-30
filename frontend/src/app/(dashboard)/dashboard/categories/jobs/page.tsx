@@ -75,12 +75,11 @@ const CreateAdForJobs = () => {
   const [newCitySo, setNewCitySo] = useState("");
 
   useEffect(() => {
-    const initPage = async () => {
-      const [regs, cts] = await Promise.all([getAllRegions(), getAllCities()]);
+    getAllRegions().then((regs) => {
       setRegions(regs || []);
-      setAllCities(cts || []);
-    };
-    initPage();
+      const cities = regs.flatMap((r: any) => r.cities ?? []);
+      setAllCities(cities);
+    });
   }, []);
 
   useEffect(() => {

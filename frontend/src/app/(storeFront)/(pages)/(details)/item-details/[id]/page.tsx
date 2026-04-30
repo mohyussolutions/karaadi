@@ -8,12 +8,18 @@ import Link from "next/link";
 import { ImageControls } from "@/app/ui/invoices/ImageControls";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import { getMarketplaceItemById } from "@/actions/categories/marketplaceActions";
+import { getCarById } from "@/actions/categories/carActions";
+import { getBoatById } from "@/actions/categories/boatActions";
+import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
+import { getRealEstateById } from "@/actions/categories/realEstateActions";
+import { getFarmEquipmentById } from "@/actions/categories/FarmequipmentAction";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { useAuth } from "@/context/AuthContext";
 import { MessageSquare, Phone } from "lucide-react";
 import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
 import { trackItemView } from "@/actions/categories/RecommendationActions";
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 
 interface ItemData {
   _id?: string;
@@ -44,6 +50,7 @@ export default function ProductDetails() {
   const [messagingLoading, setMessagingLoading] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -51,41 +58,91 @@ export default function ProductDetails() {
   }, [router]);
 
   useEffect(() => {
-    if (!id) { setLoading(false); return; }
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     let mounted = true;
-    getMarketplaceItemById(id)
-      .then((data) => {
+
+    const FETCHERS = [
+      getMarketplaceItemById,
+      getCarById,
+      getBoatById,
+      getMotorcycleById,
+      (id: string) => getRealEstateById(id),
+      getFarmEquipmentById,
+    ];
+
+    (async () => {
+      try {
+        const data = await Promise.any(
+          FETCHERS.map(async (fetcher) => {
+            const result = await fetcher(id);
+            if (!result) throw new Error("not found");
+            return result;
+          }),
+        );
         if (mounted) {
-          const resolved = data ? { ...data, id: data._id || data.id } : null;
+          const resolved = {
+            ...data,
+            id: (data as any)._id || (data as any).id,
+          };
           setItem(resolved);
-          if (resolved) {
-            const cat = Array.isArray(resolved.category) ? resolved.category[0] : resolved.category ?? "marketplace";
-            trackItemView(resolved.id!, cat, user?.id ?? null);
-          }
+          const cat = Array.isArray(resolved.category)
+            ? resolved.category[0]
+            : (resolved.category ?? "marketplace");
+          trackItemView(resolved.id!, cat, user?.id ?? null);
         }
-      })
-      .catch(() => { if (mounted) setItem(null); })
-      .finally(() => { if (mounted) setLoading(false); });
-    return () => { mounted = false; };
+      } catch {
+        // all fetchers failed
+      }
+      if (mounted) setLoading(false);
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   const images = useMemo(() => {
+    const API_BASE = BASE_API_URL;
     const raw = item?.images;
-    return Array.isArray(raw)
-      ? raw.filter((u) => typeof u === "string" && (u.startsWith("http") || u.startsWith("/") || u.startsWith("data:image")))
-      : [];
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((u) => typeof u === "string" && u.trim() !== "")
+      .map((u) => {
+        if (
+          u.startsWith("http://") ||
+          u.startsWith("https://") ||
+          u.startsWith("data:") ||
+          u.startsWith("/")
+        )
+          return u;
+        return `${API_BASE}/${u}`;
+      });
   }, [item?.images]);
 
   const itemUser = useMemo(() => {
     if (!item) return null;
     const u = item.user;
     if (u && typeof u === "object") {
-      return { id: u.id || u._id || item.userId, username: u.username || null, profileImage: u.profileImage || null, phone: u.phone || null };
+      return {
+        id: u.id || u._id || item.userId,
+        username: u.username || null,
+        profileImage: u.profileImage || null,
+        phone: u.phone || null,
+      };
     }
-    return { id: u || item.userId, username: null, profileImage: null, phone: null };
+    return {
+      id: u || item.userId,
+      username: null,
+      profileImage: null,
+      phone: null,
+    };
   }, [item]);
 
-  const isOwnItem = !!itemUser && !!user && String(itemUser.id) === String(user._id || user.id);
+  const isOwnItem =
+    !!itemUser && !!user && String(itemUser.id) === String(user._id || user.id);
 
   const handleSendMessage = useCallback(() => {
     if (!user) {
@@ -100,10 +157,17 @@ export default function ProductDetails() {
   }, [user, itemUser, item, router, pathname]);
 
   const handleModalConfirm = useCallback(async () => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) {
+      router.push("/login");
+      return;
+    }
     try {
-      const desc = Array.isArray(item?.description) ? item.description.join(" ") : item?.description || "";
-      const cat = Array.isArray(item?.category) ? item.category[0] : item?.category || "Marketplace";
+      const desc = Array.isArray(item?.description)
+        ? item.description.join(" ")
+        : item?.description || "";
+      const cat = Array.isArray(item?.category)
+        ? item.category[0]
+        : item?.category || "Marketplace";
       const response: any = await addToFavorite({
         title: item?.title || "",
         description: desc,
@@ -127,15 +191,28 @@ export default function ProductDetails() {
     setSelectedImageIndex((p) => (p === images.length - 1 ? 0 : p + 1));
   }, [images.length]);
 
+  const handleZoomOpen = useCallback(() => setIsZoomed(true), []);
+  const handleZoomClose = useCallback(() => setIsZoomed(false), []);
+
+  const handleHeartClick = useCallback(() => {
+    if (!user) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
+    setShowModal(true);
+  }, [user, router, pathname]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-7xl px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start animate-pulse">
-            <div className="space-y-6">
-              <div className="w-full bg-gray-200 rounded-2xl h-[600px] md:h-[700px]" />
+            <div className="space-y-4">
+              <div className="w-full bg-gray-200 rounded-2xl h-[400px] md:h-[560px]" />
               <div className="flex gap-3 py-2">
-                {[0, 1, 2, 3].map((i) => <div key={i} className="min-w-[100px] h-24 bg-gray-200 rounded-xl" />)}
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="min-w-[100px] h-24 bg-gray-200 rounded-xl"
+                  />
+                ))}
               </div>
             </div>
             <div className="space-y-8">
@@ -158,74 +235,173 @@ export default function ProductDetails() {
   }
 
   if (!item) {
-    return <div className="text-center py-20 text-red-600 font-bold">Item not found.</div>;
+    return (
+      <div className="text-center py-20 text-red-600 font-bold">
+        Item not found.
+      </div>
+    );
   }
 
   const currentImage = images[selectedImageIndex];
   const description = item.description || "";
-  const shouldTruncate = description.length > 250;
+  const shouldTruncate = description.length > 300;
   const sellerInitial = (itemUser?.username || "S").charAt(0).toUpperCase();
 
   return (
-    <div className="my-12 px-6 min-h-screen max-w-7xl mx-auto pb-24 md:pb-0">
+    <div className="my-12 px-4 md:px-6 min-h-screen max-w-7xl mx-auto pb-24 md:pb-0">
       <div className="mb-6 font-mono text-sm flex items-center gap-1 flex-wrap text-gray-400">
         <span className="text-blue-600 font-bold capitalize">
-          {Array.isArray(item?.category) ? item.category[0] : item?.category ?? "Marketplace"}
+          {Array.isArray(item?.category)
+            ? item.category[0]
+            : (item?.category ?? "Marketplace")}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        <div className="space-y-6">
-          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[600px] md:h-[700px]">
-            {currentImage && (
-              <Image
-                src={currentImage}
-                alt={item.title || "Product image"}
-                fill
-                className={`object-cover transition-opacity duration-300 ${item.maGaday ? "opacity-70" : "opacity-100"}`}
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-                placeholder="blur"
-                blurDataURL="/placeholder.png"
-              />
-            )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start min-w-0">
+        <div className="space-y-4 min-w-0">
+          <div className="relative">
+            <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
+              {currentImage && (
+                <Image
+                  src={currentImage}
+                  alt={item.title || "Product image"}
+                  fill
+                  className={`object-cover transition-opacity duration-300 ${item.maGaday ? "opacity-70" : "opacity-100"}`}
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              )}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
+                    aria-label="Previous image"
+                  >
+                    <IoIosArrowBack className="w-6 h-6 text-white" />
+                  </button>
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
+                    aria-label="Next image"
+                  >
+                    <IoIosArrowForward className="w-6 h-6 text-white" />
+                  </button>
+                </>
+              )}
+            </div>
             <ImageControls
-              onHeartClick={() => user ? setShowModal(true) : router.push("/login")}
-              onZoomClick={() => {}}
+              onHeartClick={handleHeartClick}
+              onZoomClick={handleZoomOpen}
             />
-            {images.length > 1 && (
-              <>
-                <button onClick={handlePrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10" aria-label="Previous image">
-                  <IoIosArrowBack className="w-6 h-6 text-white" />
-                </button>
-                <button onClick={handleNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10" aria-label="Next image">
-                  <IoIosArrowForward className="w-6 h-6 text-white" />
-                </button>
-              </>
-            )}
           </div>
 
           {images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto py-2 scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto py-1 scrollbar-hide">
               {images.map((thumb, i) => (
                 <button
                   key={i}
                   onClick={() => setSelectedImageIndex(i)}
-                  className={`min-w-[100px] h-24 border-2 rounded-xl overflow-hidden relative transition-all flex-shrink-0 ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-transparent opacity-70"}`}
+                  className={`min-w-[90px] h-20 border-2 rounded-xl overflow-hidden relative transition-all flex-shrink-0 ${selectedImageIndex === i ? "border-blue-500 scale-105" : "border-gray-100 opacity-70"}`}
                   aria-label={`Thumbnail ${i + 1}`}
                 >
-                  <Image src={thumb} alt="" fill className="object-cover" loading="lazy" />
+                  <Image
+                    src={thumb}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="90px"
+                    loading="lazy"
+                  />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <div className="space-y-8">
-          <div className="space-y-3">
+        {isZoomed && images[selectedImageIndex] && (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+            onClick={handleZoomClose}
+          >
+            <div
+              className="relative w-full max-w-5xl max-h-[90vh] m-4 flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3 px-1">
+                <span className="text-white/70 text-sm font-medium">
+                  {selectedImageIndex + 1} / {images.length}
+                </span>
+                <button
+                  onClick={handleZoomClose}
+                  className="text-white bg-white/10 hover:bg-white/25 rounded-full p-2 transition-all"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="relative flex-1 min-h-0 h-[75vh]">
+                <Image
+                  src={images[selectedImageIndex]}
+                  alt={item.title || ""}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={handlePrevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
+                      aria-label="Previous"
+                    >
+                      <IoIosArrowBack className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleNextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
+                      aria-label="Next"
+                    >
+                      <IoIosArrowForward className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {images.length > 1 && (
+                <div className="flex gap-2 justify-center mt-3 overflow-x-auto pb-1">
+                  {images.map((thumb, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedImageIndex(i)}
+                      className={`relative w-14 h-10 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === selectedImageIndex ? "border-white" : "border-white/20 opacity-50"}`}
+                    >
+                      <Image src={thumb} alt="" fill className="object-cover" sizes="56px" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-7 min-w-0 overflow-hidden">
+          <div className="space-y-2">
             <GoBackBtn />
-            <h1 className="text-4xl font-extrabold text-gray-900 leading-tight">{item.title}</h1>
-            <p className="text-3xl font-bold text-blue-700">${Number(item.price).toLocaleString()}</p>
+            <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">
+              {item.title}
+            </h1>
+            <p className="text-3xl font-bold text-blue-700">
+              ${Number(item.price).toLocaleString()}
+            </p>
+            {(item.city || item.region) && (
+              <p className="text-sm text-gray-500 flex items-center gap-1">
+                📍{item.city ? ` ${item.city}` : ""}
+                {item.region ? ` — ${item.region}` : ""}
+              </p>
+            )}
           </div>
 
           {!isOwnItem && (
@@ -233,13 +409,22 @@ export default function ProductDetails() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {itemUser?.profileImage && !avatarError ? (
-                    <img src={itemUser.profileImage} alt={itemUser.username || "Seller"} className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
+                    <img
+                      src={itemUser.profileImage}
+                      alt={itemUser.username || "Seller"}
+                      className="w-full h-full object-cover"
+                      onError={() => setAvatarError(true)}
+                    />
                   ) : (
-                    <span className="text-white font-bold text-lg leading-none">{sellerInitial}</span>
+                    <span className="text-white font-bold text-lg leading-none">
+                      {sellerInitial}
+                    </span>
                   )}
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-base leading-tight">{itemUser?.username || "Seller"}</p>
+                  <p className="font-bold text-gray-900 text-base leading-tight">
+                    {itemUser?.username || "Seller"}
+                  </p>
                   <p className="text-xs text-gray-400 mt-0.5">Active seller</p>
                 </div>
               </div>
@@ -250,7 +435,11 @@ export default function ProductDetails() {
                 className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all active:scale-[0.99] ${item.maGaday ? "bg-gray-100 text-gray-400 cursor-not-allowed" : messagingLoading ? "bg-blue-400 text-white cursor-wait" : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-100"}`}
               >
                 <MessageSquare size={17} />
-                {item.maGaday ? "Item sold" : messagingLoading ? "Opening…" : "Send Message"}
+                {item.maGaday
+                  ? "Item sold"
+                  : messagingLoading
+                    ? "Opening…"
+                    : "Send Message"}
               </button>
 
               {itemUser?.phone && (
@@ -271,22 +460,35 @@ export default function ProductDetails() {
             </div>
           )}
 
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 border-b pb-2">Description</h2>
-            <div className="text-gray-700 leading-relaxed text-base">
-              <p className="whitespace-pre-line">
-                {isExpanded || !shouldTruncate ? description : `${description.slice(0, 250)}...`}
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-gray-700 uppercase tracking-wider border-b pb-2">
+              Description
+            </h2>
+            <div className="text-gray-700 leading-relaxed text-sm min-w-0">
+              <p
+                className="whitespace-pre-line break-words"
+                style={{ overflowWrap: "anywhere" }}
+              >
+                {isExpanded || !shouldTruncate
+                  ? description
+                  : `${description.slice(0, 300)}...`}
               </p>
               {shouldTruncate && (
-                <button onClick={() => setIsExpanded((p) => !p)} className="text-blue-600 font-bold mt-2 hover:underline">
+                <button
+                  onClick={() => setIsExpanded((p) => !p)}
+                  className="text-blue-600 font-bold mt-2 hover:underline text-sm"
+                >
                   {isExpanded ? "Show Less" : "Read More"}
                 </button>
               )}
             </div>
           </div>
 
-          <div className="mt-8 p-6 border-2 border-gray-200 shadow-sm bg-white hover:border-red-200 transition-all duration-300">
-            <Link href={`/components/Report/${item.id || item._id}`} className="flex items-center justify-center gap-2 text-red-600 text-xs font-black uppercase tracking-[0.15em] hover:text-red-800">
+          <div className="mt-4 p-5 border border-gray-200 rounded-xl bg-white">
+            <Link
+              href={`/components/Report/${item.id || item._id}`}
+              className="text-red-500 text-xs font-bold uppercase tracking-widest"
+            >
               Report this item
             </Link>
           </div>
@@ -296,13 +498,20 @@ export default function ProductDetails() {
       {!isOwnItem && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-lg">
           <div className="flex-1 min-w-0">
-            <p className="text-xl font-extrabold text-blue-700 truncate">${Number(item.price).toLocaleString()}</p>
+            <p className="text-xl font-extrabold text-blue-700 truncate">
+              ${Number(item.price).toLocaleString()}
+            </p>
             <p className="text-xs text-gray-500 truncate">{item.title}</p>
           </div>
           {itemUser?.phone && (
-            <button onClick={() => setShowPhone((p) => !p)} className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0">
+            <button
+              onClick={() => setShowPhone((p) => !p)}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
+            >
               <Phone size={15} />
-              <span className="text-xs">{showPhone ? itemUser.phone : "Phone"}</span>
+              <span className="text-xs">
+                {showPhone ? itemUser.phone : "Phone"}
+              </span>
             </button>
           )}
           <button
@@ -311,7 +520,11 @@ export default function ProductDetails() {
             className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97] flex-shrink-0 ${item.maGaday ? "bg-gray-100 text-gray-400 cursor-not-allowed" : messagingLoading ? "bg-blue-400 text-white cursor-wait" : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-200"}`}
           >
             <MessageSquare size={16} />
-            {item.maGaday ? "Sold" : messagingLoading ? "Opening…" : "Message Seller"}
+            {item.maGaday
+              ? "Sold"
+              : messagingLoading
+                ? "Opening…"
+                : "Message Seller"}
           </button>
         </div>
       )}
@@ -327,7 +540,11 @@ export default function ProductDetails() {
       <Recommendations
         userId={user?.id}
         excludeId={item?.id}
-        category={Array.isArray(item?.category) ? item.category[0] : item?.category ?? undefined}
+        category={
+          Array.isArray(item?.category)
+            ? item.category[0]
+            : (item?.category ?? undefined)
+        }
         limit={4}
       />
     </div>

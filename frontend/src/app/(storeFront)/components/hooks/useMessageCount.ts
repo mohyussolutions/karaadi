@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getUnreadMessageCount } from "@/services/chatService";
-import { socketService } from "@/actions/sockets/socketService";
+import { socketService } from "@/actions/sockets/socketServiceAction";
 
 export function useMessageCount(userId: string | undefined) {
   const [messageCount, setMessageCount] = useState(0);
@@ -28,8 +28,12 @@ export function useMessageCount(userId: string | undefined) {
     let active = true;
 
     getUnreadMessageCount(userId)
-      .then((count) => { if (active) setMessageCount(count); })
-      .catch(() => { if (active) setMessageCount(0); });
+      .then((count) => {
+        if (active) setMessageCount(count);
+      })
+      .catch(() => {
+        if (active) setMessageCount(0);
+      });
 
     socketService.connect(userId);
 

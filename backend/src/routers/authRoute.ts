@@ -48,6 +48,10 @@ authRouters.get(
   adminAndManager,
   userSignupsByMonth,
 );
+authRouters.post("/auth/echo", (req: Request, res: Response) => {
+  res.json({ body: req.body, contentType: req.headers["content-type"] });
+});
+
 authRouters.post(
   "/auth",
   loginLimiter,
@@ -68,8 +72,9 @@ authRouters.post(
         userData.id,
       );
       res.json({ token, user: userData });
-    } catch {
-      res.status(401).json({ error: "Login failed" });
+    } catch (err: any) {
+      console.error("[AUTH] signIn failed:", err?.message ?? err);
+      res.status(401).json({ error: err?.message ?? "Login failed" });
     }
   },
 );

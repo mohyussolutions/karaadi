@@ -1,14 +1,26 @@
+import cacheManager from "src/services/redis/cacheManager.ts";
 import prisma from "../core/utils/db.ts";
-import cacheManager from "../services/redisserver/cacheManager.ts";
 import { Request, Response } from "express";
 
 const FEED_TTL = 300;
 const BASE_SELECT = {
-  id: true, title: true, description: true, maGaday: true,
-  isBasic30: true, isStandard60: true, isPremium90: true, expiryDate: true,
+  id: true,
+  title: true,
+  description: true,
+  maGaday: true,
+  isBasic30: true,
+  isStandard60: true,
+  isPremium90: true,
+  expiryDate: true,
 };
 const SPATIAL = { price: true, city: true, region: true, images: true };
-const JOB_SELECT = { ...BASE_SELECT, salary: true, mainCategory: true, category: true, subcategory: true };
+const JOB_SELECT = {
+  ...BASE_SELECT,
+  salary: true,
+  mainCategory: true,
+  category: true,
+  subcategory: true,
+};
 
 function rank(item: any): number {
   if (item.isPremium90) return 0;
@@ -66,9 +78,20 @@ export const getFeed = async (req: Request, res: Response) => {
     const active = { OR: [{ expiryDate: null }, { expiryDate: { gt: now } }] };
 
     const q = (model: any, extra?: object) =>
-      model.findMany({ where: { isPaid: true, ...active }, select: { ...BASE_SELECT, ...SPATIAL, ...extra }, take: perCategory, skip, orderBy: { createdAt: "desc" } });
+      model.findMany({
+        where: { isPaid: true, ...active },
+        select: { ...BASE_SELECT, ...SPATIAL, ...extra },
+        take: perCategory,
+        skip,
+        orderBy: { createdAt: "desc" },
+      });
 
-    const opts = { where: { isPaid: true, ...active }, take: perCategory, skip, orderBy: { createdAt: "desc" as const } };
+    const opts = {
+      where: { isPaid: true, ...active },
+      take: perCategory,
+      skip,
+      orderBy: { createdAt: "desc" as const },
+    };
 
     const [market, real, cars, boats, motos, farm, jobs] = await Promise.all([
       q(prisma.marketplace, { category: true, subcategory: true }),
@@ -101,7 +124,10 @@ export const getFeed = async (req: Request, res: Response) => {
     const n = deduped.length || 1;
     const bucket = n / 4;
     const sorted = deduped
-      .map((item) => ({ item, score: rank(item) * bucket + Math.random() * bucket }))
+      .map((item) => ({
+        item,
+        score: rank(item) * bucket + Math.random() * bucket,
+      }))
       .sort((a, b) => a.score - b.score)
       .map((x) => x.item);
 

@@ -10,18 +10,18 @@ export const ImageControls = ({
   onHeartClick: () => void;
   onZoomClick?: () => void;
 }) => (
-  <div className="absolute right-4 top-4 z-20 flex gap-2">
+  <div className="absolute right-3 top-3 z-30 flex gap-2">
     <button
       onClick={onHeartClick}
-      aria-label="save"
-      className="bg-white/80 p-2 rounded-full shadow hover:bg-white"
+      aria-label="Save to favorites"
+      className="bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all"
     >
       <AiOutlineHeart className="w-5 h-5 text-red-500" />
     </button>
     <button
-      onClick={() => onZoomClick?.()}
-      aria-label="zoom"
-      className="bg-white/80 p-2 rounded-full shadow hover:bg-white"
+      onClick={onZoomClick}
+      aria-label="Zoom image"
+      className="bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all"
     >
       <AiOutlineZoomIn className="w-5 h-5 text-gray-700" />
     </button>

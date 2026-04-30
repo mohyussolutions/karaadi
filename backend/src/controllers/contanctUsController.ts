@@ -1,7 +1,12 @@
-import { Status, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { EncryptionController } from "./encryptionController.ts";
+
+type Role = "USER" | "SUPPORT_MANAGER" | "ADMIN";
+type Status = "NEW" | "IN_PROGRESS" | "DONE" | "RESOLVED" | "CLOSED";
+
+const Role = { USER: "USER", SUPPORT_MANAGER: "SUPPORT_MANAGER", ADMIN: "ADMIN" } as const;
+const Status = { NEW: "NEW", IN_PROGRESS: "IN_PROGRESS", DONE: "DONE", RESOLVED: "RESOLVED", CLOSED: "CLOSED" } as const;
 export const createSupportTicket = async (req: Request, res: Response) => {
   try {
     const { senderName, senderEmail, subject, body, priority } = req.body;

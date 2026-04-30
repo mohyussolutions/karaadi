@@ -1,4 +1,4 @@
-name: Frontend — Build & Deploy to Amplify
+name: Frontend
 
 on:
   push:
@@ -8,16 +8,24 @@ on:
       - ".github/workflows/frontend.yml"
   workflow_dispatch:
 
-env:
-  NODE_VERSION: "20"
+concurrency:
+  group: frontend-deploy
+  cancel-in-progress: false
 
 permissions:
-  id-token: write
   contents: read
 
+env:
+  NODE_VERSION: "20"
+  AWS_REGION: eu-west-1
+  STACK_NAME: karaadi-production
+  # Set to your apex domain once DNS is ready (e.g. karaadi.com), or leave empty
+  DOMAIN_NAME: ""
+
 jobs:
-  build:
-    name: Build Frontend
+  # ── Test ─────────────────────────────────────────────────────────────────────
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,65 +36,166 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install
+      - name: Install dependencies
         working-directory: frontend
         run: npm ci
 
-      - name: Build
+      - name: Type check
         working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Build test
+        working-directory: frontend
+        # NEXT_PUBLIC_* are embedded at build time — dummy values are fine for CI
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
-          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: eu-west-1_TESTPOOL
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: testclientid
         run: npm run build
 
+  # ── Deploy (Amplify) ──────────────────────────────────────────────────────────
   deploy:
-    name: Frontend Deploy to Amplify
+    name: Deploy to Amplify
     runs-on: ubuntu-latest
-    needs: build
-
+    needs: test
+    outputs:
+      amplify_url: ${{ steps.monitor.outputs.amplify_url }}
     steps:
-      - name: Configure AWS credentials
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.FRONTEND_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Start Amplify release job
-        id: amplify
+      - name: Get Amplify App ID from CloudFormation
+        id: cfn
+        run: |
+          APP_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='AmplifyAppId'].OutputValue" \
+            --output text)
+
+          if [ -z "$APP_ID" ] || [ "$APP_ID" = "None" ]; then
+            echo "ERROR: AmplifyAppId not found in stack $STACK_NAME"
+            exit 1
+          fi
+
+          echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+          echo "Amplify App ID: $APP_ID"
+
+      - name: Verify Amplify environment variables
+        env:
+          APP_ID: ${{ steps.cfn.outputs.app_id }}
+        run: |
+          EXISTING=$(aws amplify get-app \
+            --app-id "$APP_ID" \
+            --region "$AWS_REGION" \
+            --query "app.environmentVariables" \
+            --output json)
+
+          echo "Environment variables on Amplify app $APP_ID:"
+          echo "$EXISTING" | jq -r 'to_entries[] | "  \(.key)"' 2>/dev/null || echo "  (none)"
+
+          for VAR in NEXT_PUBLIC_API_URL NEXT_PUBLIC_COGNITO_USER_POOL_ID NEXT_PUBLIC_COGNITO_CLIENT_ID; do
+            if ! echo "$EXISTING" | jq -e --arg k "$VAR" 'has($k)' >/dev/null 2>&1; then
+              echo "WARNING: $VAR is not set on the Amplify app"
+            fi
+          done
+
+      - name: Start Amplify deployment job
+        id: start
+        env:
+          APP_ID: ${{ steps.cfn.outputs.app_id }}
         run: |
           JOB_ID=$(aws amplify start-job \
-            --app-id "${{ secrets.AMPLIFY_APP_ID }}" \
+            --app-id "$APP_ID" \
             --branch-name main \
             --job-type RELEASE \
             --commit-id "${{ github.sha }}" \
-            --commit-message "Deploy from GitHub Actions — ${{ github.sha }}" \
-            --output text \
-            --query "jobSummary.jobId")
-          echo "job_id=$JOB_ID" >> "$GITHUB_OUTPUT"
-          echo "Amplify job started: $JOB_ID"
+            --region "$AWS_REGION" \
+            --query "jobSummary.jobId" \
+            --output text)
 
-      - name: Wait for Amplify job to complete
+          echo "job_id=$JOB_ID" >> "$GITHUB_OUTPUT"
+          echo "Amplify Job: $JOB_ID"
+
+      - name: Monitor deployment (10s poll)
+        id: monitor
+        env:
+          APP_ID: ${{ steps.cfn.outputs.app_id }}
+          JOB_ID: ${{ steps.start.outputs.job_id }}
         run: |
-          while true; do
-            STATUS=$(aws amplify get-job \
-              --app-id "${{ secrets.AMPLIFY_APP_ID }}" \
+          set -euo pipefail
+
+          MAX_ATTEMPTS=180   # 30 minutes at 10s intervals
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+
+            JOB_DATA=$(aws amplify get-job \
+              --app-id "$APP_ID" \
               --branch-name main \
-              --job-id "${{ steps.amplify.outputs.job_id }}" \
-              --query "job.summary.status" \
-              --output text)
-            echo "Amplify status: $STATUS"
+              --job-id "$JOB_ID" \
+              --region "$AWS_REGION" \
+              --output json)
+
+            STATUS=$(echo "$JOB_DATA" | jq -r '.job.summary.status')
+            echo "[$ATTEMPT/$MAX_ATTEMPTS] $STATUS"
+
             case "$STATUS" in
               SUCCEED)
-                echo "Deployment succeeded"
-                exit 0
+                URL="https://main.${APP_ID}.amplifyapp.com"
+                echo "Deployment succeeded."
+                echo "amplify_url=$URL" >> "$GITHUB_OUTPUT"
+                echo "Frontend URL: $URL"
+                break
                 ;;
               FAILED|CANCELLED)
-                echo "Deployment $STATUS"
+                echo "Amplify deployment $STATUS. Step details:"
+                echo "$JOB_DATA" | jq -r \
+                  '.job.steps[] | "  [\(.status)] \(.stepName)" + (if .logUrl then " — \(.logUrl)" else "" end)'
                 exit 1
                 ;;
               *)
-                sleep 20
+                sleep 10
                 ;;
             esac
           done
+
+          if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+            echo "Timed out waiting for Amplify after 30 minutes"
+            exit 1
+          fi
+
+      - name: Configure custom domain
+        # Only runs if DOMAIN_NAME is set and not the placeholder
+        if: env.DOMAIN_NAME != '' && env.DOMAIN_NAME != 'example.com'
+        env:
+          APP_ID: ${{ steps.cfn.outputs.app_id }}
+        run: |
+          echo "Associating custom domain: $DOMAIN_NAME"
+          aws amplify create-domain-association \
+            --app-id "$APP_ID" \
+            --domain-name "$DOMAIN_NAME" \
+            --sub-domain-settings prefix="",branchName=main \
+            --region "$AWS_REGION" 2>/dev/null \
+            || echo "Domain association already exists or requires manual DNS — check Amplify console."
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Frontend Deployment"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Amplify Job | \`${{ steps.start.outputs.job_id }}\` |"
+            if [ -n "${{ steps.monitor.outputs.amplify_url }}" ]; then
+              echo "| URL | ${{ steps.monitor.outputs.amplify_url }} |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

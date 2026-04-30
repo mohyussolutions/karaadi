@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from "uuid";
+import { USER_A, USER_B } from "./seederConstants.ts";
+
 export interface RealEstateItem {
   id: string;
   title: string;
@@ -24,12 +27,9 @@ export interface RealEstateItem {
   maGaday: boolean;
 }
 
-const USER_A = "550e8400-e29b-41d4-a716-446655440001";
-const USER_B = "550e8400-e29b-41d4-a716-446655440002";
-
 export const realEstateItems: RealEstateItem[] = [
   {
-    id: "r1",
+    id: uuidv4(),
     title: "Guri Cusub oo Iib ah - New House For Sale",
     description:
       "A newly built, spacious house with four bedrooms, a lush garden, and a secure garage. Located in the peaceful Karaan district, this property is perfect for families looking for a modern home. The house is constructed with high-quality materials including marble flooring and custom cabinetry. The open floor plan connects the living room, dining area, and kitchen seamlessly. The master bedroom features a walk-in closet and en-suite bathroom. The garden is professionally landscaped with native plants and includes an irrigation system. The neighborhood is safe and friendly, with easy access to schools, mosques, and public transport. This is an excellent investment for homebuyers seeking luxury and comfort.",
@@ -55,7 +55,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "r2",
+    id: uuidv4(),
     title: "Guri Dabaq iib ah - Modern Apartment For Sale",
     description:
       "This modern apartment is situated in the heart of the city, offering convenience and style. With two bedrooms and two bathrooms, it is ideal for small families or professionals. The building is secure and well-maintained with 24/7 security and elevator access. The apartment features large windows providing abundant natural light, a private balcony with city views, and modern fixtures throughout. The kitchen comes equipped with stainless steel appliances and granite countertops. Residents enjoy easy access to shopping malls, restaurants, and entertainment venues. The property is a great opportunity for those seeking vibrant urban living with all amenities nearby.",
@@ -81,7 +81,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "L1",
+    id: uuidv4(),
     title: "Dhul Degganaan ah - Residential Land",
     description:
       "This residential plot measures 15x20 meters and is ideal for building a family home. The land comes with access to water and electricity connections at the property line, making it ready for immediate construction. The location is peaceful, well-connected to main roads, and surrounded by other residential developments. The soil is stable and suitable for construction with no flooding concerns. The area is safe and has a growing community with new schools and mosques being built nearby. All necessary permits for construction can be easily obtained. This is a great investment for those looking to build their dream home.",
@@ -107,7 +107,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "L2",
+    id: uuidv4(),
     title: "Dhul Ganacsi - Commercial Land",
     description:
       "A prime commercial plot located on a main road, perfect for building shops, offices, or a commercial complex. The land is spacious at 5000 square feet and offers high visibility for businesses with heavy daily traffic flow. It is situated in a bustling commercial area with lots of foot traffic and established businesses nearby. Utilities including water, electricity, and sewage connections are available at the site. The plot is zoned for mixed-use commercial development with flexible building regulations. This is an excellent opportunity for entrepreneurs and investors looking to establish a retail presence or develop rental commercial space.",
@@ -133,7 +133,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "F1",
+    id: uuidv4(),
     title: "Dhul Beereed - Farm Land For Sale",
     description:
       "This productive farm in Afgooye comes with a water pump, irrigation system, and mature fruit trees, making it ideal for agriculture. The land is fertile and has been well cared for by previous owners with years of successful harvests. The property includes a small storage building and shade structures for livestock. It is suitable for growing a variety of crops including vegetables, fruits, and grains. The location is easily accessible via paved road and is secure with surrounding farmlands. Water is plentiful with a deep well and electric pump already installed. This is a great opportunity for those interested in commercial farming or homesteading.",
@@ -159,7 +159,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "F2",
+    id: uuidv4(),
     title: "Beerta Xoolaha - Livestock Farm",
     description:
       "A livestock farm with secure fencing and dedicated animal shelters suitable for cattle, goats, and sheep. Located on Jowhar Road in Balcad, this property is perfect for raising livestock for meat or dairy production. The land is expansive at 150,000 square feet and includes basic infrastructure for animal husbandry including feeding troughs, water stations, and shaded resting areas. The farm has a small residence for a caretaker with one bedroom and bathroom. The area is known for its agricultural productivity and has good security. Water is available via a deep well. This is a solid investment for those in the livestock business.",
@@ -185,7 +185,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "C1",
+    id: uuidv4(),
     title: "Goob tafaariiq - Retail Space For Rent",
     description:
       "A retail space located in a busy market area, ideal for shops and small businesses. The property is secure with roll-up metal doors and has a steady flow of customers daily. It is well-maintained with tile flooring, good lighting, and electrical outlets throughout. The location is central and easily accessible by public transport and private vehicles. The space has been used previously as a grocery store and includes basic shelving and a counter area. This is a great opportunity for entrepreneurs looking to expand their business or start a new venture in a prime location with established foot traffic.",
@@ -211,7 +211,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "C2",
+    id: uuidv4(),
     title: "Dhismaha Ganacsiga - Commercial Building",
     description:
       "A three-story commercial building designed for business use with multiple office and retail spaces. The ground floor features two large retail units with street access. The upper floors have six office spaces of various sizes, perfect for professional services. The building includes four bathrooms, a shared kitchen area, and a backup generator. There is secure parking for up to 10 vehicles. The location is on a major road with high visibility and heavy traffic. The building is well-constructed with modern finishes and security features including CCTV cameras and a security guard post. This is an excellent income-generating property for investors.",
@@ -237,7 +237,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "r6",
+    id: uuidv4(),
     title: "Guri dabaq (Apartment) Kiro ah - Apartment For Rent",
     description:
       "This apartment is located in Xamar-weyne and is ideal for small families seeking a comfortable and secure home. The building is well-maintained with secure entry and a residential caretaker. The apartment features three bedrooms, a living room, a kitchen, and two bathrooms. The master bedroom includes an en-suite bathroom. The unit receives good natural light and cross-ventilation. The building is close to essential amenities including schools, clinics, and markets. The neighborhood is known for its vibrant community and accessibility to public transportation. Enjoy a cozy lifestyle in this sought-after residential area.",
@@ -263,7 +263,7 @@ export const realEstateItems: RealEstateItem[] = [
     maGaday: false,
   },
   {
-    id: "r20",
+    id: uuidv4(),
     title: "House gooni ah oo Qoys - Standalone House For Rent",
     description:
       "This standalone house features four bedrooms, a large yard, and secure fencing, making it perfect for families. Located on Airport Road in Hodan, it offers privacy and tranquility while being close to schools, hospitals, and shopping centers. The spacious living areas are designed for comfort and convenience with a separate family room and formal dining area. The kitchen is large with ample cabinet space. All bedrooms are generously sized with built-in closets. The yard provides space for children to play or for gardening. The property is well-ventilated and receives plenty of natural light throughout the day. It is an excellent choice for those seeking a peaceful family home in a prime location.",

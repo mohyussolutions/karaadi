@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from "uuid";
+import { USER_A, USER_B } from "./seederConstants.ts";
+
 export interface MotorcycleItem {
   id: string;
   userId: string;
@@ -26,13 +29,9 @@ export interface MotorcycleItem {
   maGaday: boolean;
 }
 
-const USER_A = "550e8400-e29b-41d4-a716-446655440001";
-const USER_B = "550e8400-e29b-41d4-a716-446655440002";
-const USER_C = "64d4a43c9a8b0e6e8c4a5680";
-
 export const motorcycleItems: MotorcycleItem[] = [
   {
-    id: "m1",
+    id: uuidv4(),
     userId: USER_A,
     title: "Yamaha YZF-R1 High Performance Bike",
     mainCategory: "Motorcycle",
@@ -42,9 +41,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     price: 15500,
     region: "hamar",
     city: "hamar",
-    images: [
-      "",
-    ],
+    images: [""],
     type: "Motorcycle",
     make: "Yamaha",
     modelName: "YZF-R1",
@@ -62,7 +59,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     maGaday: false,
   },
   {
-    id: "m2",
+    id: uuidv4(),
     userId: USER_B,
     title: "Honda CRF 250L Dual Sport",
     mainCategory: "Motorcycle",
@@ -72,9 +69,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     price: 4500,
     region: "gedo",
     city: "garbaharey",
-    images: [
-      "",
-    ],
+    images: [""],
     type: "Motorcycle",
     make: "Honda",
     modelName: "CRF 250L",
@@ -92,8 +87,8 @@ export const motorcycleItems: MotorcycleItem[] = [
     maGaday: false,
   },
   {
-    id: "m3",
-    userId: USER_C,
+    id: uuidv4(),
+    userId: USER_A,
     title: "Piaggio Vespa Scooter",
     mainCategory: "Motorcycle",
     category: ["For Sale"],
@@ -102,9 +97,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     price: 3200,
     region: "hamar",
     city: "hamar",
-    images: [
-      "",
-    ],
+    images: [""],
     type: "Scooter",
     make: "Piaggio",
     modelName: "Vespa Primavera 150",
@@ -122,7 +115,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     maGaday: false,
   },
   {
-    id: "m4",
+    id: uuidv4(),
     userId: USER_A,
     title: "Bajaj RE Passenger Tuk Tuk",
     mainCategory: "Motorcycle",
@@ -132,9 +125,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     price: 25,
     region: "hamar",
     city: "hamar",
-    images: [
-      "",
-    ],
+    images: [""],
     type: "Tuk Tuk",
     make: "Bajaj",
     modelName: "RE Compact",
@@ -152,7 +143,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     maGaday: false,
   },
   {
-    id: "m5",
+    id: uuidv4(),
     userId: USER_B,
     title: "Motorcycle Rental Touring Bike",
     mainCategory: "Motorcycle",
@@ -180,8 +171,8 @@ export const motorcycleItems: MotorcycleItem[] = [
     maGaday: false,
   },
   {
-    id: "m6",
-    userId: USER_C,
+    id: uuidv4(),
+    userId: USER_B,
     title: "Cargo Bajaj Rental",
     mainCategory: "Motorcycle",
     category: ["For Rent"],
@@ -190,9 +181,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     price: 30,
     region: "hamar",
     city: "hamar",
-    images: [
-      "",
-    ],
+    images: [""],
     type: "Cargo Tuk Tuk",
     make: "Bajaj",
     modelName: "Maxima C",
@@ -210,7 +199,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     maGaday: false,
   },
   {
-    id: "m7",
+    id: uuidv4(),
     userId: USER_A,
     title: "Used Honda 125cc Engine",
     mainCategory: "Motorcycle",
@@ -238,7 +227,7 @@ export const motorcycleItems: MotorcycleItem[] = [
     maGaday: false,
   },
   {
-    id: "m12",
+    id: uuidv4(),
     userId: USER_B,
     title: "Bajaj RE 200cc Engine",
     mainCategory: "Motorcycle",

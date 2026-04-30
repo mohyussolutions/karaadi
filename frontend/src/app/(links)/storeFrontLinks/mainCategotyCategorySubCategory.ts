@@ -14,7 +14,6 @@ import { IoIosBoat } from "react-icons/io";
 import { ICONS } from "@/app/utils/icons/categoryIcons";
 import { CategoryIcons } from "@/app/utils/icons/subCategoryIcons";
 import { LuSofa } from "@/app/utils/icons";
-import { MohyusLogoIcon } from "@/app/utils/icons/customerIcons";
 import { MainCategory } from "@/app/utils/types/categoriestype";
 import {
   BoatSubCategoryItem,
@@ -1837,9 +1836,11 @@ export const allCategories: MainCategory[] = [
     subCategories: jobSubCategories,
     title: undefined,
   },
+
+  /*
   {
     key: "Smartsuuq",
-    logo: "/Smartsuq.jpg",
+    hideIcon: true,
     href: "https://www.smartsuuq.com/",
     icon: React.createElement(MohyusLogoIcon, null),
     dashboardIcon: MohyusLogoIcon,
@@ -1847,4 +1848,5 @@ export const allCategories: MainCategory[] = [
     subCategories: [],
     title: undefined,
   },
+  */
 ];

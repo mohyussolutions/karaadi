@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "@/app/utils/icons";
 import Image from "next/image";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
@@ -36,6 +36,8 @@ import {
   FaHome,
 } from "react-icons/fa";
 import { MdBalcony, MdElevator } from "react-icons/md";
+import { AiOutlineHeart, AiOutlineZoomIn } from "react-icons/ai";
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 
 interface RealEstateItem {
   id: string;
@@ -80,12 +82,13 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
   Parking: <FaCar size={14} />,
 };
 
-const isValidImageUrl = (url: any): url is string =>
-  typeof url === "string" &&
-  (url.startsWith("http") ||
-    url.startsWith("/") ||
-    url.startsWith("data:image") ||
-    url.startsWith("blob:"));
+const API_BASE = BASE_API_URL;
+const resolveImageUrl = (url: any): string | null => {
+  if (typeof url !== "string" || url.trim() === "") return null;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("/") || url.startsWith("blob:")) return url;
+  return `${API_BASE}/${url}`;
+};
+const isValidImageUrl = (url: any): url is string => resolveImageUrl(url) !== null;
 
 function RealEstateDetails() {
   const router = useRouter();
@@ -104,13 +107,13 @@ function RealEstateDetails() {
   const [showPhone, setShowPhone] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
-  const handleZoomClick = () => {
-    setIsZoomed(true);
-  };
+  const handleZoomOpen = useCallback(() => setIsZoomed(true), []);
+  const handleZoomClose = useCallback(() => setIsZoomed(false), []);
 
-  const handleCloseZoom = () => {
-    setIsZoomed(false);
-  };
+  const handleHeartClick = useCallback(() => {
+    if (!currentUser) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
+    setShowModal(true);
+  }, [currentUser, router, pathname]);
 
   useEffect(() => {
     router.prefetch("/messages");
@@ -187,6 +190,11 @@ function RealEstateDetails() {
     );
   };
 
+  const handlePrevImage = () =>
+    setSelectedImageIndex((p) => (p === 0 ? images.length - 1 : p - 1));
+  const handleNextImage = () =>
+    setSelectedImageIndex((p) => (p === images.length - 1 ? 0 : p + 1));
+
   const handleModalConfirm = async () => {
     if (!realEstate) return;
     const firstImage = realEstate.images[0];
@@ -210,10 +218,9 @@ function RealEstateDetails() {
   const images = useMemo(
     () =>
       (realEstate?.images || [])
-        .map((img) =>
-          typeof img === "string" ? img : URL.createObjectURL(img),
-        )
-        .filter(isValidImageUrl),
+        .map((img) => typeof img === "string" ? img : URL.createObjectURL(img))
+        .map((url) => resolveImageUrl(url))
+        .filter((url): url is string => url !== null),
     [realEstate?.images],
   );
 
@@ -267,10 +274,10 @@ function RealEstateDetails() {
       </div>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        <div className="space-y-4">
-          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
-            {images[selectedImageIndex] ? (
-              <>
+        <div className="space-y-4 min-w-0">
+          <div className="relative">
+            <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
+              {images[selectedImageIndex] ? (
                 <Image
                   src={images[selectedImageIndex]}
                   alt={realEstate.title}
@@ -278,64 +285,110 @@ function RealEstateDetails() {
                   className={`object-cover cursor-pointer ${realEstate.maGaday ? "opacity-70" : ""}`}
                   priority
                 />
-                <ImageControls
-                  onHeartClick={() =>
-                    currentUser ? setShowModal(true) : router.push("/login")
-                  }
-                  onZoomClick={handleZoomClick}
-                />
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                <FaHome size={64} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  <FaHome size={64} />
+                </div>
+              )}
+              <div className="absolute right-3 top-3 z-50 flex gap-2">
+                <button
+                  onClick={handleHeartClick}
+                  aria-label="Save to favorites"
+                  className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all"
+                >
+                  <AiOutlineHeart className="w-5 h-5 text-red-500" />
+                </button>
+                <button
+                  onClick={handleZoomOpen}
+                  aria-label="Zoom image"
+                  className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all"
+                >
+                  <AiOutlineZoomIn className="w-5 h-5 text-gray-700" />
+                </button>
               </div>
-            )}
-
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={() =>
-                    setSelectedImageIndex((prev) =>
-                      prev === 0 ? images.length - 1 : prev - 1,
-                    )
-                  }
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
-                >
-                  <IoIosArrowBack className="w-5 h-5 text-white" />
-                </button>
-                <button
-                  onClick={() =>
-                    setSelectedImageIndex((prev) =>
-                      prev === images.length - 1 ? 0 : prev + 1,
-                    )
-                  }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
-                >
-                  <IoIosArrowForward className="w-5 h-5 text-white" />
-                </button>
-              </>
-            )}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
+                  >
+                    <IoIosArrowBack className="w-5 h-5 text-white" />
+                  </button>
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full z-10 hover:bg-black/60 transition-colors"
+                  >
+                    <IoIosArrowForward className="w-5 h-5 text-white" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {isZoomed && images[selectedImageIndex] && (
             <div
-              className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center cursor-pointer"
-              onClick={handleCloseZoom}
+              className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+              onClick={handleZoomClose}
             >
-              <div className="relative w-full max-w-6xl h-full max-h-[90vh] m-4">
-                <Image
-                  src={images[selectedImageIndex]}
-                  alt={realEstate.title}
-                  fill
-                  className="object-contain"
-                  priority
-                />
-                <button
-                  onClick={handleCloseZoom}
-                  className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-all"
-                >
-                  ✕
-                </button>
+              <div
+                className="relative w-full max-w-5xl max-h-[90vh] m-4 flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <span className="text-white/70 text-sm font-medium">
+                    {selectedImageIndex + 1} / {images.length}
+                  </span>
+                  <button
+                    onClick={handleZoomClose}
+                    className="text-white bg-white/10 hover:bg-white/25 rounded-full p-2 transition-all"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="relative flex-1 min-h-0 h-[75vh]">
+                  <Image
+                    src={images[selectedImageIndex]}
+                    alt={realEstate.title}
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={handlePrevImage}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
+                        aria-label="Previous"
+                      >
+                        <IoIosArrowBack className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={handleNextImage}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
+                        aria-label="Next"
+                      >
+                        <IoIosArrowForward className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {images.length > 1 && (
+                  <div className="flex gap-2 justify-center mt-3 overflow-x-auto pb-1">
+                    {images.map((thumb, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedImageIndex(i)}
+                        className={`relative w-14 h-10 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === selectedImageIndex ? "border-white" : "border-white/20 opacity-50"}`}
+                      >
+                        <Image src={thumb} alt="" fill className="object-cover" sizes="56px" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -5,6 +5,8 @@ import helmet from "helmet";
 import cors from "cors";
 import { SECURITY_CONFIG } from "src/config/security.config.ts";
 
+const isProd = process.env.NODE_ENV === "production";
+
 export const setupSecurity = (app: express.Application) => {
   app.use(
     cors({
@@ -22,19 +24,19 @@ export const setupSecurity = (app: express.Application) => {
 
   app.use(
     helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          imgSrc: ["'self'", "data:", "https:"],
-        },
-      },
-      hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true,
-      },
+      contentSecurityPolicy: isProd
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              scriptSrc: ["'self'"],
+              imgSrc: ["'self'", "data:", "https:"],
+            },
+          }
+        : false,
+      hsts: isProd
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false,
     }),
   );
 

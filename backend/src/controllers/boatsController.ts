@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import prisma from "src/core/utils/db.ts";
 import {
   calculateExpiryDate,
@@ -13,6 +12,7 @@ import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { CreateBoatBody, PaymentUpdateBody } from "src/types/index.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",

@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import chalk from "chalk";
 import prisma from "src/core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import {
   getDaysUntilExpiry,
@@ -17,6 +16,7 @@ import {
   TriggerNotificationBody,
 } from "src/types/index.ts";
 import { getIO } from "src/services/sockets/socketServer.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 export const getSubscriptionStats = async (req: Request, res: Response) => {
   try {
@@ -140,7 +140,11 @@ export const notifyMatchingSubscribers = async (
         .toLowerCase()
         .split(/\s+/)
         .filter((k) => k.length > 2);
-      if (keywords.length && !keywords.some((kw) => itemTitleLower.includes(kw))) return false;
+      if (
+        keywords.length &&
+        !keywords.some((kw) => itemTitleLower.includes(kw))
+      )
+        return false;
       return true;
     });
 
@@ -190,7 +194,14 @@ export const notifyMatchingSubscribers = async (
         },
         include: {
           sender: { select: { id: true, username: true, profileImage: true } },
-          subscription: { select: { id: true, title: true, category: true, subCategory: true } },
+          subscription: {
+            select: {
+              id: true,
+              title: true,
+              category: true,
+              subCategory: true,
+            },
+          },
         },
       });
 
@@ -234,7 +245,10 @@ const ITEM_MODEL_MAP: Record<string, { model: any; type: ItemModels }> = {
   alaabooyin: { model: () => prisma.marketplace, type: "marketplace" },
   market: { model: () => prisma.marketplace, type: "marketplace" },
   farmequipment: { model: () => prisma.farmequipment, type: "farmequipment" },
-  "farm equipment": { model: () => prisma.farmequipment, type: "farmequipment" },
+  "farm equipment": {
+    model: () => prisma.farmequipment,
+    type: "farmequipment",
+  },
   tractor: { model: () => prisma.farmequipment, type: "farmequipment" },
   job: { model: () => prisma.job, type: "job" },
   jobs: { model: () => prisma.job, type: "job" },
@@ -252,22 +266,44 @@ const notifyNewSubscriberWithExistingItems = async (subscription: {
   priceMax: number | null;
 }): Promise<void> => {
   try {
-    const { id: subscriptionId, userId, title, category, region, cities, priceMin, priceMax } = subscription;
+    const {
+      id: subscriptionId,
+      userId,
+      title,
+      category,
+      region,
+      cities,
+      priceMin,
+      priceMax,
+    } = subscription;
 
     const variants = getCategoryVariants(category);
     const seen = new Set<string>();
     const configs = Object.entries(ITEM_MODEL_MAP)
-      .filter(([key]) => variants.some((v) => key === v || key.startsWith(v) || v.startsWith(key)))
+      .filter(([key]) =>
+        variants.some(
+          (v) => key === v || key.startsWith(v) || v.startsWith(key),
+        ),
+      )
       .map(([, cfg]) => cfg)
-      .filter((cfg) => { if (seen.has(cfg.type)) return false; seen.add(cfg.type); return true; });
+      .filter((cfg) => {
+        if (seen.has(cfg.type)) return false;
+        seen.add(cfg.type);
+        return true;
+      });
 
     if (!configs.length) {
-      console.log(`[notify-existing] No model for category="${category}" variants=[${variants}]`);
+      console.log(
+        `[notify-existing] No model for category="${category}" variants=[${variants}]`,
+      );
       return;
     }
 
     // Use the first meaningful word as the primary DB keyword filter
-    const keywords = title.trim().split(/\s+/).filter((k) => k.length > 1);
+    const keywords = title
+      .trim()
+      .split(/\s+/)
+      .filter((k) => k.length > 1);
     const primaryKeyword = keywords[0] ?? "";
 
     const allItems: any[] = [];
@@ -289,16 +325,27 @@ const notifyNewSubscriberWithExistingItems = async (subscription: {
       if (!isJob) {
         if (region) where.region = { equals: region, mode: "insensitive" };
         if (cities?.length) where.city = { in: cities };
-        if (priceMin !== null) where.price = { ...(where.price ?? {}), gte: priceMin };
-        if (priceMax !== null) where.price = { ...(where.price ?? {}), lte: priceMax };
+        if (priceMin !== null)
+          where.price = { ...(where.price ?? {}), gte: priceMin };
+        if (priceMax !== null)
+          where.price = { ...(where.price ?? {}), lte: priceMax };
       } else {
-        if (priceMin !== null) where.salary = { ...(where.salary ?? {}), gte: priceMin };
-        if (priceMax !== null) where.salary = { ...(where.salary ?? {}), lte: priceMax };
+        if (priceMin !== null)
+          where.salary = { ...(where.salary ?? {}), gte: priceMin };
+        if (priceMax !== null)
+          where.salary = { ...(where.salary ?? {}), lte: priceMax };
       }
 
       const select = isJob
         ? { id: true, title: true, salary: true, userId: true }
-        : { id: true, title: true, price: true, region: true, city: true, userId: true };
+        : {
+            id: true,
+            title: true,
+            price: true,
+            region: true,
+            city: true,
+            userId: true,
+          };
 
       const rows = await (cfg.model() as any)
         .findMany({ where, select, take: 10, orderBy: { createdAt: "desc" } })
@@ -334,26 +381,39 @@ const notifyNewSubscriberWithExistingItems = async (subscription: {
         itemType: item.itemType,
         region: item.region ?? null,
         city: item.city ?? null,
-        metadata: { itemTitle: item.title, itemPrice: item.price, itemCity: item.city, subscriptionTitle: subscription.title },
+        metadata: {
+          itemTitle: item.title,
+          itemPrice: item.price,
+          itemCity: item.city,
+          subscriptionTitle: subscription.title,
+        },
       })),
       skipDuplicates: true,
     });
 
     await prisma.subscription.update({
       where: { id: subscriptionId },
-      data: { notificationCount: { increment: allItems.length }, lastNotified: new Date() },
+      data: {
+        notificationCount: { increment: allItems.length },
+        lastNotified: new Date(),
+      },
     });
 
     const io = getIO();
     if (io) {
       const created = await prisma.notification.findMany({
-        where: { subscriptionId, userId, createdAt: { gte: new Date(Date.now() - 5000) } },
+        where: {
+          subscriptionId,
+          userId,
+          createdAt: { gte: new Date(Date.now() - 5000) },
+        },
         include: {
           sender: { select: { id: true, username: true, profileImage: true } },
           subscription: { select: { id: true, title: true, category: true } },
         },
       });
-      if (created.length) io.to(`user_${userId}`).emit("newNotifications", created);
+      if (created.length)
+        io.to(`user_${userId}`).emit("newNotifications", created);
     }
   } catch (err) {
     console.error("[notify-existing] Error:", err);

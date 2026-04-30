@@ -6,10 +6,9 @@ import { getNavItems } from "@/app/(links)/storeFrontLinks/MainLinks";
 import Lang from "@/i18n/Lang";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
-import { User } from "@/actions/core/chatActions";
-import useNotificationSocket from "@/hooks/useNotificationSocket";
 import { useMessageCount } from "@/app/(storeFront)/components/hooks/useMessageCount";
 import { useNavNotificationCount } from "@/app/(storeFront)/components/hooks/useNavNotificationCount";
+import { useAuth } from "@/context/AuthContext";
 import {
   ROUTE_NEW_AD,
   ROUTE_MESSAGES,
@@ -19,27 +18,27 @@ import {
   NAV_LINK_ACTIVE,
   NAV_BADGE_CLASS,
 } from "./constants";
+import useNotificationSocket from "../../hooks/useNotificationSocket";
 
 const NavItems = ({
-  user,
-  authLoading,
+  initialIsAuthenticated,
 }: {
-  user: User | null;
-  authLoading?: boolean;
+  initialIsAuthenticated?: boolean;
 }) => {
+  const { user, loading: authLoading } = useAuth();
   const pathname = usePathname();
   const { t } = useTranslation();
   useLanguage();
   useNotificationSocket();
 
-  const userId = user?.id || (user as any)?._id || (user as any)?.sub;
+  const userId = user?.id || user?._id || user?.sub;
   const isUserValid = Boolean(userId);
 
   const { notificationCount } = useNavNotificationCount(userId);
   const { messageCount } = useMessageCount(userId);
 
   const navItems = getNavItems(
-    authLoading ? false : isUserValid,
+    authLoading ? (initialIsAuthenticated ?? false) : isUserValid,
     notificationCount,
   );
   const isNewAd = (href: string) => href === ROUTE_NEW_AD;
@@ -82,11 +81,16 @@ const NavItems = ({
                   {item.icon}
                   {isMessages && messageCount > 0 && (
                     <span className={NAV_BADGE_CLASS}>
-                      {messageCount > BADGE_MAX_COUNT ? BADGE_MAX_LABEL : messageCount}
+                      {messageCount > BADGE_MAX_COUNT
+                        ? BADGE_MAX_LABEL
+                        : messageCount}
                     </span>
                   )}
                 </span>
-                <span className="hidden sm:inline text-sm font-medium" suppressHydrationWarning>
+                <span
+                  className="hidden sm:inline text-sm font-medium"
+                  suppressHydrationWarning
+                >
                   {label}
                 </span>
               </Link>

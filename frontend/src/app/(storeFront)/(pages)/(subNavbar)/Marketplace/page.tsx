@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "next/navigation";
-import { getMarketplaceItems } from "@/actions/categories/marketplaceActions";
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import { MarketplaceItem } from "@/app/utils/types/marketplace.types";
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import SearchInput from "@/app/ui/search/SearchInput";
@@ -40,8 +40,17 @@ function MarketplaceLinks() {
     setIsError(false);
     setIsLoading(true);
     try {
-      const data = await getMarketplaceItems();
-      setItems(data || []);
+      const res = await fetch(`${BASE_API_URL}/api/marketplace`);
+      if (!res.ok) throw new Error();
+      const result = await res.json();
+      const list = Array.isArray(result) ? result : (result?.data ?? []);
+      setItems(
+        list.map((it: any) => ({
+          ...it,
+          _id: String(it._id ?? it.id ?? ""),
+          id: String(it._id ?? it.id ?? ""),
+        })),
+      );
     } catch {
       setIsError(true);
     } finally {

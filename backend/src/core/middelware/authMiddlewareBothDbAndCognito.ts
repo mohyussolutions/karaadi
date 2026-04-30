@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { AuthRequest, DecodedToken } from "../../types/index.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const AUTH_CACHE_TTL = 120;
 
@@ -19,7 +19,9 @@ const getAuthCacheKey = (sub: string) => `auth:session:${sub}`;
 const loadUserAndSession = async (sub: string, res: Response) => {
   const cacheKey = getAuthCacheKey(sub);
 
-  const cached = await cacheManager.get<{ user: any; valid: boolean }>(cacheKey).catch(() => null);
+  const cached = await cacheManager
+    .get<{ user: any; valid: boolean }>(cacheKey)
+    .catch(() => null);
   if (cached) {
     if (!cached.valid) {
       res.clearCookie("idToken");
@@ -32,21 +34,30 @@ const loadUserAndSession = async (sub: string, res: Response) => {
 
   const user = await prisma.user.findUnique({ where: { cognitoId: sub } });
   if (!user) {
-    await cacheManager.set(cacheKey, { user: null, valid: false }, AUTH_CACHE_TTL).catch(() => {});
+    await cacheManager
+      .set(cacheKey, { user: null, valid: false }, AUTH_CACHE_TTL)
+      .catch(() => {});
     return null;
   }
 
-  const session = await prisma.cookie.findUnique({ where: { userId: user.id } });
+  const session = await prisma.cookie.findUnique({
+    where: { userId: user.id },
+  });
   if (!session || session.expiresAt < new Date()) {
-    if (session) await prisma.cookie.delete({ where: { id: session.id } }).catch(() => {});
-    await cacheManager.set(cacheKey, { user: null, valid: false }, 30).catch(() => {});
+    if (session)
+      await prisma.cookie.delete({ where: { id: session.id } }).catch(() => {});
+    await cacheManager
+      .set(cacheKey, { user: null, valid: false }, 30)
+      .catch(() => {});
     res.clearCookie("idToken");
     res.clearCookie("token");
     res.clearCookie("accessToken");
     return null;
   }
 
-  await cacheManager.set(cacheKey, { user, valid: true }, AUTH_CACHE_TTL).catch(() => {});
+  await cacheManager
+    .set(cacheKey, { user, valid: true }, AUTH_CACHE_TTL)
+    .catch(() => {});
   return user;
 };
 
@@ -64,7 +75,8 @@ export const ProtectRoute = async (
       return res.status(401).json({ message: "Invalid token" });
 
     const user = await loadUserAndSession(decoded.sub, res);
-    if (!user) return res.status(401).json({ message: "Session expired or not found" });
+    if (!user)
+      return res.status(401).json({ message: "Session expired or not found" });
 
     req.user = {
       ...user,

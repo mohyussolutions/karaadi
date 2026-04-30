@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { User, Prisma } from "@prisma/client";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { AuthRequest } from "src/types/index.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const getUserId = (req: AuthRequest): string | undefined =>
   req.user?.id || req.user?._id || req.user?.sub;

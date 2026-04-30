@@ -3,16 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import NavItems from "./MainLinks";
-import { useAuth } from "@/context/AuthContext";
 
-const Navbar = () => {
-  const { user, loading } = useAuth();
-
+const Navbar = ({ initialIsAuthenticated }: { initialIsAuthenticated?: boolean }) => {
   return (
     <nav className="fixed top-0 left-0 w-full z-[9999] bg-white border-b border-gray-200 pointer-events-auto">
       <div
-        className="flex justify-between items-center max-w-[64.5rem] w-full mx-auto px-4 md:px-6"
-        style={{ height: "48px" }}
+        className="flex justify-between items-center max-w-[64.5rem] w-full mx-auto px-3 sm:px-4 md:px-6 h-12"
       >
         <Link href="/" className="flex items-center shrink-0">
           <Image
@@ -26,7 +22,7 @@ const Navbar = () => {
         </Link>
 
         <div className="flex items-center gap-1">
-          <NavItems user={user as any} authLoading={loading} />
+          <NavItems initialIsAuthenticated={initialIsAuthenticated} />
         </div>
       </div>
     </nav>

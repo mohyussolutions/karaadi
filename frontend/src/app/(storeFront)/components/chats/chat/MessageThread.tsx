@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { ChevronLeft, Send, Loader2 } from "lucide-react"
 import MessageBubble from "./MessageBubble"
 import { getChatroomMessages, sendChatMessage } from "@/services/chatService"
-import { socketService } from "@/actions/sockets/socketService"
+import { socketService } from "@/actions/sockets/socketServiceAction"
 import type { ChatMessage, Chatroom } from "@/app/utils/types/chat.types"
 
 interface Props {

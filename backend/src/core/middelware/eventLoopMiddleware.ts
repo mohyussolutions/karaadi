@@ -32,12 +32,3 @@ export const eventLoopMiddleware = (
   }
   next();
 };
-
-process.on("uncaughtException", (err) => {
-  console.error("CRITICAL:", err);
-  setTimeout(() => process.exit(1), 1000);
-});
-
-process.on("unhandledRejection", (reason) => {
-  console.error("ASYNC_ERROR:", reason);
-});

@@ -7,7 +7,7 @@ import {
   createOrGetChat,
   deleteChatroom,
 } from "@/services/chatService";
-import { socketService } from "@/actions/sockets/socketService";
+import { socketService } from "@/actions/sockets/socketServiceAction";
 import ConversationRow from "./ConversationRow";
 import MessageThread from "./MessageThread";
 import type { Chatroom } from "@/app/utils/types/chat.types";

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../core/utils/db.ts";
-import cacheManager from "../services/redisserver/cacheManager.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const monthKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -154,23 +154,45 @@ export const getDashboardSummary = async (_req: Request, res: Response) => {
       return res.json(cached);
     }
 
-    const since = new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1);
+    const since = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth() - 11,
+      1,
+    );
 
-    const [categoryTotals, stats, revenue, signups, regionListings, cityListings] =
-      await Promise.all([
-        fetchCategoryTotals(),
-        fetchStatTotals(),
-        getRevenue(since),
-        getSignups(since),
-        getRegionListings(),
-        getCityListings(),
-      ]);
+    const [
+      categoryTotals,
+      stats,
+      revenue,
+      signups,
+      regionListings,
+      cityListings,
+    ] = await Promise.all([
+      fetchCategoryTotals(),
+      fetchStatTotals(),
+      getRevenue(since),
+      getSignups(since),
+      getRegionListings(),
+      getCityListings(),
+    ]);
 
-    const payload = { categoryTotals, stats, revenue, signups, regionListings, cityListings };
+    const payload = {
+      categoryTotals,
+      stats,
+      revenue,
+      signups,
+      regionListings,
+      cityListings,
+    };
     await cacheManager.set(CACHE_KEY, payload, CACHE_TTL);
     res.setHeader("X-Cache", "MISS");
     res.json(payload);
   } catch (error: any) {
-    res.status(500).json({ error: "Failed to fetch dashboard summary", message: error.message });
+    res
+      .status(500)
+      .json({
+        error: "Failed to fetch dashboard summary",
+        message: error.message,
+      });
   }
 };

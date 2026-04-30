@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import {
   AuthRequest,
@@ -9,9 +8,12 @@ import {
   SelectBusinessPlanBody,
   ExtendBusinessPlanBody,
 } from "src/types/index.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
-const getUserId = (req: AuthRequest): string | undefined =>
-  req.user?.id || req.user?._id || req.user?.sub;
+const getUserId = (req: AuthRequest): string | undefined => {
+  const u = req.user as any;
+  return u?.id || u?._id || u?.sub;
+};
 
 async function propagatePlanFlags(
   businessUserId: string,
@@ -26,12 +28,15 @@ async function propagatePlanFlags(
     isBasic30: durationDays >= 30 && durationDays < 60,
   };
   await Promise.all([
-    prisma.marketplace.updateMany({
+    (prisma as any).marketplace.updateMany({
       where: { userId: businessUserId },
       data: flags,
     }),
-    prisma.car.updateMany({ where: { userId: businessUserId }, data: flags }),
-    prisma.realEstate.updateMany({
+    (prisma as any).car.updateMany({
+      where: { userId: businessUserId },
+      data: flags,
+    }),
+    (prisma as any).realEstate.updateMany({
       where: { userId: businessUserId },
       data: flags,
     }),
@@ -84,9 +89,47 @@ const includeRelations = {
       price: true,
       durationDays: true,
       features: true,
+      maxListings: true,
     },
   },
 };
+
+async function countActiveListingsForUser(userId: string): Promise<number> {
+  const now = new Date();
+  const counts = await Promise.all([
+    (prisma as any).car.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).motorcycle.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).realEstate.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).marketplace.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).boat.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).job.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).farmequipment.count({ where: { userId, expiryDate: { gt: now } } }),
+  ]);
+  return counts.reduce((a, b) => a + b, 0);
+}
+
+async function countActiveListingsBatch(userIds: string[]): Promise<Map<string, number>> {
+  if (userIds.length === 0) return new Map();
+  const now = new Date();
+  const models = ["car", "motorcycle", "realEstate", "marketplace", "boat", "job", "farmequipment"] as const;
+  const results = await Promise.all(
+    models.map((model) =>
+      (prisma as any)[model].groupBy({
+        by: ["userId"],
+        where: { userId: { in: userIds }, expiryDate: { gt: now } },
+        _count: { _all: true },
+      }).catch(() => [] as any[])
+    )
+  );
+  const totals = new Map<string, number>();
+  for (const rows of results) {
+    for (const row of rows) {
+      totals.set(row.userId, (totals.get(row.userId) ?? 0) + (row._count?._all ?? 0));
+    }
+  }
+  return totals;
+}
+
 
 export const createBusiness = async (
   req: Request<{}, {}, CreateBusinessBody>,
@@ -186,7 +229,14 @@ export const getMyBusinesses = async (req: AuthRequest, res: Response) => {
       CACHE_TTL.LIST,
     );
 
-    res.json({ success: true, businesses });
+    const enriched = await Promise.all(
+      businesses.map(async (b: any) => {
+        const currentListings = await countActiveListingsForUser(b.userId);
+        return { ...b, currentListings };
+      }),
+    );
+
+    res.json({ success: true, businesses: enriched });
   } catch {
     res.status(500).json({ error: "Fetch failed" });
   }
@@ -397,15 +447,99 @@ export const getAllBusinessesAdmin = async (req: Request, res: Response) => {
       CACHE_TTL.LIST,
     );
 
-    const total = await (prisma as any).business.count();
+    const [total, listingCounts] = await Promise.all([
+      (prisma as any).business.count(),
+      countActiveListingsBatch(businesses.map((b: any) => b.userId)),
+    ]);
+
+    const enriched = businesses.map((b: any) => ({
+      ...b,
+      currentListings: listingCounts.get(b.userId) ?? 0,
+    }));
 
     res.json({
       success: true,
-      businesses,
+      businesses: enriched,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch {
     res.status(500).json({ error: "Fetch failed" });
+  }
+};
+
+export const adminAssignPlan = async (req: Request, res: Response) => {
+  try {
+    const id = normalizeId(req.params.id);
+    const { planId } = req.body as { planId: string };
+    if (!planId) return res.status(400).json({ error: "planId required" });
+
+    const plan = await (prisma as any).businessPlan.findUnique({
+      where: { id: planId },
+      select: { id: true, durationDays: true, isActive: true },
+    });
+    if (!plan || !plan.isActive)
+      return res.status(404).json({ error: "Plan not found or inactive" });
+
+    const now = new Date();
+    const expiryDate = new Date(now.getTime() + plan.durationDays * 86_400_000);
+
+    const updated = await (prisma as any).business.update({
+      where: { id },
+      data: { planId, planStartDate: now, expiryDate, isPaid: true },
+      include: includeRelations,
+    });
+
+    propagatePlanFlags(updated.userId, plan.durationDays, expiryDate).catch(
+      () => {},
+    );
+
+    Promise.all([
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
+      cacheManager.deletePattern(`businesses:my:${updated.userId}*`),
+      cacheManager.deletePattern("businesses:admin:*"),
+    ]).catch(() => {});
+
+    res.json({ success: true, business: updated });
+  } catch {
+    res.status(500).json({ error: "Assign plan failed" });
+  }
+};
+
+export const adminSetPostLimit = async (req: Request, res: Response) => {
+  try {
+    const id = normalizeId(req.params.id);
+    const { maxListingsOverride } = req.body as {
+      maxListingsOverride: number | null;
+    };
+
+    if (
+      maxListingsOverride !== null &&
+      (typeof maxListingsOverride !== "number" ||
+        maxListingsOverride < 0 ||
+        !Number.isInteger(maxListingsOverride))
+    ) {
+      return res
+        .status(400)
+        .json({
+          error: "maxListingsOverride must be a positive integer or null",
+        });
+    }
+
+    const updated = await (prisma as any).business.update({
+      where: { id },
+      data: { maxListingsOverride: maxListingsOverride ?? null },
+      include: includeRelations,
+    });
+
+    Promise.all([
+      cacheManager.delete(CACHE_KEYS.DETAIL(id)),
+      cacheManager.deletePattern(`businesses:my:${updated.userId}*`),
+      cacheManager.deletePattern("businesses:admin:*"),
+    ]).catch(() => {});
+
+    res.json({ success: true, business: updated });
+  } catch {
+    res.status(500).json({ error: "Set post limit failed" });
   }
 };
 
@@ -679,13 +813,23 @@ export const getBusinessStats = async (_req: Request, res: Response) => {
     const stats = await cacheManager.withCache(
       CACHE_KEYS.STATS,
       async () => {
-        const [total, active, pending, verified] = await Promise.all([
+        const now = new Date();
+        const [total, active, pending, verified, canPost] = await Promise.all([
           (prisma as any).business.count(),
           (prisma as any).business.count({ where: { status: "active" } }),
           (prisma as any).business.count({ where: { status: "pending" } }),
           (prisma as any).business.count({ where: { isVerified: true } }),
+          (prisma as any).business.count({
+            where: {
+              status: "active",
+              isVerified: true,
+              isAdminEnabled: true,
+              planId: { not: null },
+              expiryDate: { gt: now },
+            },
+          }),
         ]);
-        return { total, active, pending, verified };
+        return { total, active, pending, verified, canPost };
       },
       CACHE_TTL.STATS,
     );
@@ -800,21 +944,21 @@ export const getBusinessFeed = async (req: Request, res: Response) => {
     const order = { createdAt: "desc" as const };
 
     const [marketplace, cars, realEstate] = await Promise.all([
-      prisma.marketplace.findMany({
+      (prisma as any).marketplace.findMany({
         where: userFilter,
         orderBy: order,
         skip,
         take: pageSize,
         select,
       }),
-      prisma.car.findMany({
+      (prisma as any).car.findMany({
         where: userFilter,
         orderBy: order,
         skip,
         take: pageSize,
         select: { ...select, vehicleModel: true },
       }),
-      prisma.realEstate.findMany({
+      (prisma as any).realEstate.findMany({
         where: userFilter,
         orderBy: order,
         skip,

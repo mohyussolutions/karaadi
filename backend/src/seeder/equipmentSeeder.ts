@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from "uuid";
+import { USER_A, USER_B } from "./seederConstants.ts";
+
 export interface EquipmentItem {
   id: string;
   title: string;
@@ -25,12 +28,9 @@ export interface EquipmentItem {
   userId: string;
 }
 
-const USER_A = "550e8400-e29b-41d4-a716-446655440001";
-const USER_B = "550e8400-e29b-41d4-a716-446655440002";
-
 export const equipmentItems: EquipmentItem[] = [
   {
-    id: "equip-001",
+    id: uuidv4(),
     title: "John Deere JD100 New Utility Tractor",
     mainCategory: "Equipment",
     description:
@@ -57,7 +57,7 @@ export const equipmentItems: EquipmentItem[] = [
     userId: USER_A,
   },
   {
-    id: "equip-002",
+    id: uuidv4(),
     title: "Kubota KX200 Used Farm Tractor",
     mainCategory: "Equipment",
     description:
@@ -84,7 +84,7 @@ export const equipmentItems: EquipmentItem[] = [
     userId: USER_B,
   },
   {
-    id: "equip-003",
+    id: uuidv4(),
     title: "Heavy-Duty Disc Plow for Sale",
     mainCategory: "Equipment",
     description:
@@ -111,7 +111,7 @@ export const equipmentItems: EquipmentItem[] = [
     userId: USER_A,
   },
   {
-    id: "equip-004",
+    id: uuidv4(),
     title: "Mounted Fertilizer Spreader (800L)",
     mainCategory: "Equipment",
     description:
@@ -138,7 +138,7 @@ export const equipmentItems: EquipmentItem[] = [
     userId: USER_B,
   },
   {
-    id: "equip-005",
+    id: uuidv4(),
     title: "Self-Propelled Wheat Harvester",
     mainCategory: "Equipment",
     description:
@@ -165,7 +165,7 @@ export const equipmentItems: EquipmentItem[] = [
     userId: USER_A,
   },
   {
-    id: "equip-006",
+    id: uuidv4(),
     title: "Precision Row Planter (Used)",
     mainCategory: "Equipment",
     description:
@@ -192,7 +192,7 @@ export const equipmentItems: EquipmentItem[] = [
     userId: USER_B,
   },
   {
-    id: "equip-007",
+    id: uuidv4(),
     title: "Small Sickle Bar Mower (Hay/Fodder)",
     mainCategory: "Equipment",
     description:
@@ -219,7 +219,7 @@ export const equipmentItems: EquipmentItem[] = [
     userId: USER_A,
   },
   {
-    id: "equip-008",
+    id: uuidv4(),
     title: "Case IH CIH300 Used Tractor",
     mainCategory: "Equipment",
     description:

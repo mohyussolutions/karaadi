@@ -48,10 +48,12 @@ const importData = async () => {
       throw new Error("No users found in database");
     }
 
+    const pickUser = () => usersFromDb[Math.floor(Math.random() * usersFromDb.length)].id;
     const assignUser = (items: any[]) =>
       items.map((item) => ({
         ...item,
-        userId: usersFromDb[Math.floor(Math.random() * usersFromDb.length)].id,
+        userId: pickUser(),
+        ...(item.senderId !== undefined && { senderId: pickUser() }),
       }));
 
     await prisma.job.createMany({

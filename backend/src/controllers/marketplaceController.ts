@@ -8,10 +8,9 @@ import {
   formatExpiryDate,
   isExpired,
 } from "src/hooks/useExpire.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
-import { getPageAndSkip } from "src/hooks/usePagination.ts";
-import { CACHE_TTL, getPaginationParams } from "src/config/config.constants.ts";
+import { CACHE_TTL } from "src/config/config.constants.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",
@@ -408,6 +407,7 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
       },
     });
     cacheManager.deletePattern("marketplace:*").catch(() => {});
+    cacheManager.deletePattern(`businesses:my:${marketplaceData.userId}*`).catch(() => {});
     notifyMatchingSubscribers("marketplace", newItem.id, {
       title: marketplaceData.title,
       price: parseFloat(marketplaceData.price) || 0,

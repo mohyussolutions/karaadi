@@ -35,7 +35,7 @@ export async function getRealEstateById(
 
 export async function getRealEstateListings(page = 1, pageSize = 20): Promise<RealEstate[]> {
   const res = await fetch(`${REAL_ESTATE_ENDPOINTS.BASE}?page=${page}&pageSize=${pageSize}`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   if (!res.ok) return [];
   const result = await res.json();

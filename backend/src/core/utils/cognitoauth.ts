@@ -16,14 +16,14 @@ import jwksClient from "jwks-rsa";
 import { Request, Response } from "express";
 import prisma from "./db.ts";
 import { createHash } from "crypto";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import {
   VerifiedTokenData,
   RoleUpdateData,
   UserAttributes,
 } from "../../types/index.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
-const jwksUri = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.TOORTO_AWS_COGNITO_USER_POOL_ID}/.well-known/jwks.json`;
+const jwksUri = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.KARAADI_AWS_COGNITO_USER_POOL_ID}/.well-known/jwks.json`;
 
 const jwksClientInstance = jwksClient({
   jwksUri,
@@ -49,7 +49,7 @@ export const deleteFromCognito = async (cognitoId: string): Promise<void> => {
   try {
     await cognitoClient.send(
       new AdminDeleteUserCommand({
-        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID!,
         Username: cognitoId,
       }),
     );
@@ -104,7 +104,7 @@ export const deleteMyAccount = async (
             "AWS Cognito deletion failed due to invalid credentials.",
           );
           console.error(
-            "Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and TOORTO_AWS_COGNITO_USER_POOL_ID environment variables.",
+            "Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and KARAADI_AWS_COGNITO_USER_POOL_ID environment variables.",
           );
         }
         console.error(
@@ -146,7 +146,7 @@ export const signUp = async (
 
     const response = await cognitoClient.send(
       new SignUpCommand({
-        ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
         Password: password,
         UserAttributes: userAttributes,
@@ -168,7 +168,7 @@ export const signIn = async (
     const response = await cognitoClient.send(
       new InitiateAuthCommand({
         AuthFlow: "USER_PASSWORD_AUTH",
-        ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
         AuthParameters: { USERNAME: email, PASSWORD: password },
       }),
     );
@@ -198,6 +198,9 @@ export const signIn = async (
       update: {
         email: decodedToken.email,
         username: preferredUsername,
+        isAdmin,
+        isManager,
+        isSupport,
       },
       create: {
         cognitoId: decodedToken.sub,
@@ -207,9 +210,9 @@ export const signIn = async (
         profileImage:
           cognitoProfileImage !== "false" ? cognitoProfileImage : null,
         password: "",
-        isAdmin: false,
-        isManager: false,
-        isSupport: false,
+        isAdmin,
+        isManager,
+        isSupport,
       },
       select: {
         id: true,
@@ -276,7 +279,7 @@ export const verifySession = async (
       token,
       getKey,
       {
-        issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.TOORTO_AWS_COGNITO_USER_POOL_ID}`,
+        issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.KARAADI_AWS_COGNITO_USER_POOL_ID}`,
         ignoreExpiration: false,
       },
       async (err, decoded) => {
@@ -293,7 +296,9 @@ export const verifySession = async (
           const payload = decoded as any;
           const [userRecord, session] = await Promise.all([
             prisma.user.findUnique({ where: { cognitoId: payload.sub } }),
-            prisma.cookie.findFirst({ where: { user: { cognitoId: payload.sub } } }),
+            prisma.cookie.findFirst({
+              where: { user: { cognitoId: payload.sub } },
+            }),
           ]);
 
           if (!userRecord) {
@@ -302,11 +307,15 @@ export const verifySession = async (
 
           if (!session || session.expiresAt < new Date()) {
             if (session)
-              prisma.cookie.delete({ where: { id: session.id } }).catch(() => {});
+              prisma.cookie
+                .delete({ where: { id: session.id } })
+                .catch(() => {});
             res.clearCookie("idToken");
             res.clearCookie("refreshToken");
             res.clearCookie("accessToken");
-            return resolve(res.status(401).json({ message: "Session expired" }));
+            return resolve(
+              res.status(401).json({ message: "Session expired" }),
+            );
           }
 
           const cleanField = (val: any) =>
@@ -319,13 +328,20 @@ export const verifySession = async (
             phone: cleanField(userRecord.phone),
             profileImage: cleanField(userRecord.profileImage),
             isAdmin: userRecord.isAdmin || payload["custom:isAdmin"] === "true",
-            isManager: userRecord.isManager || payload["custom:isManager"] === "true",
-            isSupport: userRecord.isSupport || payload["custom:isSupport"] === "true",
+            isManager:
+              userRecord.isManager || payload["custom:isManager"] === "true",
+            isSupport:
+              userRecord.isSupport || payload["custom:isSupport"] === "true",
             token: token,
             accessToken: accessToken,
           };
 
-          const body = { message: "Session valid", user: responseUser, token, accessToken };
+          const body = {
+            message: "Session valid",
+            user: responseUser,
+            token,
+            accessToken,
+          };
           cacheManager.set(cacheKey, body, 60).catch(() => {});
           return resolve(res.status(200).json(body));
         } catch {
@@ -345,7 +361,7 @@ export const confirmSignUp = async (email: string, code: string) => {
   try {
     await cognitoClient.send(
       new ConfirmSignUpCommand({
-        ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
         ConfirmationCode: code,
       }),
@@ -452,7 +468,7 @@ export const updateUserRole = async (
 
     await cognitoClient.send(
       new AdminUpdateUserAttributesCommand({
-        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID!,
         Username: targetEmail,
         UserAttributes: Object.entries(attributes).map(([key, value]) => ({
           Name: key,
@@ -480,7 +496,7 @@ export const adminUpdateUser = async (
 
     await cognitoClient.send(
       new AdminUpdateUserAttributesCommand({
-        UserPoolId: process.env.TOORTO_AWS_COGNITO_USER_POOL_ID!,
+        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID!,
         Username: username,
         UserAttributes: userAttributes,
       }),
@@ -494,7 +510,7 @@ export const resendVerificationCode = async (email: string) => {
   try {
     await cognitoClient.send(
       new ResendConfirmationCodeCommand({
-        ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
       }),
     );
@@ -507,7 +523,7 @@ export const forgotPassword = async (email: string) => {
   try {
     await cognitoClient.send(
       new ForgotPasswordCommand({
-        ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
       }),
     );
@@ -524,7 +540,7 @@ export const resetPassword = async (
   try {
     await cognitoClient.send(
       new ConfirmForgotPasswordCommand({
-        ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
         Username: email,
         ConfirmationCode: resetCode,
         Password: newPassword,
@@ -595,7 +611,7 @@ export const refreshTokenLogic = async (
   const response = await cognitoClient.send(
     new InitiateAuthCommand({
       AuthFlow: "REFRESH_TOKEN_AUTH",
-      ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID!,
+      ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID!,
       AuthParameters: { REFRESH_TOKEN: refreshToken },
     }),
   );
@@ -617,7 +633,7 @@ export const refreshTokenLogicV2 = async (
     const response = await cognitoClient.send(
       new InitiateAuthCommand({
         AuthFlow: "REFRESH_TOKEN_AUTH",
-        ClientId: process.env.TOORTO_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
         AuthParameters: { REFRESH_TOKEN: refreshToken },
       }),
     );

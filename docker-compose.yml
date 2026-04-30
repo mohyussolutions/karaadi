@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    # Raise max_connections so Prisma's pool doesn't exhaust the default 100.
+    # shared_buffers=256MB caches hot pages in RAM (prevents repeated disk I/O).
+    # effective_cache_size helps the query planner pick better index plans.
+    # wal_compression reduces write amplification for the OLTP workload.
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=512MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+      -c wal_compression=on
+    environment:
+      POSTGRES_DB: karaadi
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d karaadi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    # Evict least-recently-used keys when memory is full so Redis never
+    # blocks on OOM. Disable append-only file (AOF) persistence for pure
+    # cache use – avoids fsync latency spikes.
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly no
+      --save ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file: .env.local
+    environment:
+      # connection_limit: Prisma default is (cpu_count*2+1) which is often
+      # too low when 6 parallel server-action fetches compete for connections.
+      # pool_timeout: how long (seconds) to wait for a free slot before
+      # throwing – 20s is generous enough to avoid spurious failures without
+      # masking real outages.
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/karaadi?connection_limit=20&pool_timeout=20
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+        NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${KARAADI_AWS_COGNITO_USER_POOL_ID:-eu-west-1_M5Hvrzqum}
+        NEXT_PUBLIC_COGNITO_CLIENT_ID: ${KARAADI_AWS_COGNITO_CLIENT_ID:-735nd12hvbpft29q58detnkbtg}
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

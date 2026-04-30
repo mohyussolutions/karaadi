@@ -28,4 +28,5 @@ export interface MainCategory {
   title?: string;
   labelKey?: string;
   so?: string;
+  hideIcon?: boolean;
 }

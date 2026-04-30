@@ -6,7 +6,6 @@ import session from "express-session";
 import { RedisStore } from "connect-redis";
 import cookieParser from "cookie-parser";
 import compression from "compression";
-import redisServer from "./services/redisserver/redisServer.js";
 import { setupSecurity } from "./core/middelware/securityMiddleware.js";
 import { logger } from "./core/middelware/logger.js";
 
@@ -21,6 +20,10 @@ app.get("/health", (req, res) =>
 app.use(
   "/assets",
   express.static(path.join(__dirname, "../assets"), { maxAge: "1d" }),
+);
+app.use(
+  "/imagesStore",
+  express.static(path.join(process.cwd(), "imagesStore"), { maxAge: "1d" }),
 );
 
 setupSecurity(app);
@@ -121,6 +124,7 @@ import paymentRoutes from "./routers/paymentRoutes.ts";
 import FeeRoutes from "./routers/FeeRoutes.ts";
 import initiateRouter from "./routers/initiateRouter.ts";
 import authRouters from "./routers/authRoute.ts";
+import redisServer from "./services/redis/redisServer.ts";
 apiRouter.get("/dashboard/summary", getDashboardSummary);
 
 app.use("/api", apiRouter);

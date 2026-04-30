@@ -1,0 +1,740 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Karaadi marketplace infrastructure - Complete AWS setup for classifieds marketplace like Finn.no (2026-04-28)
+
+# ============================================
+# CONSTANTS - Reusable values used throughout the template
+# ============================================
+
+Mappings:
+  Constants:
+    Region:
+      Value: !Ref AWS::Region
+    VpcCidr:
+      Value: 10.0.0.0/16
+    PublicSubnetACidr:
+      Value: 10.0.1.0/24
+    PublicSubnetBCidr:
+      Value: 10.0.2.0/24
+    PrivateSubnetACidr:
+      Value: 10.0.3.0/24
+    PrivateSubnetBCidr:
+      Value: 10.0.4.0/24
+    NodeVersion:
+      Value: 20
+    PostgresVersion:
+      Value: 15.4
+    RedisVersion:
+      Value: 7
+    BackendPort:
+      Value: 8080
+    PostgresPort:
+      Value: 5432
+    RedisPort:
+      Value: 6379
+    HealthCheckPath:
+      Value: /health
+    CpuScaleThreshold:
+      Value: 65
+    ApiThrottlingBurst:
+      Value: 5000
+    ApiThrottlingRate:
+      Value: 20000
+    BackupRetentionDays:
+      Value: 30
+    AllocatedStorageGB:
+      Value: 20
+
+# ============================================
+# PARAMETERS - Values you provide when deploying
+# ============================================
+
+Parameters:
+  AppName:
+    Type: String
+    Default: karaadi
+    Description: Name prefix for all resources
+
+  Environment:
+    Type: String
+    Default: production
+    Description: Environment name (production/staging)
+
+  EC2InstanceType:
+    Type: String
+    Default: t3.small
+    Description: EC2 instance size for backend servers
+
+  DesiredCapacity:
+    Type: Number
+    Default: 2
+    Description: Number of EC2 instances to run initially
+
+  MinSize:
+    Type: Number
+    Default: 2
+    Description: Minimum number of EC2 instances (never goes below this)
+
+  MaxSize:
+    Type: Number
+    Default: 50
+    Description: Maximum number of EC2 instances during traffic spikes
+
+  DBInstanceClass:
+    Type: String
+    Default: db.r6g.large
+    Description: RDS PostgreSQL database instance size
+
+  DBName:
+    Type: String
+    Default: karaadi
+    Description: Database name
+
+  DBUsername:
+    Type: String
+    Default: karaadi_admin
+    Description: Database master username
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Description: Database master password (provide during deploy)
+
+  CacheNodeType:
+    Type: String
+    Default: cache.t3.small
+    Description: Redis cache node size
+
+  DomainName:
+    Type: String
+    Default: example.com
+    Description: Your domain name (e.g., karaadi.com)
+
+  GitHubOrg:
+    Type: String
+    Description: Your GitHub username or organization
+
+  GitHubRepo:
+    Type: String
+    Description: Your GitHub repository name
+
+# ============================================
+# RESOURCES - All AWS services created
+# ============================================
+
+Resources:
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "${DBUsername}", "dbname": "${DBName}"}'
+        GenerateStringKey: "password"
+        PasswordLength: 30
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !FindInMap [Constants, VpcCidr, Value]
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-igw
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [Constants, PublicSubnetACidr, Value]
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-public-a
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [Constants, PublicSubnetBCidr, Value]
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-public-b
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [Constants, PrivateSubnetACidr, Value]
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-private-a
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap [Constants, PrivateSubnetBCidr, Value]
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-private-b
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-public-rt
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  NatEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnetA
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}-private-rt
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnetARouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetBRouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTable
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB security group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !FindInMap [Constants, BackendPort, Value]
+          ToPort: !FindInMap [Constants, BackendPort, Value]
+          CidrIp: !FindInMap [Constants, VpcCidr, Value]
+
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 security group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !FindInMap [Constants, BackendPort, Value]
+          ToPort: !FindInMap [Constants, BackendPort, Value]
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS security group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !FindInMap [Constants, PostgresPort, Value]
+          ToPort: !FindInMap [Constants, PostgresPort, Value]
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Redis security group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !FindInMap [Constants, RedisPort, Value]
+          ToPort: !FindInMap [Constants, RedisPort, Value]
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+
+  EC2IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2IAMRole
+
+  BackendLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        InstanceType: !Ref EC2InstanceType
+        ImageId: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+        IamInstanceProfile:
+          Name: !Ref EC2InstanceProfile
+        SecurityGroupIds:
+          - !Ref EC2SecurityGroup
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            curl -fsSL https://rpm.nodesource.com/setup_${Constants::NodeVersion}.x | bash -
+            yum install -y nodejs git
+            npm install -g pm2
+            mkdir -p /home/ec2-user/karaadi
+            cd /home/ec2-user/karaadi
+            git clone https://github.com/${GitHubOrg}/${GitHubRepo}.git .
+            cd backend
+            npm ci --production
+            npm run build
+            pm2 start dist/index.js --name karaadi-backend
+            pm2 save
+            pm2 startup
+
+  BackendAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: !Ref MinSize
+      MaxSize: !Ref MaxSize
+      DesiredCapacity: !Ref DesiredCapacity
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+      LaunchTemplate:
+        LaunchTemplateId: !Ref BackendLaunchTemplate
+        Version: !GetAtt BackendLaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+        - !Ref BackendTargetGroup
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+
+  BackendScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref BackendAutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !FindInMap [Constants, CpuScaleThreshold, Value]
+
+  BackendALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internal
+      Subnets:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+
+  BackendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Protocol: HTTP
+      Port: !FindInMap [Constants, BackendPort, Value]
+      TargetType: instance
+      HealthCheckPath: !FindInMap [Constants, HealthCheckPath, Value]
+
+  BackendALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref BackendALB
+      Protocol: HTTP
+      Port: !FindInMap [Constants, BackendPort, Value]
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: RDS subnet group
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: postgres
+      EngineVersion: !FindInMap [Constants, PostgresVersion, Value]
+      DBName: !Ref DBName
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      AllocatedStorage: !FindInMap [Constants, AllocatedStorageGB, Value]
+      StorageType: gp3
+      PubliclyAccessible: false
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      BackupRetentionPeriod: !FindInMap [Constants, BackupRetentionDays, Value]
+
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Redis subnet group
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  RedisCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      Engine: redis
+      CacheNodeType: !Ref CacheNodeType
+      NumCacheNodes: 1
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref RedisSecurityGroup
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AppName}-users
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+          AttributeDataType: String
+        - Name: phone_number
+          Required: false
+          Mutable: true
+          AttributeDataType: String
+        - Name: profile
+          Required: false
+          Mutable: true
+          AttributeDataType: String
+        - Name: isAdmin
+          Required: false
+          Mutable: true
+          AttributeDataType: String
+        - Name: isManager
+          Required: false
+          Mutable: true
+          AttributeDataType: String
+        - Name: isSupport
+          Required: false
+          Mutable: true
+          AttributeDataType: String
+      PasswordPolicy:
+        MinimumLength: 8
+        RequireUppercase: true
+        RequireLowercase: true
+        RequireNumbers: true
+        RequireSymbols: false
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  APIGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${AppName}-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+
+  APIGatewayVpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: !Sub ${AppName}-vpc-link
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  APIGatewayIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref APIGateway
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Sub http://${BackendALB.DNSName}:${Constants::BackendPort}
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref APIGatewayVpcLink
+      IntegrationMethod: ANY
+      PayloadFormatVersion: "1.0"
+      TimeoutInMillis: 29000
+
+  APIGatewayRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref APIGateway
+      RouteKey: ANY /{proxy+}
+      Target: !Sub integrations/${APIGatewayIntegration}
+
+  APIGatewayStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref APIGateway
+      StageName: prod
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: !FindInMap [Constants, ApiThrottlingBurst, Value]
+        ThrottlingRateLimit: !FindInMap [Constants, ApiThrottlingRate, Value]
+
+  AmplifyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: amplify.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess-Amplify
+
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: !Sub ${AppName}-frontend
+      Repository: !Sub https://github.com/${GitHubOrg}/${GitHubRepo}
+      IAMServiceRole: !GetAtt AmplifyRole.Arn
+      EnvironmentVariables:
+        - Name: NEXT_PUBLIC_API_URL
+          Value: !Sub https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
+        - Name: NEXT_PUBLIC_COGNITO_USER_POOL_ID
+          Value: !Ref CognitoUserPool
+        - Name: NEXT_PUBLIC_COGNITO_CLIENT_ID
+          Value: !Ref CognitoUserPoolClient
+      BuildSpec: |
+        version: 1
+        frontend:
+          phases:
+            preBuild:
+              commands:
+                - cd frontend && npm ci
+            build:
+              commands:
+                - cd frontend && npm run build
+          artifacts:
+            baseDirectory: frontend/.next
+            files:
+              - '**/*'
+          cache:
+            paths:
+              - frontend/node_modules/**/*
+
+  AmplifyBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      BranchName: main
+      EnableAutoBuild: true
+      Stage: PRODUCTION
+
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  BackendDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AppName}-backend-deploy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !GetAtt GitHubOIDCProvider.Arn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${GitHubRepo}:*
+      Policies:
+        - PolicyName: Deploy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ssm:GetCommandInvocation
+                  - ec2:DescribeInstances
+                Resource: "*"
+
+  FrontendDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AppName}-frontend-deploy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !GetAtt GitHubOIDCProvider.Arn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${GitHubRepo}:*
+      Policies:
+        - PolicyName: Deploy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - amplify:StartJob
+                  - amplify:GetApp
+                  - amplify:GetBranch
+                Resource: "*"
+
+# ============================================
+# OUTPUTS - Information after deployment
+# ============================================
+
+Outputs:
+  APIGatewayURL:
+    Description: URL for your backend API
+    Value: !Sub https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
+
+  AmplifyAppId:
+    Description: Amplify App ID for frontend deployment
+    Value: !GetAtt AmplifyApp.AppId
+
+  AmplifyURL:
+    Description: Your frontend website URL
+    Value: !Sub https://${AmplifyApp.DefaultDomain}
+
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID for authentication
+    Value: !Ref CognitoUserPool
+
+  CognitoClientId:
+    Description: Cognito App Client ID for authentication
+    Value: !Ref CognitoUserPoolClient
+
+  RDSEndpoint:
+    Description: PostgreSQL database connection endpoint
+    Value: !GetAtt RDSInstance.Endpoint.Address
+
+  RedisEndpoint:
+    Description: Redis cache connection endpoint
+    Value: !GetAtt RedisCluster.RedisEndpoint.Address
+
+  BackendDeployRoleARN:
+    Description: IAM role ARN for backend GitHub Actions
+    Value: !GetAtt BackendDeployRole.Arn
+
+  FrontendDeployRoleARN:
+    Description: IAM role ARN for frontend GitHub Actions
+    Value: !GetAtt FrontendDeployRole.Arn
+
+  VPCId:
+    Description: VPC ID for reference
+    Value: !Ref VPC
+
+  PublicSubnetIds:
+    Description: Public subnet IDs
+    Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB]]
+
+  PrivateSubnetIds:
+    Description: Private subnet IDs
+    Value: !Join [",", [!Ref PrivateSubnetA, !Ref PrivateSubnetB]]

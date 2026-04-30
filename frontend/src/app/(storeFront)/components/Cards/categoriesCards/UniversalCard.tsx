@@ -7,7 +7,6 @@ import { useState } from "react";
 import { AiOutlineHeart } from "react-icons/ai";
 import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
 import { formatPrice, getValidImageUrl, truncateText } from "./cardUtils";
-import { getPriorityBadge } from "@/actions/config/priority.config";
 
 type Props =
   | { item: UniversalCardProps }
@@ -32,10 +31,18 @@ export default function UniversalCard(props: Props) {
     isPremium90,
     type,
     sellerName,
+    linkHref,
+    href,
   } = data;
 
-  const detailRoute = getDetailRoute(data);
-  const priorityBadge = getPriorityBadge(isPremium90, isStandard60, isBasic30);
+  const detailRoute = (linkHref || href || getDetailRoute(data)) as string;
+  const priorityBadge = isPremium90
+    ? { label: "PREMIUM", color: "bg-amber-500" }
+    : isStandard60
+      ? { label: "STANDARD", color: "bg-blue-500" }
+      : isBasic30
+        ? { label: "BASIC", color: "bg-gray-500" }
+        : null;
 
   const allUrls = (images ?? []).filter(Boolean);
   const [imgIndex, setImgIndex] = useState(0);
@@ -82,7 +89,6 @@ export default function UniversalCard(props: Props) {
               </span>
             </div>
           )}
-
           {maGaday && (
             <div className="absolute top-2 left-2 z-20 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
               SOLD
@@ -90,7 +96,6 @@ export default function UniversalCard(props: Props) {
           )}
 
           {/*
-
           {!maGaday && priorityBadge && (
             <div
               className={`absolute top-2 left-2 z-20 ${priorityBadge.color} text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm`}
@@ -98,39 +103,39 @@ export default function UniversalCard(props: Props) {
               {priorityBadge.label}
             </div>
           )}
-           */}
-
+       
           <div className="absolute bottom-2 right-2 z-20 bg-black/60 text-white text-[11px] font-medium px-1.5 py-0.5 rounded capitalize">
             {category}
           </div>
+             */}
           <div className="absolute top-2 right-2 z-20 p-1 bg-white/80 rounded-full">
             <AiOutlineHeart size={18} className="text-gray-400" />
           </div>
         </div>
 
-        <div className="p-2.5 flex flex-col flex-grow">
-          <h3 className="text-[13px] sm:text-sm font-semibold text-[#1A1A1A] line-clamp-2 min-h-[36px] leading-tight">
+        <div className="p-2 sm:p-2.5 flex flex-col flex-grow">
+          <h3 className="text-xs sm:text-[13px] md:text-sm font-semibold text-[#1A1A1A] line-clamp-2 min-h-[32px] sm:min-h-[36px] leading-tight">
             {title}
           </h3>
           {sellerName && (
-            <p className="text-[11px] text-indigo-600 font-semibold mt-0.5 truncate">
+            <p className="text-[10px] sm:text-[11px] text-indigo-600 font-semibold mt-0.5 truncate">
               {sellerName}
             </p>
           )}
-          <p className="text-[12px] text-gray-500 mt-1 line-clamp-2 leading-snug">
+          <p className="text-[11px] sm:text-[12px] text-gray-800 mt-1 line-clamp-2 leading-snug">
             {truncateText(description || "")}
           </p>
           {type && (
-            <div className="mt-1.5 inline-block w-fit bg-gray-100 text-gray-600 text-[10px] uppercase font-bold tracking-tight px-1.5 py-0.5 rounded">
+            <div className="mt-1 sm:mt-1.5 inline-block w-fit bg-gray-100 text-gray-600 text-[9px] sm:text-[10px] uppercase font-bold tracking-tight px-1 sm:px-1.5 py-0.5 rounded">
               {type}
             </div>
           )}
-          <div className="flex items-center justify-between mt-auto border-t border-[#E8E8E8] pt-2 mt-2">
-            <p className="text-[15px] sm:text-base font-bold text-[#1A1A1A]">
+          <div className="flex items-center justify-between mt-auto border-t border-[#E8E8E8] pt-1.5 sm:pt-2 mt-2">
+            <p className="text-sm sm:text-[15px] md:text-base font-bold text-[#1A1A1A]">
               {price ? `$${formatPrice(price)}` : ""}
             </p>
             {city && (
-              <span className="text-[11px] sm:text-xs text-[#555555]">
+              <span className="text-[10px] sm:text-[11px] md:text-xs text-[#555555]">
                 {city}
               </span>
             )}

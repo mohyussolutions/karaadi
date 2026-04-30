@@ -1,8 +1,36 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
+import { CONTACT_ENDPOINTS, REPORT_ENDPOINTS } from "@/actions/constant/constant";
+
+type SupportLink = {
+  label?: string;
+  name?: string;
+  labelKey?: string;
+  icon?: React.ReactElement<{ size?: number }>;
+  href?: string;
+  dashboardIcon?:
+    | React.ReactElement<{ size?: number }>
+    | ((props: { size?: number }) => React.ReactNode);
+};
+
+type SectionCounts = Record<string, number>;
+
+type SupportStats = {
+  total: number;
+  today: number;
+};
+
+type RecentItem = {
+  id: string | number;
+  subject?: string;
+  senderName?: string;
+  status?: string;
+  createdAt?: string;
+  section: string;
+};
 
 function SupportCard({
   title,
@@ -31,33 +59,59 @@ function SupportCard({
   );
 }
 
-type SupportLink = {
-  label?: string;
-  name?: string;
-  labelKey?: string;
-  icon?: React.ReactElement<{ size?: number }>;
-  href?: string;
-  dashboardIcon?:
-    | React.ReactElement<{ size?: number }>
-    | ((props: { size?: number }) => React.ReactNode);
-};
-
-type SectionItem = {
-  id?: string | number;
-  title?: string;
-  createdAt?: string;
-  [key: string]: unknown;
-};
-
 export default function StreamlinedDashboard() {
   const router = useRouter();
-  const [sections, setSections] = useState<Record<string, SectionItem[]>>({});
+  const [sectionCounts, setSectionCounts] = useState<SectionCounts>({});
+  const [stats, setStats] = useState<SupportStats>({ total: 0, today: 0 });
+  const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setSections({});
+  const fetchData = useCallback(async () => {
+    try {
+      const [ticketsRes, statsRes, reportsRes] = await Promise.all([
+        fetch(CONTACT_ENDPOINTS.TICKETS, { cache: "no-store" }).catch(() => null),
+        fetch(CONTACT_ENDPOINTS.STATS, { cache: "no-store" }).catch(() => null),
+        fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store" }).catch(() => null),
+      ]);
+
+      const tickets = ticketsRes?.ok ? await ticketsRes.json() : [];
+      const statsData = statsRes?.ok ? await statsRes.json() : { total: 0, today: 0 };
+      const reports = reportsRes?.ok ? await reportsRes.json() : [];
+
+      setStats(statsData);
+
+      const counts: SectionCounts = {
+        reports: Array.isArray(reports) ? reports.length : 0,
+        messages: Array.isArray(tickets)
+          ? tickets.filter((t: { status?: string }) => t.status === "NEW").length
+          : 0,
+      };
+      setSectionCounts(counts);
+
+      const recent: RecentItem[] = [
+        ...(Array.isArray(tickets)
+          ? tickets.slice(0, 3).map((t: RecentItem) => ({ ...t, section: "messages" }))
+          : []),
+        ...(Array.isArray(reports)
+          ? reports.slice(0, 3).map((r: RecentItem) => ({ ...r, section: "reports" }))
+          : []),
+      ]
+        .sort((a, b) => ((b.createdAt || "") > (a.createdAt || "") ? 1 : -1))
+        .slice(0, 6);
+
+      setRecentItems(recent);
+    } catch {
+      // keep defaults on error
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const totalItems = Object.values(sections).reduce((s, a) => s + a.length, 0);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const totalItems = Object.values(sectionCounts).reduce((s, n) => s + n, 0);
 
   return (
     <div className="flex flex-col gap-10 p-10 w-full">
@@ -73,16 +127,26 @@ export default function StreamlinedDashboard() {
         <div className="flex items-center gap-4 bg-white p-2 rounded-3xl border border-slate-100 shadow-sm">
           <div className="px-6 py-3 text-center border-r border-slate-100">
             <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">
-              Total Items
+              Total Tickets
             </p>
-            <p className="text-3xl font-black text-indigo-600">{totalItems}</p>
+            <p className="text-3xl font-black text-indigo-600">
+              {loading ? "—" : stats.total}
+            </p>
+          </div>
+          <div className="px-6 py-3 text-center border-r border-slate-100">
+            <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">
+              Today
+            </p>
+            <p className="text-3xl font-black text-emerald-600">
+              {loading ? "—" : stats.today}
+            </p>
           </div>
           <div className="px-6 py-3 text-center">
             <p className="text-[12px] uppercase font-black text-slate-400 tracking-widest">
-              Active Sections
+              Active Items
             </p>
             <p className="text-3xl font-black text-slate-900">
-              {Object.keys(sections).length}
+              {loading ? "—" : totalItems}
             </p>
           </div>
         </div>
@@ -95,7 +159,7 @@ export default function StreamlinedDashboard() {
         }).map((link: SupportLink) => {
           const title = (link.label || link.labelKey || "").toString();
           const IconContent = link.dashboardIcon || link.icon;
-          const count = sections[title.toLowerCase()]?.length || 0;
+          const count = sectionCounts[title.toLowerCase()] ?? 0;
 
           let iconNode: React.ReactNode;
           if (typeof IconContent === "function") {
@@ -124,55 +188,100 @@ export default function StreamlinedDashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
         <div className="xl:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black text-slate-900">
-              Recent Activity
-            </h2>
-            <div className="flex gap-3">
-              <input
-                type="date"
-                className="text-sm border-slate-200 border rounded-xl px-4 py-2 outline-none focus:ring-2 ring-indigo-500/20"
-              />
-              <button className="text-sm font-black text-indigo-600 px-5 py-2 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition">
-                Filter Data
-              </button>
-            </div>
+            <h2 className="text-2xl font-black text-slate-900">Recent Activity</h2>
+            <button
+              onClick={fetchData}
+              className="text-sm font-black text-indigo-600 px-5 py-2 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition"
+            >
+              Refresh
+            </button>
           </div>
 
-          <ul className="divide-y divide-slate-50">
-            {Object.entries(sections)
-              .flatMap(([section, arr]) =>
-                arr.map((it: SectionItem) => ({ ...it, section })),
-              )
-              .sort((a, b) =>
-                (b.createdAt || "") > (a.createdAt || "") ? 1 : -1,
-              )
-              .slice(0, 6)
-              .map((item: SectionItem, idx) => (
-                <li
-                  key={item.id || idx}
-                  className="py-6 flex justify-between items-center group"
-                >
-                  <div className="flex items-center gap-6">
-                    <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]" />
-                    <div>
-                      <p className="text-lg font-bold text-slate-800">
-                        {item.title || "Request Update"}
-                      </p>
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">
-                        Section:{" "}
-                        <span className="text-indigo-500">
-                          {String(item.section)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </li>
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-slate-50 rounded-2xl animate-pulse" />
               ))}
-          </ul>
+            </div>
+          ) : (
+            <ul className="divide-y divide-slate-50">
+              {recentItems.length === 0 ? (
+                <li className="py-8 text-center text-slate-400 font-medium">
+                  No recent activity
+                </li>
+              ) : (
+                recentItems.map((item, idx) => (
+                  <li
+                    key={item.id || idx}
+                    className="py-6 flex justify-between items-center group"
+                  >
+                    <div className="flex items-center gap-6">
+                      <div
+                        className={`w-3 h-3 rounded-full shadow-sm ${
+                          item.status === "NEW"
+                            ? "bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]"
+                            : item.status === "IN_PROGRESS"
+                              ? "bg-amber-500"
+                              : "bg-emerald-500"
+                        }`}
+                      />
+                      <div>
+                        <p className="text-lg font-bold text-slate-800">
+                          {item.subject || item.senderName || "Request Update"}
+                        </p>
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">
+                          Section:{" "}
+                          <span className="text-indigo-500">{item.section}</span>
+                          {item.status && (
+                            <span className="ml-3 text-slate-300">
+                              · {item.status.replace("_", " ")}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
 
-          <button className="w-full mt-10 py-5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-black transition shadow-xl shadow-slate-200">
-            Download Full Report
+          <button
+            onClick={() => router.push("/support/messages")}
+            className="w-full mt-10 py-5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-black transition shadow-xl shadow-slate-200"
+          >
+            View All Tickets
           </button>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-6">
+          <h2 className="text-xl font-black text-slate-900">Quick Stats</h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center p-4 bg-indigo-50 rounded-2xl">
+              <span className="text-sm font-bold text-indigo-700">Total Tickets</span>
+              <span className="text-2xl font-black text-indigo-600">
+                {loading ? "—" : stats.total}
+              </span>
+            </div>
+            <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl">
+              <span className="text-sm font-bold text-emerald-700">New Today</span>
+              <span className="text-2xl font-black text-emerald-600">
+                {loading ? "—" : stats.today}
+              </span>
+            </div>
+            <div className="flex justify-between items-center p-4 bg-amber-50 rounded-2xl">
+              <span className="text-sm font-bold text-amber-700">Open Reports</span>
+              <span className="text-2xl font-black text-amber-600">
+                {loading ? "—" : sectionCounts.reports ?? 0}
+              </span>
+            </div>
+            <div className="flex justify-between items-center p-4 bg-rose-50 rounded-2xl">
+              <span className="text-sm font-bold text-rose-700">Unread Messages</span>
+              <span className="text-2xl font-black text-rose-600">
+                {loading ? "—" : sectionCounts.messages ?? 0}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

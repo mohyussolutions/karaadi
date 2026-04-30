@@ -12,70 +12,118 @@ import {
   Line,
   CartesianGrid,
 } from "recharts";
+import { CONTACT_ENDPOINTS, REPORT_ENDPOINTS } from "@/actions/constant/constant";
 
-const reportsData = [
-  { day: "Mon", reports: 12 },
-  { day: "Tue", reports: 19 },
-  { day: "Wed", reports: 8 },
-  { day: "Thu", reports: 15 },
-  { day: "Fri", reports: 22 },
-  { day: "Sat", reports: 9 },
-  { day: "Sun", reports: 13 },
-];
+type DailyCount = { day: string; count: number };
+type WeeklyCount = { week: string; count: number };
 
-const messagesData = [
-  { week: "Week 1", count: 120 },
-  { week: "Week 2", count: 90 },
-  { week: "Week 3", count: 160 },
-  { week: "Week 4", count: 130 },
-];
+function groupByDay(items: { createdAt?: string }[]): DailyCount[] {
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const counts = Object.fromEntries(days.map((d) => [d, 0]));
+  items.forEach((item) => {
+    if (item.createdAt) {
+      const day = days[new Date(item.createdAt).getDay()];
+      counts[day] = (counts[day] || 0) + 1;
+    }
+  });
+  return days.map((d) => ({ day: d, count: counts[d] }));
+}
+
+function groupByWeek(items: { createdAt?: string }[]): WeeklyCount[] {
+  const weeks: Record<string, number> = { "Week 1": 0, "Week 2": 0, "Week 3": 0, "Week 4": 0 };
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  items.forEach((item) => {
+    if (!item.createdAt) return;
+    const date = new Date(item.createdAt);
+    if (date < startOfMonth) return;
+    const dayOfMonth = date.getDate();
+    const weekKey =
+      dayOfMonth <= 7 ? "Week 1" :
+      dayOfMonth <= 14 ? "Week 2" :
+      dayOfMonth <= 21 ? "Week 3" : "Week 4";
+    weeks[weekKey]++;
+  });
+  return Object.entries(weeks).map(([week, count]) => ({ week, count }));
+}
 
 export default function SupportCharts() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [reportsData, setReportsData] = useState<DailyCount[]>([]);
+  const [messagesData, setMessagesData] = useState<WeeklyCount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setMounted(true);
+
+    async function fetchChartData() {
+      try {
+        const [reportsRes, ticketsRes] = await Promise.all([
+          fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store" }).catch(() => null),
+          fetch(CONTACT_ENDPOINTS.TICKETS, { cache: "no-store" }).catch(() => null),
+        ]);
+
+        const reports = reportsRes?.ok ? await reportsRes.json() : [];
+        const tickets = ticketsRes?.ok ? await ticketsRes.json() : [];
+
+        const reportsArr = Array.isArray(reports) ? reports : reports?.reports ?? [];
+        const ticketsArr = Array.isArray(tickets) ? tickets : [];
+
+        setReportsData(groupByDay(reportsArr));
+        setMessagesData(groupByWeek(ticketsArr));
+      } catch {
+        // keep empty charts on error
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchChartData();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
       <div className="bg-white shadow-md p-6 rounded-2xl border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Weekly User Reports</h3>
+        <h3 className="text-lg font-semibold mb-4">Weekly User Reports (by day)</h3>
         <div className="h-72">
-          {mounted ? (
+          {!mounted || loading ? (
+            <div className="h-full bg-slate-50 rounded-xl animate-pulse" />
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={reportsData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="day" />
-                <YAxis />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="reports" fill="#6366F1" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" name="Reports" fill="#6366F1" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-full" />
           )}
         </div>
       </div>
 
       <div className="bg-white shadow-md p-6 rounded-2xl border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Monthly Support Messages</h3>
+        <h3 className="text-lg font-semibold mb-4">Monthly Support Tickets (this month)</h3>
         <div className="h-72">
-          {mounted ? (
+          {!mounted || loading ? (
+            <div className="h-full bg-slate-50 rounded-xl animate-pulse" />
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={messagesData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" />
-                <YAxis />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Line
                   type="monotone"
                   dataKey="count"
+                  name="Tickets"
                   stroke="#22C55E"
                   strokeWidth={3}
                   dot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-full" />
           )}
         </div>
       </div>

@@ -4,12 +4,10 @@ import { useState, useTransition, useEffect, useRef } from "react";
 import UniversalCard from "../Cards/categoriesCards/UniversalCard";
 import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
 import { loadFeedPage } from "@/actions/categories/feedActions";
-import { parseSearchQuery } from "@/app/ui/search/parseSearchQuery";
 import { SEARCH_EVENT } from "@/app/ui/search/SearchInput";
-import {
-  DISPLAY_INCREMENT,
-  INITIAL_DISPLAY,
-} from "@/actions/constant/constant";
+import { getDetailRoute } from "@/app/utils/getDetailRoute";
+const INITIAL_DISPLAY = 50;
+const DISPLAY_INCREMENT = 20;
 
 function dedupById(items: UniversalCardProps[]): UniversalCardProps[] {
   const seen = new Set<string>();
@@ -29,7 +27,14 @@ function normalizeItem(item: any): UniversalCardProps {
       : item.image
         ? [item.image]
         : [];
-  return {
+  const mainCategory = item.mainCategory ?? "";
+  const category =
+    typeof item.category === "string" && item.category
+      ? item.category
+      : Array.isArray(item.category) && item.category.length
+        ? item.category[0]
+        : mainCategory;
+  const normalized: UniversalCardProps = {
     id,
     _id: id,
     title: item.title ?? item.name ?? "",
@@ -37,10 +42,8 @@ function normalizeItem(item: any): UniversalCardProps {
     city: item.city ?? item.region ?? "",
     images,
     description: item.description ?? "",
-    category:
-      typeof item.category === "string" && item.category
-        ? item.category
-        : (item.mainCategory ?? ""),
+    category,
+    mainCategory,
     subcategory: item.subcategory,
     maGaday: !!item.maGaday,
     isBasic30: !!item.isBasic30,
@@ -49,11 +52,16 @@ function normalizeItem(item: any): UniversalCardProps {
     type: item.type ?? item.vehicleModel ?? "",
     sellerName: item.sellerName,
   };
+  normalized.linkHref = getDetailRoute(normalized);
+  return normalized;
 }
+
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+const BACKEND = BASE_API_URL;
 
 async function fetchSearch(query: string): Promise<UniversalCardProps[]> {
   try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`${BACKEND}/api/search?q=${encodeURIComponent(query)}`);
     const data = await res.json();
     return Array.isArray(data) ? data.map(normalizeItem) : [];
   } catch {
@@ -89,35 +97,13 @@ export default function FeedClient({
         return;
       }
 
-      const parsed = parseSearchQuery(rawQuery);
-      const apiText = [parsed.text, parsed.location]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      const stableKey = `${apiText}|${parsed.price ?? ""}`;
-
+      const stableKey = rawQuery.trim().toLowerCase();
       if (stableKey === lastQueryRef.current) return;
       lastQueryRef.current = stableKey;
       setSearching(true);
 
       try {
-        let items = apiText
-          ? await fetchSearch(apiText)
-          : dedupById((await loadFeedPage(1)).map(normalizeItem));
-
-        items = dedupById(items);
-
-        if (parsed.location) {
-          const loc = parsed.location.toLowerCase();
-          items = items.filter((i) =>
-            (i.city ?? "").toLowerCase().includes(loc),
-          );
-        }
-
-        if (parsed.price && parsed.price > 0) {
-          items = items.filter((i) => Number(i.price ?? 0) <= parsed.price!);
-        }
-
+        const items = dedupById(await fetchSearch(rawQuery.trim()));
         setSearchResults(items);
       } finally {
         setSearching(false);

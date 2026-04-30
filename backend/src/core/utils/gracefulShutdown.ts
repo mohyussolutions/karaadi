@@ -3,7 +3,7 @@ import type * as http from "http";
 
 type SetupParams = {
   server: http.Server | null;
-  prisma: { $disconnect: () => Promise<void> };
+  prisma: { $disconnect: () => Promise<void>; $connect: () => Promise<void> };
   redisServer: { stop: () => Promise<void> };
 };
 
@@ -12,41 +12,63 @@ export default function setupGracefulShutdown({
   prisma,
   redisServer,
 }: SetupParams) {
-  const gracefulShutdown = async (signal?: string) => {
-    try {
-      console.log(
-        chalk.yellow(
-          `Shutting down process ${process.pid}${signal ? ` due to ${signal}` : ""}`,
-        ),
-      );
-      if (server) {
-        server.close(() => {
-          console.log(chalk.yellow("HTTP server closed"));
-        });
-      }
-    } catch (e) {
-      console.error("Error closing server", e);
+  let isShuttingDown = false;
+
+  const gracefulShutdown = async (signal: string, error?: Error) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    console.warn(
+      chalk.yellow(`\n[${signal}] Shutting down process ${process.pid}...`),
+    );
+
+    if (error) {
+      console.error(chalk.red("Trace:"), error.stack || error.message);
     }
 
-    try {
-      await prisma.$disconnect();
-      console.log(chalk.yellow("Prisma disconnected"));
-    } catch (e) {}
+    const forceExit = setTimeout(() => {
+      console.error(chalk.bgRed("Shutdown timed out. Forcing exit."));
+      process.exit(1);
+    }, 10000);
 
     try {
-      await redisServer.stop();
-    } catch (e) {}
-
-    process.exit(0);
+      server?.close();
+      await Promise.allSettled([prisma.$disconnect(), redisServer.stop()]);
+      clearTimeout(forceExit);
+      process.exit(0);
+    } catch (err) {
+      console.error(chalk.red("Cleanup failed:"), err);
+      process.exit(1);
+    }
   };
 
   process.on("unhandledRejection", (reason) => {
-    console.error(chalk.red("Unhandled Rejection:"), reason);
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    const isNetworkError = /ECONNREFUSED|ECONNRESET|ETIMEDOUT|Connection/.test(
+      error.message,
+    );
+
+    if (isNetworkError) {
+      console.error(
+        chalk.yellow(`[Network] ${error.message}. Reconnecting...`),
+      );
+      prisma.$connect().catch(() => {});
+    } else {
+      gracefulShutdown("unhandledRejection", error);
+    }
   });
 
   process.on("uncaughtException", (err) => {
-    console.error(chalk.red("Uncaught Exception:"), err);
-    process.exit(1);
+    const isNetworkError = /ECONNREFUSED|ECONNRESET|ETIMEDOUT|Connection/.test(
+      err.message,
+    );
+
+    if (isNetworkError) {
+      console.error(chalk.yellow(`[Network] ${err.message}. Reconnecting...`));
+      prisma.$connect().catch(() => {});
+    } else {
+      gracefulShutdown("uncaughtException", err);
+    }
   });
 
   process.on("SIGINT", () => gracefulShutdown("SIGINT"));

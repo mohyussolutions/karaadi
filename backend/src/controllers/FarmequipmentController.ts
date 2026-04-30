@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
@@ -11,6 +10,7 @@ import {
   isExpired,
 } from "src/hooks/useExpire.ts";
 import { AuthRequest, CreateFarmequipmentBody } from "src/types/index.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",

@@ -7,6 +7,7 @@ export interface UniversalCardProps {
   images?: string[];
   description?: string;
   category?: string;
+  mainCategory?: string;
   subcategory?: string;
   linkHref?: string;
   href?: string;

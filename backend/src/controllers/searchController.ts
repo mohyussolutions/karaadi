@@ -1,9 +1,9 @@
 import prisma from "src/core/utils/db.ts";
 import { Request, Response } from "express";
 
-import cacheManager from "src/services/redisserver/cacheManager.ts";
 import { SearchResultItem } from "src/types/user.types.ts";
 import { CACHE_KEYS, CACHE_TTL } from "src/config/config.constants.ts";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 export const globalSearch = async (req: Request, res: Response) => {
   const { q } = req.query;
