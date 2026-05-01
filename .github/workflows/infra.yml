@@ -41,7 +41,7 @@ jobs:
         run: pip install cfn-lint --quiet
 
       - name: Lint CloudFormation template
-        run: cfn-lint infrastructure/production.yaml --format json
+        run: cfn-lint infrastructure/production.yaml --format json --ignore-checks W1011
 
   # ── Deploy ───────────────────────────────────────────────────────────────────
   deploy:

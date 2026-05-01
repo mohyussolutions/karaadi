@@ -52,6 +52,11 @@ Parameters:
     Default: karaadi
     Description: Name prefix for all resources
 
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: EC2 AMI resolved from SSM public parameters at deploy time
+
   Environment:
     Type: String
     Default: production
@@ -137,6 +142,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AppName}-vpc
+        - Key: Environment
+          Value: !Ref Environment
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -333,7 +340,7 @@ Resources:
     Properties:
       LaunchTemplateData:
         InstanceType: !Ref EC2InstanceType
-        ImageId: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+        ImageId: !Ref AmiId
         IamInstanceProfile:
           Name: !Ref EC2InstanceProfile
         SecurityGroupIds:
@@ -595,6 +602,8 @@ Resources:
           Value: !Ref CognitoUserPool
         - Name: NEXT_PUBLIC_COGNITO_CLIENT_ID
           Value: !Ref CognitoUserPoolClient
+        - Name: NEXT_PUBLIC_DOMAIN
+          Value: !Ref DomainName
       BuildSpec: |
         version: 1
         frontend:
