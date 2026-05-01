@@ -1,4 +1,4 @@
-import express from "express"; // v2026-05-01
+import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
