@@ -30,19 +30,22 @@ const Sidebar: FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       )}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 bg-indigo-700 text-white transform transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-50 w-72
+          bg-indigo-700 dark:bg-gray-900
+          border-r border-indigo-600/30 dark:border-gray-700
+          text-white transform transition-transform duration-300 ease-in-out
           md:relative md:translate-x-0
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           h-screen flex flex-col shadow-xl
         `}
       >
-        <div className="h-20 flex items-center justify-between px-6 py-4 border-b border-indigo-500/30">
-          <span className="text-lg font-bold tracking-wider uppercase">
+        <div className="h-20 flex items-center justify-between px-6 py-4 border-b border-indigo-500/30 dark:border-gray-700">
+          <span className="text-lg font-bold tracking-wider uppercase text-white dark:text-gray-100">
             Admin Panel
           </span>
           <button
             onClick={toggleSidebar}
-            className="md:hidden p-2 hover:bg-indigo-600 rounded transition"
+            className="md:hidden p-2 hover:bg-indigo-600 dark:hover:bg-gray-800 rounded transition"
             aria-label="Close sidebar"
           >
             <FaTimes size={20} />
@@ -64,8 +67,8 @@ const Sidebar: FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                   flex items-center gap-4 px-4 py-3 rounded-lg transition-all mb-2
                   ${
                     isActive
-                      ? "bg-indigo-800 text-white shadow-inner"
-                      : "text-indigo-100 hover:bg-indigo-600 hover:text-white"
+                      ? "bg-indigo-800 dark:bg-gray-700 text-white shadow-inner"
+                      : "text-indigo-100 dark:text-gray-300 hover:bg-indigo-600 dark:hover:bg-gray-800 hover:text-white dark:hover:text-white"
                   }
                 `}
               >

@@ -141,6 +141,6 @@ export async function createRealEstate(
     cache: "no-store",
   });
   const result = await res.json();
-  if (!res.ok) return { success: false, message: result.message };
+  if (!res.ok) return { success: false, message: result.error === "Validation failed" ? result.message : (result.message || result.error || "Failed") };
   return { success: true, id: result.id || result._id };
 }

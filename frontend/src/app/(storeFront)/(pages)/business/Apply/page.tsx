@@ -22,7 +22,6 @@ type FormState = {
   website: string;
   address: string;
   description: string;
-  categories: string[];
 };
 
 export default function ApplyPage() {
@@ -41,15 +40,7 @@ export default function ApplyPage() {
     website: "",
     address: "",
     description: "",
-    categories: [],
   });
-
-  const availableCategories = [
-    { value: "realestate", label: t("mine.businesses.categories.realestate", "Real Estate") },
-    { value: "schools", label: t("mine.businesses.categories.schools", "Schools") },
-    { value: "motor", label: t("mine.businesses.categories.motor", "Motor") },
-    { value: "marketplace", label: t("mine.businesses.categories.marketplace", "Marketplace") },
-  ];
 
   useEffect(() => {
     if (authLoading) return;
@@ -82,8 +73,7 @@ export default function ApplyPage() {
   const canSubmit =
     form.companyName.trim() &&
     form.businessEmail.trim() &&
-    form.phone.trim() &&
-    form.categories.length > 0;
+    form.phone.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,15 +89,10 @@ export default function ApplyPage() {
       website: form.website.trim() || undefined,
       address: form.address.trim() || undefined,
       description: form.description.trim() || undefined,
-      categories: form.categories,
     };
-
-    console.log("Submitting payload:", payload);
 
     try {
       const res = (await createBusiness(payload)) as any;
-
-      console.log("Response:", res);
 
       if (res?.success && res?.business?.id) {
         toast.success(
@@ -115,12 +100,9 @@ export default function ApplyPage() {
         );
         router.push(`/business/Approval?businessId=${res.business.id}`);
       } else {
-        const errorMessage = res?.error || "Submission failed.";
-        toast.error(errorMessage);
-        console.error("Submission error:", errorMessage);
+        toast.error(res?.error || "Submission failed.");
       }
-    } catch (error) {
-      console.error("Caught error:", error);
+    } catch {
       toast.error(t("mine.businesses.genericError", "Something went wrong."));
     } finally {
       setSubmitting(false);
@@ -176,33 +158,6 @@ export default function ApplyPage() {
         onSubmit={handleSubmit}
         className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden"
       >
-        <div className="px-6 py-5">
-          <label className="block text-sm font-semibold mb-1.5 text-gray-700">
-            {t("mine.businesses.selectCategories", "Where do you want to advertise?") + " *"}
-          </label>
-          <div className="flex flex-wrap gap-3">
-            {availableCategories.map((cat) => (
-              <label key={cat.value} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  value={cat.value}
-                  checked={form.categories.includes(cat.value)}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setForm((prev) => ({
-                      ...prev,
-                      categories: checked
-                        ? [...prev.categories, cat.value]
-                        : prev.categories.filter((c) => c !== cat.value),
-                    }));
-                  }}
-                  className="accent-blue-600"
-                />
-                <span>{cat.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
         <div className="px-6 pt-6 pb-4 border-b border-gray-100">
           <h2 className="text-base font-bold text-gray-900">
             {t("mine.businesses.businessInfo", "Business Information")}

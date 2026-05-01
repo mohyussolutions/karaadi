@@ -114,7 +114,7 @@ export async function updateMarketplaceItem(
   const result = await res.json();
   return res.ok
     ? { success: true, id: result._id || result.id }
-    : { success: false, message: result.message };
+    : { success: false, message: result.message || result.error || "Failed" };
 }
 
 export async function deleteMarketplaceItem(id: string, token?: string) {

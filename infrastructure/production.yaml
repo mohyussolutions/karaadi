@@ -7,8 +7,6 @@ Description: Karaadi marketplace infrastructure - Complete AWS setup for classif
 
 Mappings:
   Constants:
-    Region:
-      Value: !Ref AWS::Region
     VpcCidr:
       Value: 10.0.0.0/16
     PublicSubnetACidr:
@@ -344,7 +342,7 @@ Resources:
           Fn::Base64: !Sub |
             #!/bin/bash
             yum update -y
-            curl -fsSL https://rpm.nodesource.com/setup_${Constants::NodeVersion}.x | bash -
+            curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
             yum install -y nodejs git
             npm install -g pm2
             mkdir -p /home/ec2-user/karaadi
@@ -425,6 +423,7 @@ Resources:
   RDSInstance:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
     Properties:
       DBInstanceClass: !Ref DBInstanceClass
       Engine: postgres
@@ -491,12 +490,13 @@ Resources:
           Required: false
           Mutable: true
           AttributeDataType: String
-      PasswordPolicy:
-        MinimumLength: 8
-        RequireUppercase: true
-        RequireLowercase: true
-        RequireNumbers: true
-        RequireSymbols: false
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -545,7 +545,7 @@ Resources:
     Properties:
       ApiId: !Ref APIGateway
       IntegrationType: HTTP_PROXY
-      IntegrationUri: !Sub http://${BackendALB.DNSName}:${Constants::BackendPort}
+      IntegrationUri: !Sub http://${BackendALB.DNSName}:8080
       ConnectionType: VPC_LINK
       ConnectionId: !Ref APIGatewayVpcLink
       IntegrationMethod: ANY

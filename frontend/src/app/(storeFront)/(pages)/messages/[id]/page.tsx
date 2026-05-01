@@ -54,7 +54,7 @@ export default function MessagesInbox() {
       <main className="flex-1 w-full h-full overflow-hidden flex flex-col md:p-4 lg:p-6">
         <div className="flex-1 w-full h-full bg-white md:rounded-3xl shadow-sm border-gray-100 md:border overflow-hidden flex flex-col">
           <ChatSystem
-            currentUserId={user?._id}
+            currentUserId={user?._id ?? user?.id ?? ""}
             sellerId={sellerId || undefined}
             itemId={itemId || undefined}
             initialChatId={chatId ? Number(chatId) : undefined}

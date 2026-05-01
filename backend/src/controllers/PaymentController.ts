@@ -400,10 +400,11 @@ export const revenueByMonth = async (_req: Request, res: Response) => {
       orderBy: { createdAt: "asc" },
     });
 
-    const monthSet = Array.from(
+    const monthSet = Array.from<string>(
       new Set(
         months.map(
-          (p) => `${p.createdAt.getFullYear()}-${p.createdAt.getMonth() + 1}`,
+          (p: { createdAt: Date }) =>
+            `${p.createdAt.getFullYear()}-${p.createdAt.getMonth() + 1}`,
         ),
       ),
     );

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: rgb(255, 255, 255);
   --foreground: #1a1a1a;
@@ -7,18 +9,18 @@
   --border-color: #e8e8e8;
 }
 
+.dark {
+  --background: #111827;
+  --foreground: #f9fafb;
+  --secondary-text: #9ca3af;
+  --border-color: #374151;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: rgb(255, 255, 255);
-    --foreground: #1a1a1a;
-  }
 }
 
 body {

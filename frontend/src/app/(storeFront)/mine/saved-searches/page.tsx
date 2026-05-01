@@ -59,7 +59,7 @@ const SavedSearchHistory: React.FC = () => {
     const fetchData = async () => {
       if (!authUser) return;
       try {
-        const token = authUser.accessToken || authUser.token;
+        const token = authUser.accessToken || authUser.token || "";
         const profile = await getProfile(token);
         setUserProfile(profile);
 

@@ -25,8 +25,8 @@ export default function ProfileClientWrapper({
 
   return (
     <>
-      <ProfileCard user={user} accessToken={accessToken} />
-      <AccountOptionsClient user={user} />
+      <ProfileCard user={user as any} accessToken={accessToken} />
+      <AccountOptionsClient user={user as any} />
     </>
   );
 }

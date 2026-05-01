@@ -28,8 +28,8 @@ export default function SupportModule() {
     setLoading(true);
     try {
       const result = await createTicket({
-        senderName: user.username,
-        senderEmail: user.email,
+        senderName: user.username ?? "",
+        senderEmail: user.email ?? "",
         subject,
         body,
       });

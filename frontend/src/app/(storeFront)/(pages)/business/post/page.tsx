@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { IoBusiness } from "react-icons/io5";
+import { AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getMyBusinesses } from "@/actions/categories/businessActions";
 import type { Business } from "@/actions/categories/businessActions";
@@ -14,7 +15,6 @@ import MotorcycleForm from "./forms/MotorcycleForm";
 import MarketplaceForm from "./forms/MarketplaceForm";
 import BoatForm from "./forms/BoatForm";
 import FarmEquipmentForm from "./forms/FarmEquipmentForm";
-
 import { toast } from "react-toastify";
 import {
   CategoryKey,
@@ -58,58 +58,91 @@ export default function PostPage() {
     });
   }, [user, authLoading, businessId]);
 
-  if (authLoading || loading) {
-    return (
-      <div className="max-w-xl mx-auto py-10 px-4 animate-pulse space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-200 rounded-2xl" />
-          <div className="space-y-2 flex-1">
-            <div className="h-5 bg-gray-200 rounded w-40" />
-            <div className="h-3 bg-gray-100 rounded w-32" />
-          </div>
-        </div>
-        <div className="h-12 bg-gray-200 rounded-2xl" />
-        <div className="h-24 bg-gray-200 rounded-3xl" />
-        <div className="grid grid-cols-2 gap-3">
-          {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="h-28 bg-gray-200 rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (!business) {
-    return (
-      <div className="max-w-xl mx-auto py-10 px-4 text-center space-y-4">
-        <p className="text-gray-500">
-          {t(
-            "mine.businesses.noActiveBusiness",
-            "No active business with a plan found.",
-          )}
-        </p>
-        <button
-          onClick={() => router.push("/business/Apply")}
-          className="text-blue-600 text-sm font-semibold hover:underline"
-        >
-          {t("mine.businesses.goApply", "← Go to Apply")}
-        </button>
-      </div>
-    );
-  }
-
   const userId = (user as any)?._id || (user as any)?.id || "";
 
-  const renderForm = () => {
-    if (!selectedCategory || !userId || isExpired) return null;
+  const handleCategorySelect = (category: CategoryKey) => {
+    setSelectedCategory(category);
+    setFormKey((k) => k + 1);
+  };
+
+  const handleSuccess = () => {
+    toast.success("Ad posted successfully!");
+    setFormKey((k) => k + 1);
+  };
+
+  const renderFormContent = () => {
+    if (authLoading || loading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
+          <p className="text-sm text-gray-400">Loading…</p>
+        </div>
+      );
+    }
+
+    if (!business) {
+      return (
+        <div className="text-center space-y-4 py-8">
+          <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto" />
+          <div>
+            <p className="font-semibold text-gray-700">
+              {t(
+                "mine.businesses.noActiveBusiness",
+                "No active business with a plan found.",
+              )}
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              {t(
+                "mine.businesses.completeSteps",
+                "Complete the previous steps to get here.",
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/business/Apply")}
+            className="text-blue-600 text-sm font-semibold hover:underline"
+          >
+            {t("mine.businesses.goApply", "← Go to Apply")}
+          </button>
+        </div>
+      );
+    }
+
+    if (isExpired) {
+      return (
+        <div className="text-center space-y-4 py-8">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto" />
+          <div>
+            <p className="font-semibold text-gray-700">
+              {t("mine.businesses.planExpired", "Your plan has expired.")}
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              {t(
+                "mine.businesses.renewToPost",
+                "Renew your plan to continue posting ads.",
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() =>
+              router.push(`/business/plan?businessId=${business.id}&extend=1`)
+            }
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+          >
+            {t("mine.businesses.renewPlan", "Renew Plan →")}
+          </button>
+        </div>
+      );
+    }
+
+    if (!selectedCategory || !userId) return null;
+
     const props = {
       businessId: business.id,
       userId,
-      onSuccess: () => {
-        toast.success("Ad posted successfully!");
-        setFormKey((k) => k + 1);
-      },
+      onSuccess: handleSuccess,
     };
+
     switch (selectedCategory) {
       case "realestate":
         return <RealEstateForm key={formKey} {...props} />;
@@ -133,11 +166,14 @@ export default function PostPage() {
         return (
           <MarketplaceForm key={formKey} {...props} mainCategory="Schools" />
         );
+      default:
+        return null;
     }
   };
 
   return (
     <div className="max-w-xl mx-auto py-10 px-4">
+      {/* Page header */}
       <div className="flex items-center gap-4 mb-8">
         <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
           <IoBusiness className="text-2xl text-white" />
@@ -146,22 +182,24 @@ export default function PostPage() {
           <h1 className="text-xl font-bold text-gray-900">
             {t("mine.businesses.postTitle", "Post an Ad")}
           </h1>
-          <p className="text-sm text-gray-500">{business.name}</p>
+          <p className="text-sm text-gray-500">
+            {loading || authLoading ? "…" : (business?.name ?? "")}
+          </p>
         </div>
       </div>
 
-      <BusinessStepper active={4} businessId={business.id} />
+      {/* Step 4 indicator — always visible */}
+      <BusinessStepper active={4} businessId={business?.id} />
 
+      {/* Category navbar — always visible */}
       <CategoryNavbar
         selectedCategory={selectedCategory}
-        onSelectCategory={(category) => {
-          setSelectedCategory(category);
-          setFormKey((k) => k + 1);
-        }}
+        onSelectCategory={handleCategorySelect}
       />
 
+      {/* Form area */}
       <div className="bg-white border border-gray-200 rounded-3xl shadow-sm px-6 py-6">
-        {renderForm()}
+        {renderFormContent()}
       </div>
     </div>
   );

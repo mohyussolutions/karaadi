@@ -114,7 +114,7 @@ export async function createBoat(payload: CreateBoatPayload, token?: string) {
   const result = await res.json();
   return res.ok
     ? { success: true, boatId: result._id || result.id }
-    : { success: false, message: result.message };
+    : { success: false, message: result.message || result.error || "Failed" };
 }
 
 export async function updateBoat(

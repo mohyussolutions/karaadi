@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { MdAttachMoney } from "@/app/utils/icons";
 import { useImageUpload } from "@/app/(storeFront)/components/shared/ImageUpload/useImageUpload";
 import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageUpload";
 import CitySelect from "@/app/(storeFront)/components/shared/CitySelect/CitySelect";
-import { getAllRegions, getAllCities } from "@/actions/categories/geoAction";
+import { useGeoData } from "@/app/(storeFront)/components/hooks/useGeoData";
 import { createMarketplaceItem } from "@/actions/categories/marketplaceActions";
 
 const MARKETPLACE_CATEGORIES = [
@@ -41,9 +41,7 @@ type Props = {
 export default function MarketplaceForm({ businessId, userId, mainCategory = "Marketplace", onSuccess }: Props) {
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
-  const [regions, setRegions] = useState<any[]>([]);
-  const [allCities, setAllCities] = useState<any[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
+  const { regions, cities: allCities, loading: dataLoading, updateCities } = useGeoData();
   const { images, addImages, removeImage, toBase64 } = useImageUpload();
 
   const categories = mainCategory === "Schools" ? SCHOOL_CATEGORIES : MARKETPLACE_CATEGORIES;
@@ -58,14 +56,6 @@ export default function MarketplaceForm({ businessId, userId, mainCategory = "Ma
     city: "",
   });
 
-  useEffect(() => {
-    Promise.all([getAllRegions(), getAllCities()])
-      .then(([regs, cits]) => {
-        setRegions(regs || []);
-        setAllCities(cits || []);
-      })
-      .finally(() => setDataLoading(false));
-  }, []);
 
   const set = (k: keyof typeof form, v: string) =>
     setForm((p) => ({ ...p, [k]: v }));
@@ -97,6 +87,7 @@ export default function MarketplaceForm({ businessId, userId, mainCategory = "Ma
         price: Number(form.price) || 0,
         mainCategory,
         category: [form.category],
+        subcategory: [],
         condition: form.condition || undefined,
         region: form.region,
         city: form.city,
@@ -190,7 +181,7 @@ export default function MarketplaceForm({ businessId, userId, mainCategory = "Ma
       </div>
 
       <CitySelect regionId={form.region} cities={allCities} value={form.city}
-        onChange={(name) => set("city", name)} onCitiesUpdate={setAllCities}
+        onChange={(name) => set("city", name)} onCitiesUpdate={updateCities}
         disabled={!form.region} label={t("createRealEstate.cityLabel", "City")} />
 
       <ImageUpload images={images} onAdd={addImages} onRemove={removeImage} label={t("createMotorcycle.upload", "Upload images")} />

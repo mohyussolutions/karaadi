@@ -73,7 +73,7 @@ export const getAllCities = async (regionId?: string) => {
     : geoEndpoints.GET_ALL_CITIES;
   const res = await fetch(url, {
     headers: headers as HeadersInit,
-    cache: "no-store",
+    next: { revalidate: 300 },
   });
   return res.ok ? await res.json() : [];
 };

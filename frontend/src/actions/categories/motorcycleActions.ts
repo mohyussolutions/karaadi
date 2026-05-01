@@ -56,7 +56,7 @@ export async function createMotorcycle(
   const result = await res.json();
   return res.ok
     ? { success: true, motorcycleId: result.id || result._id }
-    : { success: false, message: result?.message };
+    : { success: false, message: result?.message || result?.error || "Failed" };
 }
 
 export async function updateMotorcycle(
@@ -75,7 +75,7 @@ export async function updateMotorcycle(
   const result = await res.json();
   return res.ok
     ? { success: true, motorcycleId: id }
-    : { success: false, message: result?.message };
+    : { success: false, message: result?.message || result?.error || "Failed" };
 }
 
 export async function deleteMotorcycle(id: string, token?: string) {

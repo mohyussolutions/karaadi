@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { MdAttachMoney } from "@/app/utils/icons";
 import { useImageUpload } from "@/app/(storeFront)/components/shared/ImageUpload/useImageUpload";
 import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageUpload";
 import CitySelect from "@/app/(storeFront)/components/shared/CitySelect/CitySelect";
-import { getAllRegions, getAllCities } from "@/actions/categories/geoAction";
+import { useGeoData } from "@/app/(storeFront)/components/hooks/useGeoData";
 import { createTraktor } from "@/actions/categories/FarmequipmentAction";
 
 const FARM_CATEGORIES = [
@@ -31,9 +31,7 @@ export default function FarmEquipmentForm({
 }: Props) {
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
-  const [regions, setRegions] = useState<any[]>([]);
-  const [allCities, setAllCities] = useState<any[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
+  const { regions, cities: allCities, loading: dataLoading, updateCities } = useGeoData();
   const { images, addImages, removeImage, toBase64 } = useImageUpload();
 
   const [form, setForm] = useState({
@@ -48,14 +46,6 @@ export default function FarmEquipmentForm({
     city: "",
   });
 
-  useEffect(() => {
-    Promise.all([getAllRegions(), getAllCities()])
-      .then(([regs, cits]) => {
-        setRegions(regs || []);
-        setAllCities(cits || []);
-      })
-      .finally(() => setDataLoading(false));
-  }, []);
 
   const set = (k: keyof typeof form, v: string) =>
     setForm((p) => ({ ...p, [k]: v }));
@@ -279,7 +269,7 @@ export default function FarmEquipmentForm({
         cities={allCities}
         value={form.city}
         onChange={(name) => set("city", name)}
-        onCitiesUpdate={setAllCities}
+        onCitiesUpdate={updateCities}
         disabled={!form.region}
         label={t("createRealEstate.cityLabel", "City")}
       />

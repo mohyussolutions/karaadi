@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { MdAttachMoney } from "@/app/utils/icons";
 import { useImageUpload } from "@/app/(storeFront)/components/shared/ImageUpload/useImageUpload";
 import ImageUpload from "@/app/(storeFront)/components/shared/ImageUpload/ImageUpload";
 import CitySelect from "@/app/(storeFront)/components/shared/CitySelect/CitySelect";
-import { getAllRegions, getAllCities } from "@/actions/categories/geoAction";
+import { useGeoData } from "@/app/(storeFront)/components/hooks/useGeoData";
 import { createRealEstate } from "@/actions/categories/realEstateActions";
 
 const RE_CATEGORIES = [
@@ -27,9 +27,7 @@ type Props = {
 export default function RealEstateForm({ businessId, userId, onSuccess }: Props) {
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
-  const [regions, setRegions] = useState<any[]>([]);
-  const [allCities, setAllCities] = useState<any[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
+  const { regions, cities: allCities, loading: dataLoading, updateCities } = useGeoData();
   const { images, addImages, removeImage, toBase64 } = useImageUpload();
 
   const [form, setForm] = useState({
@@ -47,14 +45,6 @@ export default function RealEstateForm({ businessId, userId, onSuccess }: Props)
     hasGarden: false,
   });
 
-  useEffect(() => {
-    Promise.all([getAllRegions(), getAllCities()])
-      .then(([regs, cits]) => {
-        setRegions(regs || []);
-        setAllCities(cits || []);
-      })
-      .finally(() => setDataLoading(false));
-  }, []);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((p) => ({ ...p, [k]: v }));
@@ -84,6 +74,7 @@ export default function RealEstateForm({ businessId, userId, onSuccess }: Props)
         price: Number(form.price),
         mainCategory: "Real Estate",
         category: [form.category],
+        subcategory: [],
         region: form.region,
         city: form.city,
         county: form.region,
@@ -222,6 +213,7 @@ export default function RealEstateForm({ businessId, userId, onSuccess }: Props)
             value={form.bedrooms}
             onChange={(e) => set("bedrooms", e.target.value)}
             min={0}
+            max={100}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -234,6 +226,7 @@ export default function RealEstateForm({ businessId, userId, onSuccess }: Props)
             value={form.bathrooms}
             onChange={(e) => set("bathrooms", e.target.value)}
             min={0}
+            max={100}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -272,7 +265,7 @@ export default function RealEstateForm({ businessId, userId, onSuccess }: Props)
         cities={allCities}
         value={form.city}
         onChange={(name) => set("city", name)}
-        onCitiesUpdate={setAllCities}
+        onCitiesUpdate={updateCities}
         disabled={!form.region}
         label={t("createRealEstate.cityLabel", "City")}
       />

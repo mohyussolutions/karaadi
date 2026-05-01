@@ -3,6 +3,7 @@ import languageReducer from "./slices/reducers/languageSlice";
 import listingDraftReducer from "./slices/reducers/listingDraftSlice";
 import notificationsReducer from "./slices/reducers/notificationsSlice";
 import wantedReducer from "./slices/reducers/wantedSlice";
+import themeReducer from "./slices/reducers/themeSlice";
 
 import {
   persistStore,
@@ -33,7 +34,7 @@ const storage =
 const persistConfig = {
   key: "karaadi-root-v4",
   storage,
-  whitelist: ["listingDraft", "language"],
+  whitelist: ["listingDraft", "language", "theme"],
   transforms: [listingDraftTransform],
 };
 
@@ -42,6 +43,7 @@ const rootReducer = combineReducers({
   listingDraft: listingDraftReducer,
   notifications: notificationsReducer,
   wanted: wantedReducer,
+  theme: themeReducer,
 });
 
 type RootReducerState = ReturnType<typeof rootReducer>;
