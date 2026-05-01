@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Karaadi marketplace infrastructure - Complete AWS setup for classifieds marketplace like Finn.no (2026-04-28)
+Description: Karaadi marketplace infrastructure - Complete AWS setup for classifieds marketplace like Finn.no (2026-05-01)
 
 # ============================================
 # CONSTANTS - Reusable values used throughout the template

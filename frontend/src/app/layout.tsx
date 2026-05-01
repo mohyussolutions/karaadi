@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"; // v2026-05-01
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "./ui/Providers/Providers";
