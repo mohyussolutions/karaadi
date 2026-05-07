@@ -692,7 +692,9 @@ Resources:
       ProtocolType: HTTP
       CorsConfiguration:
         AllowOrigins:
-          - "*"
+          - "https://karaadi.com"
+          - "https://www.karaadi.com"
+          - "https://main.d1wvu9uv0jcfp.amplifyapp.com"
         AllowMethods:
           - GET
           - POST
@@ -702,6 +704,10 @@ Resources:
         AllowHeaders:
           - Content-Type
           - Authorization
+          - Cookie
+        AllowCredentials: true
+        ExposeHeaders:
+          - Set-Cookie
 
   APIGatewayVpcLink:
     Type: AWS::ApiGatewayV2::VpcLink
