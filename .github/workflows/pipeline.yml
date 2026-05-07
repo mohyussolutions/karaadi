@@ -203,11 +203,12 @@ jobs:
           COMMANDS=$(jq -nc --arg sha "$SHA" --arg bucket "$S3_BUCKET" --arg region "$AWS_REGION" '[
             "set -euo pipefail",
             "mkdir -p /home/ec2-user/karaadi/backend",
+            ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env"),
             ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev --prefer-offline",
-            "set -a; source /home/ec2-user/karaadi/backend/.env 2>/dev/null || true; set +a",
-            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep ^DATABASE_URL= /home/ec2-user/karaadi/backend/.env | cut -d= -f2-) npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true",
+            "set -a; source /home/ec2-user/karaadi/backend/.env; set +a",
+            "cd /home/ec2-user/karaadi/backend && npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true",
             "pm2 reload karaadi-backend --update-env 2>/dev/null || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend",
             "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')

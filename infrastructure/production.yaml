@@ -389,7 +389,7 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
         - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
       Policies:
-        - PolicyName: S3ImageAccess
+        - PolicyName: S3AndSSMAccess
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -402,6 +402,15 @@ Resources:
                 Resource:
                   - !GetAtt ImagesBucket.Arn
                   - !Sub ${ImagesBucket.Arn}/*
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/karaadi/*
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                Resource: "*"
 
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
