@@ -1,0 +1,13 @@
+process.env.DATABASE_URL = "postgresql://ci:ci@localhost:5432/ci";
+process.env.REDIS_URL = "redis://localhost:6379";
+process.env.AWS_REGION = "eu-west-1";
+process.env.KARAADI_AWS_COGNITO_USER_POOL_ID = "eu-west-1_testpool";
+process.env.KARAADI_AWS_COGNITO_CLIENT_ID = "testclientid";
+process.env.JWT_SECRET = "test-jwt-secret-32-characters-long";
+process.env.SESSION_SECRET = "test-session-secret";
+process.env.ENCRYPTION_KEY = "test-encryption-key-32-chars!!!";
+process.env.NODE_ENV = "test";
+process.env.PORT = "8080";
+process.env.ALLOWED_ORIGINS = "http://localhost:3000";
+process.env.PAYLOAD_LIMIT = "20mb";
+process.env.PG_POOL_MAX = "5";

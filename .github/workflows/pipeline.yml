@@ -49,6 +49,12 @@ jobs:
 
       - name: Tests
         working-directory: backend
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          REDIS_URL: redis://localhost:6379
+          AWS_REGION: eu-west-1
+          JWT_SECRET: test-jwt-secret-32-characters-long
+          NODE_ENV: test
         run: npm test --if-present
 
   test-frontend:
