@@ -1,3 +1,4 @@
+import { serverError } from "src/core/utils/serverError.ts";
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { EncryptionController } from "./encryptionController.ts";
@@ -46,7 +47,7 @@ export const createSupportTicket = async (req: Request, res: Response) => {
       })),
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -88,7 +89,7 @@ export const addMessageToTicket = async (req: Request, res: Response) => {
       body: EncryptionController.decrypt(message.body),
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -119,7 +120,7 @@ export const getTicketDetails = async (req: Request, res: Response) => {
       })),
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -137,7 +138,7 @@ export const getAllTickets = async (req: Request, res: Response) => {
       })),
     );
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -165,7 +166,7 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
       body: EncryptionController.decrypt(ticket.body),
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -183,7 +184,7 @@ export const getSupportStats = async (req: Request, res: Response) => {
 
     return res.json({ total, today: dayCount });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -202,7 +203,7 @@ export const deleteTicket = async (req: Request, res: Response) => {
 
     return res.json({ message: "Deleted" });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -222,6 +223,6 @@ export const deleteMessage = async (req: Request, res: Response) => {
 
     return res.json({ message: "Deleted" });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };

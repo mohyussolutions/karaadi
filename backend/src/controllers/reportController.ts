@@ -1,3 +1,4 @@
+import { serverError } from "src/core/utils/serverError.ts";
 import { Request, Response } from "express";
 import { ItemCategory } from "@prisma/client";
 import prisma from "src/core/utils/db.ts";
@@ -85,7 +86,7 @@ export const getReportsSummary = async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -134,7 +135,7 @@ export const createReport = async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: report });
   } catch (err: any) {
     console.error("Create report error:", err);
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -243,7 +244,7 @@ export const getReports = async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -340,7 +341,7 @@ export const getReportById = async (req: Request, res: Response) => {
       data: { ...report, item: itemDetails },
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -377,7 +378,7 @@ export const updateReportStatus = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, data: report });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -417,7 +418,7 @@ export const getReportStats = async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -426,7 +427,7 @@ export const getTotalReports = async (req: Request, res: Response) => {
     const total = await prisma.report.count();
     res.status(200).json({ success: true, data: total });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -464,7 +465,7 @@ export const getUserReports = async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };
 
@@ -479,6 +480,6 @@ export const deleteReport = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err);
   }
 };

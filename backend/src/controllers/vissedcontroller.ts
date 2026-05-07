@@ -1,3 +1,4 @@
+import { serverError } from "src/core/utils/serverError.ts";
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { v4 as uuidv4 } from "uuid";
@@ -37,7 +38,7 @@ export const trackVisitor = async (req: Request, res: Response) => {
     return res.json({ tracked: true, visitor });
   } catch (err: any) {
     console.error("Prisma Error:", err);
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -48,7 +49,7 @@ export const getAllVisitors = async (_req: Request, res: Response) => {
     });
     return res.json({ total: visitors.length, visitors });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -66,7 +67,7 @@ export const updateVisitor = async (req: Request, res: Response) => {
     });
     return res.json(updatedVisitor);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
 
@@ -91,6 +92,6 @@ export const deleteVisitor = async (req: Request, res: Response) => {
     return res.json({ message: "Deleted" });
   } catch (err: any) {
     console.error("Delete visitor error:", err);
-    return res.status(500).json({ error: err.message });
+    return serverError(res, err);
   }
 };
