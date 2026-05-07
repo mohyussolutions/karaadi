@@ -162,8 +162,7 @@ jobs:
         run: |
           cd backend
           npm ci --omit=dev
-          cat src/prisma/schema.prisma src/prisma/models/*.prisma > src/prisma/combined.prisma
-          npx prisma generate --schema src/prisma/combined.prisma
+          npx prisma generate
           npx esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --packages=external --outfile=dist/index.js
 
       - name: Upload bundle to S3
@@ -210,7 +209,7 @@ jobs:
             ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
-            "cd /home/ec2-user/karaadi/backend && npx prisma generate --schema src/prisma/combined.prisma",
+            "cd /home/ec2-user/karaadi/backend && npx prisma generate",
             "pm2 delete karaadi-backend 2>/dev/null || true",
             "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\"",
             "sleep 15 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
