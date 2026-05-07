@@ -238,25 +238,20 @@ jobs:
             COUNT=$((COUNT + 1))
             echo "::group::[$COUNT/$TOTAL] $INSTANCE"
 
-            echo "  Waiting for SSM agent..."
-            for attempt in $(seq 1 20); do
-              PING=$(aws ssm describe-instance-information \
+            CMD_ID=""
+            for attempt in $(seq 1 10); do
+              CMD_ID=$(aws ssm send-command \
+                --instance-ids "$INSTANCE" \
+                --document-name "AWS-RunShellScript" \
+                --comment "deploy-${SHA:0:8}" \
+                --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"300\"]}" \
                 --region "$AWS_REGION" \
-                --query "InstanceInformationList[?InstanceId=='$INSTANCE'].PingStatus | [0]" \
-                --output text 2>/dev/null || true)
-              [ "$PING" = "Online" ] && echo "  SSM agent online" && break
-              echo "  [$attempt/20] SSM not ready yet ($PING), waiting 15s..."
+                --output json 2>/dev/null | jq -r '.Command.CommandId // empty')
+              [ -n "$CMD_ID" ] && echo "  SSM command: $CMD_ID" && break
+              echo "  [$attempt/10] SSM not ready, retrying in 15s..."
               sleep 15
             done
-
-            CMD_ID=$(aws ssm send-command \
-              --instance-ids "$INSTANCE" \
-              --document-name "AWS-RunShellScript" \
-              --comment "deploy-${SHA:0:8}" \
-              --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"300\"]}" \
-              --region "$AWS_REGION" \
-              --output json | jq -r '.Command.CommandId')
-            echo "  SSM command: $CMD_ID"
+            [ -n "$CMD_ID" ] || { echo "ERROR: could not send SSM command to $INSTANCE"; exit 1; }
 
             for i in $(seq 1 60); do
               INV=$(aws ssm get-command-invocation \
