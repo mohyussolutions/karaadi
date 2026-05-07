@@ -207,13 +207,13 @@ jobs:
 
           COMMANDS=$(jq -nc --arg sha "$SHA" --arg bucket "$S3_BUCKET" --arg region "$AWS_REGION" '[
             "set -euo pipefail",
+            "mkdir -p /home/ec2-user/karaadi/backend",
             "echo STEP: fetch env",
-            ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env 2>&1 || { echo ERROR: SSM param /karaadi/backend/env not found - create it in AWS Parameter Store; exit 1; }"),
+            ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env || { echo ERROR: SSM param /karaadi/backend/env not found or no permission; exit 1; }"),
             "[ -s /home/ec2-user/karaadi/backend/.env ] || { echo ERROR: env file is empty; exit 1; }",
             "echo STEP: download bundle",
             ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
             "echo STEP: extract bundle",
-            "mkdir -p /home/ec2-user/karaadi/backend",
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
             "echo STEP: npm install",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
