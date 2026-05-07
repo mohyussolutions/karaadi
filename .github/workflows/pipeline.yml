@@ -167,7 +167,7 @@ jobs:
       - name: Upload bundle to S3
         run: |
           cd backend
-          tar -czf /tmp/backend-${{ github.sha }}.tar.gz dist/ src/prisma/ package.json package-lock.json .env.production
+          tar -czf /tmp/backend-${{ github.sha }}.tar.gz dist/ src/prisma/ package.json package-lock.json
           aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
             s3://karaadi-images-108782100045/deployments/backend-${{ github.sha }}.tar.gz
 
@@ -207,7 +207,7 @@ jobs:
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev --prefer-offline",
             ("cd /home/ec2-user/karaadi/backend && npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true"),
-            "pm2 reload karaadi-backend --update-env 2>/dev/null || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --env-file /home/ec2-user/karaadi/backend/.env.production",
+            "pm2 reload karaadi-backend --update-env 2>/dev/null || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend",
             "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
 
