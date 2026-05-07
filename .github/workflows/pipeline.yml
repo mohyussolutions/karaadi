@@ -11,15 +11,19 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
   NODE_VERSION: "20"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
+  INFRA_ROLE: arn:aws:iam::108782100045:role/karaadi-infra-deploy
+  BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
+  FRONTEND_ROLE: arn:aws:iam::108782100045:role/karaadi-frontend-deploy
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
-  # 1. TEST  (backend + frontend run in parallel, both must pass)
+  # 1. TEST  (backend + frontend in parallel, both must pass)
   # ─────────────────────────────────────────────────────────────────────────────
   test-backend:
     name: Test / Backend
@@ -94,11 +98,10 @@ jobs:
       - name: Lint template
         run: cfn-lint infrastructure/production.yaml --format json --ignore-checks W1011 || [ $? -eq 4 ]
 
-      - name: Configure AWS
+      - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.INFRA_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Deploy stack
@@ -134,11 +137,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS
+      - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.BACKEND_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Get ASG name
@@ -224,11 +226,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS
+      - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.FRONTEND_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Get Amplify App ID
@@ -240,7 +241,6 @@ jobs:
             --query "Stacks[0].Outputs[?OutputKey=='AmplifyAppId'].OutputValue" \
             --output text)
           if [ -z "$APP_ID" ] || [ "$APP_ID" = "None" ]; then
-            echo "AmplifyAppId not in stack — skipping Amplify deploy."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
@@ -285,4 +285,4 @@ jobs:
 
       - name: No Amplify app yet
         if: steps.cfn.outputs.skip == 'true'
-        run: echo "Amplify app not created yet — set up Amplify in AWS Console first (see karaadi_documentations/README.md)"
+        run: echo "Amplify app not created yet — set up Amplify in AWS Console first."
