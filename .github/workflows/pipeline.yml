@@ -116,15 +116,19 @@ jobs:
             --query "Stacks[0].Parameters[*].ParameterKey" \
             --output json > /tmp/param_keys.json
           python3 infrastructure/scripts/build_cfn_params.py
-          aws cloudformation update-stack \
-            --template-body file://infrastructure/production.yaml \
-            --stack-name "$STACK_NAME" \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --parameters file:///tmp/params.json \
-            --region "$AWS_REGION" \
-          && aws cloudformation wait stack-update-complete \
-            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
-          || echo "No infrastructure changes to apply."
+          if aws cloudformation update-stack \
+              --template-body file://infrastructure/production.yaml \
+              --stack-name "$STACK_NAME" \
+              --capabilities CAPABILITY_NAMED_IAM \
+              --parameters file:///tmp/params.json \
+              --region "$AWS_REGION" 2>/tmp/cfn_err.txt; then
+            aws cloudformation wait stack-update-complete \
+              --stack-name "$STACK_NAME" --region "$AWS_REGION"
+          elif grep -q "No updates are to be performed" /tmp/cfn_err.txt; then
+            echo "No infrastructure changes to apply."
+          else
+            cat /tmp/cfn_err.txt >&2; exit 1
+          fi
 
       - name: Stack outputs
         run: |
@@ -227,6 +231,18 @@ jobs:
             COUNT=$((COUNT + 1))
             echo "::group::[$COUNT/$TOTAL] $INSTANCE"
 
+            echo "  Waiting for SSM agent..."
+            for attempt in $(seq 1 20); do
+              PING=$(aws ssm describe-instance-information \
+                --filters "Key=InstanceIds,Values=$INSTANCE" \
+                --region "$AWS_REGION" \
+                --query "InstanceInformationList[0].PingStatus" \
+                --output text 2>/dev/null || true)
+              [ "$PING" = "Online" ] && echo "  SSM agent online" && break
+              echo "  [$attempt/20] SSM not ready yet ($PING), waiting 15s..."
+              sleep 15
+            done
+
             CMD_ID=$(aws ssm send-command \
               --instance-ids "$INSTANCE" \
               --document-name "AWS-RunShellScript" \
@@ -234,6 +250,7 @@ jobs:
               --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"300\"]}" \
               --region "$AWS_REGION" \
               --output json | jq -r '.Command.CommandId')
+            echo "  SSM command: $CMD_ID"
 
             for i in $(seq 1 60); do
               INV=$(aws ssm get-command-invocation \
@@ -247,7 +264,7 @@ jobs:
                 Failed|Cancelled|TimedOut)
                   echo "$INV" | jq -r '.StandardOutputContent,.StandardErrorContent'
                   echo "::endgroup::"; exit 1 ;;
-                *) sleep 5 ;;
+                *) sleep 10 ;;
               esac
             done
 
