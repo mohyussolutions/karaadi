@@ -134,7 +134,7 @@ jobs:
             --output table
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # 3. BACKEND  (rolling SSM deploy to EC2 — only after infra)
+  # 3. BACKEND  (build → S3 → SSM deploy to EC2)
   # ─────────────────────────────────────────────────────────────────────────────
   backend:
     name: Backend / Deploy
@@ -143,11 +143,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.BACKEND_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build backend bundle
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+        run: |
+          cd backend
+          npm ci --omit=dev
+          npx prisma generate --schema src/prisma/schema.prisma
+          npx esbuild src/server.ts --bundle --platform=node --target=node20 --packages=external --outfile=dist/index.js
+
+      - name: Upload bundle to S3
+        run: |
+          cd backend
+          tar -czf /tmp/backend-${{ github.sha }}.tar.gz dist/ src/prisma/ package.json package-lock.json .env.production
+          aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
+            s3://karaadi-images-108782100045/deployments/backend-${{ github.sha }}.tar.gz
 
       - name: Get ASG name
         id: cfn
@@ -165,6 +187,7 @@ jobs:
         env:
           ASG: ${{ steps.cfn.outputs.asg }}
           SHA: ${{ github.sha }}
+          S3_BUCKET: karaadi-images-108782100045
         run: |
           set -euo pipefail
 
@@ -177,15 +200,14 @@ jobs:
           TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
           echo "Deploying ${SHA:0:8} to $TOTAL instance(s)"
 
-          COMMANDS=$(jq -nc '[
+          COMMANDS=$(jq -nc --arg sha "$SHA" --arg bucket "$S3_BUCKET" --arg region "$AWS_REGION" '[
             "set -euo pipefail",
-            "mkdir -p /home/ec2-user/karaadi",
-            "cd /home/ec2-user/karaadi && { [ -d .git ] && git fetch origin main && git reset --hard origin/main || git clone https://github.com/mohyussolutions/karaadi.git .; }",
-            "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
-            "cd /home/ec2-user/karaadi/backend && npx prisma generate --schema src/prisma/schema.prisma",
-            "cd /home/ec2-user/karaadi/backend && npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true",
-            "cd /home/ec2-user/karaadi/backend && npx esbuild src/server.ts --bundle --platform=node --target=node20 --packages=external --outfile=dist/index.js",
-            "cd /home/ec2-user/karaadi/backend && (pm2 reload karaadi-backend --update-env || pm2 start dist/index.js --name karaadi-backend --env production)",
+            "mkdir -p /home/ec2-user/karaadi/backend",
+            ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
+            "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
+            "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev --prefer-offline",
+            ("cd /home/ec2-user/karaadi/backend && npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true"),
+            "pm2 reload karaadi-backend --update-env 2>/dev/null || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --env-file /home/ec2-user/karaadi/backend/.env.production",
             "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
 
