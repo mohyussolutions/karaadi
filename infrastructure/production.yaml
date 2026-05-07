@@ -18,7 +18,7 @@ Mappings:
     PrivateSubnetBCidr:
       Value: 10.0.4.0/24
     NodeVersion:
-      Value: 20
+      Value: 24
     PostgresVersion:
       Value: 15.17
     RedisVersion:
@@ -434,7 +434,7 @@ Resources:
               #!/bin/bash
               set -e
               yum update -y
-              curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+              curl -fsSL https://rpm.nodesource.com/setup_24.x | bash -
               yum install -y nodejs git
               npm install -g pm2
 

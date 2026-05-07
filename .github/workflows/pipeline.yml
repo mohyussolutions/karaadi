@@ -14,7 +14,7 @@ permissions:
   id-token: write
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "24"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -163,7 +163,7 @@ jobs:
           cd backend
           npm ci --omit=dev
           npx prisma generate --schema src/prisma/schema.prisma
-          npx esbuild src/server.ts --bundle --platform=node --target=node20 --packages=external --outfile=dist/index.js
+          npx esbuild src/server.ts --bundle --platform=node --target=node24 --packages=external --outfile=dist/index.js
 
       - name: Upload bundle to S3
         run: |
