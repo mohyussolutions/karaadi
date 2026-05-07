@@ -69,17 +69,17 @@ Parameters:
 
   DesiredCapacity:
     Type: Number
-    Default: 2
+    Default: 1
     Description: Number of EC2 instances to run initially
 
   MinSize:
     Type: Number
-    Default: 2
+    Default: 1
     Description: Minimum number of EC2 instances (never goes below this)
 
   MaxSize:
     Type: Number
-    Default: 50
+    Default: 10
     Description: Maximum number of EC2 instances during traffic spikes
 
   DBInstanceClass:
