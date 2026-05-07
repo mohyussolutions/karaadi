@@ -823,7 +823,11 @@ Resources:
                 Action:
                   - ssm:SendCommand
                   - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
                   - ec2:DescribeInstances
+                  - autoscaling:DescribeAutoScalingGroups
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:DescribeStacks
                 Resource: "*"
               - Effect: Allow
                 Action:
@@ -864,6 +868,7 @@ Resources:
                   - amplify:GetJob
                   - amplify:ListJobs
                   - amplify:CreateDomainAssociation
+                  - cloudformation:DescribeStacks
                 Resource: "*"
 
   InfraDeployRole:
