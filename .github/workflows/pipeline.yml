@@ -241,9 +241,8 @@ jobs:
             echo "  Waiting for SSM agent..."
             for attempt in $(seq 1 20); do
               PING=$(aws ssm describe-instance-information \
-                --filters "Key=InstanceIds,Values=$INSTANCE" \
                 --region "$AWS_REGION" \
-                --query "InstanceInformationList[0].PingStatus" \
+                --query "InstanceInformationList[?InstanceId=='$INSTANCE'].PingStatus | [0]" \
                 --output text 2>/dev/null || true)
               [ "$PING" = "Online" ] && echo "  SSM agent online" && break
               echo "  [$attempt/20] SSM not ready yet ($PING), waiting 15s..."
