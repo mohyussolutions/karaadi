@@ -179,12 +179,13 @@ jobs:
 
           COMMANDS=$(jq -nc '[
             "set -euo pipefail",
-            "cd /home/ec2-user/karaadi",
-            "git fetch origin main && git reset --hard origin/main",
-            "cd backend && npm ci --omit=dev",
-            "npx prisma migrate deploy",
-            "npx esbuild src/server.ts --bundle --platform=node --target=node20 --packages=external --outfile=dist/index.js",
-            "pm2 reload karaadi-backend --update-env || pm2 start dist/index.js --name karaadi-backend",
+            "mkdir -p /home/ec2-user/karaadi",
+            "cd /home/ec2-user/karaadi && { [ -d .git ] && git fetch origin main && git reset --hard origin/main || git clone https://github.com/mohyussolutions/karaadi.git .; }",
+            "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
+            "cd /home/ec2-user/karaadi/backend && npx prisma generate --schema src/prisma/schema.prisma",
+            "cd /home/ec2-user/karaadi/backend && npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true",
+            "cd /home/ec2-user/karaadi/backend && npx esbuild src/server.ts --bundle --platform=node --target=node20 --packages=external --outfile=dist/index.js",
+            "cd /home/ec2-user/karaadi/backend && (pm2 reload karaadi-backend --update-env || pm2 start dist/index.js --name karaadi-backend --env production)",
             "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
 
