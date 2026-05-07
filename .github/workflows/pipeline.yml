@@ -206,7 +206,8 @@ jobs:
             ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev --prefer-offline",
-            ("cd /home/ec2-user/karaadi/backend && npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true"),
+            "set -a; source /home/ec2-user/karaadi/backend/.env 2>/dev/null || true; set +a",
+            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep ^DATABASE_URL= /home/ec2-user/karaadi/backend/.env | cut -d= -f2-) npx prisma db push --schema src/prisma/schema.prisma --accept-data-loss || true",
             "pm2 reload karaadi-backend --update-env 2>/dev/null || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend",
             "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
