@@ -334,13 +334,9 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
           FromPort: !FindInMap [Constants, BackendPort, Value]
           ToPort: !FindInMap [Constants, BackendPort, Value]
-          CidrIp: 0.0.0.0/0
+          CidrIp: !FindInMap [Constants, VpcCidr, Value]
 
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -538,10 +534,10 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Type: application
-      Scheme: internet-facing
+      Scheme: internal
       Subnets:
-        - !Ref PublicSubnetA
-        - !Ref PublicSubnetB
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
       SecurityGroups:
         - !Ref ALBSecurityGroup
 
