@@ -55,6 +55,7 @@ jobs:
           AWS_REGION: eu-west-1
           JWT_SECRET: test-jwt-secret-32-characters-long
           NODE_ENV: test
+          AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: 1
         run: npm test --if-present
 
   test-frontend:
