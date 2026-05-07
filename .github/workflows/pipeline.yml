@@ -236,7 +236,7 @@ jobs:
           COUNT=0
           for INSTANCE in $INSTANCES; do
             COUNT=$((COUNT + 1))
-            echo "::group::[$COUNT/$TOTAL] $INSTANCE"
+            echo "=== [$COUNT/$TOTAL] $INSTANCE ==="
 
             CMD_ID=""
             for attempt in $(seq 1 10); do
@@ -247,8 +247,8 @@ jobs:
                 --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"300\"]}" \
                 --region "$AWS_REGION" \
                 --output json 2>/dev/null | jq -r '.Command.CommandId // empty')
-              [ -n "$CMD_ID" ] && echo "  SSM command: $CMD_ID" && break
-              echo "  [$attempt/10] SSM not ready, retrying in 15s..."
+              [ -n "$CMD_ID" ] && echo "SSM command: $CMD_ID" && break
+              echo "[$attempt/10] SSM not ready, retrying in 15s..."
               sleep 15
             done
             [ -n "$CMD_ID" ] || { echo "ERROR: could not send SSM command to $INSTANCE"; exit 1; }
@@ -259,17 +259,22 @@ jobs:
                 --region "$AWS_REGION" --output json 2>/dev/null \
                 || echo '{"Status":"InProgress"}')
               STATUS=$(echo "$INV" | jq -r '.Status')
-              echo "  [$i/60] $STATUS"
+              echo "[$i/60] $STATUS"
               case "$STATUS" in
-                Success) echo "$INV" | jq -r '.StandardOutputContent'; break ;;
+                Success)
+                  echo "--- OUTPUT ---"
+                  echo "$INV" | jq -r '.StandardOutputContent'
+                  break ;;
                 Failed|Cancelled|TimedOut)
-                  echo "$INV" | jq -r '.StandardOutputContent,.StandardErrorContent'
-                  echo "::endgroup::"; exit 1 ;;
+                  echo "--- STDOUT ---"
+                  echo "$INV" | jq -r '.StandardOutputContent'
+                  echo "--- STDERR ---"
+                  echo "$INV" | jq -r '.StandardErrorContent'
+                  exit 1 ;;
                 *) sleep 10 ;;
               esac
             done
 
-            echo "::endgroup::"
             [ "$COUNT" -lt "$TOTAL" ] && sleep 30
           done
           echo "All $TOTAL instance(s) deployed."
