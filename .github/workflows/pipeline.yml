@@ -122,8 +122,15 @@ jobs:
               --capabilities CAPABILITY_NAMED_IAM \
               --parameters file:///tmp/params.json \
               --region "$AWS_REGION" 2>/tmp/cfn_err.txt; then
-            aws cloudformation wait stack-update-complete \
-              --stack-name "$STACK_NAME" --region "$AWS_REGION"
+            if ! aws cloudformation wait stack-update-complete \
+                --stack-name "$STACK_NAME" --region "$AWS_REGION"; then
+              echo "--- CloudFormation failure events ---"
+              aws cloudformation describe-stack-events \
+                --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+                --query "StackEvents[?contains('UPDATE_FAILED CREATE_FAILED', ResourceStatus)].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}" \
+                --output table
+              exit 1
+            fi
           elif grep -q "No updates are to be performed" /tmp/cfn_err.txt; then
             echo "No infrastructure changes to apply."
           else
