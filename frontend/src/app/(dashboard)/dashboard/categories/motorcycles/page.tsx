@@ -185,7 +185,7 @@ export default function MotorcyclesPage() {
                     filtered.map((moto, index) => (
                       <div
                         key={moto.id || moto._id || index}
-                        className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm w-full"
+                        className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-4 shadow-sm w-full"
                       >
                         <div className="flex gap-3">
                           <img
@@ -257,7 +257,7 @@ export default function MotorcyclesPage() {
                 </div>
               </div>
               <div className="hidden lg:block w-full">
-                <div className="border border-gray-300 rounded-xl bg-white overflow-hidden">
+                <div className="border border-gray-300 rounded-xl bg-white dark:bg-gray-800 overflow-hidden">
                   <table className="w-full table-fixed">
                     <thead className="bg-gray-100">
                       <tr>

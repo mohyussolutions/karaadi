@@ -109,7 +109,8 @@ authRouters.post(
       );
       res.json({ message: "User registered successfully", cognitoResult });
     } catch (error: any) {
-      res.status(400).json({ error: error.message || "Register failed" });
+      console.error("[REGISTER]", error?.message ?? error);
+      res.status(400).json({ error: error?.message ?? "Registration failed" });
     }
   },
 );

@@ -255,7 +255,7 @@ export default function AdminReportsPage() {
           {stats && (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5 md:mb-6">
-                <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
                   <p className="text-[10px] sm:text-xs text-gray-400 font-medium mb-1 sm:mb-2">
                     Total
                   </p>
@@ -263,7 +263,7 @@ export default function AdminReportsPage() {
                     {stats.total}
                   </p>
                 </div>
-                <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
                   <p className="text-[10px] sm:text-xs text-blue-600 font-medium mb-1 sm:mb-2">
                     New
                   </p>
@@ -271,7 +271,7 @@ export default function AdminReportsPage() {
                     {stats.new}
                   </p>
                 </div>
-                <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
                   <p className="text-[10px] sm:text-xs text-yellow-600 font-medium mb-1 sm:mb-2">
                     In Progress
                   </p>
@@ -279,7 +279,7 @@ export default function AdminReportsPage() {
                     {stats.inProgress}
                   </p>
                 </div>
-                <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
                   <p className="text-[10px] sm:text-xs text-green-600 font-medium mb-1 sm:mb-2">
                     Done
                   </p>
@@ -287,7 +287,7 @@ export default function AdminReportsPage() {
                     {stats.done}
                   </p>
                 </div>
-                <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
                   <p className="text-[10px] sm:text-xs text-purple-600 font-medium mb-1 sm:mb-2">
                     Resolved
                   </p>
@@ -295,7 +295,7 @@ export default function AdminReportsPage() {
                     {stats.resolved}
                   </p>
                 </div>
-                <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
                   <p className="text-[10px] sm:text-xs text-gray-600 font-medium mb-1 sm:mb-2">
                     Closed
                   </p>
@@ -303,7 +303,7 @@ export default function AdminReportsPage() {
                     {stats.closed}
                   </p>
                 </div>
-                <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 border border-gray-100">
                   <p className="text-[10px] sm:text-xs text-indigo-600 font-medium mb-1 sm:mb-2">
                     Active
                   </p>
@@ -351,7 +351,7 @@ export default function AdminReportsPage() {
             </>
           )}
 
-          <div className="hidden sm:block bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
+          <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
               <select
                 value={filters.status}
@@ -407,7 +407,7 @@ export default function AdminReportsPage() {
           </div>
 
           {mobileFiltersOpen && (
-            <div className="sm:hidden bg-white rounded-xl p-4 border border-gray-100 mb-5">
+            <div className="sm:hidden bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 mb-5">
               <div className="space-y-3">
                 <select
                   value={filters.status}
@@ -473,7 +473,7 @@ export default function AdminReportsPage() {
           )}
 
           {dailyReports.length > 0 && (
-            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100 mb-5 sm:mb-6 md:mb-7 lg:mb-8">
               <h3 className="text-base sm:text-lg font-black text-gray-900 mb-3 sm:mb-4">
                 {t("adminTable.reportsByDay")}
               </h3>
@@ -507,7 +507,7 @@ export default function AdminReportsPage() {
             </div>
           )}
 
-          <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-100">
@@ -641,14 +641,14 @@ export default function AdminReportsPage() {
 
           <div className="block lg:hidden space-y-3">
             {reports.length === 0 ? (
-              <div className="bg-white rounded-xl p-8 text-center text-gray-400 font-medium text-sm">
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center text-gray-400 font-medium text-sm">
                 No reports found
               </div>
             ) : (
               reports.map((report) => (
                 <div
                   key={report.id}
-                  className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-all"
+                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     {report.user?.profileImage ? (
@@ -739,7 +739,7 @@ export default function AdminReportsPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-lg font-bold text-xs sm:text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 bg-white dark:bg-gray-800 border border-gray-200 rounded-lg font-bold text-xs sm:text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t("adminTable.previous")}
               </button>
@@ -749,7 +749,7 @@ export default function AdminReportsPage() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-lg font-bold text-xs sm:text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 bg-white dark:bg-gray-800 border border-gray-200 rounded-lg font-bold text-xs sm:text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t("adminTable.next")}
               </button>
@@ -758,7 +758,7 @@ export default function AdminReportsPage() {
 
           {stats && stats.topReasons.length > 0 && (
             <div className="mt-5 sm:mt-6 md:mt-7 lg:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
-              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100">
+              <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100">
                 <h3 className="text-base sm:text-lg font-black text-gray-900 mb-3 sm:mb-4">
                   {t("adminTable.topReasons")}
                 </h3>
@@ -779,7 +779,7 @@ export default function AdminReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100">
+              <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border border-gray-100">
                 <h3 className="text-base sm:text-lg font-black text-gray-900 mb-3 sm:mb-4">
                   {t("adminTable.reportsByType")}
                 </h3>
@@ -806,7 +806,7 @@ export default function AdminReportsPage() {
 
       {showModal && selectedReport && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl sm:rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto my-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto my-4">
             <div className="p-4 sm:p-5 md:p-6 lg:p-8">
               <div className="flex justify-between items-center mb-4 sm:mb-5 md:mb-6">
                 <h2 className="text-lg sm:text-xl md:text-2xl font-black text-gray-900">

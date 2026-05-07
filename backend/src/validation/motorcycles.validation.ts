@@ -4,7 +4,7 @@ import * as s from "../core/utils/sanitize.ts";
 export const createMotorcycleSchema = z.object({
   userId: z.string().min(1).max(128),
   title: s.title,
-  description: s.description,
+  description: s.description.optional(),
   price: z.coerce.number().min(0).max(s.LIMITS.PRICE_MAX),
   mainCategory: s.shortStr("Category"),
   category: z.array(s.shortStr()).max(5),
@@ -24,6 +24,8 @@ export const createMotorcycleSchema = z.object({
   region: s.shortStr("Region"),
   city: s.shortStr("City"),
   images: s.images,
+  businessId: z.string().max(128).optional(),
+  website: z.string().url().max(512).optional().or(z.literal("")),
   isPaid: z.boolean().optional(),
   planId: z.string().max(128).optional(),
   planAmount: z.coerce.number().min(0).max(s.LIMITS.PRICE_MAX).optional(),

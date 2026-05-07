@@ -3,12 +3,9 @@ const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   compress: true,
   eslint: { ignoreDuringBuilds: true },
-
-  // Reuse TCP connections between Next.js server and Express backend.
-  // Without this, each of the 6 parallel server-action fetches opens a fresh
-  // socket, adding ~10-30ms RTT overhead per request.
   httpAgentOptions: { keepAlive: true },
 
   experimental: {
@@ -52,6 +49,13 @@ const nextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
+      {
+        source: "/_next/static/(.*)\\.map",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex" },
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
     ];
   },
 
@@ -76,6 +80,7 @@ const nextConfig = {
       { protocol: "https", hostname: "picsum.photos" },
       { protocol: "https", hostname: "**.imgur.com" },
       { protocol: "http", hostname: "localhost", port: "8080" },
+      { protocol: "https", hostname: "api.karaadi.com" },
     ],
   },
 };

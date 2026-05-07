@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   MdFilterList,
   MdClose,
@@ -24,7 +25,6 @@ interface City {
   regionId: string;
   isActive?: boolean;
 }
-
 interface Region {
   id: string;
   name: string;
@@ -39,6 +39,8 @@ interface LocationSelectorProps {
   checkedCities: Record<string, boolean>;
   regionCounts?: Record<string, number>;
   cityCounts?: Record<string, number>;
+  mobileOnly?: boolean;
+  desktopOnly?: boolean;
 }
 
 const CACHE_KEY = "geo_data_cache";
@@ -46,16 +48,12 @@ const CACHE_DURATION = 30 * 60 * 1000;
 
 const getCachedData = () => {
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      const { regions, cities, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_DURATION) {
-        return { regions, cities };
-      }
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const { regions, cities, timestamp } = JSON.parse(raw);
+      if (Date.now() - timestamp < CACHE_DURATION) return { regions, cities };
     }
-  } catch (e) {
-    console.error("Cache read error:", e);
-  }
+  } catch {}
   return null;
 };
 
@@ -63,15 +61,9 @@ const setCachedData = (regions: Region[], cities: City[]) => {
   try {
     localStorage.setItem(
       CACHE_KEY,
-      JSON.stringify({
-        regions,
-        cities,
-        timestamp: Date.now(),
-      }),
+      JSON.stringify({ regions, cities, timestamp: Date.now() }),
     );
-  } catch (e) {
-    console.error("Cache write error:", e);
-  }
+  } catch {}
 };
 
 export default function LocationSelector({
@@ -80,6 +72,8 @@ export default function LocationSelector({
   checkedCities = {},
   regionCounts = {},
   cityCounts = {},
+  mobileOnly = false,
+  desktopOnly = false,
 }: LocationSelectorProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -89,7 +83,7 @@ export default function LocationSelector({
   const [expandedRegions, setExpandedRegions] = useState<
     Record<string, boolean>
   >({});
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
@@ -98,74 +92,73 @@ export default function LocationSelector({
 
   useEffect(() => {
     if (!mounted || initialLoadDone.current) return;
-
-    const fetchData = async () => {
+    initialLoadDone.current = true;
+    (async () => {
       const cached = getCachedData();
-
       if (cached) {
         setRegions(cached.regions);
         setCities(cached.cities);
         setIsLoading(false);
-        initialLoadDone.current = true;
         return;
       }
-
       try {
         const [regionsData, citiesData] = await Promise.all([
           getAllRegions(),
           getAllCities(),
         ]);
+        const active = citiesData.filter((c: City) => c.isActive !== false);
         setRegions(regionsData);
-        setCities(citiesData.filter((city: City) => city.isActive !== false));
-        setCachedData(
-          regionsData,
-          citiesData.filter((city: City) => city.isActive !== false),
-        );
-      } catch (error) {
-        console.error(error);
+        setCities(active);
+        setCachedData(regionsData, active);
+      } catch {
       } finally {
         setIsLoading(false);
-        initialLoadDone.current = true;
       }
-    };
-
-    fetchData();
+    })();
   }, [mounted]);
+
+  useEffect(() => {
+    if (!open) return;
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, [open]);
 
   const currentRegionList = useMemo(
     () => (selectedRegion ? selectedRegion.split(",") : []),
     [selectedRegion],
   );
 
+  const activeCount = useMemo(
+    () =>
+      currentRegionList.length +
+      Object.values(checkedCities).filter(Boolean).length,
+    [currentRegionList, checkedCities],
+  );
+
   const hasActiveFilters = useMemo(
-    () => selectedRegion || Object.values(checkedCities).some(Boolean),
+    () => !!(selectedRegion || Object.values(checkedCities).some(Boolean)),
     [selectedRegion, checkedCities],
   );
 
   const handleRegionToggle = useCallback(
-    (regionName: string) => {
-      const nextRegions = currentRegionList.includes(regionName)
-        ? currentRegionList.filter((r) => r !== regionName)
-        : [...currentRegionList, regionName];
-
-      setExpandedRegions((prev) => ({
-        ...prev,
-        [regionName]: !prev[regionName],
-      }));
-
-      onFilterChange(
-        nextRegions.length > 0 ? nextRegions.join(",") : null,
-        checkedCities,
-      );
+    (name: string) => {
+      const next = currentRegionList.includes(name)
+        ? currentRegionList.filter((r) => r !== name)
+        : [...currentRegionList, name];
+      setExpandedRegions((p) => ({ ...p, [name]: !p[name] }));
+      onFilterChange(next.length ? next.join(",") : null, checkedCities);
     },
     [currentRegionList, checkedCities, onFilterChange],
   );
 
   const handleCityToggle = useCallback(
-    (cityName: string) => {
+    (name: string) => {
       onFilterChange(selectedRegion, {
         ...checkedCities,
-        [cityName]: !checkedCities[cityName],
+        [name]: !checkedCities[name],
       });
     },
     [selectedRegion, checkedCities, onFilterChange],
@@ -176,126 +169,150 @@ export default function LocationSelector({
     setExpandedRegions({});
   }, [onFilterChange]);
 
-  const handleMobileOpen = useCallback(() => setIsMobileOpen(true), []);
-  const handleMobileClose = useCallback(() => setIsMobileOpen(false), []);
-
   if (!mounted) return null;
 
-  return (
-    <div className="w-full md:w-64 lg:w-72 font-sans">
-      <div className="md:hidden px-4 py-2">
-        <button
-          onClick={handleMobileOpen}
-          className="flex items-center justify-between w-full bg-white border border-gray-200 p-4 rounded-2xl font-bold shadow-sm"
-        >
-          <span className="flex items-center gap-2 text-gray-800">
-            <MdLocationOn className="text-blue-600 text-xl" />
-            <span className="truncate text-sm">
-              {t("filters.location.title")}
-            </span>
-            {hasActiveFilters && (
-              <span className="w-2 h-2 bg-blue-600 rounded-full" />
-            )}
-          </span>
-          <MdFilterList className="text-xl text-gray-400" />
-        </button>
-      </div>
-
-      <div
-        className={`
-          fixed inset-0 z-50 bg-white transform transition-transform duration-300 md:relative md:inset-auto md:translate-x-0 md:z-0 md:bg-transparent
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:block"}
-        `}
-      >
-        <div className="flex flex-col h-full md:h-auto bg-white md:rounded-2xl md:border md:border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between p-5 border-b border-gray-50">
-            <h3 className="text-xs font-black text-gray-900 flex items-center gap-2 uppercase tracking-[0.15em]">
-              <MdLocationOn className="text-blue-600" />
-              {t("filters.location.title")}
-            </h3>
-            <button
-              onClick={handleMobileClose}
-              className="md:hidden p-2 bg-gray-50 rounded-full"
-            >
-              <MdClose className="text-xl text-gray-500" />
-            </button>
-          </div>
-
-          <div className="flex-1 p-2 md:p-3 overflow-y-visible">
-            {isLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div
-                    key={i}
-                    className="h-12 bg-gray-50 animate-pulse rounded-xl w-full"
-                  />
-                ))}
-              </div>
-            ) : regions.length > 0 ? (
-              <div className="flex flex-col gap-1">
-                {regions.map((region) => {
-                  const regionCities = cities.filter(
-                    (c) => c.regionId === region.id,
-                  );
-                  if (regionCities.length === 0) return null;
-
-                  return (
-                    <RegionItem
-                      key={region.id}
-                      region={region}
-                      isSelected={currentRegionList.includes(region.name)}
-                      isExpanded={
-                        expandedRegions[region.name] ||
-                        currentRegionList.includes(region.name) ||
-                        regionCities.some((c) => checkedCities[c.name])
-                      }
-                      count={regionCounts[region.name] || 0}
-                      cities={regionCities}
-                      checkedCities={checkedCities}
-                      cityCounts={cityCounts}
-                      onRegionToggle={handleRegionToggle}
-                      onCityToggle={handleCityToggle}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
-                  No regions found. Please ensure region data is loaded.
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="p-4 bg-white border-t border-gray-50 sticky bottom-0 md:relative">
-            <button
-              onClick={handleMobileClose}
-              className="md:hidden flex items-center justify-center gap-2 w-full py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all mb-3"
-            >
-              <MdCheck className="text-lg" />
-              {t("common.showResults") || "Show Listings"}
-            </button>
-
-            {hasActiveFilters && (
-              <button
-                onClick={handleClearAll}
-                className="flex items-center justify-center gap-2 w-full py-2 text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-[0.2em]"
-              >
-                <MdRefresh className="text-sm" />
-                {t("filters.location.clearAll")}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
-          onClick={handleMobileClose}
-        />
-      )}
+  const regionList = isLoading ? (
+    <div className="space-y-2 px-4 py-3">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="h-10 bg-gray-100 animate-pulse rounded-xl" />
+      ))}
     </div>
+  ) : regions.length > 0 ? (
+    <div className="flex flex-col gap-0.5 px-4 py-3">
+      {regions.map((region) => {
+        const regionCities = cities.filter((c) => c.regionId === region.id);
+        if (!regionCities.length) return null;
+        return (
+          <RegionItem
+            key={region.id}
+            region={region}
+            isSelected={currentRegionList.includes(region.name)}
+            isExpanded={
+              expandedRegions[region.name] ||
+              currentRegionList.includes(region.name) ||
+              regionCities.some((c) => checkedCities[c.name])
+            }
+            count={regionCounts[region.name] || 0}
+            cities={regionCities}
+            checkedCities={checkedCities}
+            cityCounts={cityCounts}
+            onRegionToggle={handleRegionToggle}
+            onCityToggle={handleCityToggle}
+          />
+        );
+      })}
+    </div>
+  ) : (
+    <p className="text-center py-8 text-[11px] font-bold text-gray-300 uppercase tracking-widest">
+      No regions found
+    </p>
   );
+
+  if (desktopOnly) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-50">
+          <h3 className="text-[11px] font-black text-gray-700 flex items-center gap-2 uppercase tracking-widest">
+            <MdLocationOn className="text-blue-500" />
+            {t("filters.location.title")}
+          </h3>
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearAll}
+              className="flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <MdRefresh className="text-sm" />
+              {t("filters.location.clearAll")}
+            </button>
+          )}
+        </div>
+        <div className="p-3">{regionList}</div>
+      </div>
+    );
+  }
+
+  if (mobileOnly) {
+    return (
+      <>
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 w-full bg-white border border-gray-200 px-4 py-3 rounded-2xl shadow-sm font-semibold text-sm text-gray-700 active:scale-[0.97] transition-all"
+        >
+          <MdLocationOn className="text-blue-500 text-lg flex-shrink-0" />
+          <span className="flex-1 text-left">
+            {t("filters.location.title")}
+          </span>
+          {activeCount > 0 && (
+            <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
+              {activeCount}
+            </span>
+          )}
+          <MdFilterList className="text-gray-400 text-lg flex-shrink-0" />
+        </button>
+        {open &&
+          createPortal(
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 99999,
+                backgroundColor: "white",
+                display: "flex",
+                flexDirection: "column",
+                margin: 0,
+                padding: 0,
+                boxSizing: "border-box",
+              }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0 bg-white">
+                <h3 className="text-base font-black text-gray-800 flex items-center gap-2">
+                  <MdLocationOn className="text-blue-500 text-xl" />
+                  {t("filters.location.title")}
+                  {activeCount > 0 && (
+                    <span className="bg-blue-100 text-blue-700 text-xs font-black px-2 py-0.5 rounded-full">
+                      {activeCount}
+                    </span>
+                  )}
+                </h3>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full active:scale-95 transition-all"
+                >
+                  <MdClose className="text-gray-600 text-xl" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">{regionList}</div>
+
+              <div className="px-4 py-4 border-t border-gray-100 flex-shrink-0 bg-white space-y-3">
+                {hasActiveFilters && (
+                  <button
+                    onClick={handleClearAll}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    <MdRefresh className="text-base" />
+                    {t("filters.location.clearAll")}
+                  </button>
+                )}
+                <button
+                  onClick={() => setOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 text-white rounded-xl text-base font-black active:scale-[0.98] transition-all"
+                >
+                  <MdCheck className="text-xl" />
+                  {t("common.showResults") || "Show Results"}
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )}
+      </>
+    );
+  }
+
+  return null;
 }

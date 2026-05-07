@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
+const YEAR = new Date().getFullYear();
+
 export default function Footer() {
   const { t } = useTranslation();
-  const getCurrentYear = () => new Date().getFullYear();
 
   return (
     <footer className="text-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 border-b border-gray-300">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 border-b border-gray-300">
         <div>
           <h3 className="font-semibold mb-3">{t("footer.company")}</h3>
           <ul className="space-y-2 text-sm">
@@ -80,10 +81,10 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[59rem] px-6 py-8 mt-0 text-center text-sm text-gray-600">
+      <div className="max-w-screen-xl mx-auto w-full px-6 py-8 mt-0 text-center text-sm text-gray-600" suppressHydrationWarning>
         {t("footer.rights", {
           yearStart: 2025,
-          yearEnd: getCurrentYear(),
+          yearEnd: YEAR,
           brand: "Karaadi",
         })}
       </div>

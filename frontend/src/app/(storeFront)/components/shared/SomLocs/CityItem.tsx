@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { MdCheckBoxOutlineBlank } from "react-icons/md";
-import { CiSquareCheck } from "react-icons/ci";
+import { MdCheckBoxOutlineBlank, MdCheckBox } from "react-icons/md";
 
 interface City {
   id: string;
@@ -22,22 +21,28 @@ const formatName = (name: string) =>
 
 const CityItem = ({ city, isSelected, count, onToggle }: CityItemProps) => (
   <li
-    className="flex items-center justify-between cursor-pointer group/city py-1"
+    className="flex items-center justify-between cursor-pointer py-2 group/city active:bg-gray-50 rounded-lg px-1 transition-colors"
     onClick={() => onToggle(city.name)}
   >
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       {isSelected ? (
-        <CiSquareCheck className="text-green-600 text-2xl" />
+        <MdCheckBox className="text-blue-600 text-lg flex-shrink-0" />
       ) : (
-        <MdCheckBoxOutlineBlank className="text-gray-300 text-2xl group-hover/city:text-blue-400" />
+        <MdCheckBoxOutlineBlank className="text-gray-300 text-lg flex-shrink-0 group-hover/city:text-blue-400 transition-colors" />
       )}
       <span
-        className={`text-md ${isSelected ? "font-bold text-green-700" : "text-gray-600"}`}
+        className={`text-sm ${
+          isSelected ? "font-semibold text-blue-700" : "text-gray-600"
+        }`}
       >
         {formatName(city.name)}
       </span>
     </div>
-    <span className="text-gray-500 text-sm font-black bg-gray-100 px-2.5 py-0.5 rounded-md min-w-[30px] text-center">
+    <span
+      className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+        isSelected ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400"
+      }`}
+    >
       {count}
     </span>
   </li>

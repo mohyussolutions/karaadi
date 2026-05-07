@@ -29,7 +29,7 @@ function SettingCard({
   onNavigate,
 }: SettingCardProps) {
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md border flex flex-col justify-between">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border dark:border-gray-700 flex flex-col justify-between">
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-4">{title}</h2>
         <ul className="space-y-2 text-gray-600 mb-4">

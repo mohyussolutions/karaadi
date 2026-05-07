@@ -9,7 +9,6 @@ import {
   FaStore,
   FaWarehouse,
 } from "react-icons/fa";
-import { MdWork } from "react-icons/md";
 import { IoIosBoat } from "react-icons/io";
 import { ICONS } from "@/app/utils/icons/categoryIcons";
 import { CategoryIcons } from "@/app/utils/icons/subCategoryIcons";
@@ -1485,49 +1484,49 @@ export const vehicleSubCategories: CategoryOption[] = [
   {
     key: "carsForSale",
     name: "Cars For Sale",
-    labelKey: "subcategories.vehicles.carsForSale",
+    labelKey: "subcategories.cars.carsForSale",
     icon: React.createElement(CategoryIcons.CarSale, null),
     href: "/cars/cars-for-sale",
   },
   {
     key: "leaseCars",
     name: "Lease Cars",
-    labelKey: "subcategories.vehicles.leaseCars",
+    labelKey: "subcategories.cars.leaseCars",
     icon: React.createElement(CategoryIcons.CarLease, null),
     href: "/cars/lease-cars",
   },
   {
     key: "trailers",
     name: "Trailers",
-    labelKey: "subcategories.vehicles.trailers",
+    labelKey: "subcategories.cars.trailers",
     icon: React.createElement(CategoryIcons.Trailer, null),
     href: "/cars/trailers",
   },
   {
     key: "carParts",
     name: "Car Parts",
-    labelKey: "subcategories.vehicles.carParts",
+    labelKey: "subcategories.cars.carParts",
     icon: React.createElement(CategoryIcons.Parts, null),
     href: "/cars/car-parts",
   },
   {
     key: "truck",
     name: "Truck",
-    labelKey: "subcategories.vehicles.truck",
+    labelKey: "subcategories.cars.truck",
     icon: React.createElement(CategoryIcons.Truck, null),
     href: "/cars/truck",
   },
   {
     key: "electricCars",
     name: "Electric Cars",
-    labelKey: "subcategories.vehicles.electricCars",
+    labelKey: "subcategories.cars.electricCars",
     icon: React.createElement(CategoryIcons.Electric, null),
     href: "/cars/electric-cars",
   },
   {
     key: "buses",
     name: "Buses",
-    labelKey: "subcategories.vehicles.buses",
+    labelKey: "subcategories.cars.buses",
     icon: React.createElement(CategoryIcons.Bus, null),
     href: "/cars/buses",
   },
@@ -1797,6 +1796,16 @@ export const allCategories: MainCategory[] = [
     title: undefined,
   },
   {
+    key: "Motorcycles",
+    name: "Motorcycles",
+    href: "/motorcycles",
+    icon: React.createElement(FaCaravan, null),
+    dashboardIcon: FaMotorcycle,
+    dashboardLink: "/dashboard/categories/motorcycles",
+    subCategories: motorcycleSubCategories,
+    title: undefined,
+  },
+  {
     key: "Boats",
     name: "Boats",
     href: "/boats",
@@ -1816,37 +1825,5 @@ export const allCategories: MainCategory[] = [
     subCategories: farmEquipmentSubCategories,
     title: undefined,
   },
-  {
-    key: "Motorcycles",
-    name: "Motorcycles",
-    href: "/motorcycles",
-    icon: React.createElement(FaCaravan, null),
-    dashboardIcon: FaMotorcycle,
-    dashboardLink: "/dashboard/categories/motorcycles",
-    subCategories: motorcycleSubCategories,
-    title: undefined,
-  },
-  {
-    key: "Jobs",
-    name: "Jobs",
-    href: "/jobs",
-    icon: React.createElement(MdWork, null),
-    dashboardIcon: MdWork,
-    dashboardLink: "/dashboard/categories/jobs",
-    subCategories: jobSubCategories,
-    title: undefined,
-  },
 
-  /*
-  {
-    key: "Smartsuuq",
-    hideIcon: true,
-    href: "https://www.smartsuuq.com/",
-    icon: React.createElement(MohyusLogoIcon, null),
-    dashboardIcon: MohyusLogoIcon,
-    dashboardLink: "/dashboard/categories/smartsuuq",
-    subCategories: [],
-    title: undefined,
-  },
-  */
 ];

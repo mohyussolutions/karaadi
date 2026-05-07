@@ -47,7 +47,7 @@ export async function getAllFarmEquipment(
 
 export async function getFarmequipment(page = 1, pageSize = 20): Promise<FarmEquipment[]> {
   const res = await fetch(`${apiUrlsForCategoryTotals.Traktors}?page=${page}&pageSize=${pageSize}`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   if (!res.ok) return [];
   const data = await res.json();
@@ -59,7 +59,7 @@ export async function getFarmEquipmentById(
   id: string,
 ): Promise<FarmEquipment | null> {
   const res = await fetch(`${apiUrlsForCategoryTotals.Traktors}/${id}`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   if (!res.ok) return null;
   const item = await res.json();

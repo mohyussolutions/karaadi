@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { Prisma } from "@prisma/client";
+import { convertImages } from "src/core/utils/imageUtils.ts";
 
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import {
@@ -11,7 +12,7 @@ import {
 } from "src/hooks/useExpire.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
-import { getBusinessListingFlags } from "src/core/utils/businessListingFlags.ts";
+import { getBusinessListingFlags, checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 
 const PLAN_TYPES = {
@@ -154,7 +155,7 @@ export const getAllRealEstates = async (req: Request, res: Response) => {
       CACHE_TTL.LIST,
     );
 
-    return res.json(properties.map(formatItem));
+    return res.json(properties.map((p: any) => convertImages(formatItem(p), "real-estate")));
   } catch (error) {
     return res.status(500).json({
       message: ERROR_MESSAGES.SERVER_ERROR,
@@ -326,9 +327,9 @@ export const getRealEstateById = async (req: Request, res: Response) => {
         return res
           .status(404)
           .json({ message: ERROR_MESSAGES.PROPERTY_NOT_FOUND, id });
-      return res.json({ ...formatItem(fallback), foundByFallback: true });
+      return res.json(convertImages({ ...formatItem(fallback), foundByFallback: true }, "real-estate"));
     }
-    return res.json(formatItem(property));
+    return res.json(convertImages(formatItem(property), "real-estate"));
   } catch (error) {
     return res.status(500).json({
       message: ERROR_MESSAGES.SERVER_ERROR,
@@ -380,6 +381,13 @@ export const createRealEstate = async (req: Request, res: Response) => {
 
     const biz = await getBusinessListingFlags(businessId || null);
     if (biz.isPaidByBusiness) expiryDate = expiryDate ?? biz.expiryDate;
+
+    if (businessId) {
+      const limit = await checkBusinessListingLimit(businessId);
+      if (limit.limitReached) {
+        return res.status(403).json({ message: "Listing limit reached", current: limit.current, max: limit.max });
+      }
+    }
 
     const newProperty = await prisma.realEstate.create({
       data: {

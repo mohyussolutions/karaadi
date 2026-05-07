@@ -62,7 +62,7 @@ export async function getCarById(id: string): Promise<Car | null> {
   try {
     const response = await fetch(`${apiUrlsForCategoryTotals.Cars}/${id}`, {
       method: "GET",
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!response.ok) return null;
     const item = await response.json();

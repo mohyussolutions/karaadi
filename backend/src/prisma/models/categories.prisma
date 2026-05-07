@@ -10,6 +10,7 @@ model Marketplace {
   subcategory  String[]
   condition    String?
   categoryTag  String?
+  website      String?
   region       String
   city         String
   images       String[]
@@ -26,7 +27,7 @@ model Marketplace {
   feeAmount    Float     @default(0)
   planId       String?
   planAmount   Float     @default(0)
-  
+
   user         User      @relation("UserMarketplaces", fields: [userId], references: [id], onDelete: Cascade)
   payments     Payment[] @relation("MarketplacePayments")
   chats        Chat[]
@@ -64,6 +65,7 @@ model RealEstate {
   address      String
   hasGarage    Boolean?
   hasGarden    Boolean?
+  website      String?
   region       String
   city         String
   county       String
@@ -80,7 +82,7 @@ model RealEstate {
   feeAmount    Float     @default(0)
   planId       String?
   planAmount   Float     @default(0)
-  
+
   user         User      @relation("UserRealEstates", fields: [userId], references: [id], onDelete: Cascade)
   payments     Payment[] @relation("RealEstatePayments")
   chats        Chat[]
@@ -98,6 +100,7 @@ model RealEstate {
 model Boat {
   id           String    @id @default(cuid())
   userId       String
+  businessId   String?
   title        String
   mainCategory String
   category     String[]
@@ -111,6 +114,7 @@ model Boat {
   boatModel    String
   transmission String
   color        String
+  website      String?
   maGaday      Boolean   @default(false)
   isBasic30    Boolean   @default(false)
   isStandard60 Boolean   @default(false)
@@ -123,7 +127,7 @@ model Boat {
   feeAmount    Float     @default(0)
   planId       String?
   planAmount   Float     @default(0)
-  
+
   user         User      @relation("UserBoats", fields: [userId], references: [id], onDelete: Cascade)
   payments     Payment[] @relation("BoatPayments")
   chats        Chat[]
@@ -134,6 +138,7 @@ model Boat {
   @@index([createdAt])
   @@index([userId])
   @@index([region])
+  @@index([businessId])
 }
 
 model Car {
@@ -160,6 +165,7 @@ model Car {
   condition    String?
   color        String
   doors        Int?
+  website      String?
   region       String
   city         String
   images       String[]
@@ -175,7 +181,7 @@ model Car {
   feeAmount    Float     @default(0)
   planId       String?
   planAmount   Float     @default(0)
-  
+
   user         User      @relation("UserCars", fields: [userId], references: [id], onDelete: Cascade)
   payments     Payment[] @relation("CarPayments")
   chats        Chat[]
@@ -192,6 +198,7 @@ model Car {
 model Motorcycle {
   id           String    @id @default(cuid())
   userId       String
+  businessId   String?
   title        String
   transmission String?
   gearbox      String?
@@ -214,6 +221,7 @@ model Motorcycle {
   color        String
   condition    String?
   description  String
+  website      String?
   maGaday      Boolean   @default(false)
   isBasic30    Boolean   @default(false)
   isStandard60 Boolean   @default(false)
@@ -226,7 +234,7 @@ model Motorcycle {
   feeAmount    Float     @default(0)
   planId       String?
   planAmount   Float     @default(0)
-  
+
   user         User           @relation("UserMotorcycles", fields: [userId], references: [id], onDelete: Cascade)
   payments     Payment[]      @relation("MotorcyclePayments")
   chats        Chat[]
@@ -237,11 +245,13 @@ model Motorcycle {
   @@index([createdAt])
   @@index([userId])
   @@index([region])
+  @@index([businessId])
 }
 
 model Farmequipment {
   id                  String    @id @default(cuid())
   userId              String
+  businessId          String?
   title               String
   description         String
   price               Float
@@ -261,6 +271,7 @@ model Farmequipment {
   attachmentsIncluded Boolean?
   enginePower         String
   fuelType            String
+  website             String?
   region              String
   city                String
   images              String[]
@@ -276,7 +287,7 @@ model Farmequipment {
   feeAmount     Float     @default(0)
   planId        String?
   planAmount    Float     @default(0)
-  
+
   user          User      @relation("UserFarmequipments", fields: [userId], references: [id], onDelete: Cascade)
   payments      Payment[] @relation("FarmPayments")
   chats         Chat[]
@@ -287,6 +298,7 @@ model Farmequipment {
   @@index([createdAt])
   @@index([userId])
   @@index([region])
+  @@index([businessId])
 }
 
 model Job {
@@ -315,7 +327,7 @@ model Job {
   feeAmount       Float         @default(0)
   planId          String?
   planAmount      Float         @default(0)
-  
+
   user            User          @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
   payments        Payment[]     @relation("JobPayments")
   chats           Chat[]

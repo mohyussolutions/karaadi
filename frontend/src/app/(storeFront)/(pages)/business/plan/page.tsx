@@ -15,8 +15,8 @@ import {
 } from "@/actions/categories/businessActions";
 import type { Business } from "@/actions/categories/businessActions";
 
-import BusinessStepper from "../steps/BusinessStepper";
 import { BusinessPlan } from "@/app/utils/types/business";
+import BusinesscheckupSteps from "@/app/(storeFront)/components/checkout/BusinesscheckupSteps";
 
 const TIER: Record<
   string,
@@ -112,7 +112,7 @@ export default function PlanPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="max-w-xl mx-auto py-10 px-4 animate-pulse space-y-4">
+      <div className="max-w-3xl mx-auto py-10 px-4 animate-pulse space-y-4">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gray-200 rounded-xl" />
           <div className="w-12 h-12 bg-gray-200 rounded-2xl" />
@@ -131,7 +131,7 @@ export default function PlanPage() {
 
   if (!business) {
     return (
-      <div className="max-w-xl mx-auto py-10 px-4 text-center space-y-4">
+      <div className="max-w-3xl mx-auto py-10 px-4 text-center space-y-4">
         <p className="text-gray-500">
           {t(
             "mine.businesses.noPlanBusiness",
@@ -155,7 +155,7 @@ export default function PlanPage() {
   const isExpired = expiry ? expiry < new Date() : false;
 
   return (
-    <div className="max-w-xl mx-auto py-10 px-4">
+    <div className="max-w-3xl mx-auto py-10 px-4" suppressHydrationWarning>
       <div className="flex items-center gap-4 mb-8">
         <button
           type="button"
@@ -177,7 +177,7 @@ export default function PlanPage() {
         </div>
       </div>
 
-      <BusinessStepper active={3} businessId={business.id} />
+      <BusinesscheckupSteps active={3} businessId={business.id} />
 
       {currentPlan && (
         <div className="mb-6 bg-white border border-gray-200 rounded-2xl px-5 py-4">

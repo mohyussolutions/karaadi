@@ -89,7 +89,10 @@ export async function register(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, email, password }),
   });
-  if (!response.ok) throw new Error("Registration failed");
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.error || "Registration failed");
+  }
   return response.json();
 }
 

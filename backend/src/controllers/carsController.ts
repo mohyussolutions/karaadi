@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import prisma from "src/core/utils/db.ts";
+import { convertImages } from "src/core/utils/imageUtils.ts";
 import {
   calculateExpiryDate,
   formatExpiryDate,
@@ -12,7 +13,7 @@ import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { CarQuery, CreateCarBody, PaymentUpdateBody } from "src/types/index.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
-import { getBusinessListingFlags } from "src/core/utils/businessListingFlags.ts";
+import { getBusinessListingFlags, checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 
 const PLAN_TYPES = {
@@ -243,7 +244,7 @@ export const getAllCarsIncludingUnpaid = async (
       skip,
       take: sizeNum,
     });
-    return res.json(cars.map(formatItem));
+    return res.json(cars.map((c: any) => convertImages(formatItem(c), "cars")));
   } catch (error) {
     const err = error as Error;
     return res.status(500).json({
@@ -310,7 +311,7 @@ export const getAllCars = async (req: Request, res: Response) => {
       CACHE_TTL.LIST,
     );
 
-    return res.json(cars.map(formatItem));
+    return res.json(cars.map((c: any) => convertImages(formatItem(c), "cars")));
   } catch (error) {
     const err = error as Error;
     return res.status(500).json({
@@ -407,13 +408,10 @@ export const getCarById = async (req: Request, res: Response) => {
           [FIELD_NAMES.ID]: id,
         });
       }
-      return res.json({
-        ...formatItem(fallback),
-        [FIELD_NAMES.FOUND_BY_FALLBACK]: true,
-      });
+      return res.json(convertImages({ ...formatItem(fallback), [FIELD_NAMES.FOUND_BY_FALLBACK]: true }, "cars"));
     }
 
-    return res.json(formatItem(car));
+    return res.json(convertImages(formatItem(car), "cars"));
   } catch (error) {
     const err = error as Error;
     return res.status(500).json({
@@ -480,6 +478,13 @@ export const createCar = async (
 
     const biz = await getBusinessListingFlags(businessId);
     if (biz.isPaidByBusiness) expiryDate = expiryDate ?? biz.expiryDate;
+
+    if (businessId) {
+      const limit = await checkBusinessListingLimit(businessId);
+      if (limit.limitReached) {
+        return res.status(403).json({ message: "Listing limit reached", current: limit.current, max: limit.max });
+      }
+    }
 
     const newCar = await prisma.car.create({
       data: {

@@ -8,7 +8,7 @@ export default function SubFooter() {
 
   return (
     <div className="text-gray-700 text-sm border-t border-b border-gray-300 bg-bg-FEFDFD">
-      <div className="mx-auto w-full max-w-[59rem] px-6 py-8 mt-0 text-center space-y-6">
+      <div className="max-w-screen-xl mx-auto w-full px-6 py-8 mt-0 text-center space-y-6">
         <div>
           <h3 className="font-semibold mb-3">{t("footer.followUs")}</h3>
           <div className="flex justify-center space-x-6 text-xl text-gray-500">

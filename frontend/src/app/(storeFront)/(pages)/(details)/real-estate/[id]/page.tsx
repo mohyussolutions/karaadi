@@ -8,9 +8,7 @@ import Image from "next/image";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import Loading from "@/app/ui/loading/Loading";
-import { getRealEstateById } from "@/actions/categories/realEstateActions";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
-import { ImageControls } from "@/app/ui/invoices/ImageControls";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 import { MessageSquare, Phone } from "lucide-react";
@@ -38,6 +36,8 @@ import {
 import { MdBalcony, MdElevator } from "react-icons/md";
 import { AiOutlineHeart, AiOutlineZoomIn } from "react-icons/ai";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+import { getRealEstateById } from "@/actions/categories/realEstateActions";
+import ZoomedImageModal from "../../zoomed/ZoomedImageModal";
 
 interface RealEstateItem {
   id: string;
@@ -85,10 +85,18 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
 const API_BASE = BASE_API_URL;
 const resolveImageUrl = (url: any): string | null => {
   if (typeof url !== "string" || url.trim() === "") return null;
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("/") || url.startsWith("blob:")) return url;
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("data:") ||
+    url.startsWith("/") ||
+    url.startsWith("blob:")
+  )
+    return url;
   return `${API_BASE}/${url}`;
 };
-const isValidImageUrl = (url: any): url is string => resolveImageUrl(url) !== null;
+const isValidImageUrl = (url: any): url is string =>
+  resolveImageUrl(url) !== null;
 
 function RealEstateDetails() {
   const router = useRouter();
@@ -111,7 +119,10 @@ function RealEstateDetails() {
   const handleZoomClose = useCallback(() => setIsZoomed(false), []);
 
   const handleHeartClick = useCallback(() => {
-    if (!currentUser) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
+    if (!currentUser) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
     setShowModal(true);
   }, [currentUser, router, pathname]);
 
@@ -218,7 +229,9 @@ function RealEstateDetails() {
   const images = useMemo(
     () =>
       (realEstate?.images || [])
-        .map((img) => typeof img === "string" ? img : URL.createObjectURL(img))
+        .map((img) =>
+          typeof img === "string" ? img : URL.createObjectURL(img),
+        )
         .map((url) => resolveImageUrl(url))
         .filter((url): url is string => url !== null),
     [realEstate?.images],
@@ -272,40 +285,39 @@ function RealEstateDetails() {
           <span className="text-blue-600 font-bold">{category}</span>
         )}
       </div>
-
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
         <div className="space-y-4 min-w-0">
           <div className="relative">
             <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
               {images[selectedImageIndex] ? (
-                <Image
-                  src={images[selectedImageIndex]}
-                  alt={realEstate.title}
-                  fill
-                  className={`object-cover cursor-pointer ${realEstate.maGaday ? "opacity-70" : ""}`}
-                  priority
-                />
+                <button
+                  type="button"
+                  onClick={handleZoomOpen}
+                  className="w-full h-full absolute inset-0 cursor-zoom-in group"
+                  style={{ background: "none", border: 0, padding: 0 }}
+                  aria-label="Open fullscreen image viewer"
+                >
+                  <Image
+                    src={images[selectedImageIndex]}
+                    alt={realEstate.title}
+                    fill
+                    className={`object-cover transition-opacity duration-300 group-hover:opacity-90 ${realEstate.maGaday ? "opacity-70" : "opacity-100"}`}
+                    priority
+                  />
+                  <span className="absolute right-3 top-3 z-50 flex gap-2">
+                    <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); handleHeartClick(); }} aria-label="Save to favorites" className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer">
+                      <AiOutlineHeart className="w-5 h-5 text-red-500" />
+                  </span>
+                    <span className="bg-white/90 p-2.5 rounded-full shadow-md text-gray-700">
+                      <AiOutlineZoomIn className="w-5 h-5" />
+                    </span>
+                  </span>
+                </button>
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-300">
                   <FaHome size={64} />
                 </div>
               )}
-              <div className="absolute right-3 top-3 z-50 flex gap-2">
-                <button
-                  onClick={handleHeartClick}
-                  aria-label="Save to favorites"
-                  className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all"
-                >
-                  <AiOutlineHeart className="w-5 h-5 text-red-500" />
-                </button>
-                <button
-                  onClick={handleZoomOpen}
-                  aria-label="Zoom image"
-                  className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all"
-                >
-                  <AiOutlineZoomIn className="w-5 h-5 text-gray-700" />
-                </button>
-              </div>
               {images.length > 1 && (
                 <>
                   <button
@@ -324,74 +336,6 @@ function RealEstateDetails() {
               )}
             </div>
           </div>
-
-          {isZoomed && images[selectedImageIndex] && (
-            <div
-              className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-              onClick={handleZoomClose}
-            >
-              <div
-                className="relative w-full max-w-5xl max-h-[90vh] m-4 flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-white/70 text-sm font-medium">
-                    {selectedImageIndex + 1} / {images.length}
-                  </span>
-                  <button
-                    onClick={handleZoomClose}
-                    className="text-white bg-white/10 hover:bg-white/25 rounded-full p-2 transition-all"
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="relative flex-1 min-h-0 h-[75vh]">
-                  <Image
-                    src={images[selectedImageIndex]}
-                    alt={realEstate.title}
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-
-                  {images.length > 1 && (
-                    <>
-                      <button
-                        onClick={handlePrevImage}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
-                        aria-label="Previous"
-                      >
-                        <IoIosArrowBack className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={handleNextImage}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
-                        aria-label="Next"
-                      >
-                        <IoIosArrowForward className="w-5 h-5" />
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {images.length > 1 && (
-                  <div className="flex gap-2 justify-center mt-3 overflow-x-auto pb-1">
-                    {images.map((thumb, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setSelectedImageIndex(i)}
-                        className={`relative w-14 h-10 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === selectedImageIndex ? "border-white" : "border-white/20 opacity-50"}`}
-                      >
-                        <Image src={thumb} alt="" fill className="object-cover" sizes="56px" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {images.length > 1 && (
             <div className="flex gap-3 overflow-x-auto py-1 scrollbar-hide">
@@ -740,7 +684,6 @@ function RealEstateDetails() {
           </div>
         </div>
       </div>
-
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-lg">
         <div className="flex-1 min-w-0">
           <p className="text-xl font-extrabold text-blue-700 truncate">
@@ -778,7 +721,6 @@ function RealEstateDetails() {
               : t("realEstateDetail.sendMessage")}
         </button>
       </div>
-
       {showModal && (
         <SaveFavoriteModel
           onConfirm={handleModalConfirm}
@@ -786,7 +728,17 @@ function RealEstateDetails() {
           backgroundImage={images[0]}
         />
       )}
-
+      {isZoomed && images[selectedImageIndex] && (
+        <ZoomedImageModal
+          images={images}
+          selectedIndex={selectedImageIndex}
+          onClose={handleZoomClose}
+          onPrev={handlePrevImage}
+          onNext={handleNextImage}
+          setSelectedIndex={setSelectedImageIndex}
+          title={realEstate.title}
+        />
+      )}
       <Recommendations
         userId={currentUser?.id}
         excludeId={realEstate?.id}

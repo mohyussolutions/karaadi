@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
+import { serverError } from "src/core/utils/serverError.ts";
 
 export const regionsWithMostItemListings = async (
   _req: Request,
@@ -93,7 +94,7 @@ export const citiesWithMostItemListings = async (
 
     res.status(200).json(result);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    serverError(res, error);
   }
 };
 export const getAllRegions = async (req: Request, res: Response) => {

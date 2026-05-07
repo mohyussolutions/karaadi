@@ -86,7 +86,6 @@ export interface TraktorSubCategoryItem {
   href: string;
 }
 
-// If you need optional fields for any special cases
 export interface OptionalCategoryOption {
   key?: string;
   name?: string;

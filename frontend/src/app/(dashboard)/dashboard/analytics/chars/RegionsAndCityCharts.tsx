@@ -132,14 +132,14 @@ export const RegionsAndCityCharts = ({
   cityData,
 }: RegionsAndCityChartsProps) => (
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-2 sm:mt-6">
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm overflow-hidden">
       <VerticalBarCard
         title="Regions with Most Listings"
         data={regionData}
         color="#6366f1"
       />
     </div>
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm overflow-hidden">
       <VerticalBarCard
         title="Cities with Most Listings"
         data={cityData}

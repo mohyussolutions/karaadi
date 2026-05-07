@@ -123,7 +123,7 @@ export const deleteMyAccount = async (
 
     return res.status(200).json({ success: true, message: "Account deleted" });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message || "Deletion failed" });
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -134,15 +134,17 @@ export const signUp = async (
   phoneNumber?: string,
 ) => {
   try {
-    const userAttributes = [
+    const userAttributes: { Name: string; Value: string }[] = [
       { Name: "email", Value: email },
       { Name: "preferred_username", Value: username },
-      { Name: "custom:phone_number", Value: phoneNumber || "" },
-      { Name: "custom:profile", Value: "" },
       { Name: "custom:isAdmin", Value: "false" },
       { Name: "custom:isManager", Value: "false" },
       { Name: "custom:isSupport", Value: "false" },
     ];
+    if (phoneNumber) {
+      const e164 = phoneNumber.startsWith("+") ? phoneNumber : `+252${phoneNumber}`;
+      userAttributes.push({ Name: "phone_number", Value: e164 });
+    }
 
     const response = await cognitoClient.send(
       new SignUpCommand({
@@ -188,8 +190,8 @@ export const signIn = async (
     const isManager = decodedToken["custom:isManager"] === "true";
     const isSupport = decodedToken["custom:isSupport"] === "true";
 
-    const cognitoPhone = decodedToken["custom:phone_number"] || "";
-    const cognitoProfileImage = decodedToken["custom:profile"] || "";
+    const cognitoPhone = decodedToken["phone_number"] || "";
+    const cognitoProfileImage = decodedToken["profile"] || "";
     const preferredUsername =
       decodedToken.preferred_username || email.split("@")[0];
 
@@ -342,7 +344,7 @@ export const verifySession = async (
             token,
             accessToken,
           };
-          cacheManager.set(cacheKey, body, 60).catch(() => {});
+          cacheManager.set(cacheKey, body, 300).catch(() => {});
           return resolve(res.status(200).json(body));
         } catch {
           res.clearCookie("idToken");

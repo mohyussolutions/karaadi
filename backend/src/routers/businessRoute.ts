@@ -27,6 +27,7 @@ import {
 import { validateRequest } from "src/core/middelware/validateRequest.ts";
 import {
   createBusinessSchema,
+  updateBusinessSchema,
   updateBusinessStatusSchema,
   extendBusinessPlanSchema,
   toggleAdminEnabledSchema,
@@ -79,7 +80,7 @@ businessRoute.patch(
   adminSetPostLimit,
 );
 businessRoute.get("/:id", ProtectRoute, getBusinessById);
-businessRoute.patch("/:id", ProtectRoute, updateBusiness);
+businessRoute.patch("/:id", ProtectRoute, validateRequest(updateBusinessSchema), updateBusiness);
 businessRoute.delete("/:id", ProtectRoute, deleteBusiness);
 businessRoute.post("/:id/select-plan", ProtectRoute, selectPlan);
 businessRoute.post(

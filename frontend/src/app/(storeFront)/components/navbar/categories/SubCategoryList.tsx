@@ -3,7 +3,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
-import LinksStyleCard from "../../Cards/containerCards/linksstyleCard";
+import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 
 interface CategoryOption {
   key: string;
@@ -15,46 +15,70 @@ interface CategoryOption {
 
 interface SubCategoryListProps {
   data: CategoryOption[];
+  cols?: 2 | 3 | 4;
 }
 
 const EXTERNAL_PROPS = { target: "_blank", rel: "noopener noreferrer" };
 
+const COLS_CLASS: Record<number, string> = {
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+};
+
+const CARD_SIZE: Record<number, { card: string; icon: string; label: string }> = {
+  2: {
+    card: "py-6 px-4 min-h-[120px]",
+    icon: "w-12 h-12 rounded-2xl text-[22px]",
+    label: "text-sm font-semibold",
+  },
+  3: {
+    card: "py-3 px-2 min-h-[76px]",
+    icon: "w-9 h-9 rounded-xl text-[18px]",
+    label: "text-[10px] font-semibold",
+  },
+  4: {
+    card: "py-3 px-2 min-h-[76px]",
+    icon: "w-9 h-9 rounded-xl text-[18px]",
+    label: "text-[10px] font-semibold",
+  },
+};
+
 const SubCategoryList = memo(function SubCategoryList({
   data,
+  cols = 3,
 }: SubCategoryListProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  useLanguage();
 
-  if (!i18n.isInitialized) {
-    return (
-      <div className="grid grid-cols-2 gap-3 px-3 w-full max-w-2xl min-h-[100px] mx-auto animate-pulse bg-gray-50 rounded-lg" />
-    );
-  }
+  const size = CARD_SIZE[cols];
+
+  const gapClass = cols === 2 ? "gap-1" : "gap-2 sm:gap-3";
 
   return (
-    <div className="flex justify-center w-full py-2">
-      <div className="grid grid-cols-2 gap-3 px-3 w-full max-w-2xl">
-        {data.map((item) => {
-          const isExternal = /^https?:\/\//.test(item.href);
-          const translatedTitle = t(item.labelKey, item.name);
+    <div className={`grid ${COLS_CLASS[cols]} ${gapClass} px-2 sm:px-3 py-2 sm:py-3 max-w-7xl mx-auto`}>
+      {data.map((item) => {
+        const isExternal = /^https?:\/\//.test(item.href);
+        const label = t(item.labelKey, { defaultValue: item.name });
 
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              {...(isExternal ? EXTERNAL_PROPS : {})}
-              className="transition-transform active:scale-95 no-underline flex items-stretch"
-            >
-              <div className="w-full flex items-stretch">
-                <LinksStyleCard
-                  title={translatedTitle}
-                  icon={<div className="flex-shrink-0">{item.icon}</div>}
-                  size="sm"
-                />
+        return (
+          <Link
+            key={item.key}
+            href={item.href}
+            {...(isExternal ? EXTERNAL_PROPS : {})}
+            className="group no-underline"
+          >
+            <div className={`flex flex-col items-center justify-center gap-2 rounded-2xl bg-white ${size.card} w-full active:scale-[0.97]`}>
+              <div className={`${size.icon} flex items-center justify-center bg-gray-100 text-gray-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-200`}>
+                {item.icon}
               </div>
-            </Link>
-          );
-        })}
-      </div>
+              <p className={`${size.label} text-center leading-tight m-0 text-gray-700 group-hover:text-blue-600 transition-colors duration-200`}>
+                {label}
+              </p>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 });

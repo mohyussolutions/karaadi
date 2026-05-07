@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useAppSelector } from "@/store/slices/hooks/hooks";
 
 export default function ThemeApplier() {
-  const mode = useAppSelector((s) => s.theme.mode);
+  const mode = useAppSelector((s) => s.theme?.mode ?? "light");
 
   useEffect(() => {
     const root = document.documentElement;

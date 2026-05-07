@@ -4,7 +4,7 @@ import * as s from "../core/utils/sanitize.ts";
 export const createFarmequipmentSchema = z.object({
   userId: z.string().max(128).optional(),
   title: s.title,
-  description: s.description,
+  description: s.description.optional(),
   price: z.coerce.number().min(0).max(s.LIMITS.PRICE_MAX),
   mainCategory: s.optShortStr(),
   category: z.array(s.shortStr()).max(5).optional(),
@@ -25,6 +25,8 @@ export const createFarmequipmentSchema = z.object({
   hoursUsed: z.union([z.number().min(0).max(1_000_000), z.string().max(20)]).optional(),
   attachmentsIncluded: z.union([z.boolean(), z.string().max(10)]).optional(),
   images: s.images.optional(),
+  businessId: z.string().max(128).optional(),
+  website: z.string().url().max(512).optional().or(z.literal("")),
   isPaid: z.boolean().optional(),
   planId: z.string().max(128).optional(),
   planAmount: z.coerce.number().min(0).max(s.LIMITS.PRICE_MAX).optional(),

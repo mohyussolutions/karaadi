@@ -8,7 +8,7 @@ export async function getMotorcycles(page = 1, pageSize = 20): Promise<Motorcycl
   const res = await fetch(
     `${apiUrlsForCategoryTotals.Motorcycles}?page=${page}&pageSize=${pageSize}`,
     {
-      cache: "no-store",
+      next: { revalidate: 60 },
     },
   );
 
@@ -29,7 +29,7 @@ export async function getMotorcycleById(
   const headers = await getAuthHeaders();
   const res = await fetch(`${apiUrlsForCategoryTotals.Motorcycles}/${id}`, {
     headers: headers as HeadersInit,
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) return null;

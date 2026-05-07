@@ -32,6 +32,8 @@ export interface CreateBoatBody {
   city: string;
   so?: string;
   description: string;
+  businessId?: string;
+  isPaid?: boolean;
 }
 
 export interface CarQuery {

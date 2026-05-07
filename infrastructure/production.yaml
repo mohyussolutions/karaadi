@@ -20,7 +20,7 @@ Mappings:
     NodeVersion:
       Value: 20
     PostgresVersion:
-      Value: 15.4
+      Value: 15.17
     RedisVersion:
       Value: 7
     BackendPort:
@@ -119,6 +119,67 @@ Parameters:
   GitHubRepo:
     Type: String
     Description: Your GitHub repository name
+
+  GitHubToken:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: GitHub personal access token for private repo cloning (leave empty if repo is public)
+
+  AmplifyGitHubToken:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: GitHub OAuth token for Amplify CI/CD (leave empty to skip Amplify setup)
+
+  JWTSecret:
+    Type: String
+    NoEcho: true
+    Description: Secret key for signing JWT tokens
+
+  SessionSecret:
+    Type: String
+    NoEcho: true
+    Description: Secret key for session encryption
+
+  EncryptionKey:
+    Type: String
+    NoEcho: true
+    Description: Key for data encryption (must be 32 chars)
+
+  WaafiPayApiKey:
+    Type: String
+    NoEcho: true
+    Description: WaafiPay API key
+
+  WaafiPayApiUserId:
+    Type: String
+    Description: WaafiPay API user ID
+
+  WaafiPayMerchantUid:
+    Type: String
+    Description: WaafiPay merchant UID
+
+  TikTokClientKey:
+    Type: String
+    Description: TikTok OAuth client key
+
+  TikTokClientSecret:
+    Type: String
+    NoEcho: true
+    Description: TikTok OAuth client secret
+
+  FacebookPageId:
+    Type: String
+    Description: Facebook page ID
+
+# ============================================
+# CONDITIONS
+# ============================================
+
+Conditions:
+  HasAmplifyToken: !Not [!Equals [!Ref AmplifyGitHubToken, ""]]
+  HasGitHubToken: !Not [!Equals [!Ref GitHubToken, ""]]
 
 # ============================================
 # RESOURCES - All AWS services created
@@ -328,6 +389,20 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
         - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: S3ImageAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ImagesBucket.Arn
+                  - !Sub ${ImagesBucket.Arn}/*
 
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -346,21 +421,79 @@ Resources:
         SecurityGroupIds:
           - !Ref EC2SecurityGroup
         UserData:
-          Fn::Base64: !Sub |
-            #!/bin/bash
-            yum update -y
-            curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
-            yum install -y nodejs git
-            npm install -g pm2
-            mkdir -p /home/ec2-user/karaadi
-            cd /home/ec2-user/karaadi
-            git clone https://github.com/${GitHubOrg}/${GitHubRepo}.git .
-            cd backend
-            npm ci --production
-            npm run build
-            pm2 start dist/index.js --name karaadi-backend
-            pm2 save
-            pm2 startup
+          Fn::Base64: !Sub
+            - |
+              #!/bin/bash
+              set -e
+              yum update -y
+              curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+              yum install -y nodejs git
+              npm install -g pm2
+
+              mkdir -p /home/ec2-user/karaadi
+              cd /home/ec2-user/karaadi
+
+              # Clone repo (use token for private repos)
+              if [ -n "${GitHubToken}" ]; then
+                git clone https://${GitHubToken}@github.com/${GitHubOrg}/${GitHubRepo}.git .
+              else
+                git clone https://github.com/${GitHubOrg}/${GitHubRepo}.git .
+              fi
+
+              # Write backend .env.production
+              cat > /home/ec2-user/karaadi/backend/.env.production << 'ENVEOF'
+              NODE_ENV=production
+              PORT=8080
+              ENVEOF
+
+              # Write backend .env with dynamic values
+              cat > /home/ec2-user/karaadi/backend/.env << ENVEOF
+              NODE_ENV=production
+              PORT=8080
+              DATABASE_URL=postgresql://${DBUsername}:${DBPassword}@${RdsHost}:5432/${DBName}?connection_limit=20&pool_timeout=20
+              REDIS_URL=redis://${RedisHost}:6379
+              KARAADI_AWS_COGNITO_USER_POOL_ID=${CognitoPoolId}
+              KARAADI_AWS_COGNITO_CLIENT_ID=${CognitoClientId}
+              AWS_REGION=${AWS::Region}
+              JWT_SECRET=${JWTSecret}
+              SESSION_SECRET=${SessionSecret}
+              ENCRYPTION_KEY=${EncryptionKey}
+              ALLOWED_ORIGINS=https://${DomainName},https://www.${DomainName}
+              BACKEND_URL=https://${ApiId}.execute-api.${AWS::Region}.amazonaws.com/prod
+              NEXT_PUBLIC_FRONTEND_URL=https://${DomainName}
+              COOKIE_DOMAIN=${DomainName}
+              WAAFIPAY_MERCHANT_UID=${WaafiPayMerchantUid}
+              WAAFIPAY_API_USER_ID=${WaafiPayApiUserId}
+              WAAFIPAY_API_KEY=${WaafiPayApiKey}
+              USE_WAAFIPAY_PROD=true
+              WAAFIPAY_PRODUCTION_URL=https://api.waafipay.net/asm
+              TIKTOK_CLIENT_KEY=${TikTokClientKey}
+              TIKTOK_CLIENT_SECRET=${TikTokClientSecret}
+              FACEBOOK_PAGE_ID=${FacebookPageId}
+              S3_BUCKET_NAME=${BucketName}
+              S3_BUCKET_URL=https://${BucketName}.s3.${AWS::Region}.amazonaws.com
+              DEBUG=false
+              DOTENV_CONFIG_SILENT=true
+              DOTENV_SILENT=true
+              PG_POOL_MAX=20
+              PAYLOAD_LIMIT=20mb
+              AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE=1
+              ENVEOF
+
+              chown -R ec2-user:ec2-user /home/ec2-user/karaadi/backend
+
+              cd /home/ec2-user/karaadi/backend
+              npm ci --production
+              npm run build
+              pm2 start dist/index.js --name karaadi-backend --env production
+              pm2 save
+              env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u ec2-user --hp /home/ec2-user
+            - RdsHost: !GetAtt RDSInstance.Endpoint.Address
+              RedisHost: !GetAtt RedisCluster.RedisEndpoint.Address
+              CognitoPoolId: !Ref CognitoUserPool
+              CognitoClientId: !Ref CognitoUserPoolClient
+              ApiId: !Ref APIGateway
+              BucketName: !Ref ImagesBucket
 
   BackendAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -464,6 +597,29 @@ Resources:
       VpcSecurityGroupIds:
         - !Ref RedisSecurityGroup
 
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AppName}-images-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET, PUT, POST, DELETE]
+            AllowedOrigins:
+              - !Sub https://${DomainName}
+              - !Sub https://www.${DomainName}
+            MaxAge: 3600
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -552,7 +708,7 @@ Resources:
     Properties:
       ApiId: !Ref APIGateway
       IntegrationType: HTTP_PROXY
-      IntegrationUri: !Sub http://${BackendALB.DNSName}:8080
+      IntegrationUri: !Ref BackendALBListener
       ConnectionType: VPC_LINK
       ConnectionId: !Ref APIGatewayVpcLink
       IntegrationMethod: ANY
@@ -578,6 +734,7 @@ Resources:
 
   AmplifyRole:
     Type: AWS::IAM::Role
+    Condition: HasAmplifyToken
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -591,9 +748,11 @@ Resources:
 
   AmplifyApp:
     Type: AWS::Amplify::App
+    Condition: HasAmplifyToken
     Properties:
       Name: !Sub ${AppName}-frontend
       Repository: !Sub https://github.com/${GitHubOrg}/${GitHubRepo}
+      OauthToken: !Ref AmplifyGitHubToken
       IAMServiceRole: !GetAtt AmplifyRole.Arn
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_API_URL
@@ -624,6 +783,7 @@ Resources:
 
   AmplifyBranch:
     Type: AWS::Amplify::Branch
+    Condition: HasAmplifyToken
     Properties:
       AppId: !GetAtt AmplifyApp.AppId
       BranchName: main
@@ -666,6 +826,15 @@ Resources:
                   - ssm:GetCommandInvocation
                   - ec2:DescribeInstances
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ImagesBucket.Arn
+                  - !Sub ${ImagesBucket.Arn}/*
 
   FrontendDeployRole:
     Type: AWS::IAM::Role
@@ -706,10 +875,12 @@ Outputs:
 
   AmplifyAppId:
     Description: Amplify App ID for frontend deployment
+    Condition: HasAmplifyToken
     Value: !GetAtt AmplifyApp.AppId
 
   AmplifyURL:
     Description: Your frontend website URL
+    Condition: HasAmplifyToken
     Value: !Sub https://${AmplifyApp.DefaultDomain}
 
   CognitoUserPoolId:
@@ -747,3 +918,11 @@ Outputs:
   PrivateSubnetIds:
     Description: Private subnet IDs
     Value: !Join [",", [!Ref PrivateSubnetA, !Ref PrivateSubnetB]]
+
+  ImagesBucketName:
+    Description: S3 bucket name for image storage
+    Value: !Ref ImagesBucket
+
+  ImagesBucketURL:
+    Description: S3 bucket base URL for images
+    Value: !Sub https://${ImagesBucket}.s3.${AWS::Region}.amazonaws.com

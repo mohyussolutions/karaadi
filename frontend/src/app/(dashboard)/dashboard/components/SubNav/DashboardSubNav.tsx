@@ -25,8 +25,8 @@ const chip = (active: boolean, purple = false) =>
         ? "bg-purple-600 text-white border-purple-600"
         : "bg-blue-600 text-white border-blue-600"
       : purple
-        ? "bg-white text-gray-600 border-gray-200 hover:border-purple-400"
-        : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+        ? "bg-white dark:bg-gray-800 text-gray-600 border-gray-200 hover:border-purple-400"
+        : "bg-white dark:bg-gray-800 text-gray-700 border-gray-300 hover:border-blue-400"
   }`;
 
 export default function DashboardSubNav({

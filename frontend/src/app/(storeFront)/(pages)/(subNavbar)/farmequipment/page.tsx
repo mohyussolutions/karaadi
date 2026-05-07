@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +11,7 @@ import Loading from "@/app/ui/loading/Loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
-import SubCategoryList from "@/app/(storeFront)/components/navbar/categories/SubCategoryList";
+import SubCategoryList from "@/app/(storeFront)/components/navbar/categories/SubCategoryListClient";
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import { FarmEquipment } from "@/app/utils/types/farmequipment.types";
@@ -74,7 +73,7 @@ function TractorLinks() {
   if (isError) return renderError(isError);
 
   return (
-    <div className="container mx-auto px-2 py-2 space-y-4">
+    <div className="w-full max-w-screen-xl mx-auto px-2 py-2 space-y-4 overflow-x-hidden">
       <ContainerLinks>
         <SearchInput defaultValue={query} />
       </ContainerLinks>
@@ -105,7 +104,7 @@ function TractorLinks() {
           </ContainerLinks>
 
           <ContainerLinks>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-3">
               {visibleItems.length > 0 ? (
                 visibleItems.map((item: any, index: number) => {
                   const itemId = item._id || item.id;

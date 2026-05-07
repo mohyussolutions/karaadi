@@ -46,7 +46,7 @@ export default function VisitorList() {
 
   if (loading) {
     return (
-      <div className="p-4 bg-white rounded-xl shadow-md border">
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md border">
         <h2 className="text-xl font-semibold mb-4">{t("adminTable.visitors")}</h2>
         <div className="flex justify-center py-8">
           <Loading />
@@ -57,7 +57,7 @@ export default function VisitorList() {
 
   if (error) {
     return (
-      <div className="p-4 bg-white rounded-xl shadow-md border">
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md border">
         <h2 className="text-xl font-semibold mb-4">{t("adminTable.visitors")}</h2>
         <div className="text-red-500 text-center py-4">{error}</div>
         <button
@@ -71,7 +71,7 @@ export default function VisitorList() {
   }
 
   return (
-    <div className="p-4 bg-white rounded-xl shadow-md border">
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md border">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">{t("adminTable.visitors")}</h2>
         <span className="text-sm text-gray-500">{t("adminTable.total")}: {visitors.length}</span>

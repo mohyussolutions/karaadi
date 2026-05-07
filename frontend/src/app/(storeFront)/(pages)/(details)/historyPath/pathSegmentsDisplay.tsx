@@ -4,17 +4,19 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 
 const SEGMENT_LABEL_KEYS: Record<string, string> = {
   "real-estate": "categories.RealEstate",
   marketplace: "categories.Marketplace",
   cars: "categories.Cars",
   boats: "categories.Boats",
+  motorcycles: "categories.Motorcycles",
+  farmequipment: "categories.Farmequipment",
   "boats-for-sale": "subcategories.boats.boatsForSale",
   "boats-for-rent": "subcategories.boats.boatsForRent",
   "boat-engines-for-sale": "subcategories.boats.boatEnginesForSale",
   "boat-parts": "subcategories.boats.boatParts",
-  motorcycles: "categories.Motorcycles",
   "for-rent": "subcategories.realEstate.forRent",
   "for-sale": "subcategories.realEstate.forSale",
   "land-for-sale": "subcategories.realEstate.landForSale",
@@ -30,16 +32,15 @@ function humanize(segment: string) {
 }
 
 export default function PathSegmentsDisplay() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  useLanguage();
   const pathname = usePathname();
-  const segments = pathname?.slice(1).split("/") || [];
 
   const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  React.useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
+  const segments = pathname?.slice(1).split("/") || [];
   if (segments.length === 0) return null;
 
   return (

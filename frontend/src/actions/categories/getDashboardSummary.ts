@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import { BASE_API_URL } from "../constant/BASE_API_URL";
 
@@ -36,7 +37,7 @@ const EMPTY: DashboardSummaryData = {
   cityListings: [],
 };
 
-export async function getDashboardSummary(): Promise<DashboardSummaryData> {
+export const getDashboardSummary = cache(async function getDashboardSummary(): Promise<DashboardSummaryData> {
   try {
     const headers = await getAuthHeaders();
     const res = await fetch(`${BASE_API_URL}/api/dashboard/summary`, {
@@ -47,4 +48,4 @@ export async function getDashboardSummary(): Promise<DashboardSummaryData> {
   } catch {
     return EMPTY;
   }
-}
+});

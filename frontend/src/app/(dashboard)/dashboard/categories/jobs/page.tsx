@@ -172,7 +172,7 @@ const CreateAdForJobs = () => {
   const educationLevels = nesCategories.educationLevels || [];
 
   return (
-    <div className="max-w-3xl mx-auto my-12 p-8 bg-white rounded-xl shadow-2xl border border-gray-100">
+    <div className="max-w-3xl mx-auto my-12 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100">
       <ToastContainer />
       <h1 className="text-3xl font-bold mb-8 text-blue-800 text-center">
         {t("jobsPage.title", "Post a Job")}

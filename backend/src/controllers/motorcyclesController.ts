@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { Prisma } from "@prisma/client";
+import { convertImages } from "src/core/utils/imageUtils.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import {
   calculateExpiryDate,
@@ -11,6 +12,7 @@ import {
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
+import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",
@@ -261,7 +263,7 @@ export const getAllMotorcycles = async (req: Request, res: Response) => {
       CACHE_TTL.LIST,
     );
 
-    return res.json(motorcycles.map(formatItem));
+    return res.json(motorcycles.map((m: any) => convertImages(formatItem(m), "motorcycles")));
   } catch (error) {
     const err = error as Error;
     return res.status(500).json({
@@ -356,12 +358,9 @@ export const getMotorcycleById = async (req: Request, res: Response) => {
           [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.NOT_FOUND,
           [FIELD_NAMES.ID]: id,
         });
-      return res.json({
-        ...formatItem(fallback),
-        [FIELD_NAMES.FOUND_BY_FALLBACK]: true,
-      });
+      return res.json(convertImages({ ...formatItem(fallback), [FIELD_NAMES.FOUND_BY_FALLBACK]: true }, "motorcycles"));
     }
-    return res.json(formatItem(motorcycle));
+    return res.json(convertImages(formatItem(motorcycle), "motorcycles"));
   } catch (error) {
     const err = error as Error;
     return res.status(500).json({
@@ -394,6 +393,13 @@ export const createMotorcycle = async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.USER_ID_REQUIRED });
+
+    if (extra.businessId) {
+      const limit = await checkBusinessListingLimit(extra.businessId);
+      if (limit.limitReached) {
+        return res.status(403).json({ message: "Listing limit reached", current: limit.current, max: limit.max });
+      }
+    }
 
     let expiryDate = null;
     let finalPlanAmount = 0;
@@ -454,6 +460,7 @@ export const createMotorcycle = async (req: Request, res: Response) => {
     });
 
     await Promise.all([cacheManager.deletePattern("motorcycles:*")]);
+    cacheManager.deletePattern(`businesses:my:${userId}*`).catch(() => {});
 
     notifyMatchingSubscribers("motorcycle", newAd.id, {
       title,

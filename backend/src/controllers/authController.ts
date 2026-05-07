@@ -1,3 +1,4 @@
+import { serverError } from "src/core/utils/serverError.ts";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -78,7 +79,7 @@ export const deleteMyAccount = async (
 
     return res.status(200).json({ success: true, message: "Account deleted" });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message || "Deletion failed" });
+    return serverError(res, error);
   }
 };
 
@@ -203,7 +204,7 @@ export const updatePhoneInDb = async (req: any, res: Response) => {
       user: updatedUser,
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    serverError(res, error);
   }
 };
 
@@ -224,7 +225,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     });
     res.json({ users });
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to fetch users" });
+    serverError(res, error);
   }
 };
 
@@ -279,7 +280,7 @@ export const confirmUserSignUp = async (req: Request, res: Response) => {
     await confirmSignUp(email, code);
     res.json({ message: "Email confirmed! You can now sign in." });
   } catch (err: any) {
-    res.status(400).json({ error: err.message || "Confirm failed" });
+    res.status(400).json({ error: "Confirmation failed" });
   }
 };
 
@@ -289,7 +290,7 @@ export const resetCodeUser = async (req: Request, res: Response) => {
     await resendVerificationCode(email);
     res.json({ message: "New confirmation code sent! Check your email." });
   } catch (err: any) {
-    res.status(400).json({ error: err.message || "Resend failed" });
+    res.status(400).json({ error: "Resend failed" });
   }
 };
 
@@ -308,7 +309,7 @@ export const forgotPasswordIncontroller = async (
     await forgotPassword(email);
     res.json({ message: "Password reset code sent! Check your email." });
   } catch (err: any) {
-    res.status(400).json({ error: err.message || "Forgot password failed" });
+    res.status(400).json({ error: "Request failed" });
   }
 };
 
@@ -323,7 +324,7 @@ export const resetPasswordIncontroller = async (
     await resetPassword(email, newPassword, resetCode);
     res.status(200).json({ message: "Password reset successfully!" });
   } catch (error: any) {
-    res.status(400).json({ error: error.message || "Reset failed" });
+    res.status(400).json({ error: "Reset failed" });
   }
 };
 
@@ -382,7 +383,7 @@ export const updateProfileImage = async (req: any, res: Response) => {
     });
     res.json({ success: true, user: updatedUser });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    serverError(res, error);
   }
 };
 
@@ -391,7 +392,7 @@ export const getUsersCount = async (_req: Request, res: Response) => {
     const totalUsers = await prisma.user.count();
     res.status(200).json({ totalUsers });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    serverError(res, error);
   }
 };
 
@@ -403,6 +404,6 @@ export const refreshTokenController = async (req: Request, res: Response) => {
     const newTokens = await refreshTokenLogic(refreshToken);
     res.status(200).json({ tokens: newTokens });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    serverError(res, error);
   }
 };

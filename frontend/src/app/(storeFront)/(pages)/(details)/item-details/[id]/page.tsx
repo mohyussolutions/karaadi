@@ -3,23 +3,18 @@
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { AiOutlineHeart, AiOutlineZoomIn } from "react-icons/ai";
 import Image from "next/image";
 import Link from "next/link";
-import { ImageControls } from "@/app/ui/invoices/ImageControls";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
-import { getMarketplaceItemById } from "@/actions/categories/marketplaceActions";
-import { getCarById } from "@/actions/categories/carActions";
-import { getBoatById } from "@/actions/categories/boatActions";
-import { getMotorcycleById } from "@/actions/categories/motorcycleActions";
-import { getRealEstateById } from "@/actions/categories/realEstateActions";
-import { getFarmEquipmentById } from "@/actions/categories/FarmequipmentAction";
+import { BASE_API_URL as API } from "@/actions/constant/BASE_API_URL";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { useAuth } from "@/context/AuthContext";
 import { MessageSquare, Phone } from "lucide-react";
 import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
 import { trackItemView } from "@/actions/categories/RecommendationActions";
-import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+import ZoomedImageModal from "../../zoomed/ZoomedImageModal";
 
 interface ItemData {
   _id?: string;
@@ -64,38 +59,22 @@ export default function ProductDetails() {
     }
     let mounted = true;
 
-    const FETCHERS = [
-      getMarketplaceItemById,
-      getCarById,
-      getBoatById,
-      getMotorcycleById,
-      (id: string) => getRealEstateById(id),
-      getFarmEquipmentById,
-    ];
-
     (async () => {
       try {
-        const data = await Promise.any(
-          FETCHERS.map(async (fetcher) => {
-            const result = await fetcher(id);
-            if (!result) throw new Error("not found");
-            return result;
-          }),
-        );
+        const res = await fetch(`${API}/api/items/${id}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error("not found");
+        const data = await res.json();
         if (mounted) {
-          const resolved = {
-            ...data,
-            id: (data as any)._id || (data as any).id,
-          };
+          const resolved = { ...data, id: data._id || data.id };
           setItem(resolved);
           const cat = Array.isArray(resolved.category)
             ? resolved.category[0]
             : (resolved.category ?? "marketplace");
           trackItemView(resolved.id!, cat, user?.id ?? null);
         }
-      } catch {
-        // all fetchers failed
-      }
+      } catch {}
       if (mounted) setLoading(false);
     })();
 
@@ -105,7 +84,6 @@ export default function ProductDetails() {
   }, [id]);
 
   const images = useMemo(() => {
-    const API_BASE = BASE_API_URL;
     const raw = item?.images;
     if (!Array.isArray(raw)) return [];
     return raw
@@ -118,7 +96,7 @@ export default function ProductDetails() {
           u.startsWith("/")
         )
           return u;
-        return `${API_BASE}/${u}`;
+        return `${API}/${u}`;
       });
   }, [item?.images]);
 
@@ -195,7 +173,10 @@ export default function ProductDetails() {
   const handleZoomClose = useCallback(() => setIsZoomed(false), []);
 
   const handleHeartClick = useCallback(() => {
-    if (!user) { router.push(`/login?redirect=${encodeURIComponent(pathname)}`); return; }
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
     setShowModal(true);
   }, [user, router, pathname]);
 
@@ -259,41 +240,64 @@ export default function ProductDetails() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start min-w-0">
         <div className="space-y-4 min-w-0">
-          <div className="relative">
-            <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
-              {currentImage && (
+          <div className="w-full relative bg-gray-100 rounded-2xl overflow-hidden shadow-sm h-[400px] md:h-[560px]">
+            {currentImage ? (
+              <button
+                type="button"
+                onClick={handleZoomOpen}
+                className="w-full h-full absolute inset-0 cursor-zoom-in group"
+                style={{ background: "none", border: 0, padding: 0 }}
+                aria-label="Open fullscreen image viewer"
+              >
                 <Image
                   src={currentImage}
                   alt={item.title || "Product image"}
                   fill
-                  className={`object-cover transition-opacity duration-300 ${item.maGaday ? "opacity-70" : "opacity-100"}`}
+                  className={`object-cover transition-opacity duration-300 group-hover:opacity-90 ${item.maGaday ? "opacity-70" : "opacity-100"}`}
                   priority
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
-              )}
-              {images.length > 1 && (
-                <>
-                  <button
-                    onClick={handlePrevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
-                    aria-label="Previous image"
+                <span className="absolute right-3 top-3 z-50 flex gap-2">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleHeartClick();
+                    }}
+                    aria-label="Save to favorites"
+                    className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
                   >
-                    <IoIosArrowBack className="w-6 h-6 text-white" />
-                  </button>
-                  <button
-                    onClick={handleNextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
-                    aria-label="Next image"
-                  >
-                    <IoIosArrowForward className="w-6 h-6 text-white" />
-                  </button>
-                </>
-              )}
-            </div>
-            <ImageControls
-              onHeartClick={handleHeartClick}
-              onZoomClick={handleZoomOpen}
-            />
+                    <AiOutlineHeart className="w-5 h-5 text-red-500" />
+                  </span>
+                  <span className="bg-white/90 p-2.5 rounded-full shadow-md text-gray-700">
+                    <AiOutlineZoomIn className="w-5 h-5" />
+                  </span>
+                </span>
+              </button>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-200 text-6xl">
+                📦
+              </div>
+            )}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
+                  aria-label="Previous image"
+                >
+                  <IoIosArrowBack className="w-6 h-6 text-white" />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full hover:bg-black/60 transition z-10"
+                  aria-label="Next image"
+                >
+                  <IoIosArrowForward className="w-6 h-6 text-white" />
+                </button>
+              </>
+            )}
           </div>
 
           {images.length > 1 && (
@@ -318,74 +322,6 @@ export default function ProductDetails() {
             </div>
           )}
         </div>
-
-        {isZoomed && images[selectedImageIndex] && (
-          <div
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-            onClick={handleZoomClose}
-          >
-            <div
-              className="relative w-full max-w-5xl max-h-[90vh] m-4 flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-3 px-1">
-                <span className="text-white/70 text-sm font-medium">
-                  {selectedImageIndex + 1} / {images.length}
-                </span>
-                <button
-                  onClick={handleZoomClose}
-                  className="text-white bg-white/10 hover:bg-white/25 rounded-full p-2 transition-all"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="relative flex-1 min-h-0 h-[75vh]">
-                <Image
-                  src={images[selectedImageIndex]}
-                  alt={item.title || ""}
-                  fill
-                  className="object-contain"
-                  priority
-                />
-
-                {images.length > 1 && (
-                  <>
-                    <button
-                      onClick={handlePrevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
-                      aria-label="Previous"
-                    >
-                      <IoIosArrowBack className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={handleNextImage}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white rounded-full p-3 transition-all"
-                      aria-label="Next"
-                    >
-                      <IoIosArrowForward className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {images.length > 1 && (
-                <div className="flex gap-2 justify-center mt-3 overflow-x-auto pb-1">
-                  {images.map((thumb, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedImageIndex(i)}
-                      className={`relative w-14 h-10 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === selectedImageIndex ? "border-white" : "border-white/20 opacity-50"}`}
-                    >
-                      <Image src={thumb} alt="" fill className="object-cover" sizes="56px" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         <div className="space-y-7 min-w-0 overflow-hidden">
           <div className="space-y-2">
@@ -534,6 +470,18 @@ export default function ProductDetails() {
           onConfirm={handleModalConfirm}
           onCancel={() => setShowModal(false)}
           backgroundImage={images[0]}
+        />
+      )}
+
+      {isZoomed && images[selectedImageIndex] && (
+        <ZoomedImageModal
+          images={images}
+          selectedIndex={selectedImageIndex}
+          onClose={handleZoomClose}
+          onPrev={handlePrevImage}
+          onNext={handleNextImage}
+          setSelectedIndex={setSelectedImageIndex}
+          title={item.title || ""}
         />
       )}
 

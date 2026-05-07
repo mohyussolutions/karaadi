@@ -1,13 +1,14 @@
-import "dotenv/config";
 import http from "node:http";
 import process from "node:process";
 import chalk from "chalk";
+import cron from "node-cron";
 
 import app from "./app.js";
 import prisma from "./core/utils/db.js";
 import { socketServer } from "./services/sockets/socketServer.js";
 import setupGracefulShutdown from "./core/utils/gracefulShutdown.js";
 import redisServer from "./services/redis/redisServer.ts";
+import { runBackup } from "./services/backup/dbBackup.js";
 
 const server = http.createServer(app);
 
@@ -30,6 +31,8 @@ const startServer = async () => {
     });
 
     setupGracefulShutdown({ server, prisma, redisServer });
+
+    cron.schedule("0 2 */3 * *", runBackup, { timezone: "UTC" });
 
     setInterval(async () => {
       try {

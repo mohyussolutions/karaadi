@@ -17,7 +17,6 @@ import {
 import { PLACEHOLDER_IMAGE, CATEGORY_ENDPOINTS } from "@/actions/constant/constant";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 
-// Build flat key→name and labelKey→name lookups from the static category trees
 const ALL_NESTED_ENTRIES = Object.values(categories.marketplaceNestedMap).flat();
 
 function resolveCatName(raw: string): string {
@@ -155,7 +154,7 @@ export default function MarketplacePage() {
         />
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm flex items-center gap-2">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl px-4 py-2 shadow-sm flex items-center gap-2">
             <span className="text-gray-500 text-xs font-medium">{t("adminTable.total")}:</span>
             {loading ? (
               <span className="w-12 h-4 bg-gray-100 rounded animate-pulse inline-block" />
@@ -164,7 +163,7 @@ export default function MarketplacePage() {
             )}
           </div>
           {!loading && filtered.length !== items.length && (
-            <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm flex items-center gap-2">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl px-4 py-2 shadow-sm flex items-center gap-2">
               <span className="text-gray-500 text-xs font-medium">{t("adminTable.showing")}:</span>
               <span className="text-lg font-bold text-blue-600">{filtered.length.toLocaleString()}</span>
             </div>
@@ -174,11 +173,11 @@ export default function MarketplacePage() {
         <div className="block lg:hidden space-y-3">
           {loading
             ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white border border-gray-200 rounded-xl p-3 animate-pulse h-28" />
+                <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-3 animate-pulse h-28" />
               ))
             : filtered.length > 0
               ? filtered.map((item, idx) => (
-                  <div key={`m-${item.id}-${idx}`} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                  <div key={`m-${item.id}-${idx}`} className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-3 shadow-sm">
                     <div className="flex gap-3">
                       <Image
                         src={item.images?.[0] || PLACEHOLDER_IMAGE}
@@ -249,7 +248,7 @@ export default function MarketplacePage() {
               )}
         </div>
 
-        <div className="hidden lg:block w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="hidden lg:block w-full rounded-xl border border-gray-200 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
           <table className="w-full table-fixed min-w-[700px]">
             <thead className="bg-gray-50">
               <tr>

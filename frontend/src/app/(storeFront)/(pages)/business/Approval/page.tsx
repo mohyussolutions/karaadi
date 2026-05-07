@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { IoBusiness } from "react-icons/io5";
-import { ChevronLeft, Clock, CheckCircle, XCircle } from "lucide-react";
+import { ChevronLeft, Clock, CheckCircle, XCircle, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getMyBusinesses } from "@/actions/categories/businessActions";
 import type { Business } from "@/actions/categories/businessActions";
-import BusinessStepper from "../steps/BusinessStepper";
+import BusinesscheckupSteps from "@/app/(storeFront)/components/checkout/BusinesscheckupSteps";
 
 export default function ApprovalPage() {
   const { t } = useTranslation();
@@ -43,7 +44,9 @@ export default function ApprovalPage() {
 
         if (found?.status === "active" && found.isVerified) {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          toast.success(t("mine.businesses.approvedToast", "Business approved!"));
+          toast.success(
+            t("mine.businesses.approvedToast", "Business approved!"),
+          );
           router.push(
             found.planId
               ? `/business/post?businessId=${found.id}`
@@ -65,7 +68,7 @@ export default function ApprovalPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="max-w-xl mx-auto py-10 px-4 animate-pulse space-y-4">
+      <div className="max-w-3xl mx-auto py-10 px-4 animate-pulse space-y-4">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gray-200 rounded-xl" />
           <div className="w-12 h-12 bg-gray-200 rounded-2xl" />
@@ -82,7 +85,7 @@ export default function ApprovalPage() {
 
   if (!business) {
     return (
-      <div className="max-w-xl mx-auto py-10 px-4 text-center space-y-4">
+      <div className="max-w-3xl mx-auto py-10 px-4 text-center space-y-4">
         <p className="text-gray-500">
           {t("mine.businesses.notFound", "Business not found.")}
         </p>
@@ -97,7 +100,7 @@ export default function ApprovalPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto py-10 px-4">
+    <div className="max-w-3xl mx-auto py-10 px-4" suppressHydrationWarning>
       <div className="flex items-center gap-4 mb-8">
         <Link
           href="/business/Apply"
@@ -116,7 +119,7 @@ export default function ApprovalPage() {
         </div>
       </div>
 
-      <BusinessStepper active={2} businessId={business.id} />
+      <BusinesscheckupSteps active={2} businessId={business.id} />
 
       <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
         <div className="px-8 py-10 text-center space-y-4">
@@ -180,6 +183,31 @@ export default function ApprovalPage() {
             </>
           )}
         </div>
+
+        {user && (
+          <div className="border-t border-gray-100 px-6 py-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Account</p>
+            <div className="flex items-center gap-3">
+              {(user as any).profileImage ? (
+                <Image
+                  src={(user as any).profileImage}
+                  alt={(user as any).username ?? ""}
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <User className="w-5 h-5 text-blue-600" />
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-bold text-gray-900">{(user as any).username ?? (user as any).name ?? "—"}</p>
+                <p className="text-xs text-gray-500">{(user as any).email ?? "—"}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="border-t border-gray-100 px-6 py-4 space-y-0">
           <DetailRow

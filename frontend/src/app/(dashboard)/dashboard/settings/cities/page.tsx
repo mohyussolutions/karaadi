@@ -144,7 +144,7 @@ export default function Cities() {
                       key={city.id}
                       className={`group relative p-4 rounded-xl border transition-all duration-200 ${
                         isActive
-                          ? "bg-white border-gray-200 hover:shadow-lg hover:border-blue-200"
+                          ? "bg-white dark:bg-gray-800 border-gray-200 hover:shadow-lg hover:border-blue-200"
                           : "bg-gray-50 border-gray-200 opacity-70"
                       }`}
                     >
@@ -245,7 +245,7 @@ export default function Cities() {
                 })}
 
                 {(!region.cities || region.cities.length === 0) && (
-                  <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-xl border border-gray-200">
+                  <div className="col-span-full py-12 text-center text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200">
                     <p className="text-sm">{t("adminTable.noCitiesFound")}</p>
                   </div>
                 )}
@@ -254,7 +254,7 @@ export default function Cities() {
           ))}
 
           {regions.length === 0 && (
-            <div className="text-center py-12 text-gray-400 bg-white rounded-xl border border-gray-200">
+            <div className="text-center py-12 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200">
               <p className="text-sm">{t("adminTable.noRegions")}</p>
             </div>
           )}

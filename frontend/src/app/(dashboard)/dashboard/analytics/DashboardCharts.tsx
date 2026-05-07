@@ -18,7 +18,7 @@ export default async function DashboardCharts() {
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-h-[220px]">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden min-h-[220px]">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm overflow-hidden min-h-[220px]">
           <LineChartBlock
             title="Revenue by Month"
             subtitle="All time"
@@ -28,7 +28,7 @@ export default async function DashboardCharts() {
             isCurrency
           />
         </div>
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden min-h-[220px]">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm overflow-hidden min-h-[220px]">
           <BarChartBlock
             title="User Signups by Month"
             subtitle="All time"

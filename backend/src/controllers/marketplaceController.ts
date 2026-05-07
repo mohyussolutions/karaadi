@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import { getBusinessListingFlags } from "src/core/utils/businessListingFlags.ts";
+import { getBusinessListingFlags, checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
+import { convertImages } from "src/core/utils/imageUtils.ts";
 
 import {
   calculateExpiryDate,
@@ -261,7 +262,7 @@ export const getAllMarketplaceItems = async (req: Request, res: Response) => {
       },
       CACHE_TTL.LIST,
     );
-    return res.json(items.map(formatItem));
+    return res.json(items.map((i: any) => convertImages(formatItem(i), "marketplace")));
   } catch (error) {
     return res
       .status(500)
@@ -337,12 +338,9 @@ export const getMarketplaceItemById = async (req: Request, res: Response) => {
           [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.ITEM_NOT_FOUND,
           [FIELD_NAMES.ID]: id,
         });
-      return res.json({
-        ...formatItem(fallback),
-        [FIELD_NAMES.FOUND_BY_FALLBACK]: true,
-      });
+      return res.json(convertImages({ ...formatItem(fallback), [FIELD_NAMES.FOUND_BY_FALLBACK]: true }, "marketplace"));
     }
-    return res.json(formatItem(item));
+    return res.json(convertImages(formatItem(item), "marketplace"));
   } catch (error) {
     return res.status(500).json({
       [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.SERVER_ERROR,
@@ -376,6 +374,13 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
 
     const biz = await getBusinessListingFlags(businessId);
     if (biz.isPaidByBusiness) expiryDate = expiryDate ?? biz.expiryDate;
+
+    if (businessId) {
+      const limit = await checkBusinessListingLimit(businessId);
+      if (limit.limitReached) {
+        return res.status(403).json({ message: "Listing limit reached", current: limit.current, max: limit.max });
+      }
+    }
 
     const newItem = await prisma.marketplace.create({
       data: {

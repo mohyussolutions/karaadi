@@ -24,7 +24,7 @@ export async function getRealEstateById(
   const headers = await getAuthHeaders();
   const res = await fetch(REAL_ESTATE_ENDPOINTS.BY_ID(id), {
     headers: headers as HeadersInit,
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   if (!res.ok) return null;
   const result = await res.json();

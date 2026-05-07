@@ -181,7 +181,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen max-h-screen bg-gray-50 flex-col overflow-hidden">
-      <div className="bg-white border-b p-4 flex gap-6 px-8 items-center justify-between shadow-sm flex-shrink-0">
+      <div className="bg-white dark:bg-gray-800 border-b p-4 flex gap-6 px-8 items-center justify-between shadow-sm flex-shrink-0">
         <div className="flex gap-8">
           <div className="flex items-center gap-2">
             <MdAssessment className="text-blue-600" size={20} />
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
 
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
         <div
-          className={`${selectedTicket ? "hidden md:flex" : "flex"} w-full md:w-1/3 border-r bg-white flex-col h-full overflow-hidden`}
+          className={`${selectedTicket ? "hidden md:flex" : "flex"} w-full md:w-1/3 border-r bg-white dark:bg-gray-800 flex-col h-full overflow-hidden`}
         >
           <div className="p-4 border-b bg-gray-900 text-white flex items-center gap-2 flex-shrink-0">
             <MdInbox />
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
         </div>
 
         <div
-          className={`${!selectedTicket ? "hidden md:flex" : "flex"} flex-1 flex-col bg-white h-full overflow-hidden`}
+          className={`${!selectedTicket ? "hidden md:flex" : "flex"} flex-1 flex-col bg-white dark:bg-gray-800 h-full overflow-hidden`}
         >
           {selectedTicket ? (
             <>
@@ -304,7 +304,7 @@ export default function AdminDashboard() {
                     <div
                       className={`p-4 rounded-2xl text-sm max-w-[80%] shadow-sm relative group ${
                         msg.senderRole === "USER"
-                          ? "bg-white border text-gray-800"
+                          ? "bg-white dark:bg-gray-800 border text-gray-800"
                           : "bg-blue-600 text-white"
                       }`}
                     >
@@ -326,7 +326,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
-              <div className="p-4 border-t flex gap-3 items-center bg-white flex-shrink-0">
+              <div className="p-4 border-t flex gap-3 items-center bg-white dark:bg-gray-800 flex-shrink-0">
                 <input
                   className="flex-1 p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   placeholder={t("adminTable.replyPlaceholder")}

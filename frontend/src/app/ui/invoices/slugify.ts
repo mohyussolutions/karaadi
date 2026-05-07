@@ -1,3 +1,18 @@
+// Utility to resolve image URLs for the app
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+
+export const resolveImageUrl = (url: any): string | null => {
+  if (typeof url !== "string" || url.trim() === "") return null;
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("data:") ||
+    url.startsWith("/") ||
+    url.startsWith("blob:")
+  )
+    return url;
+  return `${BASE_API_URL}/${url}`;
+};
 const REGEX_CLEAN = /[^\w\s-]/g;
 const REGEX_SPACES = /\s+/g;
 const REGEX_DASHES = /^-+|-+$/g;

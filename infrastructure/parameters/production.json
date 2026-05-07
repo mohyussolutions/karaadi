@@ -3,7 +3,6 @@
     "AppName": "karaadi",
     "Environment": "production",
     "EC2InstanceType": "t3.small",
-    "EC2KeyName": "",
     "DesiredCapacity": "2",
     "MinSize": "2",
     "MaxSize": "10",
@@ -12,10 +11,7 @@
     "DBUsername": "karaadi_admin",
     "CacheNodeType": "cache.t3.small",
     "DomainName": "karaadi.com",
-    "HostedZoneId": "",
-    "ApiCertificateArn": "",
-    "AmplifyCertificateArn": "",
-    "GitHubOrg": "your-organization",
+    "GitHubOrg": "mohyussolutions",
     "GitHubRepo": "karaadi"
   },
   "Tags": {

@@ -23,7 +23,7 @@ export default function ImageUpload({
       {canAdd && (
         <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white hover:border-blue-400 transition-all group">
           <MdCloudUpload className="text-3xl text-gray-300 group-hover:text-blue-500 transition-colors" />
-          <span className="text-[10px] font-black text-gray-400">{label}</span>
+          <span className="text-[10px] font-black text-gray-400" suppressHydrationWarning>{label}</span>
           <input
             type="file"
             multiple

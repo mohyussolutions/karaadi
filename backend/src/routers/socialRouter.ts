@@ -63,7 +63,7 @@ socialRouter.get("/tiktok/callback", async (req: Request, res: Response) => {
       <p style="color:gray;font-size:13px">Expires in ${Math.round(data.expires_in / 3600)} hours</p>
     `);
   } catch (err: any) {
-    return res.status(500).send(`Error: ${err.message}`);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 

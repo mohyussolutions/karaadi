@@ -4,6 +4,7 @@ import listingDraftReducer from "./slices/reducers/listingDraftSlice";
 import notificationsReducer from "./slices/reducers/notificationsSlice";
 import wantedReducer from "./slices/reducers/wantedSlice";
 import themeReducer from "./slices/reducers/themeSlice";
+import dashboardReducer from "./slices/reducers/dashboardSlice";
 
 import {
   persistStore,
@@ -44,6 +45,7 @@ const rootReducer = combineReducers({
   notifications: notificationsReducer,
   wanted: wantedReducer,
   theme: themeReducer,
+  dashboard: dashboardReducer,
 });
 
 type RootReducerState = ReturnType<typeof rootReducer>;

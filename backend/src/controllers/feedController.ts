@@ -31,19 +31,21 @@ function rank(item: any): number {
 
 function normalize(item: any, category: string) {
   const id = item.id || item._id;
-  const images = (
-    Array.isArray(item.images) && item.images.length
-      ? item.images
-      : item.image
-        ? [item.image]
-        : item.companyLogo
-          ? [item.companyLogo]
-          : item.logo
-            ? [item.logo]
-            : []
-  )
-    .filter((img: string) => img && !img.startsWith("data:"))
-    .slice(0, 3);
+  const raw: string[] = Array.isArray(item.images) && item.images.length
+    ? item.images
+    : item.image
+      ? [item.image]
+      : item.companyLogo
+        ? [item.companyLogo]
+        : item.logo
+          ? [item.logo]
+          : [];
+  const images = raw
+    .filter((img: string) => img && img.trim() !== "")
+    .slice(0, 1)
+    .map((img: string) =>
+      img.startsWith("data:") ? `api/images/${category}/${id}` : img,
+    );
 
   return {
     id,

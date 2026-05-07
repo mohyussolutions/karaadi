@@ -240,7 +240,7 @@ const FeeManagement = () => {
         {FEE_CATEGORIES.map((cat, idx) => (
           <section
             key={cat.title || idx}
-            className="bg-white rounded-2xl lg:rounded-3xl border border-gray-100 p-4 sm:p-5 lg:p-6 shadow-sm hover:shadow-md transition-all group"
+            className="bg-white dark:bg-gray-800 rounded-2xl lg:rounded-3xl border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 shadow-sm hover:shadow-md transition-all group"
           >
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">

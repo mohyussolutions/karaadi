@@ -97,7 +97,7 @@ const MostSavedSearch = () => {
 
   if (loading) {
     return (
-      <div className="w-full bg-white rounded-2xl border border-gray-200 p-8">
+      <div className="w-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 p-8">
         <div className="flex items-center justify-center">
           <FiRefreshCw className="animate-spin text-blue-500" size={24} />
         </div>
@@ -106,7 +106,7 @@ const MostSavedSearch = () => {
   }
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="w-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-4 sm:p-6 md:p-8 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
           <div>

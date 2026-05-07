@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import prisma from "src/core/utils/db.ts";
+import { convertImages } from "src/core/utils/imageUtils.ts";
 import {
   calculateExpiryDate,
   formatExpiryDate,
@@ -13,6 +14,7 @@ import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { CreateBoatBody, PaymentUpdateBody } from "src/types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
+import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",
@@ -382,7 +384,7 @@ export const getAllBoats = async (req: Request, res: Response) => {
       CACHE_TTL.LIST,
     );
 
-    return res.json(boats.map(formatBoat));
+    return res.json(boats.map((b: any) => convertImages(formatBoat(b), "boats")));
   } catch (error) {
     const err = error as Error;
     return res.status(500).json({
@@ -414,7 +416,7 @@ export const getBoatById = async (req: Request, res: Response) => {
         .status(404)
         .json({ [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.NOT_FOUND });
 
-    return res.json(boat);
+    return res.json(convertImages(boat, "boats"));
   } catch (error) {
     const err = error as Error;
     return res.status(500).json({
@@ -436,6 +438,7 @@ export const createBoat = async (
       category,
       subcategory,
       images,
+      businessId,
       ...boatData
     } = req.body;
 
@@ -443,6 +446,13 @@ export const createBoat = async (
       return res
         .status(400)
         .json({ [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.USER_ID_REQUIRED });
+    }
+
+    if (businessId) {
+      const limit = await checkBusinessListingLimit(businessId);
+      if (limit.limitReached) {
+        return res.status(403).json({ message: "Listing limit reached", current: limit.current, max: limit.max });
+      }
     }
 
     let expiryDate = null;
@@ -503,6 +513,7 @@ export const createBoat = async (
     }
 
     await cacheManager.deletePattern("boats:*");
+    cacheManager.deletePattern(`businesses:my:${newBoat.userId}*`).catch(() => {});
     return res.status(201).json(formatBoat(newBoat));
   } catch (error) {
     const err = error as Error;

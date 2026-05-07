@@ -47,7 +47,7 @@ export const StatsCards = ({ stats }: { stats: Stats }) => {
       {items.map(({ label, value }, i) => (
         <div
           key={i}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col"
+          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col"
         >
           <div className={`h-1.5 w-full bg-gradient-to-r ${COLORS[i]}`} />
           <div className="flex flex-col gap-1 p-3 sm:p-4">

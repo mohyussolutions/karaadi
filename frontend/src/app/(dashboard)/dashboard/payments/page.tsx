@@ -290,7 +290,7 @@ export default function Payments() {
         />
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex flex-col gap-3">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm px-4 py-3 flex flex-col gap-3">
         <div className="relative w-full">
           <FaSearch
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -333,7 +333,7 @@ export default function Payments() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loading />
@@ -632,7 +632,7 @@ function StatCard({
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`w-full text-left p-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm transition-all ${
+      className={`w-full text-left p-3.5 bg-white dark:bg-gray-800 border border-gray-100 rounded-2xl shadow-sm transition-all ${
         active ? ring : "hover:shadow-md"
       } ${onClick ? "cursor-pointer" : "cursor-default"}`}
     >

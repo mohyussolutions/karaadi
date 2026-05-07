@@ -155,7 +155,7 @@ export default function DashboardProfile() {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="relative flex-shrink-0">
             <Image
@@ -201,7 +201,7 @@ export default function DashboardProfile() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
         <div className="p-6">
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
             <FiUser size={13} />
@@ -322,7 +322,7 @@ export default function DashboardProfile() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-red-50 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-red-50 p-6">
         <button
           onClick={handleDeleteAccount}
           className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition"

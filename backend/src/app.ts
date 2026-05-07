@@ -13,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
+app.disable("x-powered-by");
 
 app.get("/health", (req, res) =>
   res.status(200).json({ status: "OK", pid: process.pid }),
@@ -84,6 +85,36 @@ apiRouter.use("/reports", reportRoutes);
 apiRouter.use("/businesses", businessRoute);
 apiRouter.use("/business-plans", businessPlanRoute);
 apiRouter.use("/feed", feedRouter);
+apiRouter.use("/images", imageRouter);
+
+import prisma from "./core/utils/db.ts";
+apiRouter.get("/items/:id", async (req: import("express").Request, res: import("express").Response) => {
+  const { id } = req.params;
+  const include = { user: { select: { id: true, username: true, profileImage: true, phone: true } } };
+  const [marketplace, car, realEstate, boat, motorcycle, farm] = await Promise.all([
+    (prisma as any).marketplace.findUnique({ where: { id }, include }).catch(() => null),
+    (prisma as any).car.findUnique({ where: { id }, include }).catch(() => null),
+    (prisma as any).realEstate.findUnique({ where: { id }, include }).catch(() => null),
+    (prisma as any).boat.findUnique({ where: { id }, include }).catch(() => null),
+    (prisma as any).motorcycle.findUnique({ where: { id }, include }).catch(() => null),
+    (prisma as any).farmequipment.findUnique({ where: { id }, include }).catch(() => null),
+  ]);
+  let item: any = null;
+  let table = "";
+  if (car) { item = car; table = "cars"; }
+  else if (marketplace) { item = marketplace; table = "marketplace"; }
+  else if (realEstate) { item = realEstate; table = "real-estate"; }
+  else if (boat) { item = boat; table = "boats"; }
+  else if (motorcycle) { item = motorcycle; table = "motorcycles"; }
+  else if (farm) { item = farm; table = "traktor"; }
+  if (!item) return res.status(404).json({ error: "Not found" });
+  const images = ((item.images ?? []) as string[])
+    .map((img, idx) =>
+      img && img.startsWith("data:") ? `api/images/${table}/${id}/${idx}` : img,
+    )
+    .filter((img) => img && img.trim() !== "");
+  res.json({ ...item, images });
+});
 apiRouter.use("/social", socialRouter);
 apiRouter.use("/hage", hageRouter);
 
@@ -109,6 +140,7 @@ import messageRoutes from "./routers/messageRoute.ts";
 import hageRouter from "./AI/hageRouter.ts";
 import socialRouter from "./routers/socialRouter.ts";
 import feedRouter from "./routers/feedRouter.ts";
+import imageRouter from "./routers/imageRouter.ts";
 import businessPlanRoute from "./routers/businessPlanRoute.ts";
 import businessRoute from "./routers/businessRoute.ts";
 import reportRoutes from "./routers/reportRoute.ts";

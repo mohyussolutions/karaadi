@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { MdCheckBoxOutlineBlank } from "react-icons/md";
-import { CiSquareCheck } from "react-icons/ci";
+import { MdCheckBoxOutlineBlank, MdCheckBox } from "react-icons/md";
 import CityItem from "./CityItem";
 
 interface City {
@@ -41,30 +40,38 @@ const RegionItem = ({
   onRegionToggle,
   onCityToggle,
 }: RegionItemProps) => (
-  <div className="mb-3">
+  <div className="mb-1">
     <div
-      className="flex items-center justify-between cursor-pointer py-1 group"
+      className="flex items-center justify-between cursor-pointer py-2.5 px-1 rounded-xl group active:bg-gray-50 transition-colors"
       onClick={() => onRegionToggle(region.name)}
     >
-      <div className="flex items-center gap-3 overflow-hidden">
+      <div className="flex items-center gap-2.5 overflow-hidden">
         {isSelected ? (
-          <CiSquareCheck className="text-blue-600 text-2xl flex-shrink-0" />
+          <MdCheckBox className="text-blue-600 text-xl flex-shrink-0" />
         ) : (
-          <MdCheckBoxOutlineBlank className="text-gray-400 text-2xl flex-shrink-0 group-hover:text-blue-500" />
+          <MdCheckBoxOutlineBlank className="text-gray-300 text-xl flex-shrink-0 group-hover:text-blue-400 transition-colors" />
         )}
         <span
-          className={`text-lg font-bold truncate ${isSelected ? "text-blue-600" : "text-gray-700"}`}
+          className={`text-sm font-semibold truncate ${
+            isSelected ? "text-blue-600" : "text-gray-700"
+          }`}
         >
           {formatName(region.name)}
         </span>
       </div>
-      <span className="bg-blue-50 text-blue-700 text-sm font-black px-3 py-1 rounded-full border border-blue-100 min-w-[38px] text-center shadow-sm flex-shrink-0 ml-2">
+      <span
+        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full flex-shrink-0 ml-2 ${
+          isSelected
+            ? "bg-blue-100 text-blue-700"
+            : "bg-gray-100 text-gray-500"
+        }`}
+      >
         {count}
       </span>
     </div>
 
     {isExpanded && (
-      <ul className="ml-7 mt-3 space-y-3 border-l-2 border-gray-100 pl-5 transition-all">
+      <ul className="ml-6 mb-1 border-l-2 border-gray-100 pl-4 space-y-0.5">
         {cities.map((city) => (
           <CityItem
             key={city.id}

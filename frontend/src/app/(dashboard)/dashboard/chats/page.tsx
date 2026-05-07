@@ -343,7 +343,7 @@ export default function AdminMonitor() {
                   className={`group p-3 md:p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
                     selectedChat?.id === chat.id
                       ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 shadow-lg"
-                      : "bg-white border-slate-200 hover:shadow-md"
+                      : "bg-white dark:bg-gray-800 border-slate-200 hover:shadow-md"
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2 md:mb-3">
@@ -408,7 +408,7 @@ export default function AdminMonitor() {
       )}
 
       <div
-        className={`flex-1 h-full flex flex-col bg-white ${
+        className={`flex-1 h-full flex flex-col bg-white dark:bg-gray-800 ${
           isMobile && selectedChat ? "" : ""
         }`}
       >
@@ -509,7 +509,7 @@ export default function AdminMonitor() {
                       <div
                         className={`p-3 md:p-4 rounded-2xl max-w-[90%] md:max-w-[80%] min-w-0 ${
                           isSender
-                            ? "bg-white border border-slate-200 text-slate-800 shadow-sm"
+                            ? "bg-white dark:bg-gray-800 border border-slate-200 text-slate-800 shadow-sm"
                             : "bg-blue-600 text-white shadow-md"
                         }`}
                       >

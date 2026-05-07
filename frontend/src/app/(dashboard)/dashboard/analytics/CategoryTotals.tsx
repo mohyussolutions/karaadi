@@ -10,7 +10,7 @@ interface CategoryTotalsProps {
 }
 
 const circleClass =
-  "w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 flex items-center justify-center text-center transition-all duration-300 hover:scale-105 border-2 border-green-100 rounded-full bg-white shadow-sm hover:border-green-500 hover:shadow-md";
+  "w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 flex items-center justify-center text-center transition-all duration-300 hover:scale-105 border-2 border-green-100 rounded-full bg-white dark:bg-gray-800 shadow-sm hover:border-green-500 hover:shadow-md";
 
 interface CircleCardProps {
   label: string;

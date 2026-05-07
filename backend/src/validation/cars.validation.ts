@@ -4,7 +4,7 @@ import * as s from "../core/utils/sanitize.ts";
 export const createCarSchema = z.object({
   userId: z.string().min(1).max(128),
   title: s.title,
-  description: s.description,
+  description: s.description.optional(),
   price: s.price(),
   mainCategory: s.shortStr("Category"),
   category: z.array(s.shortStr()).max(5),
@@ -33,6 +33,7 @@ export const createCarSchema = z.object({
   feeId: z.string().max(128).optional(),
   feeAmount: z.number().min(0).max(s.LIMITS.PRICE_MAX).optional(),
   businessId: z.string().max(128).optional(),
+  website: z.string().url().max(512).optional().or(z.literal("")),
 });
 
 export const carQuerySchema = z.object({

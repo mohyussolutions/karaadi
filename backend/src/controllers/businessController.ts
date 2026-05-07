@@ -1,5 +1,17 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
+
+function sanitizeWebsite(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const domain = raw
+    .replace(/^https?:\/\/(www\.)?/i, "")
+    .replace(/^www\./i, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9.\-]/g, "")
+    .trim();
+  if (!domain) return null;
+  return `https://www.${domain}`;
+}
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import {
   AuthRequest,
@@ -98,38 +110,60 @@ async function countActiveListingsForUser(userId: string): Promise<number> {
   const now = new Date();
   const counts = await Promise.all([
     (prisma as any).car.count({ where: { userId, expiryDate: { gt: now } } }),
-    (prisma as any).motorcycle.count({ where: { userId, expiryDate: { gt: now } } }),
-    (prisma as any).realEstate.count({ where: { userId, expiryDate: { gt: now } } }),
-    (prisma as any).marketplace.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).motorcycle.count({
+      where: { userId, expiryDate: { gt: now } },
+    }),
+    (prisma as any).realEstate.count({
+      where: { userId, expiryDate: { gt: now } },
+    }),
+    (prisma as any).marketplace.count({
+      where: { userId, expiryDate: { gt: now } },
+    }),
     (prisma as any).boat.count({ where: { userId, expiryDate: { gt: now } } }),
     (prisma as any).job.count({ where: { userId, expiryDate: { gt: now } } }),
-    (prisma as any).farmequipment.count({ where: { userId, expiryDate: { gt: now } } }),
+    (prisma as any).farmequipment.count({
+      where: { userId, expiryDate: { gt: now } },
+    }),
   ]);
   return counts.reduce((a, b) => a + b, 0);
 }
 
-async function countActiveListingsBatch(userIds: string[]): Promise<Map<string, number>> {
+async function countActiveListingsBatch(
+  userIds: string[],
+): Promise<Map<string, number>> {
   if (userIds.length === 0) return new Map();
   const now = new Date();
-  const models = ["car", "motorcycle", "realEstate", "marketplace", "boat", "job", "farmequipment"] as const;
+  const models = [
+    "car",
+    "motorcycle",
+    "realEstate",
+    "marketplace",
+    "boat",
+    "job",
+    "farmequipment",
+  ] as const;
   const results = await Promise.all(
     models.map((model) =>
-      (prisma as any)[model].groupBy({
-        by: ["userId"],
-        where: { userId: { in: userIds }, expiryDate: { gt: now } },
-        _count: { _all: true },
-      }).catch(() => [] as any[])
-    )
+      (prisma as any)[model]
+        .groupBy({
+          by: ["userId"],
+          where: { userId: { in: userIds }, expiryDate: { gt: now } },
+          _count: { _all: true },
+        })
+        .catch(() => [] as any[]),
+    ),
   );
   const totals = new Map<string, number>();
   for (const rows of results) {
     for (const row of rows) {
-      totals.set(row.userId, (totals.get(row.userId) ?? 0) + (row._count?._all ?? 0));
+      totals.set(
+        row.userId,
+        (totals.get(row.userId) ?? 0) + (row._count?._all ?? 0),
+      );
     }
   }
   return totals;
 }
-
 
 export const createBusiness = async (
   req: Request<{}, {}, CreateBusinessBody>,
@@ -182,7 +216,7 @@ export const createBusiness = async (
         phone,
         orgNumber: orgNumber || null,
         address: address || null,
-        website: website || null,
+        website: sanitizeWebsite(website),
         logo: logo || null,
         images: images ?? [],
         description: description || null,
@@ -216,24 +250,25 @@ export const getMyBusinesses = async (req: AuthRequest, res: Response) => {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const cacheKey = CACHE_KEYS.MY_BUSINESSES(userId);
-    const businesses = await cacheManager.withCache(
+    const enriched = await cacheManager.withCache(
       cacheKey,
-      async () =>
-        (prisma as any).business.findMany({
-          where: {
-            OR: [{ userId }, { members: { some: { id: userId } } }],
-          },
+      async () => {
+        const businesses = await (prisma as any).business.findMany({
+          where: { OR: [{ userId }, { members: { some: { id: userId } } }] },
           include: includeRelations,
           orderBy: { createdAt: "desc" },
-        }),
+        });
+        if (businesses.length === 0) return [];
+        const userIds = [
+          ...new Set(businesses.map((b: any) => String(b.userId))),
+        ] as string[];
+        const listingCounts = await countActiveListingsBatch(userIds);
+        return businesses.map((b: any) => ({
+          ...b,
+          currentListings: listingCounts.get(b.userId) ?? 0,
+        }));
+      },
       CACHE_TTL.LIST,
-    );
-
-    const enriched = await Promise.all(
-      businesses.map(async (b: any) => {
-        const currentListings = await countActiveListingsForUser(b.userId);
-        return { ...b, currentListings };
-      }),
     );
 
     res.json({ success: true, businesses: enriched });
@@ -306,7 +341,7 @@ export const updateBusiness = async (req: AuthRequest, res: Response) => {
         ...(phone && { phone }),
         ...(orgNumber !== undefined && { orgNumber }),
         ...(address !== undefined && { address }),
-        ...(website !== undefined && { website }),
+        ...(website !== undefined && { website: sanitizeWebsite(website) }),
         ...(logo !== undefined && { logo }),
         ...(images !== undefined && { images }),
         ...(description !== undefined && { description }),
@@ -518,11 +553,9 @@ export const adminSetPostLimit = async (req: Request, res: Response) => {
         maxListingsOverride < 0 ||
         !Number.isInteger(maxListingsOverride))
     ) {
-      return res
-        .status(400)
-        .json({
-          error: "maxListingsOverride must be a positive integer or null",
-        });
+      return res.status(400).json({
+        error: "maxListingsOverride must be a positive integer or null",
+      });
     }
 
     const updated = await (prisma as any).business.update({
@@ -879,43 +912,55 @@ export const getTotalBusinesses = async (_req: Request, res: Response) => {
 export const getBusinessFeed = async (req: Request, res: Response) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
-    const pageSize = Math.min(
-      40,
-      Math.max(1, Number(req.query.pageSize) || 100),
-    );
+    const pageSize = Math.min(40, Math.max(1, Number(req.query.pageSize) || 100));
     const skip = (page - 1) * pageSize;
     const filterUserId = req.query.userId as string | undefined;
+    const filterBusinessId = req.query.businessId as string | undefined;
+
+    const select = {
+      id: true,
+      title: true,
+      price: true,
+      images: true,
+      city: true,
+      region: true,
+      mainCategory: true,
+      category: true,
+      userId: true,
+      businessId: true,
+      maGaday: true,
+      description: true,
+    };
+    const order = { createdAt: "desc" as const };
+
+    if (filterBusinessId) {
+      const where = { businessId: filterBusinessId };
+      const [marketplace, cars, realEstate, boats, motorcycles, farmequipment] = await Promise.all([
+        (prisma as any).marketplace.findMany({ where, orderBy: order, select }),
+        (prisma as any).car.findMany({ where, orderBy: order, select: { ...select, vehicleModel: true } }),
+        (prisma as any).realEstate.findMany({ where, orderBy: order, select }),
+        (prisma as any).boat.findMany({ where, orderBy: order, select }),
+        (prisma as any).motorcycle.findMany({ where, orderBy: order, select }),
+        (prisma as any).farmequipment.findMany({ where, orderBy: order, select }),
+      ]);
+      return res.json({
+        success: true,
+        items: [...marketplace, ...cars, ...realEstate, ...boats, ...motorcycles, ...farmequipment],
+      });
+    }
 
     const businessWhere: any = filterUserId
       ? { userId: filterUserId }
-      : {
-          status: "active",
-          isAdminEnabled: true,
-          expiryDate: { gt: new Date() },
-        };
+      : { status: "active", isAdminEnabled: true, expiryDate: { gt: new Date() } };
 
     const activeBusinesses = await (prisma as any).business.findMany({
       where: businessWhere,
-      select: {
-        userId: true,
-        expiryDate: true,
-        plan: { select: { durationDays: true } },
-      },
+      select: { userId: true, expiryDate: true, plan: { select: { durationDays: true } } },
     });
 
-    if (!activeBusinesses.length) {
-      return res.json({ success: true, items: [] });
-    }
+    if (!activeBusinesses.length) return res.json({ success: true, items: [] });
 
-    const flagMap = new Map<
-      string,
-      {
-        isPremium90: boolean;
-        isStandard60: boolean;
-        isBasic30: boolean;
-        expiryDate: Date;
-      }
-    >();
+    const flagMap = new Map<string, { isPremium90: boolean; isStandard60: boolean; isBasic30: boolean; expiryDate: Date }>();
     for (const b of activeBusinesses) {
       const days: number = b.plan?.durationDays ?? 0;
       flagMap.set(b.userId, {
@@ -928,66 +973,19 @@ export const getBusinessFeed = async (req: Request, res: Response) => {
 
     const userIds = activeBusinesses.map((b: any) => b.userId);
     const userFilter = { userId: { in: userIds } };
-    const select = {
-      id: true,
-      title: true,
-      price: true,
-      images: true,
-      city: true,
-      region: true,
-      mainCategory: true,
-      category: true,
-      userId: true,
-      maGaday: true,
-      description: true,
-    };
-    const order = { createdAt: "desc" as const };
 
     const [marketplace, cars, realEstate] = await Promise.all([
-      (prisma as any).marketplace.findMany({
-        where: userFilter,
-        orderBy: order,
-        skip,
-        take: pageSize,
-        select,
-      }),
-      (prisma as any).car.findMany({
-        where: userFilter,
-        orderBy: order,
-        skip,
-        take: pageSize,
-        select: { ...select, vehicleModel: true },
-      }),
-      (prisma as any).realEstate.findMany({
-        where: userFilter,
-        orderBy: order,
-        skip,
-        take: pageSize,
-        select,
-      }),
+      (prisma as any).marketplace.findMany({ where: userFilter, orderBy: order, skip, take: pageSize, select }),
+      (prisma as any).car.findMany({ where: userFilter, orderBy: order, skip, take: pageSize, select: { ...select, vehicleModel: true } }),
+      (prisma as any).realEstate.findMany({ where: userFilter, orderBy: order, skip, take: pageSize, select }),
     ]);
 
     const applyFlags = (item: any) => {
-      const f = flagMap.get(item.userId) ?? {
-        isPremium90: false,
-        isStandard60: false,
-        isBasic30: false,
-        expiryDate: null,
-      };
-      return {
-        ...item,
-        isPaid: true,
-        isPremium90: f.isPremium90,
-        isStandard60: f.isStandard60,
-        isBasic30: f.isBasic30,
-        expiryDate: f.expiryDate,
-      };
+      const f = flagMap.get(item.userId) ?? { isPremium90: false, isStandard60: false, isBasic30: false, expiryDate: null };
+      return { ...item, isPaid: true, ...f };
     };
 
-    res.json({
-      success: true,
-      items: [...marketplace, ...cars, ...realEstate].map(applyFlags),
-    });
+    res.json({ success: true, items: [...marketplace, ...cars, ...realEstate].map(applyFlags) });
   } catch (e) {
     console.error("getBusinessFeed error:", e);
     res.status(500).json({ error: "Feed failed" });

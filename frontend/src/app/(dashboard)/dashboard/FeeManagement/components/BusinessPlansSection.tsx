@@ -84,7 +84,7 @@ export default function BusinessPlansSection({ plans, onRefresh }: Props) {
   };
 
   return (
-    <section className="bg-white rounded-2xl lg:rounded-3xl border border-gray-100 p-4 sm:p-5 lg:p-6 shadow-sm col-span-full">
+    <section className="bg-white dark:bg-gray-800 rounded-2xl lg:rounded-3xl border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 shadow-sm col-span-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
         <div>
           <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">

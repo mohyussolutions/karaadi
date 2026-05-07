@@ -72,5 +72,9 @@ export function useImageUpload() {
     return Promise.all(images.map(compressImage));
   }
 
-  return { images, addImages, removeImage, toBase64, MAX_IMAGES };
+  function resetImages() {
+    setImages([]);
+  }
+
+  return { images, addImages, removeImage, resetImages, toBase64, MAX_IMAGES };
 }

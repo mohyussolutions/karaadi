@@ -66,7 +66,7 @@ export default function Security() {
         {securityData.map((item) => (
           <div
             key={item.id}
-            className="p-4 bg-white rounded-lg shadow flex flex-col justify-between"
+            className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow flex flex-col justify-between"
           >
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">{item.name}</span>

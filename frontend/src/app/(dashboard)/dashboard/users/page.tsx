@@ -129,7 +129,7 @@ export default function UserPage() {
   if (error) {
     return (
       <div className="w-full h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-red-200">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-red-200">
           <p className="text-red-500 font-bold text-center">{error}</p>
           <button
             onClick={loadUsers}
@@ -185,7 +185,7 @@ export default function UserPage() {
         <div className="block md:hidden space-y-3">
           {visibleUsers.length > 0 ? (
             visibleUsers.map((user) => (
-              <div key={user.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <div key={user.id} className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-4 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden border flex-shrink-0">
                     <img
@@ -231,7 +231,7 @@ export default function UserPage() {
           )}
         </div>
 
-        <div className="hidden md:block border border-gray-200 rounded-xl bg-white overflow-hidden">
+        <div className="hidden md:block border border-gray-200 rounded-xl bg-white dark:bg-gray-800 overflow-hidden">
           <table className="w-full table-fixed">
             <thead className="bg-gray-50">
               <tr>

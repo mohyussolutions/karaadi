@@ -13,10 +13,7 @@ export const PRIORITY_CONFIG = {
   STANDARD: { label: "STANDARD", color: "bg-blue-500" },
   BASIC: { label: "BASIC", color: "bg-gray-500" },
 } as const;
-export const OPTION = {
-  Public: "Public",
-  Private: "Private",
-} as const;
+
 export const getPriorityBadge = (
   isPremium90?: boolean,
   isStandard60?: boolean,
@@ -30,16 +27,21 @@ export const getPriorityBadge = (
 
 export const INITIAL_COUNT = 52;
 export const INCREMENT = 20;
-export const MAX_COUNT = 110;
+export const MAX_COUNT = 120;
 
 export const GRID_CONFIG: GridConfiguration = {
   PAGE_SIZE: 20,
   INITIAL_PAGE: 1,
   INITIAL_LOAD: 60,
   ITEMS_PER_LOAD: 10,
-  MAX_ITEMS: 100,
-  MAX_LOADS: 2,
+  MAX_ITEMS: 120,
+  MAX_LOADS: 3,
 };
+
+export const OPTION = {
+  Public: "Public",
+  Private: "Private",
+} as const;
 
 const createEndpoint = (path: string): string => `${BASE_API_URL}${path}`;
 const createIdEndpoint = (base: string, id: string | number): string =>

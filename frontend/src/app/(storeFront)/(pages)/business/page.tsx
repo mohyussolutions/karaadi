@@ -1,35 +1,21 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
-import { useAuth } from "@/context/AuthContext";
-import { IoBusiness } from "react-icons/io5";
+export default function BusinessIndexPage() {
+  redirect("/business/post");
+}
 
-export default function BusinessPage() {
-  const router = useRouter();
-  const { t } = useTranslation();
-  const { user, loading } = useAuth();
+/*import BusinesscheckupSteps from "../../components/checkout/BusinesscheckupSteps";
 
-  useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
-    router.replace("/business/Apply");
-  }, [user, loading, router]);
+export const dynamic = "force-dynamic";
 
+export default function BusinessIndexPage() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center animate-pulse">
-          <IoBusiness className="text-3xl text-blue-400" />
-        </div>
-        <p className="text-sm text-gray-400 animate-pulse">
-          {t("mine.businesses.loading", "Loading…")}
-        </p>
-      </div>
+    <div className="max-w-2xl mx-auto py-20 px-4 text-center">
+      <BusinesscheckupSteps active={1} />
+      <h1 className="text-2xl font-bold mb-4">Business Dashboard</h1>
+      <p className="text-gray-600">
+        Welcome to the business section. Please select an action from the menu.
+      </p>
     </div>
   );
-}
+}*/

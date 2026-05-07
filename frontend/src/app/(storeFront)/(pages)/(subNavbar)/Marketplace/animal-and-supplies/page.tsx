@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
@@ -11,7 +11,6 @@ import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/U
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
 import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
-import { usehandleHorizontalScroll } from "@/app/(storeFront)/components/hooks/useHandleHorizontalScroll";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { MarketplaceItem } from "@/app/utils/types/marketplace.types";
@@ -21,10 +20,7 @@ import { AnimalAndSuppliesNestedSub } from "@/app/(links)/storeFrontLinks/mainCa
 
 export default function AnimalAndSupplies() {
   const { t } = useTranslation();
-  const scrollRef = useRef<HTMLDivElement>(null);
   const { renderError } = useError();
-  const { scroll } = usehandleHorizontalScroll(scrollRef);
-
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -174,7 +170,7 @@ export default function AnimalAndSupplies() {
   if (isError) return renderError(isError);
 
   return (
-    <div className="container mx-auto px-2 py-2 space-y-3">
+    <div className="w-full max-w-screen-xl mx-auto px-2 py-2 space-y-3 overflow-x-hidden">
       <ContainerLinks>
         <SearchInput onSearch={setQuery} defaultValue={query} />
       </ContainerLinks>
@@ -190,20 +186,30 @@ export default function AnimalAndSupplies() {
           onSelect={(id) =>
             setSelectedSubcategory((prev) => (prev === id ? null : id))
           }
-          onScroll={scroll}
-          scrollRef={scrollRef}
           t={t}
         />
       </ContainerLinks>
 
+      <div className="md:hidden px-2">
+        <LocationSelector
+          mobileOnly
+          onFilterChange={(reg, cities) => {
+            setSelectedRegion(reg);
+            setCheckedCities(cities);
+          }}
+          selectedRegion={selectedRegion}
+          checkedCities={checkedCities}
+          regionCounts={regionCityCounts.regionCounts}
+          cityCounts={regionCityCounts.cityCounts}
+        />
+      </div>
+
       <div className="flex flex-col-reverse md:flex-row gap-4 pt-1">
-        <aside className="w-full md:w-1/3 space-y-4 sticky top-4 self-start">
+        <aside className="hidden md:flex md:flex-col md:w-1/3 space-y-4 md:sticky md:top-14 md:self-start">
           <ContainerLinks>
             <LocationSelector
-              onFilterChange={(
-                reg: string | null,
-                cities: Record<string, boolean>,
-              ) => {
+              desktopOnly
+              onFilterChange={(reg, cities) => {
                 setSelectedRegion(reg);
                 setCheckedCities(cities);
               }}

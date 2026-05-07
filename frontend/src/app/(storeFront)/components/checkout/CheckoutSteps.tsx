@@ -2,13 +2,7 @@
 
 import React from "react";
 import { Check } from "lucide-react";
-
-export const steps = [
-  { id: 1, name: "Sign In", href: "/login" },
-  { id: 2, name: "new-ad", href: "/new-ad" },
-  { id: 3, name: "plan", href: "/plan" },
-  { id: 4, name: "Payment", href: "/payment" },
-];
+import { steps } from "@/app/(links)/storeFrontLinks/checkingLinks";
 
 interface CheckoutStepsProps {
   step1?: boolean;

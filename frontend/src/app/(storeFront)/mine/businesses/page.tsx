@@ -37,6 +37,9 @@ export default function MyBusinessesPage() {
       .finally(() => setFetching(false));
   }, [user, authLoading]);
 
+  const stripPrefix = (url: string) =>
+    url.replace(/^https?:\/\/(www\.)?/i, "").replace(/^www\./i, "");
+
   const startEdit = (b: Business) => {
     setEditId(b.id);
     setEditForm({
@@ -44,7 +47,7 @@ export default function MyBusinessesPage() {
       email: b.email,
       phone: b.phone,
       address: b.address ?? "",
-      website: b.website ?? "",
+      website: stripPrefix(b.website ?? ""),
       description: b.description ?? "",
       contactName: b.contactName ?? "",
     });
@@ -57,7 +60,17 @@ export default function MyBusinessesPage() {
 
   const saveEdit = async (id: string) => {
     setSaving(true);
-    const res = (await updateBusiness(id, editForm as Record<string, unknown>)) as any;
+    const domain = (editForm.website ?? "")
+      .replace(/^https?:\/\/(www\.)?/i, "")
+      .replace(/^www\./i, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9.\-]/g, "")
+      .trim();
+    const safePayload = {
+      ...editForm,
+      website: domain ? `https://www.${domain}` : "",
+    };
+    const res = (await updateBusiness(id, safePayload as Record<string, unknown>)) as any;
     if (res?.success) {
       setBusinesses((prev) =>
         prev.map((b) => (b.id === id ? { ...b, ...editForm } : b)),
@@ -188,9 +201,9 @@ function BusinessRow({
 
         <p className="text-sm text-gray-500 mt-0.5">{b.email} · {b.phone}</p>
         {b.address && <p className="text-sm text-gray-500">{b.address}</p>}
-        {b.website && (
-          <a href={b.website} target="_blank" rel="noreferrer" className="text-xs text-indigo-500 hover:underline">
-            {b.website}
+        {b.website?.startsWith("https://") && (
+          <a href={b.website} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-500 hover:underline">
+            {b.website.replace(/^https:\/\/www\./, "")}
           </a>
         )}
         {b.description && (
@@ -282,7 +295,28 @@ function EditForm({
         {field("phone", "Phone")}
         {field("contactName", "Contact Name")}
         {field("address", "Address")}
-        {field("website", "Website")}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 mb-1">Website</label>
+          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-300">
+            <span className="px-2 py-2 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 select-none whitespace-nowrap">
+              https://www.
+            </span>
+            <input
+              type="text"
+              value={(form.website as string) ?? ""}
+              onChange={(e) => {
+                const clean = e.target.value
+                  .replace(/^https?:\/\/(www\.)?/i, "")
+                  .replace(/^www\./i, "")
+                  .replace(/[^a-zA-Z0-9.\-]/g, "");
+                onChange({ ...form, website: clean });
+              }}
+              placeholder="yourbusiness.com"
+              className="flex-1 px-2 py-2 text-sm focus:outline-none bg-white"
+              autoComplete="off"
+            />
+          </div>
+        </div>
       </div>
       <div>
         <label className="block text-xs font-semibold text-gray-500 mb-1">Description</label>

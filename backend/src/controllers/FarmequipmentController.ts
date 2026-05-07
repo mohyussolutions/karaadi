@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
+import { convertImages } from "src/core/utils/imageUtils.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import {
@@ -11,6 +12,7 @@ import {
 } from "src/hooks/useExpire.ts";
 import { AuthRequest, CreateFarmequipmentBody } from "src/types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
+import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 
 const PLAN_TYPES = {
   BASIC: "basic30",
@@ -204,6 +206,14 @@ export const createfarmequipment = async (req: AuthRequest, res: Response) => {
         [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.UNAUTHORIZED,
       });
     }
+
+    if (req.body.businessId) {
+      const limit = await checkBusinessListingLimit(req.body.businessId);
+      if (limit.limitReached) {
+        return res.status(403).json({ success: false, message: "Listing limit reached", current: limit.current, max: limit.max });
+      }
+    }
+
     const data = await prepareTractorData(req.body, userId);
     const newTractor = await prisma.farmequipment.create({
       data,
@@ -212,6 +222,7 @@ export const createfarmequipment = async (req: AuthRequest, res: Response) => {
     await Promise.all([
       cacheManager.deletePattern("tractors:*:all"),
       cacheManager.delete(CACHE_KEYS.TOTAL),
+      cacheManager.deletePattern(`businesses:my:${userId}*`),
     ]);
     if (newTractor[FIELD_NAMES.IS_PAID]) {
       notifyMatchingSubscribers("farmequipment", newTractor.id, {
@@ -374,7 +385,7 @@ export const getAllTractorsIncludingUnpaid = async (
       },
       CACHE_TTL.LIST,
     );
-    return res.json(tractors);
+    return res.json(Array.isArray(tractors) ? tractors.map((t: any) => convertImages(t, "traktor")) : convertImages(tractors, "traktor"));
   } catch (error: any) {
     return res.status(500).json({
       [FIELD_NAMES.MESSAGE]: `${ERROR_MESSAGES.FETCH_ERROR} all`,
@@ -439,7 +450,7 @@ export const getAllTractors = async (req: Request, res: Response) => {
       },
       CACHE_TTL.LIST,
     );
-    return res.json(tractors);
+    return res.json(Array.isArray(tractors) ? tractors.map((t: any) => convertImages(t, "traktor")) : convertImages(tractors, "traktor"));
   } catch (error: any) {
     return res.status(500).json({
       [FIELD_NAMES.MESSAGE]: `${ERROR_MESSAGES.FETCH_ERROR} public`,
@@ -531,12 +542,9 @@ export const getTractorById = async (req: Request, res: Response) => {
           [FIELD_NAMES.MESSAGE]: ERROR_MESSAGES.NOT_FOUND,
           [FIELD_NAMES.ID]: id,
         });
-      return res.json({
-        ...formatItem(fallback),
-        [FIELD_NAMES.FOUND_BY_FALLBACK]: true,
-      });
+      return res.json(convertImages({ ...formatItem(fallback), [FIELD_NAMES.FOUND_BY_FALLBACK]: true }, "traktor"));
     }
-    return res.json(tractor);
+    return res.json(convertImages(tractor, "traktor"));
   } catch (error: any) {
     return res.status(500).json({
       [FIELD_NAMES.MESSAGE]: `${ERROR_MESSAGES.FETCH_ERROR} detail`,

@@ -33,7 +33,7 @@ export default function PendingBusinessesSection({ businesses, onRefresh }: Prop
   const pending = businesses.filter((b) => b.status === "pending" || !b.isVerified);
 
   return (
-    <section className="bg-white rounded-2xl lg:rounded-3xl border border-gray-100 p-4 sm:p-5 lg:p-6 shadow-sm col-span-full">
+    <section className="bg-white dark:bg-gray-800 rounded-2xl lg:rounded-3xl border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 shadow-sm col-span-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-5">
         <div>
           <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">

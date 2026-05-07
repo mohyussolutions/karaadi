@@ -279,7 +279,7 @@ export default function AdminSubscriptionsPageComponent() {
               </button>
               <button
                 onClick={fetchSubscriptions}
-                className="p-2 bg-white border border-gray-300 rounded-full hover:bg-blue-50 transition-all shadow-sm"
+                className="p-2 bg-white dark:bg-gray-800 border border-gray-300 rounded-full hover:bg-blue-50 transition-all shadow-sm"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -331,7 +331,7 @@ export default function AdminSubscriptionsPageComponent() {
             />
           </div>
           <div
-            className={`${mobileFiltersOpen ? "block" : "hidden"} sm:block bg-white rounded-xl border border-gray-200 p-4 w-full`}
+            className={`${mobileFiltersOpen ? "block" : "hidden"} sm:block bg-white dark:bg-gray-800 rounded-xl border border-gray-200 p-4 w-full`}
           >
             <div className="flex justify-between items-center sm:hidden mb-3">
               <h3 className="font-bold text-gray-700 text-sm">Filters</h3>
@@ -351,7 +351,7 @@ export default function AdminSubscriptionsPageComponent() {
               onBulkDeactivate={() => handleBulkStatus("inactive")}
             />
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 w-full overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 w-full overflow-hidden">
             <SubscriptionTable
               subscriptions={visibleSubscriptions}
               onViewDetails={setSelectedSubscription}

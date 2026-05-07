@@ -58,6 +58,6 @@ recommendationRoutes.delete(
   deleteByExternalId,
 );
 
-recommendationRoutes.post("/track-view", ProtectRoute, incrementViews);
+recommendationRoutes.post("/track-view", incrementViews);
 
 export default recommendationRoutes;

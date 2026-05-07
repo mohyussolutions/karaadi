@@ -18,31 +18,36 @@ function LinksStyleCard({
   const isSm = size === "sm";
 
   const card = [
-    "flex flex-col items-center justify-center w-full h-full rounded-lg border gap-1 transition-all duration-200",
-    isSm ? "py-2 px-1.5 min-h-[52px]" : "py-3 px-2.5 min-h-[70px]",
+    "flex flex-col items-center justify-center w-full h-full",
+    "rounded-2xl border-2 gap-1.5 transition-all duration-150",
+    isSm ? "py-2 px-2 min-h-[64px]" : "py-3 px-2 min-h-[80px]",
     isActive
-      ? "bg-blue-500 border-blue-500 shadow-md"
-      : "bg-white border-gray-200 shadow-sm hover:border-blue-300 hover:shadow",
+      ? "border-blue-600 bg-blue-600 shadow-sm scale-[1.02]"
+      : "border-gray-100 bg-white hover:bg-blue-600 hover:border-blue-600 hover:shadow-md active:scale-[0.97]",
   ].join(" ");
 
-  const iconWrapper = [
-    "flex items-center justify-center",
-    isSm ? "w-[26px] h-[26px] text-base" : "w-[38px] h-[38px] text-xl",
-    isActive ? "text-white" : "text-blue-500",
+  const bubble = [
+    "flex items-center justify-center flex-shrink-0 rounded-xl leading-none",
+    isSm ? "w-8 h-8 text-[18px]" : "w-10 h-10 text-[22px]",
+    isActive ? "text-white" : "text-blue-500 group-hover:text-white",
   ].join(" ");
 
   const name = [
-    "font-medium text-center leading-tight m-0",
-    isSm ? "text-xs" : "text-sm",
-    isActive ? "text-white" : "text-gray-900",
+    "font-bold text-center leading-tight m-0",
+    isSm ? "text-[10px]" : "text-[11px]",
+    isActive ? "text-white" : "text-gray-600 group-hover:text-white",
   ].join(" ");
 
   return (
     <div className={card}>
-      {icon && <div className={iconWrapper}>{icon}</div>}
-      <h2 className={name} suppressHydrationWarning>
+      {icon && (
+        <div className={bubble} suppressHydrationWarning>
+          {icon}
+        </div>
+      )}
+      <p className={name} suppressHydrationWarning>
         {title}
-      </h2>
+      </p>
     </div>
   );
 }

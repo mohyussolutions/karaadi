@@ -225,6 +225,21 @@ export async function getBusinessListings(page = 1, pageSize = 20) {
   }
 }
 
+export async function getListingsByBusiness(businessId: string) {
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(
+      `${BASE_API_URL}/api/businesses/feed?businessId=${businessId}&pageSize=200`,
+      { headers: headers as HeadersInit, cache: "no-store" },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function getListingsByBusinessOwner(userId: string) {
   try {
     const headers = await getAuthHeaders();
@@ -237,6 +252,30 @@ export async function getListingsByBusinessOwner(userId: string) {
     return Array.isArray(data?.items) ? data.items : [];
   } catch {
     return [];
+  }
+}
+
+const LISTING_DELETE_URLS: Record<string, string> = {
+  Cars: `${BASE_API_URL}/api/cars`,
+  "Real Estate": `${BASE_API_URL}/api/real-estate`,
+  Marketplace: `${BASE_API_URL}/api/marketplace`,
+  Schools: `${BASE_API_URL}/api/marketplace`,
+  Boats: `${BASE_API_URL}/api/boats`,
+  Motorcycles: `${BASE_API_URL}/api/motorcycles`,
+  "Farm Equipment": `${BASE_API_URL}/api/traktor`,
+};
+
+export async function deleteAdminListing(id: string, mainCategory: string) {
+  try {
+    const headers = await getAuthHeaders();
+    const base = LISTING_DELETE_URLS[mainCategory] ?? `${BASE_API_URL}/api/marketplace`;
+    const res = await fetch(`${base}/${id}`, {
+      method: "DELETE",
+      headers: headers as HeadersInit,
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 

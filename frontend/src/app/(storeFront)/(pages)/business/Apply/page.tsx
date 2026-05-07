@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -11,7 +11,7 @@ import {
   createBusiness,
   getMyBusinesses,
 } from "@/actions/categories/businessActions";
-import BusinessStepper from "../steps/BusinessStepper";
+import BusinesscheckupSteps from "@/app/(storeFront)/components/checkout/BusinesscheckupSteps";
 
 type FormState = {
   companyName: string;
@@ -19,15 +19,31 @@ type FormState = {
   businessEmail: string;
   phone: string;
   contactPerson: string;
-  website: string;
+  websiteDomain: string;
   address: string;
   description: string;
+  logo: string;
 };
+
+function sanitizeDomain(raw: string): string {
+  return raw
+    .replace(/^https?:\/\/(www\.)?/i, "")
+    .replace(/^www\./i, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9.\-]/g, "")
+    .trim();
+}
+
+function buildWebsiteUrl(domain: string): string {
+  const clean = sanitizeDomain(domain);
+  return clean ? `https://www.${clean}` : "";
+}
 
 export default function ApplyPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -37,9 +53,10 @@ export default function ApplyPage() {
     businessEmail: "",
     phone: "",
     contactPerson: "",
-    website: "",
+    websiteDomain: "",
     address: "",
     description: "",
+    logo: "",
   });
 
   useEffect(() => {
@@ -67,13 +84,31 @@ export default function ApplyPage() {
     });
   }, [user, authLoading]);
 
-  const set = (k: keyof FormState, v: string | string[]) =>
+  const set = (k: keyof FormState, v: string) =>
     setForm((p) => ({ ...p, [k]: v }));
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => set("logo", ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleWebsiteInput = (raw: string) => {
+    const clean = raw
+      .replace(/^https?:\/\/(www\.)?/i, "")
+      .replace(/^www\./i, "")
+      .replace(/[^a-zA-Z0-9.\-]/g, "");
+    set("websiteDomain", clean);
+  };
+
   const canSubmit =
-    form.companyName.trim() &&
-    form.businessEmail.trim() &&
-    form.phone.trim();
+    form.companyName.trim() && form.businessEmail.trim() && form.phone.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,14 +121,14 @@ export default function ApplyPage() {
       phone: form.phone.trim(),
       orgNumber: form.orgNumber.trim() || undefined,
       contactName: form.contactPerson.trim() || undefined,
-      website: form.website.trim() || undefined,
+      website: buildWebsiteUrl(form.websiteDomain) || undefined,
       address: form.address.trim() || undefined,
       description: form.description.trim() || undefined,
+      logo: form.logo || undefined,
     };
 
     try {
       const res = (await createBusiness(payload)) as any;
-
       if (res?.success && res?.business?.id) {
         toast.success(
           t("mine.businesses.applySuccess", "Application submitted!"),
@@ -111,7 +146,7 @@ export default function ApplyPage() {
 
   if (authLoading || checking) {
     return (
-      <div className="max-w-xl mx-auto py-10 px-4 animate-pulse space-y-4">
+      <div className="max-w-3xl mx-auto py-10 px-4 animate-pulse space-y-4">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gray-200 rounded-xl" />
           <div className="w-12 h-12 bg-gray-200 rounded-2xl" />
@@ -127,7 +162,7 @@ export default function ApplyPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto py-10 px-4">
+    <div className="max-w-3xl mx-auto py-10 px-4" suppressHydrationWarning>
       <div className="flex items-center gap-4 mb-8">
         <button
           type="button"
@@ -152,11 +187,12 @@ export default function ApplyPage() {
         </div>
       </div>
 
-      <BusinessStepper active={1} />
+      <BusinesscheckupSteps active={1} />
 
       <form
         onSubmit={handleSubmit}
         className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden"
+        autoComplete="off"
       >
         <div className="px-6 pt-6 pb-4 border-b border-gray-100">
           <h2 className="text-base font-bold text-gray-900">
@@ -165,6 +201,51 @@ export default function ApplyPage() {
         </div>
 
         <div className="px-6 py-5 space-y-4">
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="relative w-20 h-20 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0 hover:border-blue-400 transition-colors bg-gray-50"
+            >
+              {form.logo ? (
+                <img
+                  src={form.logo}
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl text-gray-300">🏢</span>
+              )}
+            </button>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-700">
+                {t("mine.businesses.logoLabel", "Business Logo")}{" "}
+                <span className="font-normal text-gray-400">
+                  ({t("mine.businesses.optional", "optional")})
+                </span>
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {t("mine.businesses.logoHint", "Click to upload · JPG, PNG, WebP")}
+              </p>
+              {form.logo && (
+                <button
+                  type="button"
+                  onClick={() => set("logo", "")}
+                  className="mt-1 text-xs text-red-500 hover:underline"
+                >
+                  {t("mine.businesses.removeLogo", "Remove")}
+                </button>
+              )}
+            </div>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoChange}
+            />
+          </div>
+
           <Field
             label={t("mine.businesses.companyName", "Company Name") + " *"}
             value={form.companyName}
@@ -219,13 +300,32 @@ export default function ApplyPage() {
             placeholder={t("mine.businesses.optional", "Optional")}
           />
 
-          <Field
-            label={t("mine.businesses.website", "Website")}
-            value={form.website}
-            onChange={(v) => set("website", v)}
-            type="url"
-            placeholder="https:// (optional)"
-          />
+          <div>
+            <label className="block text-sm font-semibold mb-1.5 text-gray-700">
+              {t("mine.businesses.website", "Website")}{" "}
+              <span className="font-normal text-gray-400">
+                ({t("mine.businesses.optional", "optional")})
+              </span>
+            </label>
+            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+              <span className="px-3 py-3 bg-gray-50 text-sm text-gray-400 border-r border-gray-200 select-none whitespace-nowrap">
+                https://www.
+              </span>
+              <input
+                type="text"
+                value={form.websiteDomain}
+                onChange={(e) => handleWebsiteInput(e.target.value)}
+                placeholder="yourbusiness.com"
+                className="flex-1 px-3 py-3 text-sm focus:outline-none bg-white"
+                autoComplete="off"
+              />
+            </div>
+            {form.websiteDomain && (
+              <p className="mt-1 text-xs text-gray-400">
+                {buildWebsiteUrl(form.websiteDomain)}
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-semibold mb-1.5 text-gray-700">
@@ -292,6 +392,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        autoComplete="off"
       />
     </div>
   );
