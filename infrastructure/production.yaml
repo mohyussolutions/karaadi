@@ -179,7 +179,6 @@ Parameters:
 
 Conditions:
   HasAmplifyToken: !Not [!Equals [!Ref AmplifyGitHubToken, ""]]
-  HasGitHubToken: !Not [!Equals [!Ref GitHubToken, ""]]
 
 # ============================================
 # RESOURCES - All AWS services created

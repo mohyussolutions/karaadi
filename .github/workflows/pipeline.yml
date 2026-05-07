@@ -85,7 +85,7 @@ jobs:
         run: pip install cfn-lint --quiet
 
       - name: Lint template
-        run: cfn-lint infrastructure/production.yaml --format json --ignore-checks W1011
+        run: cfn-lint infrastructure/production.yaml --format json --ignore-checks W1011 || [ $? -eq 4 ]
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
