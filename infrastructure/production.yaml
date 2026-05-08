@@ -23,6 +23,8 @@ Mappings:
       Value: "15.10"
     RedisVersion:
       Value: 7
+    ALBPort:
+      Value: 80
     BackendPort:
       Value: 8080
     PostgresPort:
@@ -334,8 +336,8 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: !FindInMap [Constants, BackendPort, Value]
-          ToPort: !FindInMap [Constants, BackendPort, Value]
+          FromPort: !FindInMap [Constants, ALBPort, Value]
+          ToPort: !FindInMap [Constants, ALBPort, Value]
           CidrIp: !FindInMap [Constants, VpcCidr, Value]
 
   EC2SecurityGroup:
@@ -555,7 +557,7 @@ Resources:
     Properties:
       LoadBalancerArn: !Ref BackendALB
       Protocol: HTTP
-      Port: !FindInMap [Constants, BackendPort, Value]
+      Port: !FindInMap [Constants, ALBPort, Value]
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref BackendTargetGroup
