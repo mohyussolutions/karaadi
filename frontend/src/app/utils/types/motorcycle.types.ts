@@ -64,7 +64,6 @@ export interface AdminMotorcycle {
   color?: string;
 }
 
-// Or use Partial with Motorcycle
 export type AdminMotorcyclePartial = Partial<Motorcycle> & {
   user?:
     | {
