@@ -84,7 +84,8 @@ jobs:
 
       - name: Type check
         working-directory: frontend
-        run: npx tsc --noEmit
+        timeout-minutes: 5
+        run: ./node_modules/.bin/tsc --noEmit
 
   # ─────────────────────────────────────────────────────────────────────────────
   # 3. INFRA / CLOUDFORMATION
