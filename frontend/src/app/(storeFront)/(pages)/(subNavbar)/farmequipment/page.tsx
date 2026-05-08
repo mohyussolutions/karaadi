@@ -27,7 +27,7 @@ function TractorLinks() {
   const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const filteredItems = useListingFeed(items, query, "Farm Equipment");
@@ -50,11 +50,11 @@ function TractorLinks() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
+    
     loadData();
   }, [loadData]);
 
-  const displayItems = mounted ? shuffledItems : filteredItems;
+  const displayItems = shuffledItems;
   const visibleItems = displayItems.slice(0, visibleCount);
   const hasMore = displayItems.length > visibleCount;
 
@@ -90,7 +90,7 @@ function TractorLinks() {
         <WantSell />
       </ContainerLinks>
 
-      {isLoading || !mounted ? (
+      {isLoading ? (
         <Loading />
       ) : (
         <div className="space-y-4">

@@ -29,7 +29,7 @@ function CarLinks() {
   const [items, setItems] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const filteredItems = useListingFeed(items, query, "Cars");
@@ -52,11 +52,11 @@ function CarLinks() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
+    
     loadData();
   }, [loadData]);
 
-  const displayItems = mounted ? shuffledItems : filteredItems;
+  const displayItems = shuffledItems;
   const visibleItems = displayItems.slice(0, visibleCount);
   const hasMore = displayItems.length > visibleCount;
 
@@ -88,7 +88,7 @@ function CarLinks() {
       <ContainerLinks>
         <WantSell />
       </ContainerLinks>
-      {isLoading || !mounted ? (
+      {isLoading ? (
         <Loading />
       ) : (
         <div className="space-y-4">
