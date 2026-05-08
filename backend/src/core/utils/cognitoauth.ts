@@ -195,35 +195,35 @@ export const signIn = async (
     const preferredUsername =
       decodedToken.preferred_username || email.split("@")[0];
 
-    const userRecord = await prisma.user.upsert({
-      where: { cognitoId: decodedToken.sub },
-      update: {
-        email: decodedToken.email,
-        username: preferredUsername,
-        isAdmin,
-        isManager,
-        isSupport,
-      },
-      create: {
-        cognitoId: decodedToken.sub,
-        email: decodedToken.email,
-        username: preferredUsername,
-        phone: cognitoPhone !== "false" ? cognitoPhone : "",
-        profileImage:
-          cognitoProfileImage !== "false" ? cognitoProfileImage : null,
-        password: "",
-        isAdmin,
-        isManager,
-        isSupport,
-      },
-      select: {
-        id: true,
-        username: true,
-        phone: true,
-        profileImage: true,
-        cognitoId: true,
-      },
-    });
+    let userRecord: any = null;
+    try {
+      userRecord = await prisma.user.upsert({
+        where: { cognitoId: decodedToken.sub },
+        update: { email: decodedToken.email, username: preferredUsername, isAdmin, isManager, isSupport },
+        create: {
+          cognitoId: decodedToken.sub,
+          email: decodedToken.email,
+          username: preferredUsername,
+          phone: cognitoPhone !== "false" ? cognitoPhone : "",
+          profileImage: cognitoProfileImage !== "false" ? cognitoProfileImage : null,
+          password: "",
+          isAdmin,
+          isManager,
+          isSupport,
+        },
+        select: { id: true, username: true, phone: true, profileImage: true, cognitoId: true },
+      });
+    } catch {
+      userRecord = null;
+    }
+
+    const resolvedUser = {
+      id: userRecord?.id || decodedToken.sub,
+      username: userRecord?.username || preferredUsername,
+      phone: userRecord?.phone || cognitoPhone || "",
+      profileImage: userRecord?.profileImage || cognitoProfileImage || "",
+      cognitoId: userRecord?.cognitoId || decodedToken.sub,
+    };
 
     if (req?.session) {
       req.session.idToken = idToken;
@@ -231,9 +231,9 @@ export const signIn = async (
       req.session.accessToken = accessToken;
       req.session.user = {
         sub: decodedToken.sub,
-        username: userRecord.username,
-        phone: userRecord.phone || "",
-        profileImage: userRecord.profileImage || "",
+        username: resolvedUser.username,
+        phone: resolvedUser.phone,
+        profileImage: resolvedUser.profileImage,
         isAdmin,
         isManager,
         isSupport,
@@ -247,14 +247,14 @@ export const signIn = async (
       userData: {
         accessToken,
         email,
-        username: userRecord.username,
-        phone: userRecord.phone || "",
-        profileImage: userRecord.profileImage || "",
+        username: resolvedUser.username,
+        phone: resolvedUser.phone,
+        profileImage: resolvedUser.profileImage,
         isAdmin,
         isManager,
         isSupport,
-        cognitoId: userRecord.cognitoId || decodedToken.sub,
-        id: userRecord.id,
+        cognitoId: resolvedUser.cognitoId,
+        id: resolvedUser.id,
       },
     };
   } catch (error: unknown) {
