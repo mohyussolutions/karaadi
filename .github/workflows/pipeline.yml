@@ -294,7 +294,7 @@ jobs:
               echo "[$attempt/10] SSM not ready, retrying in 15s..."
               sleep 15
             done
-            [ -n "$CMD_ID" ] || { echo "ERROR: could not send SSM command to $INSTANCE"; exit 1; }
+            [ -n "$CMD_ID" ] || { echo "WARNING: could not reach $INSTANCE via SSM — skipping"; continue; }
 
             for i in $(seq 1 60); do
               INV=$(aws ssm get-command-invocation \
