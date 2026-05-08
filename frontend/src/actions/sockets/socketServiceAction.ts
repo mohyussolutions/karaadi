@@ -15,10 +15,10 @@ class SocketService {
   private readonly socketUrl: string;
 
   private constructor() {
-    this.socketUrl =
-      process.env.NEXT_PUBLIC_SOCKET_URL ||
+    const rawUrl = process.env.NEXT_PUBLIC_SOCKET_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
       "http://localhost:8080";
+    this.socketUrl = rawUrl.replace(/:8080(\/|$)/, "$1");
   }
 
   static getInstance(): SocketService {

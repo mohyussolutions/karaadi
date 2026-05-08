@@ -8,7 +8,7 @@ export const formatPrice = (price: number | string) => {
   return new Intl.NumberFormat("en-US").format(numPrice || 0);
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/:8080(\/|$)/, "$1");
 
 export const getValidImageUrl = (url: string | undefined): string | null => {
   if (!url || url.trim() === "") return null;
