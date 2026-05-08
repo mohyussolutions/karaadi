@@ -24,7 +24,7 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
-  # 1. TEST  (backend + frontend in parallel, both must pass)
+  # 1. TEST BACKEND
   # ─────────────────────────────────────────────────────────────────────────────
   test-backend:
     name: Test / Backend
@@ -63,9 +63,13 @@ jobs:
           AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: 1
         run: npm test --if-present
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 2. TEST FRONTEND
+  # ─────────────────────────────────────────────────────────────────────────────
   test-frontend:
     name: Test / Frontend
     runs-on: ubuntu-latest
+    needs: test-backend
     steps:
       - uses: actions/checkout@v4
 
@@ -84,12 +88,12 @@ jobs:
         run: npx tsc --noEmit
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # 2. INFRA  (CloudFormation — only after both tests pass)
+  # 3. INFRA / CLOUDFORMATION
   # ─────────────────────────────────────────────────────────────────────────────
   infra:
     name: Infra / CloudFormation
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: test-frontend
     steps:
       - uses: actions/checkout@v4
 
@@ -146,7 +150,7 @@ jobs:
             --output table
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # 3. BACKEND  (build → S3 → SSM deploy to EC2)
+  # 4. BACKEND DEPLOY
   # ─────────────────────────────────────────────────────────────────────────────
   backend:
     name: Backend / Deploy
@@ -190,21 +194,26 @@ jobs:
         env:
           DB_MASTER_PASSWORD: ${{ secrets.DB_MASTER_PASSWORD }}
         run: |
-          # Prefer GitHub secret, fall back to SSM
+          set -euo pipefail
+          # Use GitHub secret first, fall back to SSM
           DB_PASS="$DB_MASTER_PASSWORD"
           if [ -z "$DB_PASS" ]; then
             DB_PASS=$(aws ssm get-parameter --name /karaadi/db-master-password \
               --with-decryption --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
           fi
           if [ -z "$DB_PASS" ]; then
-            echo "WARNING: No DB password found — add DB_MASTER_PASSWORD as a GitHub secret"
-            exit 0
+            echo "ERROR: No DB password. Go to GitHub repo Settings > Secrets > Actions and add DB_MASTER_PASSWORD=Karaadi2025Seed!"
+            exit 1
           fi
           RDS_HOST=$(aws cloudformation describe-stacks \
             --stack-name "$STACK_NAME" --region "$AWS_REGION" \
             --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
             --output text)
-          [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ] && echo "No RDS endpoint" && exit 0
+          if [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ]; then
+            echo "ERROR: Could not get RDS endpoint from CloudFormation"
+            exit 1
+          fi
+          echo "RDS: $RDS_HOST"
           CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env \
             --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
           export NEW_DB_LINE="DATABASE_URL=postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi_production?connection_limit=20&pool_timeout=20"
@@ -212,7 +221,6 @@ jobs:
             'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_DB_LINE"];p=re.compile(r"^DATABASE_URL=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
           aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
             --type SecureString --overwrite --region "$AWS_REGION"
-          # Also store in SSM for fix-db workflow
           aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" \
             --type SecureString --overwrite --region "$AWS_REGION" 2>/dev/null || true
           echo "DATABASE_URL patched in SSM"
@@ -246,29 +254,42 @@ jobs:
           TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
           echo "Deploying ${SHA:0:8} to $TOTAL instance(s)"
 
-          COMMANDS=$(jq -nc --arg sha "$SHA" --arg bucket "$S3_BUCKET" --arg region "$AWS_REGION" '[
+          COMMANDS=$(jq -nc --arg sha "$SHA" --arg bucket "$S3_BUCKET" --arg region "$AWS_REGION" --arg stack "$STACK_NAME" '[
             "set -euo pipefail",
             "mkdir -p /home/ec2-user/karaadi/backend",
-            "echo STEP: fetch env",
+
+            "echo === STEP 1: fetch env from SSM ===",
             ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env || exit 1"),
             "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
-            "echo STEP: download bundle",
+
+            "echo === STEP 2: patch DATABASE_URL on instance ===",
+            ("DB_PASS=$(aws ssm get-parameter --name /karaadi/db-master-password --with-decryption --query Parameter.Value --output text --region " + $region + " 2>/dev/null || echo \"\")"),
+            ("RDS_HOST=$(aws cloudformation describe-stacks --stack-name " + $stack + " --region " + $region + " --query \"Stacks[0].Outputs[?OutputKey==\\'RDSEndpoint\\'].OutputValue\" --output text 2>/dev/null || echo \"\")"),
+            "if [ -n \"$DB_PASS\" ] && [ -n \"$RDS_HOST\" ] && [ \"$RDS_HOST\" != \"None\" ]; then DB_URL=\"postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi_production?connection_limit=20&pool_timeout=20\"; if grep -q \"^DATABASE_URL=\" /home/ec2-user/karaadi/backend/.env; then sed -i \"s|^DATABASE_URL=.*|DATABASE_URL=${DB_URL}|\" /home/ec2-user/karaadi/backend/.env; else echo \"DATABASE_URL=${DB_URL}\" >> /home/ec2-user/karaadi/backend/.env; fi; echo DATABASE_URL_PATCHED; else echo DATABASE_URL_SKIPPED; fi",
+
+            "echo === STEP 3: download bundle ===",
             ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
-            "echo STEP: extract bundle",
+
+            "echo === STEP 4: extract bundle ===",
             "rm -rf /home/ec2-user/karaadi/backend/src/prisma",
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
-            "echo STEP: npm install",
+
+            "echo === STEP 5: npm install ===",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
-            "echo STEP: prisma generate",
+
+            "echo === STEP 6: prisma generate ===",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
-            "echo STEP: seed data",
-            "cd /home/ec2-user/karaadi/backend && NODE_ENV=production node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED: check DATABASE_URL in SSM",
-            "echo STEP: restart app",
+
+            "echo === STEP 7: seed all data (regions, cities, listings) ===",
+            "cd /home/ec2-user/karaadi/backend && NODE_ENV=production node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
+
+            "echo === STEP 8: restart app ===",
             "pm2 delete karaadi-backend 2>/dev/null || true",
             "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
             "pm2 save",
             "env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true",
-            "echo STEP: health check",
+
+            "echo === STEP 9: health check ===",
             "sleep 20 && curl -sf http://localhost:8080/health && echo HEALTH_OK && pm2 list"
           ]')
 
@@ -359,10 +380,10 @@ jobs:
           done
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # 4. FRONTEND  (Amplify build — only after backend)
+  # 5. FRONTEND DEPLOY
   # ─────────────────────────────────────────────────────────────────────────────
   frontend:
-    name: Frontend / Amplify
+    name: Frontend / Deploy
     runs-on: ubuntu-latest
     needs: backend
     steps:
@@ -402,9 +423,9 @@ jobs:
             UPDATED=$(echo "$VARS" | jq -c --arg url "$FIXED" '.NEXT_PUBLIC_API_URL = $url')
             aws amplify update-app --app-id "$APP_ID" \
               --environment-variables "$UPDATED" --region "$AWS_REGION"
-            echo "Fixed: $CURRENT → $FIXED"
+            echo "Fixed: $CURRENT -> $FIXED"
           else
-            echo "NEXT_PUBLIC_API_URL is already correct: $CURRENT"
+            echo "NEXT_PUBLIC_API_URL is correct: $CURRENT"
           fi
 
       - name: Trigger Amplify build
@@ -437,7 +458,7 @@ jobs:
               --query "job.summary.status" --output text)
             echo "[$i/180] $STATUS"
             case "$STATUS" in
-              SUCCEED) echo "Build succeeded. URL: https://main.${APP_ID}.amplifyapp.com"; break ;;
+              SUCCEED) echo "Build succeeded."; break ;;
               FAILED|CANCELLED) echo "Build $STATUS"; exit 1 ;;
               *) sleep 10 ;;
             esac
@@ -445,4 +466,4 @@ jobs:
 
       - name: No Amplify app yet
         if: steps.cfn.outputs.skip == 'true'
-        run: echo "Amplify app not created yet — set up Amplify in AWS Console first."
+        run: echo "Amplify app not configured yet."
