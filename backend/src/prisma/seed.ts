@@ -8,7 +8,8 @@ import { notificationItems } from "../seeder/notifications.ts";
 import { equipmentItems } from "../seeder/equipmentSeeder.ts";
 import { subscriptionItems } from "../seeder/subscription.ts";
 import { supportTicketSeedData } from "../seeder/ticketData.ts";
-import { cities, regions } from "../seeder/SomaliaRegionsSeeder.ts";
+import { somaliaData } from "../seeder/SomaliaRegionsSeeder.ts";
+const { cities, regions } = somaliaData;
 import { jobsData } from "../seeder/jobsSeed.ts";
 import { recommendations } from "../seeder/recomendationSeeder.ts";
 import prisma from "../core/utils/db.ts";
@@ -39,7 +40,7 @@ const importData = async () => {
 
     await prisma.region.createMany({ data: regions, skipDuplicates: true });
     await prisma.city.createMany({
-      data: cities.map((city) => ({ ...city, isActive: true })),
+      data: cities.map((city: { id: string; name: string; regionId: string }) => ({ ...city, isActive: true })),
       skipDuplicates: true,
     });
 
