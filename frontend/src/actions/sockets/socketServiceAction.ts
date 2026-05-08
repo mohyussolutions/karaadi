@@ -18,7 +18,7 @@ class SocketService {
     const rawUrl = process.env.NEXT_PUBLIC_SOCKET_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
       "http://localhost:8080";
-    this.socketUrl = rawUrl.replace(/:8080(\/|$)/, "$1");
+    this.socketUrl = rawUrl.replace(/^(https:\/\/.+):8080(\/|$)/, "$1$2");
   }
 
   static getInstance(): SocketService {
