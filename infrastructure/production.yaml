@@ -700,12 +700,17 @@ Resources:
           - GET
           - POST
           - PUT
+          - PATCH
           - DELETE
           - OPTIONS
         AllowHeaders:
           - Content-Type
           - Authorization
           - Cookie
+          - X-Access-Token
+          - x-access-token
+          - Cache-Control
+          - X-Requested-With
         AllowCredentials: true
         ExposeHeaders:
           - Set-Cookie
@@ -735,6 +740,13 @@ Resources:
     Properties:
       ApiId: !Ref APIGateway
       RouteKey: ANY /{proxy+}
+      Target: !Sub integrations/${APIGatewayIntegration}
+
+  APIGatewayDefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref APIGateway
+      RouteKey: $default
       Target: !Sub integrations/${APIGatewayIntegration}
 
   APIGatewayStage:
