@@ -8,8 +8,6 @@ import {
   EXTERNAL_LINK_REGEX,
 } from "@/app/utils/types/navCategory.types";
 import { allCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
-import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
-
 const HIDDEN_KEYS = new Set(["Jobs", "jobs", "Smartsuuq"]);
 
 const visibleCategories = (allCategories as Category[]).filter(
@@ -18,7 +16,6 @@ const visibleCategories = (allCategories as Category[]).filter(
 
 const CategoryLinks = memo(function CategoryLinks() {
   const { t } = useTranslation();
-  useLanguage();
 
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-3 max-w-7xl mx-auto">

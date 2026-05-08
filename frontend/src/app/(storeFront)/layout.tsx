@@ -4,7 +4,6 @@ import AdFetcher from "./components/Advertisement/AdFetcher";
 import Container from "./components/Cards/containerCards/ContainerCard";
 import TrackVisitor from "../ui/invoices/TrackUniqueVisitorOnce";
 import LanguageSync from "@/i18n/LanguageContext";
-import { Suspense } from "react";
 import { cookies } from "next/headers";
 
 export default async function StoreFrontLayout({
@@ -24,7 +23,7 @@ export default async function StoreFrontLayout({
         <TrackVisitor />
         <AdFetcher>
           <Container>
-            <Suspense>{children}</Suspense>
+            {children}
           </Container>
         </AdFetcher>
       </main>
