@@ -13,43 +13,41 @@ import { runBackup } from "./services/backup/dbBackup.js";
 const server = http.createServer(app);
 
 const startServer = async () => {
-  try {
-    await Promise.all([redisServer.start(), prisma.$connect()]);
+  await redisServer.start().catch((err: unknown) => {
+    console.error(chalk.yellow("[Redis] failed to connect:"), err);
+  });
 
-    const pub = redisServer.getClient();
-    const sub = pub.duplicate();
-    await sub.connect();
+  const pub = redisServer.getClient();
+  const sub = pub.duplicate();
+  await sub.connect().catch((err: unknown) => {
+    console.error(chalk.yellow("[Redis] sub connect failed:"), err);
+  });
 
-    socketServer(server, pub, sub);
+  socketServer(server, pub, sub);
 
-    server.listen(Number(process.env.PORT) || 8080, "::", () => {
-      console.log(
-        chalk.green(
-          `Server PID ${process.pid} ready on port ${process.env.PORT}`,
-        ),
-      );
+  server.listen(Number(process.env.PORT) || 8080, "::", () => {
+    console.log(
+      chalk.green(`Server PID ${process.pid} ready on port ${process.env.PORT}`),
+    );
+  });
+
+  prisma.$connect()
+    .then(() => console.log(chalk.green("DB connected")))
+    .catch((err: unknown) => {
+      console.error(chalk.yellow("[DB] initial connect failed — will retry:"), err);
     });
 
-    setupGracefulShutdown({ server, prisma, redisServer });
+  setupGracefulShutdown({ server, prisma, redisServer });
 
-    cron.schedule("0 2 */3 * *", runBackup, { timezone: "UTC" });
+  cron.schedule("0 2 */3 * *", runBackup, { timezone: "UTC" });
 
-    setInterval(async () => {
-      try {
-        await prisma.$queryRaw`SELECT 1`;
-      } catch (e) {
-        console.warn(
-          chalk.yellow("[Keepalive] DB ping failed — reconnecting…"),
-        );
-        try {
-          await prisma.$connect();
-        } catch {}
-      }
-    }, 60_000);
-  } catch (err) {
-    console.error(chalk.red("Startup failed:"), err);
-    process.exit(1);
-  }
+  setInterval(async () => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch {
+      try { await prisma.$connect(); } catch {}
+    }
+  }, 60_000);
 };
 
 startServer();
