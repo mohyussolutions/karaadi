@@ -690,23 +690,6 @@ Resources:
     Properties:
       Name: !Sub ${AppName}-api
       ProtocolType: HTTP
-      CorsConfiguration:
-        AllowOrigins:
-          - "https://karaadi.com"
-          - "https://www.karaadi.com"
-          - "https://main.d1wvu9uv0jcfp.amplifyapp.com"
-        AllowMethods:
-          - GET
-          - POST
-          - PUT
-          - PATCH
-          - DELETE
-          - OPTIONS
-        AllowHeaders:
-          - "*"
-        AllowCredentials: true
-        ExposeHeaders:
-          - Set-Cookie
 
   APIGatewayVpcLink:
     Type: AWS::ApiGatewayV2::VpcLink
