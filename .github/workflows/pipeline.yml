@@ -183,6 +183,8 @@ jobs:
           tar --exclude="._*" --exclude=".DS_Store" -czf /tmp/backend-${{ github.sha }}.tar.gz dist/ src/prisma/ prisma.config.ts package.json package-lock.json
           aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
             s3://karaadi-images-108782100045/deployments/backend-${{ github.sha }}.tar.gz
+          aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
+            s3://karaadi-images-108782100045/deployments/backend-latest.tar.gz
 
       - name: Fix DATABASE_URL in SSM
         run: |
@@ -254,8 +256,9 @@ jobs:
             "cd /home/ec2-user/karaadi/backend && NODE_ENV=production node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED: check DATABASE_URL in SSM",
             "echo STEP: restart app",
             "pm2 delete karaadi-backend 2>/dev/null || true",
-            "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\"",
+            "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
             "pm2 save",
+            "env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true",
             "echo STEP: health check",
             "sleep 20 && curl -sf http://localhost:8080/health && echo HEALTH_OK && pm2 list"
           ]')
