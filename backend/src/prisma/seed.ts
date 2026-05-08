@@ -15,23 +15,33 @@ import prisma from "../core/utils/db.ts";
 
 const importData = async () => {
   try {
-    await prisma.job.deleteMany();
-    await prisma.message.deleteMany();
-    await prisma.chat.deleteMany();
-    await prisma.notification.deleteMany();
-    await prisma.subscription.deleteMany();
-    await prisma.farmequipment.deleteMany();
-    await prisma.boat.deleteMany();
-    await prisma.car.deleteMany();
-    await prisma.motorcycle.deleteMany();
-    await prisma.marketplace.deleteMany();
-    await prisma.realEstate.deleteMany();
-    await prisma.customerSupportTicket.deleteMany();
-    await prisma.city.deleteMany();
-    await prisma.region.deleteMany();
-    await prisma.user.deleteMany();
-    await prisma.recommendation.deleteMany();
-    await prisma.userView.deleteMany();
+    const isProd = process.env.NODE_ENV === "production";
+
+    if (isProd) {
+      const existing = await prisma.user.count();
+      if (existing > 0) {
+        console.log(`Seed skipped — ${existing} users already in DB.`);
+        process.exit(0);
+      }
+    } else {
+      await prisma.job.deleteMany();
+      await prisma.message.deleteMany();
+      await prisma.chat.deleteMany();
+      await prisma.notification.deleteMany();
+      await prisma.subscription.deleteMany();
+      await prisma.farmequipment.deleteMany();
+      await prisma.boat.deleteMany();
+      await prisma.car.deleteMany();
+      await prisma.motorcycle.deleteMany();
+      await prisma.marketplace.deleteMany();
+      await prisma.realEstate.deleteMany();
+      await prisma.customerSupportTicket.deleteMany();
+      await prisma.city.deleteMany();
+      await prisma.region.deleteMany();
+      await prisma.user.deleteMany();
+      await prisma.recommendation.deleteMany();
+      await prisma.userView.deleteMany();
+    }
 
     await prisma.region.createMany({ data: regions, skipDuplicates: true });
     await prisma.city.createMany({

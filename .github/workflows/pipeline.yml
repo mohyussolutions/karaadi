@@ -175,6 +175,7 @@ jobs:
           npm ci --omit=dev
           npx prisma generate
           npx esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --packages=external --outfile=dist/index.js
+          npx esbuild src/prisma/seed.ts --bundle --platform=node --target=node24 --format=esm --packages=external --outfile=dist/seed.js
 
       - name: Upload bundle to S3
         run: |
@@ -227,6 +228,8 @@ jobs:
             "echo STEP: prisma generate",
             "find /home/ec2-user/karaadi/backend/src/prisma -name '._*' -delete 2>/dev/null || true",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
+            "echo STEP: seed data",
+            "cd /home/ec2-user/karaadi/backend && NODE_ENV=production node --env-file=.env dist/seed.js 2>&1 || echo SEED_WARN: seed failed but continuing",
             "echo STEP: restart app",
             "pm2 delete karaadi-backend 2>/dev/null || true",
             "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\"",
