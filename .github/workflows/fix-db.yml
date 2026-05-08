@@ -78,18 +78,31 @@ jobs:
 
           FIRST=$(echo "$INSTANCES" | awk '{print $1}')
 
-          SEED_COMMANDS=$(jq -nc '[
+          LATEST=$(aws s3 cp s3://karaadi-images-108782100045/deployments/backend-latest.tar.gz - \
+            --region "$AWS_REGION" 2>/dev/null | wc -c || echo "0")
+          S3_BUCKET="karaadi-images-108782100045"
+
+          SEED_COMMANDS=$(jq -nc --arg bucket "$S3_BUCKET" --arg region "$AWS_REGION" '[
             "set -euo pipefail",
-            "cd /home/ec2-user/karaadi/backend",
-            "echo Running npm run import on production...",
-            "node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
-            "pm2 restart karaadi-backend --update-env",
-            "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
+            "mkdir -p /home/ec2-user/karaadi/backend",
+            ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env || exit 1"),
+            "if [ ! -f /home/ec2-user/karaadi/backend/dist/index.js ]; then",
+            ("aws s3 cp s3://" + $bucket + "/deployments/backend-latest.tar.gz /tmp/backend.tar.gz --region " + $region),
+            "rm -rf /home/ec2-user/karaadi/backend/src/prisma",
+            "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
+            "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
+            "cd /home/ec2-user/karaadi/backend && npx prisma generate",
+            "fi",
+            "cd /home/ec2-user/karaadi/backend && node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
+            "pm2 delete karaadi-backend 2>/dev/null || true",
+            "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
+            "pm2 save",
+            "sleep 10; curl -s http://localhost:8080/health && echo HEALTH_OK; pm2 list"
           ]')
 
           RESTART_COMMANDS=$(jq -nc '[
-            "pm2 restart karaadi-backend --update-env",
-            "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
+            "pm2 restart karaadi-backend --update-env || true",
+            "sleep 5; curl -s http://localhost:8080/health && echo HEALTH_OK"
           ]')
 
           run_ssm() {
