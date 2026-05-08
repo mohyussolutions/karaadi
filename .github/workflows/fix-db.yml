@@ -76,25 +76,34 @@ jobs:
             --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
             --output text)
 
-          COMMANDS=$(jq -nc '[
+          FIRST=$(echo "$INSTANCES" | awk '{print $1}')
+
+          SEED_COMMANDS=$(jq -nc '[
             "set -euo pipefail",
             "cd /home/ec2-user/karaadi/backend",
-            "NODE_ENV=production node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
+            "echo Running npm run import on production...",
+            "node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
             "pm2 restart karaadi-backend --update-env",
             "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
 
-          for INSTANCE in $INSTANCES; do
-            echo "=== $INSTANCE ==="
+          RESTART_COMMANDS=$(jq -nc '[
+            "pm2 restart karaadi-backend --update-env",
+            "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
+          ]')
+
+          run_ssm() {
+            local INSTANCE=$1
+            local CMDS=$2
             CMD_ID=$(aws ssm send-command \
               --instance-ids "$INSTANCE" \
               --document-name "AWS-RunShellScript" \
               --comment "fix-db-seed" \
-              --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"120\"]}" \
+              --parameters "{\"commands\":$CMDS,\"executionTimeout\":[\"180\"]}" \
               --region "$AWS_REGION" \
               --output json | jq -r '.Command.CommandId')
-
-            for i in $(seq 1 30); do
+            echo "SSM $CMD_ID on $INSTANCE"
+            for i in $(seq 1 36); do
               INV=$(aws ssm get-command-invocation \
                 --command-id "$CMD_ID" --instance-id "$INSTANCE" \
                 --region "$AWS_REGION" --output json 2>/dev/null \
@@ -102,13 +111,23 @@ jobs:
               STATUS=$(echo "$INV" | jq -r '.Status')
               echo "[$i] $STATUS"
               case "$STATUS" in
-                Success) echo "$INV" | jq -r '.StandardOutputContent'; break ;;
+                Success) echo "$INV" | jq -r '.StandardOutputContent'; return 0 ;;
                 Failed|Cancelled|TimedOut)
                   echo "$INV" | jq -r '.StandardOutputContent'
                   echo "$INV" | jq -r '.StandardErrorContent'
-                  exit 1 ;;
+                  return 1 ;;
                 *) sleep 5 ;;
               esac
             done
+          }
+
+          echo "=== Seeding on $FIRST ==="
+          run_ssm "$FIRST" "$SEED_COMMANDS"
+
+          for INSTANCE in $INSTANCES; do
+            if [ "$INSTANCE" != "$FIRST" ]; then
+              echo "=== Restarting $INSTANCE ==="
+              run_ssm "$INSTANCE" "$RESTART_COMMANDS"
+            fi
           done
           echo "Done."
