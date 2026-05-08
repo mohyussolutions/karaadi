@@ -201,9 +201,18 @@ jobs:
               --with-decryption --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
           fi
           if [ -z "$DB_PASS" ]; then
-            echo "WARNING: DB_MASTER_PASSWORD secret not set — DATABASE_URL not updated"
-            echo "To fix: GitHub repo Settings > Secrets > Actions > New secret"
-            echo "  Name: DB_MASTER_PASSWORD  Value: Karaadi2025Seed!"
+            SECRET_ID=$(aws cloudformation describe-stack-resources \
+              --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+              --logical-resource-id DatabaseSecret \
+              --query "StackResources[0].PhysicalResourceId" --output text 2>/dev/null || echo "")
+            if [ -n "$SECRET_ID" ] && [ "$SECRET_ID" != "None" ]; then
+              DB_PASS=$(aws secretsmanager get-secret-value --secret-id "$SECRET_ID" \
+                --region "$AWS_REGION" --query SecretString --output text 2>/dev/null \
+                | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('password',''))" 2>/dev/null || echo "")
+            fi
+          fi
+          if [ -z "$DB_PASS" ]; then
+            echo "WARNING: no DB password found — DATABASE_URL not updated"
             exit 0
           fi
           RDS_HOST=$(aws cloudformation describe-stacks \
@@ -211,24 +220,20 @@ jobs:
             --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
             --output text 2>/dev/null || echo "")
           if [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ]; then
-            echo "WARNING: Could not get RDS endpoint — DATABASE_URL not updated"
+            echo "WARNING: no RDS endpoint found"
             exit 0
           fi
           echo "RDS: $RDS_HOST"
           CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env \
             --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
           export NEW_DB_LINE="DATABASE_URL=postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi?connection_limit=20&pool_timeout=20"
-          UPDATED=$(printf '%s' "$CURRENT" | python3 -c \
-            'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_DB_LINE"];p=re.compile(r"^DATABASE_URL=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
-          DOMAIN="karaadi.com"
-          export NEW_ORIGINS_LINE="ALLOWED_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}"
-          UPDATED=$(printf '%s' "$UPDATED" | python3 -c \
-            'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_ORIGINS_LINE"];p=re.compile(r"^ALLOWED_ORIGINS=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
+          export NEW_ORIGINS_LINE="ALLOWED_ORIGINS=https://karaadi.com,https://www.karaadi.com"
+          UPDATED=$(printf '%s' "$CURRENT" | python3 -c 'import sys,os,re;c=sys.stdin.read();l1=os.environ["NEW_DB_LINE"];l2=os.environ["NEW_ORIGINS_LINE"];c=re.compile(r"^DATABASE_URL=.*",re.MULTILINE).sub(l1,c) if re.search(r"^DATABASE_URL=",c,re.MULTILINE) else c.rstrip()+"\n"+l1;c=re.compile(r"^ALLOWED_ORIGINS=.*",re.MULTILINE).sub(l2,c) if re.search(r"^ALLOWED_ORIGINS=",c,re.MULTILINE) else c.rstrip()+"\n"+l2;print(c,end="")')
           aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
             --type SecureString --overwrite --region "$AWS_REGION"
           aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" \
             --type SecureString --overwrite --region "$AWS_REGION" 2>/dev/null || true
-          echo "DATABASE_URL and ALLOWED_ORIGINS patched in SSM"
+          echo "DATABASE_URL patched. RDS: $RDS_HOST"
 
       - name: Get ASG name
         id: cfn
