@@ -269,7 +269,6 @@ jobs:
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
-            "cd /home/ec2-user/karaadi/backend && NODE_ENV=production node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
             "pm2 delete karaadi-backend 2>/dev/null || true",
             "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
             "pm2 save",

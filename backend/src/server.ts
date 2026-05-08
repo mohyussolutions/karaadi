@@ -5,7 +5,6 @@ import cron from "node-cron";
 
 import app from "./app.js";
 import prisma from "./core/utils/db.js";
-import { seedDatabase } from "./prisma/seed.ts";
 import { socketServer } from "./services/sockets/socketServer.js";
 import setupGracefulShutdown from "./core/utils/gracefulShutdown.js";
 import redisServer from "./services/redis/redisServer.ts";
@@ -31,14 +30,7 @@ const startServer = async () => {
   });
 
   prisma.$connect()
-    .then(async () => {
-      console.log(chalk.green("DB connected"));
-      try {
-        await seedDatabase();
-      } catch (err) {
-        console.error(chalk.yellow("[Seed] failed:"), err);
-      }
-    })
+    .then(() => console.log(chalk.green("DB connected")))
     .catch((err: unknown) =>
       console.error(chalk.yellow("[DB] connect failed — will retry:"), err),
     );
