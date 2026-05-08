@@ -184,6 +184,29 @@ jobs:
           aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
             s3://karaadi-images-108782100045/deployments/backend-${{ github.sha }}.tar.gz
 
+      - name: Fix DATABASE_URL in SSM
+        env:
+          DB_MASTER_PASSWORD: ${{ secrets.DB_MASTER_PASSWORD }}
+        run: |
+          [ -z "$DB_MASTER_PASSWORD" ] && echo "DB_MASTER_PASSWORD secret not set — skipping" && exit 0
+          RDS_HOST=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
+            --output text)
+          [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ] && echo "No RDS endpoint found" && exit 0
+          DB_URL="postgresql://karaadi_admin:${DB_MASTER_PASSWORD}@${RDS_HOST}:5432/karaadi_production?connection_limit=20&pool_timeout=20"
+          CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env \
+            --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
+          if echo "$CURRENT" | grep -q "^DATABASE_URL="; then
+            UPDATED=$(echo "$CURRENT" | sed "s|^DATABASE_URL=.*|DATABASE_URL=${DB_URL}|")
+          else
+            UPDATED="${CURRENT}"$'\n'"DATABASE_URL=${DB_URL}"
+          fi
+          aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
+            --type SecureString --overwrite --region "$AWS_REGION"
+          echo "DATABASE_URL patched in SSM → karaadi_admin@${RDS_HOST}/karaadi_production"
+
       - name: Get ASG name
         id: cfn
         run: |
@@ -324,9 +347,9 @@ jobs:
           CURRENT=$(echo "$VARS" | jq -r '.NEXT_PUBLIC_API_URL // ""')
           FIXED=$(echo "$CURRENT" | sed 's/:8080//')
           if [ "$CURRENT" != "$FIXED" ] && [ -n "$FIXED" ]; then
-            UPDATED=$(echo "$VARS" | jq --arg url "$FIXED" '.NEXT_PUBLIC_API_URL = $url')
-            PAIRS=$(echo "$UPDATED" | jq -r 'to_entries | map("\(.key)=\(.value)") | join(" ")')
-            aws amplify update-app --app-id "$APP_ID" --environment-variables "$PAIRS" --region "$AWS_REGION"
+            UPDATED=$(echo "$VARS" | jq -c --arg url "$FIXED" '.NEXT_PUBLIC_API_URL = $url')
+            aws amplify update-app --app-id "$APP_ID" \
+              --environment-variables "$UPDATED" --region "$AWS_REGION"
             echo "Fixed: $CURRENT → $FIXED"
           else
             echo "NEXT_PUBLIC_API_URL is already correct: $CURRENT"
