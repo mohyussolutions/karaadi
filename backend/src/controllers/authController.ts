@@ -133,10 +133,15 @@ export const registerUser = async (
   username: string,
   phone?: string,
 ) => {
-  const emailExists = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true },
-  });
+  let emailExists: any;
+  try {
+    emailExists = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+  } catch {
+    throw new Error("Service is temporarily unavailable. Please try again later.");
+  }
   if (emailExists)
     throw new Error("This email is already in use. Please try another one.");
   let cognitoResult: any;

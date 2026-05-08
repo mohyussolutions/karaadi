@@ -110,7 +110,13 @@ authRouters.post(
       res.json({ message: "User registered successfully", cognitoResult });
     } catch (error: any) {
       console.error("[REGISTER]", error?.message ?? error);
-      res.status(400).json({ error: error?.message ?? "Registration failed" });
+      const msg = error?.message ?? "";
+      const isPrismaError = msg.includes("prisma") || msg.includes("Invalid URL") || msg.includes("database");
+      res.status(isPrismaError ? 503 : 400).json({
+        error: isPrismaError
+          ? "Service is temporarily unavailable. Please try again later."
+          : msg || "Registration failed",
+      });
     }
   },
 );
