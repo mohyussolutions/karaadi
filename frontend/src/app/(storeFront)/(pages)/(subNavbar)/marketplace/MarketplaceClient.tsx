@@ -11,7 +11,7 @@ import WantSell from "@/app/(storeFront)/components/shared/WantToSell/page";
 import Loading from "@/app/ui/loading/Loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
-import { useError } from "@/app/(storeFront)/components/hooks/useError";
+
 import SubCategoryList from "@/app/(storeFront)/components/navbar/categories/SubCategoryListClient";
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
@@ -23,7 +23,7 @@ const PAGE_SIZE = 12;
 
 export default function MarketplaceClient() {
   const { t } = useTranslation();
-  const { renderError } = useError();
+
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -77,8 +77,6 @@ export default function MarketplaceClient() {
     setVisibleCount(PAGE_SIZE);
   }, [query]);
 
-  if (isError) return renderError(isError);
-
   return (
     <div className="w-full max-w-screen-xl mx-auto px-2 py-2 space-y-4 overflow-x-hidden">
       <ContainerLinks>
@@ -95,6 +93,10 @@ export default function MarketplaceClient() {
       </ContainerLinks>
       {isLoading ? (
         <Loading />
+      ) : isError ? (
+        <div className="text-center py-12 text-gray-400 text-sm">
+          {t("loadError", { defaultValue: "Waxaad dib u eegi kartaa markale." })}
+        </div>
       ) : (
         <div className="space-y-4">
           <ContainerLinks>
