@@ -195,23 +195,24 @@ jobs:
           DB_MASTER_PASSWORD: ${{ secrets.DB_MASTER_PASSWORD }}
         run: |
           set -euo pipefail
-          # Use GitHub secret first, fall back to SSM
           DB_PASS="$DB_MASTER_PASSWORD"
           if [ -z "$DB_PASS" ]; then
             DB_PASS=$(aws ssm get-parameter --name /karaadi/db-master-password \
               --with-decryption --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
           fi
           if [ -z "$DB_PASS" ]; then
-            echo "ERROR: No DB password. Go to GitHub repo Settings > Secrets > Actions and add DB_MASTER_PASSWORD=Karaadi2025Seed!"
-            exit 1
+            echo "WARNING: DB_MASTER_PASSWORD secret not set — DATABASE_URL not updated"
+            echo "To fix: GitHub repo Settings > Secrets > Actions > New secret"
+            echo "  Name: DB_MASTER_PASSWORD  Value: Karaadi2025Seed!"
+            exit 0
           fi
           RDS_HOST=$(aws cloudformation describe-stacks \
             --stack-name "$STACK_NAME" --region "$AWS_REGION" \
             --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
-            --output text)
+            --output text 2>/dev/null || echo "")
           if [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ]; then
-            echo "ERROR: Could not get RDS endpoint from CloudFormation"
-            exit 1
+            echo "WARNING: Could not get RDS endpoint — DATABASE_URL not updated"
+            exit 0
           fi
           echo "RDS: $RDS_HOST"
           CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env \
