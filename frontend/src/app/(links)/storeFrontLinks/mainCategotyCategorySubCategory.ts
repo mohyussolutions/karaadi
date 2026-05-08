@@ -569,12 +569,12 @@ const applicationMethods = [
 ];
 
 export const marketplaceHrefToCategoryKey: Record<string, string> = {
-  "/Marketplace/antiques-and-art": "Antiques & Art",
-  "/Marketplace/electronics": "Electronics",
-  "/Marketplace/animal-and-supplies": "Animal & Supplies",
-  "/Marketplace/sports-and-outdoors": "Sports & Outdoors",
-  "/Marketplace/furniture": "Furniture",
-  "/Marketplace/fashion": "Fashion",
+  "/marketplace/antiques-and-art": "Antiques & Art",
+  "/marketplace/electronics": "Electronics",
+  "/marketplace/animal-and-supplies": "Animal & Supplies",
+  "/marketplace/sports-and-outdoors": "Sports & Outdoors",
+  "/marketplace/furniture": "Furniture",
+  "/marketplace/fashion": "Fashion",
 };
 
 export const AntiquesAndArtNestedSub: MarketplaceSubCategoryItem[] = [
@@ -1403,42 +1403,42 @@ export const marketplaceSubCategories: CategoryOption[] = [
     name: "Antiques & Art",
     labelKey: "subcategories.marketplace.antiques",
     icon: React.createElement(CategoryIcons.Antiques, null),
-    href: "/Marketplace/antiques-and-art",
+    href: "/marketplace/antiques-and-art",
   },
   {
     key: "electronics",
     name: "Electronics",
     labelKey: "subcategories.marketplace.electronics",
     icon: React.createElement(CategoryIcons.Electronics, null),
-    href: "/Marketplace/electronics",
+    href: "/marketplace/electronics",
   },
   {
     key: "animalAndSupplies",
     name: "Animal & Supplies",
     labelKey: "subcategories.marketplace.animalAndSupplies",
     icon: React.createElement(CategoryIcons.Animals, null),
-    href: "/Marketplace/animal-and-supplies",
+    href: "/marketplace/animal-and-supplies",
   },
   {
     key: "sportsAndOutdoors",
     name: "Sports & Outdoors",
     labelKey: "subcategories.marketplace.sportsAndOutdoors",
     icon: React.createElement(CategoryIcons.Sports, null),
-    href: "/Marketplace/sports-and-outdoors",
+    href: "/marketplace/sports-and-outdoors",
   },
   {
     key: "furniture",
     name: "Furniture & Interior",
     labelKey: "subcategories.marketplace.furniture",
     icon: React.createElement(CategoryIcons.Furniture, null),
-    href: "/Marketplace/furniture-and-interior",
+    href: "/marketplace/furniture-and-interior",
   },
   {
     key: "fashion",
     name: "Fashion & Accessories",
     labelKey: "subcategories.marketplace.fashion",
     icon: React.createElement(CategoryIcons.Fashion, null),
-    href: "/Marketplace/fashion-and-accessories",
+    href: "/marketplace/fashion-and-accessories",
   },
 ];
 
@@ -1768,7 +1768,7 @@ export const allCategories: MainCategory[] = [
   {
     key: "Marketplace",
     name: "Marketplace",
-    href: "/Marketplace",
+    href: "/marketplace",
     icon: React.createElement(LuSofa, null),
     dashboardIcon: FaStore,
     dashboardLink: "/dashboard/categories/marketplace",

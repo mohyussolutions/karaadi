@@ -47,7 +47,7 @@ export default function Footer() {
           <h3 className="font-semibold mb-3">{t("footer.categories")}</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link href="/Marketplace" className="hover:text-blue-600">
+              <Link href="/marketplace" className="hover:text-blue-600">
                 {t("footer.marketplace")}
               </Link>
             </li>
