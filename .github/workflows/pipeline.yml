@@ -314,6 +314,24 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Fix NEXT_PUBLIC_API_URL (remove :8080 if present)
+        if: steps.cfn.outputs.skip != 'true'
+        env:
+          APP_ID: ${{ steps.cfn.outputs.app_id }}
+        run: |
+          VARS=$(aws amplify get-app --app-id "$APP_ID" --region "$AWS_REGION" \
+            --query "app.environmentVariables" --output json)
+          CURRENT=$(echo "$VARS" | jq -r '.NEXT_PUBLIC_API_URL // ""')
+          FIXED=$(echo "$CURRENT" | sed 's/:8080//')
+          if [ "$CURRENT" != "$FIXED" ] && [ -n "$FIXED" ]; then
+            UPDATED=$(echo "$VARS" | jq --arg url "$FIXED" '.NEXT_PUBLIC_API_URL = $url')
+            PAIRS=$(echo "$UPDATED" | jq -r 'to_entries | map("\(.key)=\(.value)") | join(" ")')
+            aws amplify update-app --app-id "$APP_ID" --environment-variables "$PAIRS" --region "$AWS_REGION"
+            echo "Fixed: $CURRENT → $FIXED"
+          else
+            echo "NEXT_PUBLIC_API_URL is already correct: $CURRENT"
+          fi
+
       - name: Trigger Amplify build
         if: steps.cfn.outputs.skip != 'true'
         id: start
