@@ -17,13 +17,7 @@ const importData = async () => {
   try {
     const isProd = process.env.NODE_ENV === "production";
 
-    if (isProd) {
-      const existing = await prisma.user.count();
-      if (existing > 0) {
-        console.log(`Seed skipped — ${existing} users already in DB.`);
-        process.exit(0);
-      }
-    } else {
+    if (!isProd) {
       await prisma.job.deleteMany();
       await prisma.message.deleteMany();
       await prisma.chat.deleteMany();
@@ -43,11 +37,18 @@ const importData = async () => {
       await prisma.userView.deleteMany();
     }
 
+    // Always seed regions and cities (skipDuplicates = safe to run repeatedly)
     await prisma.region.createMany({ data: regions, skipDuplicates: true });
     await prisma.city.createMany({
       data: cities.map((city) => ({ ...city, isActive: true })),
       skipDuplicates: true,
     });
+
+    const existingUsers = await prisma.user.count();
+    if (isProd && existingUsers > 0) {
+      console.log(`Regions/cities seeded. Users already exist (${existingUsers}) — skipping listings.`);
+      process.exit(0);
+    }
 
     await prisma.user.createMany({ data: userItems, skipDuplicates: true });
 
