@@ -20,7 +20,7 @@ Mappings:
     NodeVersion:
       Value: 24
     PostgresVersion:
-      Value: 15.17
+      Value: "15.10"
     RedisVersion:
       Value: 7
     BackendPort:
@@ -84,7 +84,7 @@ Parameters:
 
   DBInstanceClass:
     Type: String
-    Default: db.r6g.large
+    Default: db.t3.medium
     Description: RDS PostgreSQL database instance size
 
   DBName:
@@ -979,7 +979,7 @@ Outputs:
     Value: !Ref CognitoUserPoolClient
 
   RDSEndpoint:
-    Description: PostgreSQL database connection endpoint
+    Description: RDS PostgreSQL connection endpoint
     Value: !GetAtt RDSInstance.Endpoint.Address
 
   RedisEndpoint:
