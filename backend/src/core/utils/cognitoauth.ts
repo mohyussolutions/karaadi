@@ -1,6 +1,7 @@
 import {
   CognitoIdentityProviderClient,
   AdminDeleteUserCommand,
+  AdminConfirmSignUpCommand,
   SignUpCommand,
   InitiateAuthCommand,
   GlobalSignOutCommand,
@@ -154,6 +155,12 @@ export const signUp = async (
         UserAttributes: userAttributes,
       }),
     );
+    await cognitoClient.send(
+      new AdminConfirmSignUpCommand({
+        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID || "",
+        Username: email,
+      }),
+    ).catch(() => {});
     return response;
   } catch (error: any) {
     throw new Error(error.message);
