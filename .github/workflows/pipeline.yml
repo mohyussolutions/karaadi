@@ -309,6 +309,46 @@ jobs:
           done
           echo "All $TOTAL instance(s) deployed."
 
+      - name: Ensure backend is running on all instances
+        if: always()
+        env:
+          ASG: ${{ steps.cfn.outputs.asg }}
+        run: |
+          INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ASG" --region "$AWS_REGION" \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text 2>/dev/null || echo "")
+          [ -z "$INSTANCES" ] && echo "No instances found" && exit 0
+
+          COMMANDS=$(jq -nc '[
+            "pm2 describe karaadi-backend > /dev/null 2>&1 && pm2 restart karaadi-backend --update-env || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
+            "pm2 save",
+            "sleep 10 && curl -sf http://localhost:8080/health && echo SERVER_RUNNING && pm2 list"
+          ]')
+
+          for INSTANCE in $INSTANCES; do
+            CMD_ID=$(aws ssm send-command \
+              --instance-ids "$INSTANCE" \
+              --document-name "AWS-RunShellScript" \
+              --comment "ensure-running" \
+              --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"60\"]}" \
+              --region "$AWS_REGION" --output json 2>/dev/null | jq -r '.Command.CommandId // empty')
+            [ -z "$CMD_ID" ] && echo "Could not reach $INSTANCE" && continue
+            echo "Ensuring $INSTANCE is running (SSM: $CMD_ID)"
+            for i in $(seq 1 18); do
+              INV=$(aws ssm get-command-invocation \
+                --command-id "$CMD_ID" --instance-id "$INSTANCE" \
+                --region "$AWS_REGION" --output json 2>/dev/null \
+                || echo '{"Status":"InProgress"}')
+              STATUS=$(echo "$INV" | jq -r '.Status')
+              case "$STATUS" in
+                Success) echo "$INV" | jq -r '.StandardOutputContent'; break ;;
+                Failed|Cancelled|TimedOut) echo "$INV" | jq -r '.StandardOutputContent'; break ;;
+                *) sleep 5 ;;
+              esac
+            done
+          done
+
   # ─────────────────────────────────────────────────────────────────────────────
   # 4. FRONTEND  (Amplify build — only after backend)
   # ─────────────────────────────────────────────────────────────────────────────
