@@ -276,7 +276,7 @@ jobs:
             "echo === STEP 5: prisma generate ===",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
 
-            "echo === STEP 6: seed all data (regions, cities, listings) ===",
+            "echo === STEP 6: seed all data ===",
             "cd /home/ec2-user/karaadi/backend && NODE_ENV=production node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
 
             "echo === STEP 7: restart app ===",
