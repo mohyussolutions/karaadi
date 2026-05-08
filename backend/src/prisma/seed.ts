@@ -14,137 +14,82 @@ import { jobsData } from "../seeder/jobsSeed.ts";
 import { recommendations } from "../seeder/recomendationSeeder.ts";
 import prisma from "../core/utils/db.ts";
 
+export const seedDatabase = async () => {
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (!isProd) {
+    await prisma.job.deleteMany();
+    await prisma.message.deleteMany();
+    await prisma.chat.deleteMany();
+    await prisma.notification.deleteMany();
+    await prisma.subscription.deleteMany();
+    await prisma.farmequipment.deleteMany();
+    await prisma.boat.deleteMany();
+    await prisma.car.deleteMany();
+    await prisma.motorcycle.deleteMany();
+    await prisma.marketplace.deleteMany();
+    await prisma.realEstate.deleteMany();
+    await prisma.customerSupportTicket.deleteMany();
+    await prisma.city.deleteMany();
+    await prisma.region.deleteMany();
+    await prisma.user.deleteMany();
+    await prisma.recommendation.deleteMany();
+    await prisma.userView.deleteMany();
+  }
+
+  await prisma.region.createMany({ data: regions, skipDuplicates: true });
+  await prisma.city.createMany({
+    data: cities.map((city: { id: string; name: string; regionId: string }) => ({ ...city, isActive: true })),
+    skipDuplicates: true,
+  });
+
+  const existingUsers = await prisma.user.count();
+  if (isProd && existingUsers > 0) {
+    console.log(`[Seed] Regions/cities seeded. Users already exist (${existingUsers}) — skipping listings.`);
+    return;
+  }
+
+  await prisma.user.createMany({ data: userItems, skipDuplicates: true });
+
+  const usersFromDb = await prisma.user.findMany();
+  const firstUserId = usersFromDb[0]?.id;
+  if (!firstUserId) throw new Error("No users found after seeding");
+
+  const pickUser = () => usersFromDb[Math.floor(Math.random() * usersFromDb.length)].id;
+  const assignUser = (items: any[]) =>
+    items.map((item) => ({
+      ...item,
+      userId: pickUser(),
+      ...(item.senderId !== undefined && { senderId: pickUser() }),
+    }));
+
+  await prisma.job.createMany({ data: assignUser(jobsData).map((job) => ({ ...job, isPaid: true })), skipDuplicates: true });
+  await prisma.boat.createMany({ data: assignUser(boatItems), skipDuplicates: true });
+  await prisma.car.createMany({ data: assignUser(carItems), skipDuplicates: true });
+  await prisma.motorcycle.createMany({ data: assignUser(motorcycleItems), skipDuplicates: true });
+  await prisma.marketplace.createMany({ data: assignUser(marketplaceSeederData), skipDuplicates: true });
+  await prisma.realEstate.createMany({ data: assignUser(realEstateItems), skipDuplicates: true });
+  await prisma.farmequipment.createMany({ data: assignUser(equipmentItems), skipDuplicates: true });
+  await prisma.subscription.createMany({ data: assignUser(subscriptionItems), skipDuplicates: true });
+  await prisma.notification.createMany({ data: assignUser(notificationItems), skipDuplicates: true });
+  await prisma.customerSupportTicket.createMany({ data: supportTicketSeedData, skipDuplicates: true });
+  await prisma.recommendation.createMany({ data: recommendations, skipDuplicates: true });
+  await prisma.userView.createMany({
+    data: [
+      { userId: firstUserId, itemId: "item-1", category: "electronics", viewedAt: new Date() },
+      { userId: firstUserId, itemId: "item-3", category: "cars", viewedAt: new Date() },
+      { userId: firstUserId, itemId: "item-5", category: "tech", viewedAt: new Date() },
+    ],
+    skipDuplicates: true,
+  });
+
+  console.log("[Seed] All data imported.");
+};
+
 const importData = async () => {
   try {
-    const isProd = process.env.NODE_ENV === "production";
-
-    if (!isProd) {
-      await prisma.job.deleteMany();
-      await prisma.message.deleteMany();
-      await prisma.chat.deleteMany();
-      await prisma.notification.deleteMany();
-      await prisma.subscription.deleteMany();
-      await prisma.farmequipment.deleteMany();
-      await prisma.boat.deleteMany();
-      await prisma.car.deleteMany();
-      await prisma.motorcycle.deleteMany();
-      await prisma.marketplace.deleteMany();
-      await prisma.realEstate.deleteMany();
-      await prisma.customerSupportTicket.deleteMany();
-      await prisma.city.deleteMany();
-      await prisma.region.deleteMany();
-      await prisma.user.deleteMany();
-      await prisma.recommendation.deleteMany();
-      await prisma.userView.deleteMany();
-    }
-
-    await prisma.region.createMany({ data: regions, skipDuplicates: true });
-    await prisma.city.createMany({
-      data: cities.map((city: { id: string; name: string; regionId: string }) => ({ ...city, isActive: true })),
-      skipDuplicates: true,
-    });
-
-    const existingUsers = await prisma.user.count();
-    if (isProd && existingUsers > 0) {
-      console.log(`Regions/cities seeded. Users already exist (${existingUsers}) — skipping listings.`);
-      process.exit(0);
-    }
-
-    await prisma.user.createMany({ data: userItems, skipDuplicates: true });
-
-    const usersFromDb = await prisma.user.findMany();
-    const firstUserId = usersFromDb[0]?.id;
-
-    if (!firstUserId) {
-      throw new Error("No users found in database");
-    }
-
-    const pickUser = () => usersFromDb[Math.floor(Math.random() * usersFromDb.length)].id;
-    const assignUser = (items: any[]) =>
-      items.map((item) => ({
-        ...item,
-        userId: pickUser(),
-        ...(item.senderId !== undefined && { senderId: pickUser() }),
-      }));
-
-    await prisma.job.createMany({
-      data: assignUser(jobsData).map((job) => ({
-        ...job,
-        isPaid: true,
-      })),
-      skipDuplicates: true,
-    });
-
-    await prisma.boat.createMany({
-      data: assignUser(boatItems),
-      skipDuplicates: true,
-    });
-    await prisma.car.createMany({
-      data: assignUser(carItems),
-      skipDuplicates: true,
-    });
-    await prisma.motorcycle.createMany({
-      data: assignUser(motorcycleItems),
-      skipDuplicates: true,
-    });
-    await prisma.marketplace.createMany({
-      data: assignUser(marketplaceSeederData),
-      skipDuplicates: true,
-    });
-    await prisma.realEstate.createMany({
-      data: assignUser(realEstateItems),
-      skipDuplicates: true,
-    });
-    await prisma.farmequipment.createMany({
-      data: assignUser(equipmentItems),
-      skipDuplicates: true,
-    });
-    await prisma.subscription.createMany({
-      data: assignUser(subscriptionItems),
-      skipDuplicates: true,
-    });
-    await prisma.notification.createMany({
-      data: assignUser(notificationItems),
-      skipDuplicates: true,
-    });
-    await prisma.customerSupportTicket.createMany({
-      data: supportTicketSeedData,
-      skipDuplicates: true,
-    });
-
-    await prisma.recommendation.createMany({
-      data: recommendations,
-      skipDuplicates: true,
-    });
-
-    const userViews = [
-      {
-        userId: firstUserId,
-        itemId: "item-1",
-        category: "electronics",
-        viewedAt: new Date(),
-      },
-      {
-        userId: firstUserId,
-        itemId: "item-3",
-        category: "cars",
-        viewedAt: new Date(),
-      },
-      {
-        userId: firstUserId,
-        itemId: "item-5",
-        category: "tech",
-        viewedAt: new Date(),
-      },
-    ];
-
-    await prisma.userView.createMany({
-      data: userViews,
-      skipDuplicates: true,
-    });
-
-    console.log("Data Imported!");
-    process.exit();
+    await seedDatabase();
+    process.exit(0);
   } catch (error) {
     console.error(error);
     process.exit(1);
