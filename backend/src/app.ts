@@ -16,8 +16,15 @@ const isProd = process.env.NODE_ENV === "production";
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
-app.get("/health", (req, res) =>
-  res.status(200).json({ status: "OK", pid: process.pid }),
+app.get("/health", (_req, res) =>
+  res.status(200).json({
+    status: "running",
+    message: "Server is running",
+    env: process.env.NODE_ENV || "development",
+    pid: process.pid,
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  }),
 );
 app.use(
   "/assets",
