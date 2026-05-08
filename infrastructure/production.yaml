@@ -20,11 +20,9 @@ Mappings:
     NodeVersion:
       Value: 24
     PostgresVersion:
-      Value: "15.10"
+      Value: "15.17"
     RedisVersion:
       Value: 7
-    ALBPort:
-      Value: 80
     BackendPort:
       Value: 8080
     PostgresPort:
@@ -336,8 +334,8 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: !FindInMap [Constants, ALBPort, Value]
-          ToPort: !FindInMap [Constants, ALBPort, Value]
+          FromPort: !FindInMap [Constants, BackendPort, Value]
+          ToPort: !FindInMap [Constants, BackendPort, Value]
           CidrIp: !FindInMap [Constants, VpcCidr, Value]
 
   EC2SecurityGroup:
@@ -557,7 +555,7 @@ Resources:
     Properties:
       LoadBalancerArn: !Ref BackendALB
       Protocol: HTTP
-      Port: !FindInMap [Constants, ALBPort, Value]
+      Port: !FindInMap [Constants, BackendPort, Value]
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref BackendTargetGroup
@@ -705,12 +703,7 @@ Resources:
           - DELETE
           - OPTIONS
         AllowHeaders:
-          - Content-Type
-          - Authorization
-          - Cookie
-          - X-Access-Token
-          - Cache-Control
-          - X-Requested-With
+          - "*"
         AllowCredentials: true
         ExposeHeaders:
           - Set-Cookie
