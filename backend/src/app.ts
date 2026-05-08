@@ -15,6 +15,12 @@ const app = express();
 const isProd = process.env.NODE_ENV === "production";
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+app.use((req, _res, next) => {
+  if (req.path.startsWith("/prod/") || req.path === "/prod") {
+    req.url = req.url.replace(/^\/prod/, "") || "/";
+  }
+  next();
+});
 
 app.get("/health", (_req, res) =>
   res.status(200).json({
