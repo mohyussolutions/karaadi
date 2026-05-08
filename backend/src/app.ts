@@ -13,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 app.get("/health", (req, res) =>
