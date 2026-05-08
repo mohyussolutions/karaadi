@@ -74,7 +74,12 @@ authRouters.post(
       res.json({ token, user: userData });
     } catch (err: any) {
       console.error("[AUTH] signIn failed:", err?.message ?? err);
-      res.status(401).json({ error: err?.message ?? "Login failed" });
+      const msg = err?.message ?? "";
+      if (/not confirmed/i.test(msg))
+        return res.status(401).json({ error: "Please confirm your email before logging in. Check your inbox for a confirmation code." });
+      if (/incorrect.*username.*password|not authorized/i.test(msg))
+        return res.status(401).json({ error: "Incorrect email or password." });
+      res.status(401).json({ error: msg || "Login failed" });
     }
   },
 );
