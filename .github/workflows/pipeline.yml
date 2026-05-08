@@ -195,14 +195,11 @@ jobs:
             --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
             --output text)
           [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ] && echo "No RDS endpoint found" && exit 0
-          DB_URL="postgresql://karaadi_admin:${DB_MASTER_PASSWORD}@${RDS_HOST}:5432/karaadi_production?connection_limit=20&pool_timeout=20"
           CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env \
             --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
-          if echo "$CURRENT" | grep -q "^DATABASE_URL="; then
-            UPDATED=$(echo "$CURRENT" | sed "s|^DATABASE_URL=.*|DATABASE_URL=${DB_URL}|")
-          else
-            UPDATED="${CURRENT}"$'\n'"DATABASE_URL=${DB_URL}"
-          fi
+          export NEW_DB_LINE="DATABASE_URL=postgresql://karaadi_admin:${DB_MASTER_PASSWORD}@${RDS_HOST}:5432/karaadi_production?connection_limit=20&pool_timeout=20"
+          UPDATED=$(printf '%s' "$CURRENT" | python3 -c \
+            'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_DB_LINE"];p=re.compile(r"^DATABASE_URL=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
           aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
             --type SecureString --overwrite --region "$AWS_REGION"
           echo "DATABASE_URL patched in SSM → karaadi_admin@${RDS_HOST}/karaadi_production"
