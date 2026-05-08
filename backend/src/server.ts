@@ -13,29 +13,27 @@ import { runBackup } from "./services/backup/dbBackup.js";
 const server = http.createServer(app);
 
 const startServer = async () => {
-  await redisServer.start().catch((err: unknown) => {
-    console.error(chalk.yellow("[Redis] failed to connect:"), err);
-  });
-
-  const pub = redisServer.getClient();
-  const sub = pub.duplicate();
-  await sub.connect().catch((err: unknown) => {
-    console.error(chalk.yellow("[Redis] sub connect failed:"), err);
-  });
-
-  socketServer(server, pub, sub);
+  try {
+    await redisServer.start();
+    const pub = redisServer.getClient();
+    const sub = pub.duplicate();
+    await sub.connect();
+    socketServer(server, pub, sub);
+  } catch (err) {
+    console.error(chalk.yellow("[Redis] unavailable — sockets disabled:"), err);
+  }
 
   server.listen(Number(process.env.PORT) || 8080, "::", () => {
     console.log(
-      chalk.green(`Server PID ${process.pid} ready on port ${process.env.PORT}`),
+      chalk.green(`Server PID ${process.pid} ready on port ${process.env.PORT || 8080}`),
     );
   });
 
   prisma.$connect()
     .then(() => console.log(chalk.green("DB connected")))
-    .catch((err: unknown) => {
-      console.error(chalk.yellow("[DB] initial connect failed — will retry:"), err);
-    });
+    .catch((err: unknown) =>
+      console.error(chalk.yellow("[DB] connect failed — will retry:"), err),
+    );
 
   setupGracefulShutdown({ server, prisma, redisServer });
 
@@ -50,4 +48,6 @@ const startServer = async () => {
   }, 60_000);
 };
 
-startServer();
+startServer().catch((err) => {
+  console.error(chalk.red("Fatal startup error:"), err);
+});
