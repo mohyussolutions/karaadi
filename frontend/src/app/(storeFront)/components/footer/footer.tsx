@@ -10,7 +10,7 @@ export default function Footer() {
 
   return (
     <footer className="text-gray-700">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 border-b border-gray-300">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 border-b border-gray-300 text-center sm:text-left">
         <div>
           <h3 className="font-semibold mb-3">{t("footer.company")}</h3>
           <ul className="space-y-2 text-sm">
