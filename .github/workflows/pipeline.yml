@@ -220,11 +220,15 @@ jobs:
           export NEW_DB_LINE="DATABASE_URL=postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi_production?connection_limit=20&pool_timeout=20"
           UPDATED=$(printf '%s' "$CURRENT" | python3 -c \
             'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_DB_LINE"];p=re.compile(r"^DATABASE_URL=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
+          DOMAIN="karaadi.com"
+          export NEW_ORIGINS_LINE="ALLOWED_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}"
+          UPDATED=$(printf '%s' "$UPDATED" | python3 -c \
+            'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_ORIGINS_LINE"];p=re.compile(r"^ALLOWED_ORIGINS=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
           aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
             --type SecureString --overwrite --region "$AWS_REGION"
           aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" \
             --type SecureString --overwrite --region "$AWS_REGION" 2>/dev/null || true
-          echo "DATABASE_URL patched in SSM"
+          echo "DATABASE_URL and ALLOWED_ORIGINS patched in SSM"
 
       - name: Get ASG name
         id: cfn
