@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
+const PROD_API = "https://s55gb5sdnl.execute-api.eu-west-1.amazonaws.com/prod";
+
+const resolvedApiUrl =
+  process.env.NODE_ENV === "production"
+    ? PROD_API
+    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_API_URL: resolvedApiUrl,
+    NEXT_PUBLIC_SOCKET_URL: resolvedApiUrl,
+  },
   reactStrictMode: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
@@ -80,6 +91,7 @@ const nextConfig = {
       { protocol: "https", hostname: "**.imgur.com" },
       { protocol: "http", hostname: "localhost", port: "8080" },
       { protocol: "https", hostname: "api.karaadi.com" },
+      { protocol: "https", hostname: "*.execute-api.eu-west-1.amazonaws.com" },
     ],
   },
 };
