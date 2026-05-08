@@ -611,9 +611,9 @@ Resources:
       BucketName: !Sub ${AppName}-images-${AWS::AccountId}
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
-        BlockPublicPolicy: true
+        BlockPublicPolicy: false
         IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        RestrictPublicBuckets: false
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ["*"]
@@ -627,6 +627,18 @@ Resources:
           - Id: ExpireOldVersions
             Status: Enabled
             NoncurrentVersionExpirationInDays: 30
+
+  ImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ImagesBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadImages
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub ${ImagesBucket.Arn}/images/*
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
