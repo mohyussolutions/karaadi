@@ -438,16 +438,24 @@ Resources:
               yum install -y nodejs git
               npm install -g pm2
 
-              mkdir -p /home/ec2-user/karaadi/backend
+              mkdir -p /home/ec2-user/karaadi
+              cd /home/ec2-user/karaadi
 
-              # Fetch env from SSM
-              aws ssm get-parameter --name /karaadi/backend/env --with-decryption \
-                --query Parameter.Value --output text --region ${AWS::Region} \
-                > /home/ec2-user/karaadi/backend/.env 2>/dev/null || true
+              # Clone repo (use token for private repos)
+              if [ -n "${GitHubToken}" ]; then
+                git clone https://${GitHubToken}@github.com/${GitHubOrg}/${GitHubRepo}.git .
+              else
+                git clone https://github.com/${GitHubOrg}/${GitHubRepo}.git .
+              fi
 
-              # Fall back to CF-generated env if SSM param not set yet
-              if [ ! -s /home/ec2-user/karaadi/backend/.env ]; then
-                cat > /home/ec2-user/karaadi/backend/.env << ENVEOF
+              # Write backend .env.production
+              cat > /home/ec2-user/karaadi/backend/.env.production << 'ENVEOF'
+              NODE_ENV=production
+              PORT=8080
+              ENVEOF
+
+              # Write backend .env with dynamic values
+              cat > /home/ec2-user/karaadi/backend/.env << ENVEOF
               NODE_ENV=production
               PORT=8080
               DATABASE_URL=postgresql://${DBUsername}:${DBPassword}@${RdsHost}:5432/${DBName}?connection_limit=20&pool_timeout=20
@@ -479,22 +487,13 @@ Resources:
               PAYLOAD_LIMIT=20mb
               AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE=1
               ENVEOF
-              fi
-
-              # Download latest backend bundle from S3
-              aws s3 cp s3://karaadi-images-108782100045/deployments/backend-latest.tar.gz \
-                /tmp/backend.tar.gz --region ${AWS::Region} 2>/dev/null && \
-                tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend || true
 
               chown -R ec2-user:ec2-user /home/ec2-user/karaadi/backend
+
               cd /home/ec2-user/karaadi/backend
-
-              npm ci --omit=dev
-              npx prisma generate
-
-              pm2 start dist/index.js --name karaadi-backend \
-                --node-args "--env-file=/home/ec2-user/karaadi/backend/.env" \
-                --max-restarts 10 --restart-delay 3000
+              npm ci --production
+              npm run build
+              pm2 start dist/index.js --name karaadi-backend --env production
               pm2 save
               env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u ec2-user --hp /home/ec2-user
             - RdsHost: !GetAtt RDSInstance.Endpoint.Address
@@ -708,7 +707,6 @@ Resources:
           - Authorization
           - Cookie
           - X-Access-Token
-          - x-access-token
           - Cache-Control
           - X-Requested-With
         AllowCredentials: true
