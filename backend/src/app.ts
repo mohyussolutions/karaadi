@@ -42,9 +42,10 @@ app.use(cookieParser());
 if (!isProd) app.use(morgan("dev"));
 app.use(compression());
 
+const redisClient = redisServer.getClient?.();
 app.use(
   session({
-    store: new RedisStore({ client: redisServer.getClient() }),
+    ...(redisClient ? { store: new RedisStore({ client: redisClient }) } : {}),
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
