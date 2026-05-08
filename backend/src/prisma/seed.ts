@@ -37,7 +37,6 @@ const importData = async () => {
       await prisma.userView.deleteMany();
     }
 
-    // Always seed regions and cities (skipDuplicates = safe to run repeatedly)
     await prisma.region.createMany({ data: regions, skipDuplicates: true });
     await prisma.city.createMany({
       data: cities.map((city) => ({ ...city, isActive: true })),
