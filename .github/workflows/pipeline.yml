@@ -179,7 +179,7 @@ jobs:
       - name: Upload bundle to S3
         run: |
           cd backend
-          tar -czf /tmp/backend-${{ github.sha }}.tar.gz dist/ src/prisma/ prisma.config.ts package.json package-lock.json
+          tar --exclude="._*" --exclude=".DS_Store" -czf /tmp/backend-${{ github.sha }}.tar.gz dist/ src/prisma/ prisma.config.ts package.json package-lock.json
           aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
             s3://karaadi-images-108782100045/deployments/backend-${{ github.sha }}.tar.gz
 
@@ -225,6 +225,7 @@ jobs:
             "echo STEP: npm install",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
             "echo STEP: prisma generate",
+            "find /home/ec2-user/karaadi/backend/src/prisma -name '._*' -delete 2>/dev/null || true",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
             "echo STEP: restart app",
             "pm2 delete karaadi-backend 2>/dev/null || true",
