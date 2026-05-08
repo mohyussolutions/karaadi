@@ -1,3 +1,4 @@
+import { fileURLToPath } from "url";
 import { boatItems } from "../seeder/boatSeeder.ts";
 import { carItems } from "../seeder/cars.ts";
 import { userItems } from "../seeder/users.ts";
@@ -9,10 +10,11 @@ import { equipmentItems } from "../seeder/equipmentSeeder.ts";
 import { subscriptionItems } from "../seeder/subscription.ts";
 import { supportTicketSeedData } from "../seeder/ticketData.ts";
 import { somaliaData } from "../seeder/SomaliaRegionsSeeder.ts";
-const { cities, regions } = somaliaData;
 import { jobsData } from "../seeder/jobsSeed.ts";
 import { recommendations } from "../seeder/recomendationSeeder.ts";
 import prisma from "../core/utils/db.ts";
+
+const { cities, regions } = somaliaData;
 
 export const seedDatabase = async () => {
   const isProd = process.env.NODE_ENV === "production";
@@ -115,7 +117,6 @@ const deleteData = async () => {
     await prisma.user.deleteMany();
     await prisma.recommendation.deleteMany();
     await prisma.userView.deleteMany();
-
     console.log("Data Deleted!");
     process.exit();
   } catch (error) {
@@ -124,10 +125,10 @@ const deleteData = async () => {
   }
 };
 
-import { fileURLToPath } from "url";
 const isMain = process.argv[1] === fileURLToPath(import.meta.url) ||
   process.argv[1]?.endsWith("seed.ts") ||
   process.argv[1]?.endsWith("seed.js");
+
 if (isMain) {
   if (process.argv[2] === "-d") deleteData();
   else importData();
