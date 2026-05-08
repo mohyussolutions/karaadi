@@ -2,7 +2,6 @@ import Navbar from "./components/navbar/main/navbar";
 import SiteFooter from "./components/footer/SiteFooter/SiteFooter";
 import AdFetcher from "./components/Advertisement/AdFetcher";
 import Container from "./components/Cards/containerCards/ContainerCard";
-import TrackVisitor from "../ui/invoices/TrackUniqueVisitorOnce";
 import LanguageSync from "@/i18n/LanguageContext";
 import { cookies } from "next/headers";
 
@@ -20,8 +19,7 @@ export default async function StoreFrontLayout({
       <Navbar initialIsAuthenticated={initialIsAuthenticated} />
       <div className="h-14" />
       <main className="flex-grow">
-        <TrackVisitor />
-        <AdFetcher>
+<AdFetcher>
           <Container>
             {children}
           </Container>
