@@ -53,8 +53,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
+
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+
+// Strip API Gateway stage prefix (/prod) forwarded by VPC Link
 app.use((req, _res, next) => {
   if (req.path.startsWith("/prod/") || req.path === "/prod") {
     req.url = req.url.replace(/^\/prod/, "") || "/";
@@ -72,6 +75,7 @@ app.get("/health", (_req, res) =>
     timestamp: new Date().toISOString(),
   }),
 );
+
 app.use(
   "/assets",
   express.static(path.join(__dirname, "../assets"), { maxAge: "1d" }),
@@ -164,7 +168,7 @@ apiRouter.get("/items/:id", async (req: express.Request, res: express.Response) 
   else if (boat) { item = boat; table = "boats"; }
   else if (motorcycle) { item = motorcycle; table = "motorcycles"; }
   else if (farm) { item = farm; table = "traktor"; }
-  if (!item) return res.status(404).json({ error: "Not found" });
+  if (!item) return res.status(404).json({ error: "Not found", message: "Shayga la raadinayay lama helin." });
   const images = ((item.images ?? []) as string[])
     .map((img, idx) =>
       img && img.startsWith("data:") ? `api/images/${table}/${id}/${idx}` : img,
@@ -185,20 +189,18 @@ app.use(
     try {
       logger.error((err as any)?.stack || err);
     } catch {}
-    const msg =
-      typeof (_req as any).t === "function"
-        ? (_req as any).t("api_errors.server_error")
-        : "Server error";
-    res.status(500).json({ message: msg });
+    res.status(500).json({
+      error: "Server error",
+      message: "Khalad ayaa dhacay. Fadlan mar kale isku day. / An error occurred, please try again.",
+    });
   },
 );
 
-app.use((req: express.Request, res: express.Response) => {
-  const msg =
-    typeof (req as any).t === "function"
-      ? (req as any).t("api_errors.not_found")
-      : "Not found";
-  res.status(404).json({ message: msg });
+app.use((_req: express.Request, res: express.Response) => {
+  res.status(404).json({
+    error: "Not found",
+    message: "Bogga la raadinayay lama helin. / The page you requested was not found.",
+  });
 });
 
 export default app;
