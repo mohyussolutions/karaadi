@@ -156,8 +156,6 @@ export default function LocationSelector({
     setExpandedRegions({});
   }, [onFilterChange]);
 
-  if (!mounted) return null;
-
   const regionList = isLoading ? (
     <div className="space-y-2 px-4 py-3">
       {[1, 2, 3, 4, 5, 6].map((i) => (
