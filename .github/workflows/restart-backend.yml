@@ -1,0 +1,82 @@
+name: Restart Backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: eu-west-1
+  STACK_NAME: karaadi-production
+  BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
+
+jobs:
+  restart:
+    name: Restart pm2 on all instances
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BACKEND_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get instances
+        id: asg
+        run: |
+          ASG=$(aws cloudformation describe-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --logical-resource-id BackendAutoScalingGroup \
+            --region "$AWS_REGION" \
+            --query "StackResources[0].PhysicalResourceId" \
+            --output text)
+          INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ASG" --region "$AWS_REGION" \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text)
+          echo "instances=$INSTANCES" >> "$GITHUB_OUTPUT"
+          echo "Instances: $INSTANCES"
+
+      - name: Restart pm2 on all instances
+        env:
+          INSTANCES: ${{ steps.asg.outputs.instances }}
+        run: |
+          set -euo pipefail
+
+          COMMANDS=$(jq -nc '[
+            "pm2 restart karaadi-backend --update-env || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\"",
+            "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
+          ]')
+
+          for INSTANCE in $INSTANCES; do
+            echo "=== Restarting $INSTANCE ==="
+            CMD_ID=$(aws ssm send-command \
+              --instance-ids "$INSTANCE" \
+              --document-name "AWS-RunShellScript" \
+              --comment "restart-backend" \
+              --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"60\"]}" \
+              --region "$AWS_REGION" \
+              --output json | jq -r '.Command.CommandId')
+
+            for i in $(seq 1 20); do
+              INV=$(aws ssm get-command-invocation \
+                --command-id "$CMD_ID" --instance-id "$INSTANCE" \
+                --region "$AWS_REGION" --output json 2>/dev/null \
+                || echo '{"Status":"InProgress"}')
+              STATUS=$(echo "$INV" | jq -r '.Status')
+              echo "[$i] $STATUS"
+              case "$STATUS" in
+                Success)
+                  echo "$INV" | jq -r '.StandardOutputContent'
+                  break ;;
+                Failed|Cancelled|TimedOut)
+                  echo "$INV" | jq -r '.StandardOutputContent'
+                  echo "$INV" | jq -r '.StandardErrorContent'
+                  exit 1 ;;
+                *) sleep 5 ;;
+              esac
+            done
+          done
+          echo "All instances restarted."

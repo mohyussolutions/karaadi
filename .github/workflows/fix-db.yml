@@ -3,8 +3,8 @@ name: Fix DB / Seed Data
 on:
   workflow_dispatch:
     inputs:
-      database_url:
-        description: "PostgreSQL DATABASE_URL (postgresql://user:pass@host:5432/dbname?...)"
+      db_master_password:
+        description: "RDS master password"
         required: true
         type: string
 
@@ -19,7 +19,7 @@ env:
 
 jobs:
   fix-db:
-    name: Update DB credentials and seed
+    name: Fix DATABASE_URL and seed
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS (OIDC)
@@ -28,36 +28,31 @@ jobs:
           role-to-assume: ${{ env.BACKEND_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Update DATABASE_URL in SSM parameter
+      - name: Store password and patch SSM env
         env:
-          NEW_DB_URL: ${{ github.event.inputs.database_url }}
+          DB_PASS: ${{ github.event.inputs.db_master_password }}
         run: |
           set -euo pipefail
 
-          # Fetch current env file from SSM
-          CURRENT=$(aws ssm get-parameter \
-            --name /karaadi/backend/env \
-            --with-decryption \
-            --query Parameter.Value \
-            --output text \
-            --region "$AWS_REGION")
+          RDS_HOST=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
+            --output text)
+          echo "RDS: $RDS_HOST"
 
-          # Replace (or append) DATABASE_URL line
-          if echo "$CURRENT" | grep -q "^DATABASE_URL="; then
-            UPDATED=$(echo "$CURRENT" | sed "s|^DATABASE_URL=.*|DATABASE_URL=${NEW_DB_URL}|")
-          else
-            UPDATED="${CURRENT}"$'\n'"DATABASE_URL=${NEW_DB_URL}"
-          fi
+          aws ssm put-parameter --name /karaadi/db-master-password \
+            --value "$DB_PASS" --type SecureString --overwrite --region "$AWS_REGION"
 
-          # Write back
-          aws ssm put-parameter \
-            --name /karaadi/backend/env \
-            --value "$UPDATED" \
-            --type SecureString \
-            --overwrite \
-            --region "$AWS_REGION"
+          CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env \
+            --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
 
-          echo "SSM parameter updated with new DATABASE_URL"
+          export NEW_DB_LINE="DATABASE_URL=postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi_production?connection_limit=20&pool_timeout=20"
+          UPDATED=$(printf '%s' "$CURRENT" | python3 -c \
+            'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_DB_LINE"];p=re.compile(r"^DATABASE_URL=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
+
+          aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
+            --type SecureString --overwrite --region "$AWS_REGION"
+          echo "SSM updated"
 
       - name: Get ASG name
         id: cfn
@@ -70,29 +65,21 @@ jobs:
             --output text)
           echo "asg=$ASG" >> "$GITHUB_OUTPUT"
 
-      - name: Run seed + restart on all instances
+      - name: Seed and restart on all instances
         env:
           ASG: ${{ steps.cfn.outputs.asg }}
-          NEW_DB_URL: ${{ github.event.inputs.database_url }}
         run: |
           set -euo pipefail
 
           INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
-            --auto-scaling-group-names "$ASG" \
-            --region "$AWS_REGION" \
+            --auto-scaling-group-names "$ASG" --region "$AWS_REGION" \
             --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
             --output text)
 
-          TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
-          echo "Running seed on $TOTAL instance(s)"
-
-          COMMANDS=$(jq -nc --arg db "$NEW_DB_URL" '[
+          COMMANDS=$(jq -nc '[
             "set -euo pipefail",
             "cd /home/ec2-user/karaadi/backend",
-            ("sed -i \"s|^DATABASE_URL=.*|DATABASE_URL=" + $db + "|\" .env || echo DATABASE_URL=" + $db + " >> .env"),
-            "echo Running seed...",
-            "NODE_ENV=production node --env-file=.env dist/seed.js",
-            "echo Restarting backend...",
+            "NODE_ENV=production node --env-file=.env dist/seed.js && echo SEED_OK || echo SEED_FAILED",
             "pm2 restart karaadi-backend --update-env",
             "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
@@ -107,7 +94,6 @@ jobs:
               --region "$AWS_REGION" \
               --output json | jq -r '.Command.CommandId')
 
-            echo "SSM: $CMD_ID"
             for i in $(seq 1 30); do
               INV=$(aws ssm get-command-invocation \
                 --command-id "$CMD_ID" --instance-id "$INSTANCE" \
@@ -116,14 +102,9 @@ jobs:
               STATUS=$(echo "$INV" | jq -r '.Status')
               echo "[$i] $STATUS"
               case "$STATUS" in
-                Success)
-                  echo "--- OUTPUT ---"
-                  echo "$INV" | jq -r '.StandardOutputContent'
-                  break ;;
+                Success) echo "$INV" | jq -r '.StandardOutputContent'; break ;;
                 Failed|Cancelled|TimedOut)
-                  echo "--- STDOUT ---"
                   echo "$INV" | jq -r '.StandardOutputContent'
-                  echo "--- STDERR ---"
                   echo "$INV" | jq -r '.StandardErrorContent'
                   exit 1 ;;
                 *) sleep 5 ;;
