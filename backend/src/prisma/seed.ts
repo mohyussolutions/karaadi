@@ -124,5 +124,11 @@ const deleteData = async () => {
   }
 };
 
-if (process.argv[2] === "-d") deleteData();
-else importData();
+import { fileURLToPath } from "url";
+const isMain = process.argv[1] === fileURLToPath(import.meta.url) ||
+  process.argv[1]?.endsWith("seed.ts") ||
+  process.argv[1]?.endsWith("seed.js");
+if (isMain) {
+  if (process.argv[2] === "-d") deleteData();
+  else importData();
+}
