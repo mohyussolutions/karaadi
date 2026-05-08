@@ -36,9 +36,8 @@ export const trackVisitor = async (req: Request, res: Response) => {
     });
 
     return res.json({ tracked: true, visitor });
-  } catch (err: any) {
-    console.error("Prisma Error:", err);
-    return serverError(res, err);
+  } catch {
+    return res.json({ tracked: false });
   }
 };
 
