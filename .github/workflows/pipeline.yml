@@ -187,11 +187,17 @@ jobs:
             s3://karaadi-images-108782100045/deployments/backend-latest.tar.gz
 
       - name: Fix DATABASE_URL in SSM
+        env:
+          DB_MASTER_PASSWORD: ${{ secrets.DB_MASTER_PASSWORD }}
         run: |
-          DB_PASS=$(aws ssm get-parameter --name /karaadi/db-master-password \
-            --with-decryption --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          # Prefer GitHub secret, fall back to SSM
+          DB_PASS="$DB_MASTER_PASSWORD"
           if [ -z "$DB_PASS" ]; then
-            echo "No /karaadi/db-master-password in SSM — run fix-db workflow first"
+            DB_PASS=$(aws ssm get-parameter --name /karaadi/db-master-password \
+              --with-decryption --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          fi
+          if [ -z "$DB_PASS" ]; then
+            echo "WARNING: No DB password found — add DB_MASTER_PASSWORD as a GitHub secret"
             exit 0
           fi
           RDS_HOST=$(aws cloudformation describe-stacks \
@@ -206,6 +212,9 @@ jobs:
             'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_DB_LINE"];p=re.compile(r"^DATABASE_URL=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
           aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
             --type SecureString --overwrite --region "$AWS_REGION"
+          # Also store in SSM for fix-db workflow
+          aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" \
+            --type SecureString --overwrite --region "$AWS_REGION" 2>/dev/null || true
           echo "DATABASE_URL patched in SSM"
 
       - name: Get ASG name
