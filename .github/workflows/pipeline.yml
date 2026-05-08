@@ -17,7 +17,6 @@ env:
   NODE_VERSION: "24"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   INFRA_ROLE: arn:aws:iam::108782100045:role/karaadi-infra-deploy
   BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
   FRONTEND_ROLE: arn:aws:iam::108782100045:role/karaadi-frontend-deploy
