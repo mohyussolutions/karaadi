@@ -1,0 +1,133 @@
+name: Fix DB / Seed Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      database_url:
+        description: "PostgreSQL DATABASE_URL (postgresql://user:pass@host:5432/dbname?...)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: eu-west-1
+  STACK_NAME: karaadi-production
+  BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
+
+jobs:
+  fix-db:
+    name: Update DB credentials and seed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BACKEND_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update DATABASE_URL in SSM parameter
+        env:
+          NEW_DB_URL: ${{ github.event.inputs.database_url }}
+        run: |
+          set -euo pipefail
+
+          # Fetch current env file from SSM
+          CURRENT=$(aws ssm get-parameter \
+            --name /karaadi/backend/env \
+            --with-decryption \
+            --query Parameter.Value \
+            --output text \
+            --region "$AWS_REGION")
+
+          # Replace (or append) DATABASE_URL line
+          if echo "$CURRENT" | grep -q "^DATABASE_URL="; then
+            UPDATED=$(echo "$CURRENT" | sed "s|^DATABASE_URL=.*|DATABASE_URL=${NEW_DB_URL}|")
+          else
+            UPDATED="${CURRENT}"$'\n'"DATABASE_URL=${NEW_DB_URL}"
+          fi
+
+          # Write back
+          aws ssm put-parameter \
+            --name /karaadi/backend/env \
+            --value "$UPDATED" \
+            --type SecureString \
+            --overwrite \
+            --region "$AWS_REGION"
+
+          echo "SSM parameter updated with new DATABASE_URL"
+
+      - name: Get ASG name
+        id: cfn
+        run: |
+          ASG=$(aws cloudformation describe-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --logical-resource-id BackendAutoScalingGroup \
+            --region "$AWS_REGION" \
+            --query "StackResources[0].PhysicalResourceId" \
+            --output text)
+          echo "asg=$ASG" >> "$GITHUB_OUTPUT"
+
+      - name: Run seed + restart on all instances
+        env:
+          ASG: ${{ steps.cfn.outputs.asg }}
+          NEW_DB_URL: ${{ github.event.inputs.database_url }}
+        run: |
+          set -euo pipefail
+
+          INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ASG" \
+            --region "$AWS_REGION" \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text)
+
+          TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
+          echo "Running seed on $TOTAL instance(s)"
+
+          COMMANDS=$(jq -nc --arg db "$NEW_DB_URL" '[
+            "set -euo pipefail",
+            "cd /home/ec2-user/karaadi/backend",
+            ("sed -i \"s|^DATABASE_URL=.*|DATABASE_URL=" + $db + "|\" .env || echo DATABASE_URL=" + $db + " >> .env"),
+            "echo Running seed...",
+            "NODE_ENV=production node --env-file=.env dist/seed.js",
+            "echo Restarting backend...",
+            "pm2 restart karaadi-backend --update-env",
+            "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
+          ]')
+
+          for INSTANCE in $INSTANCES; do
+            echo "=== $INSTANCE ==="
+            CMD_ID=$(aws ssm send-command \
+              --instance-ids "$INSTANCE" \
+              --document-name "AWS-RunShellScript" \
+              --comment "fix-db-seed" \
+              --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"120\"]}" \
+              --region "$AWS_REGION" \
+              --output json | jq -r '.Command.CommandId')
+
+            echo "SSM: $CMD_ID"
+            for i in $(seq 1 30); do
+              INV=$(aws ssm get-command-invocation \
+                --command-id "$CMD_ID" --instance-id "$INSTANCE" \
+                --region "$AWS_REGION" --output json 2>/dev/null \
+                || echo '{"Status":"InProgress"}')
+              STATUS=$(echo "$INV" | jq -r '.Status')
+              echo "[$i] $STATUS"
+              case "$STATUS" in
+                Success)
+                  echo "--- OUTPUT ---"
+                  echo "$INV" | jq -r '.StandardOutputContent'
+                  break ;;
+                Failed|Cancelled|TimedOut)
+                  echo "--- STDOUT ---"
+                  echo "$INV" | jq -r '.StandardOutputContent'
+                  echo "--- STDERR ---"
+                  echo "$INV" | jq -r '.StandardErrorContent'
+                  exit 1 ;;
+                *) sleep 5 ;;
+              esac
+            done
+          done
+          echo "Done."
