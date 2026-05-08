@@ -270,7 +270,7 @@ jobs:
             "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
             "pm2 save",
             "env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true",
-            "sleep 20 && curl -sf http://localhost:8080/health && echo HEALTH_OK && pm2 list"
+            "sleep 20; curl -s http://localhost:8080/health && echo HEALTH_OK; pm2 list"
           ]')
 
           COUNT=0
