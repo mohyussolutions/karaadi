@@ -1,6 +1,11 @@
 name: Backend
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
   workflow_dispatch:
     inputs:
       action:
@@ -13,7 +18,7 @@ on:
           - Seed-Fix
 
 concurrency:
-  group: backend-${{ github.event.inputs.action }}
+  group: backend-${{ github.event.inputs.action || 'Deploy' }}
   cancel-in-progress: false
 
 permissions:
@@ -24,6 +29,7 @@ env:
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
   SSM_ENV_PATH: /karaadi/backend/env
+  ACTION: ${{ github.event.inputs.action || 'Deploy' }}
 
 jobs:
   test:
@@ -155,7 +161,7 @@ jobs:
           echo "SSM parameter updated with live RDS endpoint."
 
   fleet:
-    name: "Fleet — ${{ github.event.inputs.action }}"
+    name: "Fleet — ${{ github.event.inputs.action || 'Deploy' }}"
     runs-on: ubuntu-latest
     needs: sync-ssm
     steps:
@@ -199,7 +205,7 @@ jobs:
           echo "Instances: $INSTANCES"
 
       - name: Build SSM commands — Deploy
-        if: ${{ github.event.inputs.action == 'Deploy' }}
+        if: ${{ env.ACTION == 'Deploy' }}
         id: cmd_deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -317,7 +323,7 @@ jobs:
           echo "timeout=600"   >> "$GITHUB_OUTPUT"
 
       - name: Build SSM commands — Restart (pm2 reload)
-        if: ${{ github.event.inputs.action == 'Restart' }}
+        if: ${{ env.ACTION == 'Restart' }}
         id: cmd_restart
         run: |
           COMMANDS=$(jq -nc '[
@@ -331,7 +337,7 @@ jobs:
           echo "timeout=120"   >> "$GITHUB_OUTPUT"
 
       - name: Build SSM commands — Seed-Fix (migrate deploy + re-import)
-        if: ${{ github.event.inputs.action == 'Seed-Fix' }}
+        if: ${{ env.ACTION == 'Seed-Fix' }}
         id: cmd_seedfix
         env:
           COMMIT_SHA: ${{ github.sha }}
@@ -360,7 +366,7 @@ jobs:
       - name: Execute on fleet (rolling SSM)
         env:
           INSTANCES: ${{ steps.asg.outputs.instances }}
-          ACTION: ${{ github.event.inputs.action }}
+          ACTION: ${{ env.ACTION }}
           COMMIT_SHA: ${{ github.sha }}
           CMD_DEPLOY: ${{ steps.cmd_deploy.outputs.commands }}
           CMD_RESTART: ${{ steps.cmd_restart.outputs.commands }}
