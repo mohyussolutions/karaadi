@@ -103,11 +103,10 @@ jobs:
       - name: Lint template
         run: cfn-lint infrastructure/production.yaml --format json --ignore-checks W1011 || [ $? -eq 4 ]
 
-      - name: Configure AWS
+      - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.INFRA_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Deploy stack
