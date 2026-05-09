@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Edge-compatible JWT payload decoder (no Node.js APIs required)
 function decodeJwt(token: string): Record<string, unknown> {
   const base64Url = token.split(".")[1];
   if (!base64Url) throw new Error("Invalid JWT");
