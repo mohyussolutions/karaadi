@@ -206,20 +206,20 @@ jobs:
             --arg region    "$AWS_REGION" \
             --arg sha       "${COMMIT_SHA:0:8}" \
           '[
-            "set -euo pipefail",
+            "# ── 0. Install git FIRST — before set -e, before everything ────────",
+            "sudo dnf install -y git || sudo yum install -y git || true",
 
-            "# ── 1. Environment bootstrap ─────────────────────────────────────",
+            "# ── 1. Now enable strict mode and bootstrap env ──────────────────",
+            "set -euo pipefail",
             "export HOME=/home/ec2-user",
-            "export PATH=$PATH:/usr/bin:/usr/local/bin:/home/ec2-user/.local/bin",
+            "export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin",
+            "echo \"[deploy] git version: $(git --version)\"",
             "echo \"[deploy] starting nuclear rebuild for commit \($sha)\"",
 
-            "# ── 2. Ensure git is installed (fixes Exit Status 127) ───────────",
-            "sudo dnf install -y git",
-
-            "# ── 3. Full purge (remove previous failed/stale deployment) ──────",
+            "# ── 2. Full purge (remove previous failed/stale deployment) ──────",
             "sudo rm -rf /home/ec2-user/karaadi",
 
-            "# ── 4. Authenticated clone ───────────────────────────────────────",
+            "# ── 3. Authenticated clone ───────────────────────────────────────",
             "git clone \($clone_url) /home/ec2-user/karaadi",
 
             "# ── 5. cd into backend dir — all subsequent commands run from here ──",
