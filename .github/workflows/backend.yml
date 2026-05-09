@@ -1,15 +1,20 @@
 name: Backend
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
   workflow_dispatch:
     inputs:
       action:
-        description: "Choose the operation to run on the backend fleet"
+        description: "Operation to perform"
         required: true
         type: choice
         options:
           - Deploy
-          - Restart
+          - Deploy-NoTests
           - Seed-Fix
 
 concurrency:
@@ -17,18 +22,19 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  id-token: write
   contents: read
 
 env:
   NODE_VERSION: "20"
   AWS_REGION: eu-west-1
-  STACK_NAME: karaadi-production
-  SSM_ENV_PATH: /karaadi/backend/env
-  ACTION: ${{ github.event.inputs.action || 'Deploy' }}
+  STACK_NAME: karaadi-master-backend
+  DEPLOY_ROLE_ARN: ${{ secrets.EB_DEPLOY_ROLE_ARN }}
 
 jobs:
   test:
-    name: Test
+    name: "Test & Type-check"
+    if: github.event.inputs.action != 'Deploy-NoTests' && github.event.inputs.action != 'Seed-Fix'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,400 +49,274 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Generate Prisma client (CI stub DB)
+      - name: Generate Prisma client
         working-directory: backend
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-        run: npx prisma generate
+        run: npx prisma generate --schema=./src/prisma/schema.prisma
 
-      - name: Type check
+      - name: TypeScript type-check
         working-directory: backend
         run: npx tsc --noEmit
 
-      - name: Run tests
+      - name: Run unit tests
         working-directory: backend
         run: npm test
 
-  sync-ssm:
-    name: Sync SSM env (patch DATABASE_URL from live RDS endpoint)
+  build:
+    name: "Build & Package"
+    if: |
+      always() &&
+      github.event.inputs.action != 'Seed-Fix' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: [test]
     runs-on: ubuntu-latest
-    needs: test
+    outputs:
+      version_label: ${{ steps.label.outputs.version_label }}
+      artifact_key: ${{ steps.label.outputs.artifact_key }}
     steps:
-      - name: Configure AWS
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+        run: npx prisma generate --schema=./src/prisma/schema.prisma
+
+      - name: TypeScript build
+        working-directory: backend
+        run: npx tsc --project tsconfig.json
+
+      - name: Compute version label
+        id: label
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:8}"
+          TS="$(date -u +'%Y%m%dT%H%M%SZ')"
+          VERSION="v${TS}-${SHORT_SHA}"
+          echo "version_label=${VERSION}"  >> "$GITHUB_OUTPUT"
+          echo "artifact_key=deployments/${VERSION}.zip" >> "$GITHUB_OUTPUT"
+          echo "Version label: ${VERSION}"
+
+      - name: Create deployment ZIP
+        run: |
+          cd backend
+          zip -r ../backend-deploy.zip . \
+            --exclude "node_modules/*" \
+            --exclude ".git/*" \
+            --exclude "*.test.ts" \
+            --exclude "*.spec.ts" \
+            --exclude "__tests__/*" \
+            --exclude "jest.config.*" \
+            --exclude "jest.setup.*" \
+            --exclude ".env*" \
+            --exclude "dist/*"
+          echo "ZIP size: $(du -sh ../backend-deploy.zip | cut -f1)"
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-deploy-zip
+          path: backend-deploy.zip
+          retention-days: 3
+
+  deploy:
+    name: "Deploy → Elastic Beanstalk"
+    if: |
+      always() &&
+      github.event.inputs.action != 'Seed-Fix' &&
+      needs.build.result == 'success'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GHActions-EB-Deploy-${{ github.run_id }}
 
-      - name: Patch DATABASE_URL and all canonical env vars in SSM
+      - name: Resolve CloudFormation outputs
+        id: cfn
         run: |
           set -euo pipefail
+          query_output() {
+            aws cloudformation describe-stacks \
+              --stack-name "$STACK_NAME" \
+              --region     "$AWS_REGION" \
+              --query      "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" \
+              --output     text
+          }
+          EB_APP=$(query_output  "EBApplicationName")
+          EB_ENV=$(query_output  "EBEnvironmentName")
+          S3_BUCKET=$(query_output "ArtifactsBucketName")
+          [ -n "$EB_APP" ]    || { echo "ERROR: EBApplicationName not in CFN outputs"; exit 1; }
+          [ -n "$EB_ENV" ]    || { echo "ERROR: EBEnvironmentName not in CFN outputs";  exit 1; }
+          [ -n "$S3_BUCKET" ] || { echo "ERROR: ArtifactsBucketName not in CFN outputs"; exit 1; }
+          echo "eb_app=${EB_APP}"       >> "$GITHUB_OUTPUT"
+          echo "eb_env=${EB_ENV}"       >> "$GITHUB_OUTPUT"
+          echo "s3_bucket=${S3_BUCKET}" >> "$GITHUB_OUTPUT"
+          echo "EB Application : $EB_APP"
+          echo "EB Environment : $EB_ENV"
+          echo "Artifacts bucket: $S3_BUCKET"
 
-          DB_USER="karaadi_database_2025_for_prod"
-          DB_PASS="karaadi_password_2025_for_prod"
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-deploy-zip
 
-          echo "Waiting for RDS to reach 'available' state..."
-          for i in $(seq 1 40); do
-            RDS_STATUS=$(aws rds describe-db-instances \
-              --region "$AWS_REGION" \
-              --query "DBInstances[?contains(Endpoint.Address, 'rds.amazonaws.com')].DBInstanceStatus" \
-              --output text 2>/dev/null | head -1 || echo "unknown")
-            echo "  [$i/40] RDS status: $RDS_STATUS"
-            if [ "$RDS_STATUS" = "available" ]; then
-              echo "RDS is available."
-              break
-            fi
-            if [ "$i" -eq 40 ]; then
-              echo "ERROR: RDS did not become available after 40 attempts (~13 min)"
-              exit 1
-            fi
+      - name: Upload ZIP to S3
+        run: |
+          ARTIFACT_KEY="${{ needs.build.outputs.artifact_key }}"
+          aws s3 cp backend-deploy.zip \
+            "s3://${{ steps.cfn.outputs.s3_bucket }}/${ARTIFACT_KEY}" \
+            --region "$AWS_REGION"
+          echo "Uploaded to s3://${{ steps.cfn.outputs.s3_bucket }}/${ARTIFACT_KEY}"
+
+      - name: Create EB application version
+        run: |
+          VERSION="${{ needs.build.outputs.version_label }}"
+          ARTIFACT_KEY="${{ needs.build.outputs.artifact_key }}"
+          aws elasticbeanstalk create-application-version \
+            --application-name "${{ steps.cfn.outputs.eb_app }}" \
+            --version-label    "${VERSION}" \
+            --description      "Commit ${GITHUB_SHA:0:8} — ${{ github.actor }}" \
+            --source-bundle    "S3Bucket=${{ steps.cfn.outputs.s3_bucket }},S3Key=${ARTIFACT_KEY}" \
+            --region           "$AWS_REGION"
+          echo "Created EB version: ${VERSION}"
+
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          VERSION="${{ needs.build.outputs.version_label }}"
+          aws elasticbeanstalk update-environment \
+            --application-name  "${{ steps.cfn.outputs.eb_app }}" \
+            --environment-name  "${{ steps.cfn.outputs.eb_env }}" \
+            --version-label     "${VERSION}" \
+            --region            "$AWS_REGION"
+          echo "Deployment triggered for version: ${VERSION}"
+
+      - name: Wait for environment to become Ready
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          EB_ENV="${{ steps.cfn.outputs.eb_env }}"
+          MAX=60
+          for i in $(seq 1 $MAX); do
+            STATUS=$(aws elasticbeanstalk describe-environments \
+              --environment-names "$EB_ENV" --region "$AWS_REGION" \
+              --query "Environments[0].Status" --output text)
+            HEALTH=$(aws elasticbeanstalk describe-environments \
+              --environment-names "$EB_ENV" --region "$AWS_REGION" \
+              --query "Environments[0].Health" --output text)
+            echo "[$i/$MAX] Status=${STATUS}  Health=${HEALTH}"
+            case "$STATUS" in
+              Ready)
+                echo "✅ Deployment complete! Status=$STATUS Health=$HEALTH"
+                [ "$HEALTH" != "Red" ] || { echo "⚠️  Health is Red — check EB logs."; exit 1; }
+                exit 0 ;;
+              Terminated|Terminating)
+                echo "ERROR: Environment entered $STATUS during deployment."
+                exit 1 ;;
+            esac
             sleep 20
           done
+          echo "ERROR: Timed out waiting for EB environment to become Ready."
+          exit 1
 
-          RDS_HOST=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --region "$AWS_REGION" \
-            --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
+      - name: Print live endpoint
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='EBEnvironmentURL'].OutputValue" \
             --output text)
+          echo "🚀  Backend live at: ${URL}"
 
-          if [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ]; then
-            echo "ERROR: RDS endpoint not found in CloudFormation outputs."
-            echo "Ensure the RDS instance is 'available' BEFORE the EC2 fleet starts (DependsOn in CFN)."
-            exit 1
-          fi
-          echo "RDS endpoint: $RDS_HOST"
-
-          REDIS_HOST=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --region "$AWS_REGION" \
-            --query "Stacks[0].Outputs[?OutputKey=='RedisEndpoint'].OutputValue" \
-            --output text 2>/dev/null || echo "")
-          echo "Redis endpoint: ${REDIS_HOST:-<not found>}"
-
-          CURRENT=$(aws ssm get-parameter \
-            --name "$SSM_ENV_PATH" \
-            --with-decryption \
-            --query Parameter.Value \
-            --output text \
-            --region "$AWS_REGION")
-
-          patch_env() {
-            local key=$1 val=$2 content=$3
-            if echo "$content" | grep -q "^${key}="; then
-              echo "$content" | sed "s|^${key}=.*|${key}=${val}|"
-            else
-              printf '%s\n%s=%s' "$content" "$key" "$val"
-            fi
-          }
-
-          UPDATED="$CURRENT"
-          UPDATED=$(patch_env "DATABASE_URL"                     "postgresql://${DB_USER}:${DB_PASS}@${RDS_HOST}:5432/karaadi" "$UPDATED")
-          UPDATED=$(patch_env "ALLOWED_ORIGINS"                  "https://karaadi.com,https://www.karaadi.com"                 "$UPDATED")
-          UPDATED=$(patch_env "KARAADI_AWS_COGNITO_USER_POOL_ID" "eu-west-1_mmyv1vz45"                                        "$UPDATED")
-          UPDATED=$(patch_env "KARAADI_AWS_COGNITO_CLIENT_ID"    "29lcmo54mlc692mbsf26j07g7p"                                 "$UPDATED")
-          UPDATED=$(patch_env "COGNITO_JWKS_URL"                 "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_mmyv1vz45/.well-known/jwks.json" "$UPDATED")
-          UPDATED=$(patch_env "NODE_ENV"                         "production"                                                  "$UPDATED")
-          UPDATED=$(patch_env "PORT"                             "8080"                                                        "$UPDATED")
-          UPDATED=$(patch_env "BACKEND_URL"                      "https://api.karaadi.com"                                     "$UPDATED")
-          UPDATED=$(patch_env "NEXT_PUBLIC_FRONTEND_URL"         "https://karaadi.com"                                        "$UPDATED")
-          UPDATED=$(patch_env "COOKIE_DOMAIN"                    "karaadi.com"                                                 "$UPDATED")
-          UPDATED=$(patch_env "USE_WAAFIPAY_PROD"                "true"                                                        "$UPDATED")
-          UPDATED=$(patch_env "AWS_REGION"                       "eu-west-1"                                                   "$UPDATED")
-          [ -n "$REDIS_HOST" ] && UPDATED=$(patch_env "REDIS_URL" "redis://${REDIS_HOST}:6379" "$UPDATED") || true
-
-          aws ssm put-parameter \
-            --name "$SSM_ENV_PATH" \
-            --value "$UPDATED" \
-            --type SecureString \
-            --tier Advanced \
-            --overwrite \
-            --region "$AWS_REGION"
-
-          echo "SSM parameter updated with live RDS endpoint."
-
-  fleet:
-    name: "Fleet — ${{ github.event.inputs.action || 'Deploy' }}"
+  seed-fix:
+    name: "Seed-Fix (migrate deploy + npm run import)"
+    if: github.event.inputs.action == 'Seed-Fix'
     runs-on: ubuntu-latest
-    needs: sync-ssm
     steps:
-      - name: Configure AWS
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GHActions-SeedFix-${{ github.run_id }}
 
-      - name: Resolve ASG instances
-        id: asg
+      - name: Resolve EB instance IDs
+        id: instances
         run: |
           set -euo pipefail
-
-          ASG=$(aws cloudformation describe-stack-resources \
-            --stack-name "$STACK_NAME" \
-            --logical-resource-id BackendAutoScalingGroup \
-            --region "$AWS_REGION" \
-            --query "StackResources[0].PhysicalResourceId" \
+          EB_ENV=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='EBEnvironmentName'].OutputValue" \
             --output text)
-
-          if [ -z "$ASG" ] || [ "$ASG" = "None" ]; then
-            echo "ERROR: BackendAutoScalingGroup not found in stack $STACK_NAME"
-            exit 1
-          fi
-
-          INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
-            --auto-scaling-group-names "$ASG" \
-            --region "$AWS_REGION" \
-            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
-            --output text)
-
-          if [ -z "$INSTANCES" ] || [ "$INSTANCES" = "None" ]; then
-            echo "ERROR: No InService instances found in $ASG"
-            exit 1
-          fi
-
-          echo "asg=$ASG"           >> "$GITHUB_OUTPUT"
-          echo "instances=$INSTANCES" >> "$GITHUB_OUTPUT"
+          echo "EB environment: $EB_ENV"
+          INSTANCES=$(aws ec2 describe-instances \
+            --filters \
+              "Name=tag:elasticbeanstalk:environment-name,Values=${EB_ENV}" \
+              "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].InstanceId" \
+            --region "$AWS_REGION" --output text)
+          [ -n "$INSTANCES" ] || { echo "ERROR: No running instances for $EB_ENV"; exit 1; }
+          echo "instances=${INSTANCES}" >> "$GITHUB_OUTPUT"
           echo "Instances: $INSTANCES"
 
-      - name: Build SSM commands — Deploy
-        if: ${{ env.ACTION == 'Deploy' }}
-        id: cmd_deploy
+      - name: Run migrate + seed via SSM
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          COMMIT_SHA: ${{ github.sha }}
+          INSTANCES: ${{ steps.instances.outputs.instances }}
         run: |
           set -euo pipefail
-          CLONE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
-
-          COMMANDS=$(jq -nc \
-            --arg clone_url "$CLONE_URL" \
-            --arg region    "$AWS_REGION" \
-            --arg stack     "$STACK_NAME" \
-            --arg ssm_path  "$SSM_ENV_PATH" \
-            --arg db_user   "karaadi_database_2025_for_prod" \
-            --arg db_pass   "karaadi_password_2025_for_prod" \
-            --arg db_name   "karaadi" \
-          '[
-            "# === SYSTEM SETUP (runs before set -e so install failures are non-fatal) ===",
-            "sudo dnf install -y git 2>&1 | tail -5",
-            "sudo dnf install -y postgresql15 2>&1 | tail -5 || sudo dnf install -y postgresql 2>&1 | tail -5 || true",
-            "npm list -g tsx >/dev/null 2>&1 || npm install -g tsx 2>&1 | tail -3",
-            "command -v git >/dev/null 2>&1 || { echo FATAL_git_not_installed; exit 127; }",
-            "echo \"SYSTEM_OK git=$(git --version) node=$(node --version 2>/dev/null||echo missing)\"",
-            "set -euo pipefail",
-            "export HOME=/home/ec2-user",
-            "export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin",
-
-            "# === STEP 1: RDS endpoint from CloudFormation ===",
-            "RDS_HOST=$(aws cloudformation describe-stacks --stack-name \($stack) --region \($region) --query \"Stacks[0].Outputs[?OutputKey==\\\"RDSEndpoint\\\"].OutputValue\" --output text 2>&1)",
-            "echo \"RDS_HOST=[$RDS_HOST]\"",
-            "[ -n \"$RDS_HOST\" ] && [ \"$RDS_HOST\" != \"None\" ] || { echo FATAL_RDS_endpoint_not_in_CFN_outputs; exit 1; }",
-
-            "# === STEP 1b: Redis endpoint from CloudFormation ===",
-            "REDIS_HOST=$(aws cloudformation describe-stacks --stack-name \($stack) --region \($region) --query \"Stacks[0].Outputs[?OutputKey==\\\"RedisEndpoint\\\"].OutputValue\" --output text 2>/dev/null || echo '')",
-            "echo \"REDIS_HOST=[$REDIS_HOST]\"",
-
-            "# === STEP 2: assemble and EXPORT DATABASE_URL as a persistent shell variable ===",
-            "DB_URL=\"postgresql://\\($db_user):\\($db_pass)@${RDS_HOST}:5432/\\($db_name)\"",
-            "export DATABASE_URL=\"${DB_URL}\"",
-            "echo \"DATABASE_URL exported — host=$(echo $DATABASE_URL | sed 's|.*@||' | cut -d: -f1)\""
-
-            "# === STEP 3: clone repo ===",
-            "sudo rm -rf /home/ec2-user/karaadi",
-            "mkdir -p /home/ec2-user/karaadi",
-            "git clone \($clone_url) /home/ec2-user/karaadi",
-
-            "# === STEP 4: write .env (each key on its own line, no printf tricks) ===",
-            "ENV_FILE=/home/ec2-user/karaadi/backend/.env",
-            "mkdir -p /home/ec2-user/karaadi/backend",
-            "> \"$ENV_FILE\"",
-            "echo \"DATABASE_URL=${DB_URL}\"                                                                                                                   >> \"$ENV_FILE\"",
-            "echo \"REDIS_URL=redis://${REDIS_HOST}:6379\"                                                                                                     >> \"$ENV_FILE\"",
-            "echo 'NODE_ENV=production'                                                                                                                         >> \"$ENV_FILE\"",
-            "echo 'PORT=8080'                                                                                                                                   >> \"$ENV_FILE\"",
-            "echo 'ALLOWED_ORIGINS=https://karaadi.com,https://www.karaadi.com'                                                                                 >> \"$ENV_FILE\"",
-            "echo 'KARAADI_AWS_COGNITO_USER_POOL_ID=eu-west-1_mmyv1vz45'                                                                                       >> \"$ENV_FILE\"",
-            "echo 'KARAADI_AWS_COGNITO_CLIENT_ID=29lcmo54mlc692mbsf26j07g7p'                                                                                   >> \"$ENV_FILE\"",
-            "echo 'COGNITO_JWKS_URL=https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_mmyv1vz45/.well-known/jwks.json'                                     >> \"$ENV_FILE\"",
-            "echo 'BACKEND_URL=https://api.karaadi.com'                                                                                                         >> \"$ENV_FILE\"",
-            "echo 'NEXT_PUBLIC_FRONTEND_URL=https://karaadi.com'                                                                                               >> \"$ENV_FILE\"",
-            "echo 'COOKIE_DOMAIN=karaadi.com'                                                                                                                   >> \"$ENV_FILE\"",
-            "echo 'USE_WAAFIPAY_PROD=true'                                                                                                                     >> \"$ENV_FILE\"",
-            "echo 'AWS_REGION=eu-west-1'                                                                                                                       >> \"$ENV_FILE\"",
-
-            "# === STEP 5: hard-verify .env ===",
-            "echo \".env_line_count=$(wc -l < $ENV_FILE)\"",
-            "cat \"$ENV_FILE\"",
-            "grep -q '^DATABASE_URL=' \"$ENV_FILE\" || { echo FATAL_DATABASE_URL_missing; exit 1; }",
-            "grep -q '^NODE_ENV='     \"$ENV_FILE\" || { echo FATAL_NODE_ENV_missing;     exit 1; }",
-            "echo ENV_FILE_VERIFIED",
-
-            "# === STEP 5b: overlay remaining secrets from SSM (JWT_SECRET, SESSION_SECRET, ENCRYPTION_KEY, S3, WaafiPay, etc.) ===",
-            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) 2>/dev/null | grep -v '^#' | grep '^[A-Z_]' | while IFS= read -r L; do K=\"${L%%=*}\"; grep -q \"^${K}=\" \"$ENV_FILE\" || echo \"$L\" >> \"$ENV_FILE\"; done && echo SSM_OVERLAY_DONE || echo SSM_NO_PARAM",
-            "echo \"env_vars_total=$(grep -c '^[A-Z_]' $ENV_FILE || echo 0)\"",
-
-            "set -a && source \"$ENV_FILE\" && set +a",
-            "echo \"DATABASE_URL after source: $(echo $DATABASE_URL | sed 's|:.*@|:***@|')\"",
-
-            "# === STEP 6: wait for RDS to accept TCP connections ===",
-            "RDS_READY=0; for i in $(seq 1 18); do if pg_isready -h \"$RDS_HOST\" -p 5432 -t 5 >/dev/null 2>&1; then echo DB_READY_on_attempt_$i; RDS_READY=1; break; fi; echo \"pg_isready attempt $i/18 — waiting 10s\"; sleep 10; done",
-            "[ \"$RDS_READY\" = '1' ] || { echo FATAL_RDS_not_reachable_after_3min; exit 1; }",
-
-            "# === STEP 7: install deps ===",
-            "cd /home/ec2-user/karaadi/backend",
-            "npm install",
-
-            "# === STEP 8: re-export DATABASE_URL directly from .env (double-lock) ===",
-            "export DATABASE_URL=$(grep \"^DATABASE_URL=\" .env | cut -d'=' -f2- | tr -d '\"')",
-            "[ -n \"$DATABASE_URL\" ] || { echo FATAL_DATABASE_URL_not_set; exit 1; }",
-            "echo \"DATABASE_URL re-exported — host=$(echo $DATABASE_URL | sed 's|.*@||' | cut -d: -f1)\"",
-
-            "# === STEP 9: generate Prisma client ===",
-            "DATABASE_URL=\"$DATABASE_URL\" npx prisma generate --schema=./src/prisma/schema.prisma",
-
-            "# === STEP 10: type check ===",
-            "npm run build",
-
-            "# === STEP 11: run pending migrations (deploy, not reset) ===",
-            "DATABASE_URL=\"$DATABASE_URL\" npx prisma migrate deploy --schema=./src/prisma/schema.prisma",
-
-            "# === STEP 12: seed database ===",
-            "DATABASE_URL=\"$DATABASE_URL\" npm run import",
-
-            "# === STEP 13: pm2 ===",
-            "pm2 startOrRestart ecosystem.config.cjs --update-env",
-            "pm2 save",
-            "sleep 10",
-            "curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 50 --nostream; exit 1; }"
-          ]')
-
-          echo "commands<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$COMMANDS"     >> "$GITHUB_OUTPUT"
-          echo "EOF"           >> "$GITHUB_OUTPUT"
-          echo "timeout=600"   >> "$GITHUB_OUTPUT"
-
-      - name: Build SSM commands — Restart (pm2 reload)
-        if: ${{ env.ACTION == 'Restart' }}
-        id: cmd_restart
-        run: |
           COMMANDS=$(jq -nc '[
             "set -euo pipefail",
-            "pm2 reload karaadi-backend --update-env || pm2 restart karaadi-backend --update-env",
-            "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 30; exit 1; }"
+            "cd /var/app/current",
+            "echo \"[seed-fix] prisma migrate deploy...\"",
+            "npx prisma migrate deploy --schema=./src/prisma/schema.prisma",
+            "echo \"[seed-fix] npm run import...\"",
+            "npm run import",
+            "echo \"[seed-fix] DONE\""
           ]')
-          echo "commands<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$COMMANDS"     >> "$GITHUB_OUTPUT"
-          echo "EOF"           >> "$GITHUB_OUTPUT"
-          echo "timeout=120"   >> "$GITHUB_OUTPUT"
-
-      - name: Build SSM commands — Seed-Fix (migrate deploy + re-import)
-        if: ${{ env.ACTION == 'Seed-Fix' }}
-        id: cmd_seedfix
-        env:
-          COMMIT_SHA: ${{ github.sha }}
-        run: |
-          COMMANDS=$(jq -nc \
-            --arg ssm_path "$SSM_ENV_PATH" \
-            --arg region   "$AWS_REGION" \
-          '[
-            "set -euo pipefail",
-            "export HOME=/home/ec2-user",
-            "cd /home/ec2-user/karaadi/backend",
-            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > .env || exit 1",
-            "[ -s .env ] || { echo 'FATAL: .env is empty after SSM pull'; exit 1; }",
-            "if [ -z \"$(grep '^DATABASE_URL=' .env)\" ]; then echo 'FATAL: DATABASE_URL MISSING FROM .env'; exit 1; fi",
-            "export $(grep -v '^#' .env | xargs)",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma migrate deploy",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npm run import",
-            "pm2 reload karaadi-backend --update-env || true",
-            "echo SEED_FIX_OK"
-          ]')
-          echo "commands<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$COMMANDS"     >> "$GITHUB_OUTPUT"
-          echo "EOF"           >> "$GITHUB_OUTPUT"
-          echo "timeout=300"   >> "$GITHUB_OUTPUT"
-
-      - name: Execute on fleet (rolling SSM)
-        env:
-          INSTANCES: ${{ steps.asg.outputs.instances }}
-          ACTION: ${{ env.ACTION }}
-          COMMIT_SHA: ${{ github.sha }}
-          CMD_DEPLOY: ${{ steps.cmd_deploy.outputs.commands }}
-          CMD_RESTART: ${{ steps.cmd_restart.outputs.commands }}
-          CMD_SEEDFIX: ${{ steps.cmd_seedfix.outputs.commands }}
-          TIMEOUT_DEPLOY: ${{ steps.cmd_deploy.outputs.timeout }}
-          TIMEOUT_RESTART: ${{ steps.cmd_restart.outputs.timeout }}
-          TIMEOUT_SEEDFIX: ${{ steps.cmd_seedfix.outputs.timeout }}
-        run: |
-          set -euo pipefail
-
-          case "$ACTION" in
-            Deploy)   COMMANDS="$CMD_DEPLOY";  EXEC_TIMEOUT="$TIMEOUT_DEPLOY"  ;;
-            Restart)  COMMANDS="$CMD_RESTART"; EXEC_TIMEOUT="$TIMEOUT_RESTART" ;;
-            Seed-Fix) COMMANDS="$CMD_SEEDFIX"; EXEC_TIMEOUT="$TIMEOUT_SEEDFIX" ;;
-            *) echo "Unknown action: $ACTION"; exit 1 ;;
-          esac
-
           run_ssm() {
-            local INSTANCE=$1
-            local MAX_ATTEMPTS=$(( EXEC_TIMEOUT / 5 ))
-
+            local INST=$1
             CMD_ID=$(aws ssm send-command \
-              --instance-ids "$INSTANCE" \
-              --document-name "AWS-RunShellScript" \
-              --comment "${ACTION}-${COMMIT_SHA:0:8}" \
-              --parameters "{\"commands\":${COMMANDS},\"executionTimeout\":[\"${EXEC_TIMEOUT}\"]}" \
-              --region "$AWS_REGION" \
-              --output json | jq -r '.Command.CommandId')
-            echo "  SSM command: $CMD_ID"
-
-            for i in $(seq 1 "$MAX_ATTEMPTS"); do
+              --instance-ids  "$INST" --document-name "AWS-RunShellScript" \
+              --comment       "seed-fix-${GITHUB_SHA:0:8}" \
+              --parameters    "{\"commands\":${COMMANDS},\"executionTimeout\":[\"300\"]}" \
+              --region        "$AWS_REGION" --output json | jq -r '.Command.CommandId')
+            echo "  SSM command: $CMD_ID (instance: $INST)"
+            for i in $(seq 1 60); do
               INV=$(aws ssm get-command-invocation \
-                --command-id "$CMD_ID" \
-                --instance-id "$INSTANCE" \
-                --region "$AWS_REGION" \
-                --output json 2>/dev/null \
-                || echo '{"Status":"InProgress","StandardOutputContent":"","StandardErrorContent":""}')
+                --command-id "$CMD_ID" --instance-id "$INST" \
+                --region "$AWS_REGION" --output json 2>/dev/null \
+                || echo '{"Status":"InProgress"}')
               STATUS=$(echo "$INV" | jq -r '.Status')
-              echo "  [$i/$MAX_ATTEMPTS] $STATUS"
+              echo "  [$i/60] $STATUS"
               case "$STATUS" in
                 Success)
-                  echo "$INV" | jq -r '.StandardOutputContent'
-                  return 0
-                  ;;
-                Failed|Cancelled|TimedOut|Undeliverable|Terminated)
-                  echo "--- stdout ---"
-                  echo "$INV" | jq -r '.StandardOutputContent'
-                  echo "--- stderr ---"
-                  echo "$INV" | jq -r '.StandardErrorContent'
-                  return 1
-                  ;;
-                *)
-                  sleep 5
-                  ;;
+                  echo "$INV" | jq -r '.StandardOutputContent'; return 0 ;;
+                Failed|Cancelled|TimedOut|Terminated)
+                  echo "--- stdout ---"; echo "$INV" | jq -r '.StandardOutputContent'
+                  echo "--- stderr ---"; echo "$INV" | jq -r '.StandardErrorContent'
+                  return 1 ;;
               esac
+              sleep 5
             done
-
-            echo "ERROR: Timed out waiting for SSM on $INSTANCE"
-            return 1
+            echo "ERROR: SSM timed out on $INST"; return 1
           }
-
-          TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
-          COUNT=0
-          for INSTANCE in $INSTANCES; do
-            COUNT=$((COUNT + 1))
-            echo ""
-            echo "::group::[$COUNT/$TOTAL] $ACTION → $INSTANCE"
-            run_ssm "$INSTANCE" || { echo "::endgroup::"; echo "Aborting — $INSTANCE failed."; exit 1; }
+          for INST in $INSTANCES; do
+            echo "::group::Seed-Fix → $INST"
+            run_ssm "$INST" || { echo "::endgroup::"; exit 1; }
             echo "::endgroup::"
-
-            if [ "$COUNT" -lt "$TOTAL" ] && [ "$ACTION" = "Deploy" ]; then
-              echo "Waiting 30 s before next instance (rolling deploy)…"
-              sleep 30
-            fi
           done
-
-          echo ""
-          echo "✅  $ACTION completed on all $TOTAL instance(s)."
+          echo "✅  Seed-Fix completed on all instances."
