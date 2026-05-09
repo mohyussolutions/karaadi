@@ -15,9 +15,6 @@ const app = express();
 const isProd = process.env.NODE_ENV === "production";
 app.disable("x-powered-by");
 
-app.get("/health", (req, res) =>
-  res.status(200).json({ status: "OK", pid: process.pid }),
-);
 app.use(
   "/assets",
   express.static(path.join(__dirname, "../assets"), { maxAge: "1d" }),
@@ -28,6 +25,10 @@ app.use(
 );
 
 setupSecurity(app);
+
+app.get("/health", (req, res) =>
+  res.status(200).json({ status: "OK", pid: process.pid }),
+);
 setupServerUtils(app);
 
 app.use(cookieParser());

@@ -50,14 +50,7 @@ export default function LoginForm() {
         router.refresh();
       }
     } catch (err: any) {
-      const msg = err.message || "";
-      if (msg.includes("429")) {
-        setError(t("auth.login.tooManyAttempts"));
-      } else if (msg.includes("disabled") || msg.includes("locked")) {
-        setError(t("auth.login.accountLocked"));
-      } else {
-        setError(t("auth.login.failed"));
-      }
+      setError(err?.message || t("auth.login.failed"));
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +81,7 @@ export default function LoginForm() {
 
         <PasswordToggle
           value={password}
+          autoComplete="current-password"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setPassword(e.target.value)
           }

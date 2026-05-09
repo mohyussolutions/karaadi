@@ -44,28 +44,16 @@ export function clearAuthCookies() {
 }
 
 export async function login(email: string, password: string): Promise<User> {
-  const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-  try {
-    await fetch(`${BASE}/health`, { method: "GET", cache: "no-store" });
-  } catch {}
-
-  const doLogin = () =>
-    fetch(apiUrls.LOGIN, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-  let response = await doLogin();
-  if (response.status === 502 || response.status === 503) {
-    await new Promise((r) => setTimeout(r, 3000));
-    response = await doLogin();
-  }
+  const response = await fetch(apiUrls.LOGIN, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error ?? "Login failed");
+    throw new Error(data?.error || "Login failed");
   }
   const data: LoginResponse = await response.json();
   const u = (data.user as any) || data;
