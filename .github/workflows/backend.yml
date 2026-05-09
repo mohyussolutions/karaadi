@@ -18,13 +18,11 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
 
 env:
   NODE_VERSION: "20"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
-  BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
   SSM_ENV_PATH: /karaadi/backend/env
 
 jobs:
@@ -63,10 +61,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - name: Configure AWS (OIDC)
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.BACKEND_ROLE }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Patch DATABASE_URL and all canonical env vars in SSM
@@ -160,10 +159,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: sync-ssm
     steps:
-      - name: Configure AWS (OIDC)
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.BACKEND_ROLE }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Resolve ASG instances
