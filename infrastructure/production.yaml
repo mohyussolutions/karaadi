@@ -1,196 +1,138 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Karaadi marketplace infrastructure - Complete AWS setup for classifieds marketplace like Finn.no (2026-05-01)
-
-# ============================================
-# CONSTANTS - Reusable values used throughout the template
-# ============================================
+Description: Karaadi production infrastructure
 
 Mappings:
   Constants:
-    VpcCidr:
-      Value: 10.0.0.0/16
-    PublicSubnetACidr:
-      Value: 10.0.1.0/24
-    PublicSubnetBCidr:
-      Value: 10.0.2.0/24
-    PrivateSubnetACidr:
-      Value: 10.0.3.0/24
-    PrivateSubnetBCidr:
-      Value: 10.0.4.0/24
-    NodeVersion:
-      Value: 24
-    PostgresVersion:
-      Value: "15.17"
-    RedisVersion:
-      Value: 7
-    BackendPort:
-      Value: 8080
-    PostgresPort:
-      Value: 5432
-    RedisPort:
-      Value: 6379
-    HealthCheckPath:
-      Value: /health
-    CpuScaleThreshold:
-      Value: 65
-    ApiThrottlingBurst:
-      Value: 5000
-    ApiThrottlingRate:
-      Value: 20000
-    BackupRetentionDays:
-      Value: 30
-    AllocatedStorageGB:
-      Value: 20
-
-# ============================================
-# PARAMETERS - Values you provide when deploying
-# ============================================
+    VpcCidr:          { Value: 10.0.0.0/16 }
+    PublicSubnetACidr:  { Value: 10.0.1.0/24 }
+    PublicSubnetBCidr:  { Value: 10.0.2.0/24 }
+    PrivateSubnetACidr: { Value: 10.0.3.0/24 }
+    PrivateSubnetBCidr: { Value: 10.0.4.0/24 }
+    BackendPort:        { Value: 8080 }
+    PostgresPort:       { Value: 5432 }
+    RedisPort:          { Value: 6379 }
+    HealthCheckPath:    { Value: /health }
+    NodeVersion:        { Value: 24 }
+    PostgresVersion:    { Value: "15.17" }
+    RedisVersion:       { Value: 7 }
+    AllocatedStorageGB: { Value: 20 }
+    BackupRetentionDays: { Value: 30 }
+    CpuScaleThreshold:  { Value: 65 }
+    ApiThrottlingBurst: { Value: 5000 }
+    ApiThrottlingRate:  { Value: 20000 }
 
 Parameters:
   AppName:
     Type: String
     Default: karaadi
-    Description: Name prefix for all resources
 
   AmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
-    Description: EC2 AMI resolved from SSM public parameters at deploy time
 
   Environment:
     Type: String
     Default: production
-    Description: Environment name (production/staging)
 
   EC2InstanceType:
     Type: String
     Default: t3.small
-    Description: EC2 instance size for backend servers
 
   DesiredCapacity:
     Type: Number
     Default: 1
-    Description: Number of EC2 instances to run initially
 
   MinSize:
     Type: Number
     Default: 1
-    Description: Minimum number of EC2 instances (never goes below this)
 
   MaxSize:
     Type: Number
-    Default: 10
-    Description: Maximum number of EC2 instances during traffic spikes
+    Default: 1
 
   DBInstanceClass:
     Type: String
     Default: db.t3.medium
-    Description: RDS PostgreSQL database instance size
 
   DBName:
     Type: String
     Default: karaadi
-    Description: Database name
 
   DBUsername:
     Type: String
     Default: karaadi_admin
-    Description: Database master username
 
   DBPassword:
     Type: String
     NoEcho: true
-    Description: Database master password (provide during deploy)
 
   CacheNodeType:
     Type: String
     Default: cache.t3.small
-    Description: Redis cache node size
 
   DomainName:
     Type: String
-    Default: example.com
-    Description: Your domain name (e.g., karaadi.com)
+    Default: karaadi.com
 
   GitHubOrg:
     Type: String
-    Description: Your GitHub username or organization
 
   GitHubRepo:
     Type: String
-    Description: Your GitHub repository name
 
   GitHubToken:
     Type: String
     Default: ""
     NoEcho: true
-    Description: GitHub personal access token for private repo cloning (leave empty if repo is public)
 
   AmplifyGitHubToken:
     Type: String
     Default: ""
     NoEcho: true
-    Description: GitHub OAuth token for Amplify CI/CD (leave empty to skip Amplify setup)
 
   JWTSecret:
     Type: String
     NoEcho: true
-    Description: Secret key for signing JWT tokens
 
   SessionSecret:
     Type: String
     NoEcho: true
-    Description: Secret key for session encryption
 
   EncryptionKey:
     Type: String
     NoEcho: true
-    Description: Key for data encryption (must be 32 chars)
 
   WaafiPayApiKey:
     Type: String
     NoEcho: true
-    Description: WaafiPay API key
 
   WaafiPayApiUserId:
     Type: String
-    Description: WaafiPay API user ID
 
   WaafiPayMerchantUid:
     Type: String
-    Description: WaafiPay merchant UID
 
   TikTokClientKey:
     Type: String
-    Description: TikTok OAuth client key
 
   TikTokClientSecret:
     Type: String
     NoEcho: true
-    Description: TikTok OAuth client secret
 
   FacebookPageId:
     Type: String
-    Description: Facebook page ID
-
-# ============================================
-# CONDITIONS
-# ============================================
 
 Conditions:
   HasAmplifyToken: !Not [!Equals [!Ref AmplifyGitHubToken, ""]]
 
-# ============================================
-# RESOURCES - All AWS services created
-# ============================================
-
 Resources:
+
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "${DBUsername}", "dbname": "${DBName}"}'
-        GenerateStringKey: "password"
+        GenerateStringKey: password
         PasswordLength: 30
 
   VPC:
@@ -200,17 +142,14 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-vpc
-        - Key: Environment
-          Value: !Ref Environment
+        - { Key: Name, Value: !Sub "${AppName}-vpc" }
+        - { Key: Environment, Value: !Ref Environment }
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-igw
+        - { Key: Name, Value: !Sub "${AppName}-igw" }
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -226,8 +165,7 @@ Resources:
       AvailabilityZone: !Select [0, !GetAZs ""]
       MapPublicIpOnLaunch: true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-public-a
+        - { Key: Name, Value: !Sub "${AppName}-public-a" }
 
   PublicSubnetB:
     Type: AWS::EC2::Subnet
@@ -237,8 +175,7 @@ Resources:
       AvailabilityZone: !Select [1, !GetAZs ""]
       MapPublicIpOnLaunch: true
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-public-b
+        - { Key: Name, Value: !Sub "${AppName}-public-b" }
 
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
@@ -247,8 +184,7 @@ Resources:
       CidrBlock: !FindInMap [Constants, PrivateSubnetACidr, Value]
       AvailabilityZone: !Select [0, !GetAZs ""]
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-private-a
+        - { Key: Name, Value: !Sub "${AppName}-private-a" }
 
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
@@ -257,16 +193,14 @@ Resources:
       CidrBlock: !FindInMap [Constants, PrivateSubnetBCidr, Value]
       AvailabilityZone: !Select [1, !GetAZs ""]
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-private-b
+        - { Key: Name, Value: !Sub "${AppName}-private-b" }
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-public-rt
+        - { Key: Name, Value: !Sub "${AppName}-public-rt" }
 
   PublicRoute:
     Type: AWS::EC2::Route
@@ -305,8 +239,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       Tags:
-        - Key: Name
-          Value: !Sub ${AppName}-private-rt
+        - { Key: Name, Value: !Sub "${AppName}-private-rt" }
 
   PrivateRoute:
     Type: AWS::EC2::Route
@@ -330,7 +263,7 @@ Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: ALB security group
+      GroupDescription: ALB
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -341,7 +274,7 @@ Resources:
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: EC2 security group
+      GroupDescription: EC2
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -356,7 +289,7 @@ Resources:
   RDSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: RDS security group
+      GroupDescription: RDS
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -367,7 +300,7 @@ Resources:
   RedisSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Redis security group
+      GroupDescription: Redis
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -382,8 +315,7 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
+            Principal: { Service: ec2.amazonaws.com }
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
@@ -394,22 +326,15 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:PutObject
-                  - s3:DeleteObject
-                  - s3:ListBucket
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
                 Resource:
                   - !GetAtt ImagesBucket.Arn
-                  - !Sub ${ImagesBucket.Arn}/*
+                  - !Sub "${ImagesBucket.Arn}/*"
               - Effect: Allow
-                Action:
-                  - ssm:GetParameter
-                  - ssm:GetParameters
-                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/karaadi/*
+                Action: [ssm:GetParameter, ssm:GetParameters]
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/karaadi/*"
               - Effect: Allow
-                Action:
-                  - kms:Decrypt
+                Action: kms:Decrypt
                 Resource: "*"
 
   EC2InstanceProfile:
@@ -441,24 +366,18 @@ Resources:
               mkdir -p /home/ec2-user/karaadi
               cd /home/ec2-user/karaadi
 
-              # Clone repo (use token for private repos)
               if [ -n "${GitHubToken}" ]; then
                 git clone https://${GitHubToken}@github.com/${GitHubOrg}/${GitHubRepo}.git .
               else
                 git clone https://github.com/${GitHubOrg}/${GitHubRepo}.git .
               fi
 
-              # Write backend .env.production
-              cat > /home/ec2-user/karaadi/backend/.env.production << 'ENVEOF'
-              NODE_ENV=production
-              PORT=8080
-              ENVEOF
+              mkdir -p /home/ec2-user/karaadi/backend
 
-              # Write backend .env with dynamic values
               cat > /home/ec2-user/karaadi/backend/.env << ENVEOF
               NODE_ENV=production
               PORT=8080
-              DATABASE_URL=postgresql://${DBUsername}:${DBPassword}@${RdsHost}:5432/${DBName}?connection_limit=20&pool_timeout=20
+              DATABASE_URL=postgresql://${DBUsername}:${DBPassword}@${RdsHost}:5432/${DBName}
               REDIS_URL=redis://${RedisHost}:6379
               KARAADI_AWS_COGNITO_USER_POOL_ID=${CognitoPoolId}
               KARAADI_AWS_COGNITO_CLIENT_ID=${CognitoClientId}
@@ -488,20 +407,31 @@ Resources:
               AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE=1
               ENVEOF
 
-              chown -R ec2-user:ec2-user /home/ec2-user/karaadi/backend
+              cp /home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/.env.production
+              chown -R ec2-user:ec2-user /home/ec2-user/karaadi
 
               cd /home/ec2-user/karaadi/backend
-              npm ci --production
-              npm run build
-              pm2 start dist/index.js --name karaadi-backend --env production
+              aws s3 cp s3://${BucketName}/deployments/backend-latest.tar.gz /tmp/backend.tar.gz \
+                --region ${AWS::Region} 2>/dev/null && \
+                rm -rf src/prisma && \
+                tar -xzf /tmp/backend.tar.gz -C . && \
+                npm ci --omit=dev && \
+                npx prisma generate && \
+                npx prisma migrate deploy && \
+                node --env-file=.env dist/seed.js || true
+
+              pm2 start /home/ec2-user/karaadi/backend/dist/index.js \
+                --name karaadi-backend \
+                --node-args "--env-file=/home/ec2-user/karaadi/backend/.env" \
+                --max-restarts 10 --restart-delay 3000 2>/dev/null || true
               pm2 save
-              env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u ec2-user --hp /home/ec2-user
-            - RdsHost: !GetAtt RDSInstance.Endpoint.Address
-              RedisHost: !GetAtt RedisCluster.RedisEndpoint.Address
-              CognitoPoolId: !Ref CognitoUserPool
+              env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true
+            - RdsHost:     !GetAtt RDSInstance.Endpoint.Address
+              RedisHost:   !GetAtt RedisCluster.RedisEndpoint.Address
+              CognitoPoolId:   !Ref CognitoUserPool
               CognitoClientId: !Ref CognitoUserPoolClient
-              ApiId: !Ref APIGateway
-              BucketName: !Ref ImagesBucket
+              ApiId:       !Ref APIGateway
+              BucketName:  !Ref ImagesBucket
 
   BackendAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -608,7 +538,7 @@ Resources:
   ImagesBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AppName}-images-${AWS::AccountId}
+      BucketName: !Sub "${AppName}-images-${AWS::AccountId}"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -619,8 +549,8 @@ Resources:
           - AllowedHeaders: ["*"]
             AllowedMethods: [GET, PUT, POST, DELETE]
             AllowedOrigins:
-              - !Sub https://${DomainName}
-              - !Sub https://www.${DomainName}
+              - !Sub "https://${DomainName}"
+              - !Sub "https://www.${DomainName}"
             MaxAge: 3600
       LifecycleConfiguration:
         Rules:
@@ -631,36 +561,18 @@ Resources:
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub ${AppName}-users
+      UserPoolName: !Sub "${AppName}-users"
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
         - email
       Schema:
-        - Name: email
-          Required: true
-          Mutable: true
-          AttributeDataType: String
-        - Name: phone_number
-          Required: false
-          Mutable: true
-          AttributeDataType: String
-        - Name: profile
-          Required: false
-          Mutable: true
-          AttributeDataType: String
-        - Name: isAdmin
-          Required: false
-          Mutable: true
-          AttributeDataType: String
-        - Name: isManager
-          Required: false
-          Mutable: true
-          AttributeDataType: String
-        - Name: isSupport
-          Required: false
-          Mutable: true
-          AttributeDataType: String
+        - { Name: email,        Required: true,  Mutable: true, AttributeDataType: String }
+        - { Name: phone_number, Required: false, Mutable: true, AttributeDataType: String }
+        - { Name: profile,      Required: false, Mutable: true, AttributeDataType: String }
+        - { Name: isAdmin,      Required: false, Mutable: true, AttributeDataType: String }
+        - { Name: isManager,    Required: false, Mutable: true, AttributeDataType: String }
+        - { Name: isSupport,    Required: false, Mutable: true, AttributeDataType: String }
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -688,13 +600,13 @@ Resources:
   APIGateway:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: !Sub ${AppName}-api
+      Name: !Sub "${AppName}-api"
       ProtocolType: HTTP
 
   APIGatewayVpcLink:
     Type: AWS::ApiGatewayV2::VpcLink
     Properties:
-      Name: !Sub ${AppName}-vpc-link
+      Name: !Sub "${AppName}-vpc-link"
       SubnetIds:
         - !Ref PrivateSubnetA
         - !Ref PrivateSubnetB
@@ -715,15 +627,15 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref APIGateway
-      RouteKey: ANY /{proxy+}
-      Target: !Sub integrations/${APIGatewayIntegration}
+      RouteKey: "ANY /{proxy+}"
+      Target: !Sub "integrations/${APIGatewayIntegration}"
 
   APIGatewayDefaultRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref APIGateway
       RouteKey: $default
-      Target: !Sub integrations/${APIGatewayIntegration}
+      Target: !Sub "integrations/${APIGatewayIntegration}"
 
   APIGatewayStage:
     Type: AWS::ApiGatewayV2::Stage
@@ -743,8 +655,7 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
-            Principal:
-              Service: amplify.amazonaws.com
+            Principal: { Service: amplify.amazonaws.com }
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess-Amplify
@@ -753,19 +664,15 @@ Resources:
     Type: AWS::Amplify::App
     Condition: HasAmplifyToken
     Properties:
-      Name: !Sub ${AppName}-frontend
-      Repository: !Sub https://github.com/${GitHubOrg}/${GitHubRepo}
+      Name: !Sub "${AppName}-frontend"
+      Repository: !Sub "https://github.com/${GitHubOrg}/${GitHubRepo}"
       OauthToken: !Ref AmplifyGitHubToken
       IAMServiceRole: !GetAtt AmplifyRole.Arn
       EnvironmentVariables:
-        - Name: NEXT_PUBLIC_API_URL
-          Value: !Sub https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
-        - Name: NEXT_PUBLIC_COGNITO_USER_POOL_ID
-          Value: !Ref CognitoUserPool
-        - Name: NEXT_PUBLIC_COGNITO_CLIENT_ID
-          Value: !Ref CognitoUserPoolClient
-        - Name: NEXT_PUBLIC_DOMAIN
-          Value: !Ref DomainName
+        - { Name: NEXT_PUBLIC_API_URL,              Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod" }
+        - { Name: NEXT_PUBLIC_COGNITO_USER_POOL_ID, Value: !Ref CognitoUserPool }
+        - { Name: NEXT_PUBLIC_COGNITO_CLIENT_ID,    Value: !Ref CognitoUserPoolClient }
+        - { Name: NEXT_PUBLIC_DOMAIN,               Value: !Ref DomainName }
       BuildSpec: |
         version: 1
         frontend:
@@ -805,7 +712,7 @@ Resources:
   BackendDeployRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AppName}-backend-deploy
+      RoleName: !Sub "${AppName}-backend-deploy"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -817,7 +724,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${GitHubRepo}:*
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOrg}/${GitHubRepo}:*"
       Policies:
         - PolicyName: Deploy
           PolicyDocument:
@@ -834,25 +741,18 @@ Resources:
                   - cloudformation:DescribeStacks
                 Resource: "*"
               - Effect: Allow
-                Action:
-                  - ssm:GetParameter
-                  - ssm:GetParameters
-                  - ssm:PutParameter
-                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/karaadi/*
+                Action: [ssm:GetParameter, ssm:GetParameters, ssm:PutParameter]
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/karaadi/*"
               - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:PutObject
-                  - s3:DeleteObject
-                  - s3:ListBucket
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
                 Resource:
                   - !GetAtt ImagesBucket.Arn
-                  - !Sub ${ImagesBucket.Arn}/*
+                  - !Sub "${ImagesBucket.Arn}/*"
 
   FrontendDeployRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AppName}-frontend-deploy
+      RoleName: !Sub "${AppName}-frontend-deploy"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -864,7 +764,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${GitHubRepo}:*
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOrg}/${GitHubRepo}:*"
       Policies:
         - PolicyName: Deploy
           PolicyDocument:
@@ -878,13 +778,14 @@ Resources:
                   - amplify:GetJob
                   - amplify:ListJobs
                   - amplify:CreateDomainAssociation
+                  - amplify:UpdateApp
                   - cloudformation:DescribeStacks
                 Resource: "*"
 
   InfraDeployRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AppName}-infra-deploy
+      RoleName: !Sub "${AppName}-infra-deploy"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -896,7 +797,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${GitHubRepo}:*
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOrg}/${GitHubRepo}:*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/PowerUserAccess
       Policies:
@@ -929,69 +830,50 @@ Resources:
                   - iam:AddClientIDToOpenIDConnectProvider
                 Resource: "*"
 
-# ============================================
-# OUTPUTS - Information after deployment
-# ============================================
-
 Outputs:
   APIGatewayURL:
-    Description: URL for your backend API
-    Value: !Sub https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
+    Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod"
+
+  CognitoUserPoolId:
+    Value: !Ref CognitoUserPool
+
+  CognitoClientId:
+    Value: !Ref CognitoUserPoolClient
+
+  RDSEndpoint:
+    Value: !GetAtt RDSInstance.Endpoint.Address
+
+  RedisEndpoint:
+    Value: !GetAtt RedisCluster.RedisEndpoint.Address
 
   AmplifyAppId:
-    Description: Amplify App ID for frontend deployment
     Condition: HasAmplifyToken
     Value: !GetAtt AmplifyApp.AppId
 
   AmplifyURL:
-    Description: Your frontend website URL
     Condition: HasAmplifyToken
-    Value: !Sub https://${AmplifyApp.DefaultDomain}
-
-  CognitoUserPoolId:
-    Description: Cognito User Pool ID for authentication
-    Value: !Ref CognitoUserPool
-
-  CognitoClientId:
-    Description: Cognito App Client ID for authentication
-    Value: !Ref CognitoUserPoolClient
-
-  RDSEndpoint:
-    Description: RDS PostgreSQL connection endpoint
-    Value: !GetAtt RDSInstance.Endpoint.Address
-
-  RedisEndpoint:
-    Description: Redis cache connection endpoint
-    Value: !GetAtt RedisCluster.RedisEndpoint.Address
-
-  BackendDeployRoleARN:
-    Description: IAM role ARN for backend GitHub Actions
-    Value: !GetAtt BackendDeployRole.Arn
-
-  FrontendDeployRoleARN:
-    Description: IAM role ARN for frontend GitHub Actions
-    Value: !GetAtt FrontendDeployRole.Arn
-
-  InfraDeployRoleARN:
-    Description: IAM role ARN for infra GitHub Actions
-    Value: !GetAtt InfraDeployRole.Arn
-
-  VPCId:
-    Description: VPC ID for reference
-    Value: !Ref VPC
-
-  PublicSubnetIds:
-    Description: Public subnet IDs
-    Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB]]
-
-  PrivateSubnetIds:
-    Description: Private subnet IDs
-    Value: !Join [",", [!Ref PrivateSubnetA, !Ref PrivateSubnetB]]
+    Value: !Sub "https://${AmplifyApp.DefaultDomain}"
 
   ImagesBucketName:
-    Description: S3 bucket name for image storage
     Value: !Ref ImagesBucket
 
   ImagesBucketURL:
-    Description: S3 bucket base URL for images
-    Value: !Sub https://${ImagesBucket}.s3.${AWS::Region}.amazonaws.com
+    Value: !Sub "https://${ImagesBucket}.s3.${AWS::Region}.amazonaws.com"
+
+  BackendDeployRoleARN:
+    Value: !GetAtt BackendDeployRole.Arn
+
+  FrontendDeployRoleARN:
+    Value: !GetAtt FrontendDeployRole.Arn
+
+  InfraDeployRoleARN:
+    Value: !GetAtt InfraDeployRole.Arn
+
+  VPCId:
+    Value: !Ref VPC
+
+  PublicSubnetIds:
+    Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB]]
+
+  PrivateSubnetIds:
+    Value: !Join [",", [!Ref PrivateSubnetA, !Ref PrivateSubnetB]]
