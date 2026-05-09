@@ -18,6 +18,17 @@ const nextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      { source: "/marketplace", destination: "/marketplace", permanent: true },
+      {
+        source: "/marketplace/:path*",
+        destination: "/marketplace/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
