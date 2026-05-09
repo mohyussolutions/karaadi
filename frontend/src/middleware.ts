@@ -15,12 +15,16 @@ const ROLE_ROUTES = [
   { pattern: "/support", claim: "custom:isSupport" },
 ] as const;
 
-const PUBLIC_PREFIXES = [
+const AUTH_PREFIXES = [
   "/login",
   "/register",
   "/confirm",
   "/forgot-password",
   "/reset-password",
+];
+
+const PUBLIC_PREFIXES = [
+  ...AUTH_PREFIXES,
   "/marketplace",
   "/real-estate",
   "/cars",
@@ -76,15 +80,14 @@ export function middleware(req: NextRequest) {
   }
 
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+  const isAuthPage = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
 
-  if (idToken && (isPublic || pathname === "/")) {
+  if (idToken && (isAuthPage || pathname === "/")) {
     const c = getClaims();
     if (c) {
       const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
       const destination = ownRoute ? ownRoute.pattern : "/marketplace";
-      if (!pathname.startsWith(destination)) {
-        return NextResponse.redirect(new URL(destination, req.url));
-      }
+      return NextResponse.redirect(new URL(destination, req.url));
     }
   }
 
