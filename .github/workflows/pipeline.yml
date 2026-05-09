@@ -283,6 +283,8 @@ jobs:
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
             "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
+            "dnf install -y postgresql15 2>/dev/null || yum install -y postgresql15 2>/dev/null || true",
+            "python3 -c \"import subprocess,re,os; env=open('/home/ec2-user/karaadi/backend/.env').read(); m=re.search(r'DATABASE_URL=postgresql://([^:]+):([^@]+)@([^:/]+)(?::([0-9]+))?/([^?\\\\s]+)', env); u,p,h,port,db=m.group(1),m.group(2),m.group(3),(m.group(4) or '5432'),m.group(5); e={**os.environ,'PGPASSWORD':p}; subprocess.run(['psql','-h',h,'-p',port,'-U',u,'-d','postgres','-c',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);'],env=e); subprocess.run(['psql','-h',h,'-p',port,'-U',u,'-d','postgres','-c',f'CREATE DATABASE {db} OWNER {u};'],env=e); print('DB_RECREATED')\"",
             "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy",
             "echo --- importing seed data ---",
             "node --env-file=/home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/dist/seed.js && echo IMPORT_OK || echo IMPORT_FAILED",
