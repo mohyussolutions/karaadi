@@ -6,8 +6,6 @@ const nextConfig = {
   compress: true,
   eslint: { ignoreDuringBuilds: true },
   httpAgentOptions: { keepAlive: true },
-  output: "standalone",
-
   experimental: {
     serverActions: { bodySizeLimit: "20mb" },
     optimizePackageImports: [
