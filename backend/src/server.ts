@@ -16,14 +16,17 @@ const startServer = async () => {
   try {
     await prisma.$connect();
 
-    if (process.env.REDIS_URL) {
+    const redisUrl = process.env.REDIS_URL ?? "";
+    const validRedis = redisUrl.startsWith("redis://") || redisUrl.startsWith("rediss://");
+
+    if (validRedis) {
       await redisServer.start();
       const pub = redisServer.getClient();
       const sub = pub.duplicate();
       await sub.connect();
       socketServer(server, pub, sub);
     } else {
-      console.warn(chalk.yellow("REDIS_URL not set — sockets running without Redis adapter"));
+      console.warn(chalk.yellow("No valid REDIS_URL — sockets running without Redis adapter"));
       socketServer(server);
     }
 
