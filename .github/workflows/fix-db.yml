@@ -44,7 +44,7 @@ jobs:
           CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
           patch_env() { local key=$1 val=$2 content=$3; if echo "$content" | grep -q "^${key}="; then echo "$content" | sed "s|^${key}=.*|${key}=${val}|"; else printf '%s\n%s=%s' "$content" "$key" "$val"; fi; }
           UPDATED="$CURRENT"
-          UPDATED=$(patch_env "DATABASE_URL" "postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi?connection_limit=20&pool_timeout=20" "$UPDATED")
+          UPDATED=$(patch_env "DATABASE_URL" "postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi" "$UPDATED")
           UPDATED=$(patch_env "ALLOWED_ORIGINS" "https://karaadi.com,https://www.karaadi.com" "$UPDATED")
           [ -n "$COGNITO_POOL" ] && UPDATED=$(patch_env "KARAADI_AWS_COGNITO_USER_POOL_ID" "$COGNITO_POOL" "$UPDATED")
           [ -n "$COGNITO_CLIENT" ] && UPDATED=$(patch_env "KARAADI_AWS_COGNITO_CLIENT_ID" "$COGNITO_CLIENT" "$UPDATED")
