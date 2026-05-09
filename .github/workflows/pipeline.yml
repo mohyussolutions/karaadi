@@ -166,43 +166,23 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Fix DATABASE_URL in SSM
-        env:
-          DB_MASTER_PASSWORD: ${{ secrets.DB_MASTER_PASSWORD }}
         run: |
           set -euo pipefail
-          DB_PASS="$DB_MASTER_PASSWORD"
-          if [ -z "$DB_PASS" ]; then
-            DB_PASS=$(aws ssm get-parameter --name /karaadi/db-master-password \
-              --with-decryption --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-          fi
-          if [ -z "$DB_PASS" ]; then
-            SECRET_ID=$(aws cloudformation describe-stack-resources \
-              --stack-name "$STACK_NAME" --region "$AWS_REGION" \
-              --logical-resource-id DatabaseSecret \
-              --query "StackResources[0].PhysicalResourceId" --output text 2>/dev/null || echo "")
-            if [ -n "$SECRET_ID" ] && [ "$SECRET_ID" != "None" ]; then
-              DB_PASS=$(aws secretsmanager get-secret-value --secret-id "$SECRET_ID" \
-                --region "$AWS_REGION" --query SecretString --output text 2>/dev/null \
-                | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('password',''))" 2>/dev/null || echo "")
-            fi
-          fi
-          if [ -z "$DB_PASS" ]; then
-            echo "WARNING: no DB password found — DATABASE_URL not updated"
-            exit 0
-          fi
+          DB_USER="karaadi_database_2025_for_prod"
+          DB_PASS="karaadi_password_2025_for_prod"
           RDS_HOST=$(aws cloudformation describe-stacks \
             --stack-name "$STACK_NAME" --region "$AWS_REGION" \
             --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
             --output text 2>/dev/null || echo "")
           if [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ]; then
-            echo "WARNING: no RDS endpoint found"
+            echo "WARNING: no RDS endpoint found — SSM not updated"
             exit 0
           fi
           echo "RDS: $RDS_HOST"
           CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
           patch_env() { local key=$1 val=$2 content=$3; if echo "$content" | grep -q "^${key}="; then echo "$content" | sed "s|^${key}=.*|${key}=${val}|"; else printf '%s\n%s=%s' "$content" "$key" "$val"; fi; }
           UPDATED="$CURRENT"
-          UPDATED=$(patch_env "DATABASE_URL"                    "postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi" "$UPDATED")
+          UPDATED=$(patch_env "DATABASE_URL"                    "postgresql://${DB_USER}:${DB_PASS}@${RDS_HOST}:5432/karaadi" "$UPDATED")
           UPDATED=$(patch_env "ALLOWED_ORIGINS"                 "https://karaadi.com,https://www.karaadi.com" "$UPDATED")
           UPDATED=$(patch_env "KARAADI_AWS_COGNITO_USER_POOL_ID" "eu-west-1_mmyv1vz45" "$UPDATED")
           UPDATED=$(patch_env "KARAADI_AWS_COGNITO_CLIENT_ID"    "29lcmo54mlc692mbsf26j07g7p" "$UPDATED")
@@ -215,7 +195,6 @@ jobs:
           UPDATED=$(patch_env "USE_WAAFIPAY_PROD"                "true" "$UPDATED")
           UPDATED=$(patch_env "AWS_REGION"                       "eu-west-1" "$UPDATED")
           aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" --type SecureString --tier Advanced --overwrite --region "$AWS_REGION"
-          aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" --type SecureString --tier Advanced --overwrite --region "$AWS_REGION" 2>/dev/null || true
           echo "SSM env patched"
 
       - name: Get ASG name

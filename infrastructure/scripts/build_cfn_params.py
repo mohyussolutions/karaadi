@@ -11,6 +11,9 @@ overrides = {
     'MinSize':         '1',
     'MaxSize':         '1',
     'DesiredCapacity': '1',
+    'DBUsername':      'karaadi_database_2025_for_prod',
+    'DBPassword':      'karaadi_password_2025_for_prod',
+    'DBName':          'karaadi',
 }
 
 params = [
