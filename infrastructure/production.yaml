@@ -416,10 +416,10 @@ Resources:
               echo "[userdata] waiting for RDS to accept connections..."
               for i in $(seq 1 30); do
                 if pg_isready -h ${RdsHost} -p 5432 -U ${DBUsername} -d ${DBName} -t 5 2>/dev/null; then
-                  echo "[userdata] RDS is ready after ${i} attempts"
+                  echo "[userdata] RDS is ready after ${!i} attempts"
                   break
                 fi
-                echo "[userdata] attempt ${i}/30 — RDS not ready, retrying in 10s..."
+                echo "[userdata] attempt ${!i}/30 — RDS not ready, retrying in 10s..."
                 sleep 10
               done
               aws s3 cp s3://${BucketName}/deployments/backend-latest.tar.gz /tmp/backend.tar.gz \
