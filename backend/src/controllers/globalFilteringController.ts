@@ -123,7 +123,7 @@ export const getFilterMetadata = async (req: Request, res: Response) => {
 
     const dataStructure: Record<
       string,
-      { total: number; cities: Record<string, number> }
+      { displayName: string; total: number; cities: Record<string, { displayName: string; total: number }> }
     > = {};
 
     allItems.forEach((item) => {
@@ -131,22 +131,28 @@ export const getFilterMetadata = async (req: Request, res: Response) => {
       const c = item.city?.trim();
       if (!r) return;
 
-      if (!dataStructure[r]) dataStructure[r] = { total: 0, cities: {} };
-      dataStructure[r].total += 1;
+      const rKey = r.toLowerCase();
+      const cKey = c?.toLowerCase();
 
-      if (c) {
-        dataStructure[r].cities[c] = (dataStructure[r].cities[c] || 0) + 1;
+      if (!dataStructure[rKey]) dataStructure[rKey] = { displayName: r, total: 0, cities: {} };
+      dataStructure[rKey].total += 1;
+
+      if (c && cKey) {
+        if (!dataStructure[rKey].cities[cKey]) {
+          dataStructure[rKey].cities[cKey] = { displayName: c, total: 0 };
+        }
+        dataStructure[rKey].cities[cKey].total += 1;
       }
     });
 
     const regions = Object.entries(dataStructure)
-      .map(([name, data]) => ({
-        name,
+      .map(([, data]) => ({
+        name: data.displayName,
         total: data.total,
         cities: Object.entries(data.cities)
-          .map(([cityName, cityTotal]) => ({
-            name: cityName,
-            total: cityTotal,
+          .map(([, cityData]) => ({
+            name: cityData.displayName,
+            total: cityData.total,
           }))
           .sort((a, b) => b.total - a.total),
       }))

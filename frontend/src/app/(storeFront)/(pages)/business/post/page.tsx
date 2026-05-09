@@ -16,7 +16,7 @@ import CarsForm from "@/app/(storeFront)/components/forms/CarsForm";
 import BoatsForm from "@/app/(storeFront)/components/forms/BoatsForm";
 import MotorcyclesForm from "@/app/(storeFront)/components/forms/MotorcyclesForm";
 import FarmEquipmentForm from "@/app/(storeFront)/components/forms/FarmEquipmentForm";
-import MarketplaceForm from "@/app/(storeFront)/components/forms/marketplaceForm";
+import MarketplaceForm from "@/app/(storeFront)/components/forms/MarketplaceForm";
 
 export default function PostPage() {
   const { t } = useTranslation();

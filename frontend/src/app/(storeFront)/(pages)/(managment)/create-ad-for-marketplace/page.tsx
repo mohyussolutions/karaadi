@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import MarketplaceForm from "@/app/(storeFront)/components/forms/marketplaceForm";
+import MarketplaceForm from "@/app/(storeFront)/components/forms/MarketplaceForm";
 
 export default function CreateAdForMarketplacePage() {
   const router = useRouter();
