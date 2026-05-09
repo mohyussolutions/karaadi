@@ -1,0 +1,61 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      DBPassword:
+        description: "RDS master password"
+        required: true
+      JWTSecret:
+        description: "JWT secret"
+        required: true
+      SessionSecret:
+        description: "Session secret"
+        required: true
+      EncryptionKey:
+        description: "Encryption key (32 chars)"
+        required: true
+
+env:
+  AWS_REGION: eu-west-1
+  STACK_NAME: karaadi-master-backend
+  TEMPLATE: infrastructure/master-backend-stack.yml
+
+jobs:
+  deploy-infra:
+    name: "Deploy CloudFormation Stack"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy CloudFormation stack
+        run: |
+          aws cloudformation deploy \
+            --stack-name "$STACK_NAME" \
+            --template-file "$TEMPLATE" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --region "$AWS_REGION" \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              AppName=karaadi \
+              DBPassword="${{ github.event.inputs.DBPassword }}" \
+              JWTSecret="${{ github.event.inputs.JWTSecret }}" \
+              SessionSecret="${{ github.event.inputs.SessionSecret }}" \
+              EncryptionKey="${{ github.event.inputs.EncryptionKey }}" \
+              WaafiPayApiKey="${{ secrets.WAAFI_PAY_API_KEY }}" \
+              TikTokClientSecret="${{ secrets.TIKTOK_CLIENT_SECRET }}"
+
+      - name: Print stack outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs" \
+            --output table

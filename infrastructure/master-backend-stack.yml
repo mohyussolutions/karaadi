@@ -1,0 +1,565 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Karaadi Master Backend Stack — VPC, RDS, ElastiCache, Elastic Beanstalk, S3
+
+Parameters:
+  AppName:
+    Type: String
+    Default: karaadi
+
+  # ── App secrets ────────────────────────────────────────────────────────────
+  DBUsername:
+    Type: String
+    Default: karaadi_db_user
+  DBPassword:
+    Type: String
+    NoEcho: true
+  DBName:
+    Type: String
+    Default: karaadi
+  JWTSecret:
+    Type: String
+    NoEcho: true
+  SessionSecret:
+    Type: String
+    NoEcho: true
+  EncryptionKey:
+    Type: String
+    NoEcho: true
+
+  # ── Cognito ────────────────────────────────────────────────────────────────
+  CognitoUserPoolId:
+    Type: String
+    Default: eu-west-1_mmyv1vz45
+  CognitoClientId:
+    Type: String
+    Default: 29lcmo54mlc692mbsf26j07g7p
+  CognitoJwksUrl:
+    Type: String
+    Default: "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_mmyv1vz45/.well-known/jwks.json"
+
+  # ── WaafiPay ───────────────────────────────────────────────────────────────
+  WaafiPayApiKey:
+    Type: String
+    NoEcho: true
+    Default: API-Q9yhd1f89hJLeXV8lq78hEZaS5CP
+  WaafiPayApiUserId:
+    Type: String
+    Default: "1008816"
+  WaafiPayMerchantUid:
+    Type: String
+    Default: M0914229
+
+  # ── Social ─────────────────────────────────────────────────────────────────
+  TikTokClientKey:
+    Type: String
+    Default: aw7w2mc71navvwzl
+  TikTokClientSecret:
+    Type: String
+    NoEcho: true
+    Default: 6LXGWoVsW8apQBthEOO5jivtbigGXubz
+  FacebookPageId:
+    Type: String
+    Default: "61569249207022"
+
+  # ── Elastic Beanstalk ──────────────────────────────────────────────────────
+  EBSolutionStackName:
+    Type: String
+    Default: "64bit Amazon Linux 2023 v6.4.1 running Node.js 20"
+  InstanceType:
+    Type: String
+    Default: t3.small
+
+  # ── RDS ───────────────────────────────────────────────────────────────────
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+
+  # ── ElastiCache ────────────────────────────────────────────────────────────
+  CacheNodeType:
+    Type: String
+    Default: cache.t3.micro
+
+Resources:
+  # ══════════════════════════════════════════════════════════════════════════
+  # VPC
+  # ══════════════════════════════════════════════════════════════════════════
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AppName}-vpc"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AppName}-igw"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AppName}-public-1"
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AppName}-public-2"
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.11.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub "${AppName}-private-1"
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.12.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub "${AppName}-private-2"
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  NatEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub "${AppName}-nat"
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnet1RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Security Groups
+  # ══════════════════════════════════════════════════════════════════════════
+
+  EBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EB instances — HTTP + HTTPS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9000
+          ToPort: 9000
+          CidrIp: 0.0.0.0/0
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS — allow from EB instances
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EBSecurityGroup
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ElastiCache — allow from EB instances
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref EBSecurityGroup
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # RDS PostgreSQL
+  # ══════════════════════════════════════════════════════════════════════════
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub "${AppName} private subnets"
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub "${AppName}-postgres"
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: postgres
+      EngineVersion: "15.7"
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: !Ref DBName
+      AllocatedStorage: "20"
+      StorageType: gp2
+      StorageEncrypted: true
+      MultiAZ: false
+      PubliclyAccessible: false
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      BackupRetentionPeriod: 7
+      DeletionProtection: false
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # ElastiCache Redis
+  # ══════════════════════════════════════════════════════════════════════════
+
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: !Sub "${AppName} Redis subnet group"
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  RedisCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      ClusterName: !Sub "${AppName}-redis"
+      CacheNodeType: !Ref CacheNodeType
+      Engine: redis
+      EngineVersion: "7.1"
+      NumCacheNodes: 1
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref RedisSecurityGroup
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # S3 Artifacts Bucket
+  # ══════════════════════════════════════════════════════════════════════════
+
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AppName}-eb-artifacts-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-deploys
+            Status: Enabled
+            ExpirationInDays: 30
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # IAM — EC2 Instance Profile for EB
+  # ══════════════════════════════════════════════════════════════════════════
+
+  EBInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AppName}-eb-instance-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+      Policies:
+        - PolicyName: eb-s3-artifacts
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${AppName}-eb-artifacts-${AWS::AccountId}/*"
+        - PolicyName: eb-cognito
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminGetUser
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - cognito-idp:ListUsers
+                Resource: "*"
+        - PolicyName: eb-ses-ses
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
+
+  EBInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub "${AppName}-eb-instance-profile"
+      Roles:
+        - !Ref EBInstanceRole
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Elastic Beanstalk
+  # ══════════════════════════════════════════════════════════════════════════
+
+  EBApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: !Sub "${AppName}-app"
+      Description: !Sub "Karaadi backend application"
+
+  EBConfigTemplate:
+    Type: AWS::ElasticBeanstalk::ConfigurationTemplate
+    Properties:
+      ApplicationName: !Ref EBApplication
+      SolutionStackName: !Ref EBSolutionStackName
+      OptionSettings:
+        # ── VPC / Networking ─────────────────────────────────────────────
+        - Namespace: aws:ec2:vpc
+          OptionName: VPCId
+          Value: !Ref VPC
+        - Namespace: aws:ec2:vpc
+          OptionName: Subnets
+          Value: !Join [",", [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+        - Namespace: aws:ec2:vpc
+          OptionName: ELBSubnets
+          Value: !Join [",", [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+        - Namespace: aws:ec2:vpc
+          OptionName: AssociatePublicIpAddress
+          Value: "true"
+
+        # ── Instance ─────────────────────────────────────────────────────
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref EBInstanceProfile
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: !Ref InstanceType
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: SecurityGroups
+          Value: !Ref EBSecurityGroup
+
+        # ── Scaling ──────────────────────────────────────────────────────
+        - Namespace: aws:autoscaling:asg
+          OptionName: MinSize
+          Value: "1"
+        - Namespace: aws:autoscaling:asg
+          OptionName: MaxSize
+          Value: "2"
+
+        # ── Deployment ───────────────────────────────────────────────────
+        - Namespace: aws:elasticbeanstalk:command
+          OptionName: DeploymentPolicy
+          Value: Rolling
+        - Namespace: aws:elasticbeanstalk:command
+          OptionName: BatchSizeType
+          Value: Fixed
+        - Namespace: aws:elasticbeanstalk:command
+          OptionName: BatchSize
+          Value: "1"
+
+        # ── Health reporting ──────────────────────────────────────────────
+        - Namespace: aws:elasticbeanstalk:healthreporting:system
+          OptionName: SystemType
+          Value: enhanced
+
+        # ── Node.js runtime ───────────────────────────────────────────────
+        - Namespace: aws:elasticbeanstalk:container:nodejs
+          OptionName: NodeCommand
+          Value: "node --loader ts-node/esm -r tsconfig-paths/register src/server.ts"
+
+        # ── Environment variables ──────────────────────────────────────────
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: NODE_ENV
+          Value: production
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: PORT
+          Value: "9000"
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: DATABASE_URL
+          Value: !Sub
+            - "postgresql://${DBUsername}:${DBPassword}@${RDSEndpoint}:5432/${DBName}"
+            - RDSEndpoint: !GetAtt RDSInstance.Endpoint.Address
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: REDIS_URL
+          Value: !Sub
+            - "redis://${RedisEndpoint}:6379"
+            - RedisEndpoint: !GetAtt RedisCluster.RedisEndpoint.Address
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: JWT_SECRET
+          Value: !Ref JWTSecret
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: SESSION_SECRET
+          Value: !Ref SessionSecret
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: ENCRYPTION_KEY
+          Value: !Ref EncryptionKey
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: COGNITO_USER_POOL_ID
+          Value: !Ref CognitoUserPoolId
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: COGNITO_CLIENT_ID
+          Value: !Ref CognitoClientId
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: COGNITO_JWKS_URL
+          Value: !Ref CognitoJwksUrl
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: WAAFI_PAY_API_KEY
+          Value: !Ref WaafiPayApiKey
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: WAAFI_PAY_API_USER_ID
+          Value: !Ref WaafiPayApiUserId
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: WAAFI_PAY_MERCHANT_UID
+          Value: !Ref WaafiPayMerchantUid
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: TIKTOK_CLIENT_KEY
+          Value: !Ref TikTokClientKey
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: TIKTOK_CLIENT_SECRET
+          Value: !Ref TikTokClientSecret
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: FACEBOOK_PAGE_ID
+          Value: !Ref FacebookPageId
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: AWS_REGION
+          Value: !Ref AWS::Region
+
+  EBEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    DependsOn: RDSInstance
+    Properties:
+      EnvironmentName: !Sub "${AppName}-env"
+      ApplicationName: !Ref EBApplication
+      TemplateName: !Ref EBConfigTemplate
+      Tier:
+        Name: WebServer
+        Type: Standard
+
+# ════════════════════════════════════════════════════════════════════════════
+# Outputs — consumed by backend.yml workflow
+# ════════════════════════════════════════════════════════════════════════════
+
+Outputs:
+  EBApplicationName:
+    Value: !Ref EBApplication
+    Export:
+      Name: !Sub "${AppName}-EBApplicationName"
+
+  EBEnvironmentName:
+    Value: !Sub "${AppName}-env"
+    Export:
+      Name: !Sub "${AppName}-EBEnvironmentName"
+
+  EBEnvironmentURL:
+    Value: !Sub "http://${EBEnvironment.EndpointURL}"
+    Export:
+      Name: !Sub "${AppName}-EBEnvironmentURL"
+
+  ArtifactsBucketName:
+    Value: !Ref ArtifactsBucket
+    Export:
+      Name: !Sub "${AppName}-ArtifactsBucketName"
+
+  RDSEndpoint:
+    Value: !GetAtt RDSInstance.Endpoint.Address
+    Export:
+      Name: !Sub "${AppName}-RDSEndpoint"
+
+  RedisEndpoint:
+    Value: !GetAtt RedisCluster.RedisEndpoint.Address
+    Export:
+      Name: !Sub "${AppName}-RedisEndpoint"
+
+  VpcId:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AppName}-VpcId"
