@@ -147,6 +147,16 @@ jobs:
 
       - name: Deploy / update infrastructure stack
         run: |
+          set -euo pipefail
+          STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+            --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          if [ "$STATUS" = "ROLLBACK_COMPLETE" ]; then
+            echo "Stack is in ROLLBACK_COMPLETE — deleting before recreate..."
+            aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$AWS_REGION"
+            aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME" --region "$AWS_REGION"
+            echo "Stack deleted"
+          fi
           aws cloudformation deploy \
             --stack-name "$STACK_NAME" \
             --template-file "infrastructure/master-backend-stack.yml" \
