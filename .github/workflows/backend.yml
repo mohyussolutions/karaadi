@@ -1,22 +1,45 @@
 name: Backend
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Consolidated workflow — replaces fix-db.yml and restart-backend.yml.
+#
+# Actions:
+#   Deploy    → nuclear purge → clone → env inject → install → prisma reset
+#               → seed → pm2 start
+#   Restart   → pm2 reload karaadi-backend on every InService instance
+#   Seed-Fix  → prisma migrate deploy → npm run import (no purge needed)
+# ─────────────────────────────────────────────────────────────────────────────
+
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: "Choose the operation to run on the backend fleet"
+        required: true
+        type: choice
+        options:
+          - Deploy
+          - Restart
+          - Seed-Fix
 
 concurrency:
-  group: backend-deploy
+  group: backend-${{ github.event.inputs.action }}
   cancel-in-progress: false
 
 permissions:
   contents: read
+  id-token: write # Required for OIDC role assumption
 
 env:
   NODE_VERSION: "20"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
+  BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
+  # SSM source of truth for all runtime env vars (RDS URL, Cognito, etc.)
+  SSM_ENV_PATH: /karaadi/backend/env
 
 jobs:
-  # ── Test ─────────────────────────────────────────────────────────────────────
+  # ── CI Gate (always runs so no broken code ships) ─────────────────────────
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -33,7 +56,7 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Generate Prisma client
+      - name: Generate Prisma client (CI stub DB)
         working-directory: backend
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
@@ -47,133 +70,299 @@ jobs:
         working-directory: backend
         run: npm test
 
-  # ── Deploy (rolling SSM) ─────────────────────────────────────────────────────
-  deploy:
-    name: Rolling Deploy
+  # ── Sync SSM → RDS endpoint (runs before every fleet operation) ───────────
+  sync-ssm:
+    name: Sync SSM env (patch DATABASE_URL from live RDS endpoint)
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS
+      - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.BACKEND_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get ASG name from CloudFormation
-        id: cfn
+      - name: Patch DATABASE_URL and all canonical env vars in SSM
         run: |
-          ASG_NAME=$(aws cloudformation describe-stack-resources \
+          set -euo pipefail
+
+          DB_USER="karaadi_database_2025_for_prod"
+          DB_PASS="karaadi_password_2025_for_prod"
+
+          RDS_HOST=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
+            --output text)
+
+          if [ -z "$RDS_HOST" ] || [ "$RDS_HOST" = "None" ]; then
+            echo "ERROR: RDS endpoint not found in CloudFormation outputs."
+            echo "Ensure the RDS instance is 'available' BEFORE the EC2 fleet starts (DependsOn in CFN)."
+            exit 1
+          fi
+          echo "RDS endpoint: $RDS_HOST"
+
+          CURRENT=$(aws ssm get-parameter \
+            --name "$SSM_ENV_PATH" \
+            --with-decryption \
+            --query Parameter.Value \
+            --output text \
+            --region "$AWS_REGION")
+
+          # Helper: upsert a KEY=value line in an env-file string
+          patch_env() {
+            local key=$1 val=$2 content=$3
+            if echo "$content" | grep -q "^${key}="; then
+              echo "$content" | sed "s|^${key}=.*|${key}=${val}|"
+            else
+              printf '%s\n%s=%s' "$content" "$key" "$val"
+            fi
+          }
+
+          UPDATED="$CURRENT"
+          UPDATED=$(patch_env "DATABASE_URL"                     "postgresql://${DB_USER}:${DB_PASS}@${RDS_HOST}:5432/karaadi" "$UPDATED")
+          UPDATED=$(patch_env "ALLOWED_ORIGINS"                  "https://karaadi.com,https://www.karaadi.com"                 "$UPDATED")
+          UPDATED=$(patch_env "KARAADI_AWS_COGNITO_USER_POOL_ID" "eu-west-1_mmyv1vz45"                                        "$UPDATED")
+          UPDATED=$(patch_env "KARAADI_AWS_COGNITO_CLIENT_ID"    "29lcmo54mlc692mbsf26j07g7p"                                 "$UPDATED")
+          UPDATED=$(patch_env "COGNITO_JWKS_URL"                 "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_mmyv1vz45/.well-known/jwks.json" "$UPDATED")
+          UPDATED=$(patch_env "NODE_ENV"                         "production"                                                  "$UPDATED")
+          UPDATED=$(patch_env "PORT"                             "8080"                                                        "$UPDATED")
+          UPDATED=$(patch_env "BACKEND_URL"                      "https://api.karaadi.com"                                     "$UPDATED")
+          UPDATED=$(patch_env "NEXT_PUBLIC_FRONTEND_URL"         "https://karaadi.com"                                        "$UPDATED")
+          UPDATED=$(patch_env "COOKIE_DOMAIN"                    "karaadi.com"                                                 "$UPDATED")
+          UPDATED=$(patch_env "USE_WAAFIPAY_PROD"                "true"                                                        "$UPDATED")
+          UPDATED=$(patch_env "AWS_REGION"                       "eu-west-1"                                                   "$UPDATED")
+
+          aws ssm put-parameter \
+            --name "$SSM_ENV_PATH" \
+            --value "$UPDATED" \
+            --type SecureString \
+            --tier Advanced \
+            --overwrite \
+            --region "$AWS_REGION"
+
+          echo "SSM parameter updated with live RDS endpoint."
+
+  # ── Fleet Operation ────────────────────────────────────────────────────────
+  fleet:
+    name: "Fleet — ${{ github.event.inputs.action }}"
+    runs-on: ubuntu-latest
+    needs: sync-ssm
+    steps:
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BACKEND_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve ASG instances
+        id: asg
+        run: |
+          set -euo pipefail
+
+          ASG=$(aws cloudformation describe-stack-resources \
             --stack-name "$STACK_NAME" \
             --logical-resource-id BackendAutoScalingGroup \
             --region "$AWS_REGION" \
             --query "StackResources[0].PhysicalResourceId" \
             --output text)
 
-          if [ -z "$ASG_NAME" ] || [ "$ASG_NAME" = "None" ]; then
-            echo "ERROR: Could not resolve ASG name from stack $STACK_NAME"
+          if [ -z "$ASG" ] || [ "$ASG" = "None" ]; then
+            echo "ERROR: BackendAutoScalingGroup not found in stack $STACK_NAME"
             exit 1
           fi
 
-          echo "asg_name=$ASG_NAME" >> "$GITHUB_OUTPUT"
-          echo "ASG: $ASG_NAME"
-
-      - name: Rolling deploy via SSM
-        env:
-          ASG_NAME: ${{ steps.cfn.outputs.asg_name }}
-          COMMIT_SHA: ${{ github.sha }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
           INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
-            --auto-scaling-group-names "$ASG_NAME" \
+            --auto-scaling-group-names "$ASG" \
             --region "$AWS_REGION" \
             --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
             --output text)
 
           if [ -z "$INSTANCES" ] || [ "$INSTANCES" = "None" ]; then
-            echo "No InService instances found in $ASG_NAME"
+            echo "ERROR: No InService instances found in $ASG"
             exit 1
           fi
 
-          TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
-          echo "Deploying ${COMMIT_SHA:0:8} to $TOTAL instance(s): $INSTANCES"
+          echo "asg=$ASG"           >> "$GITHUB_OUTPUT"
+          echo "instances=$INSTANCES" >> "$GITHUB_OUTPUT"
+          echo "Instances: $INSTANCES"
 
-          CLONE_CMD="git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git /home/ec2-user/karaadi"
-          SSM_GET="aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region $AWS_REGION > /home/ec2-user/karaadi/backend/.env || exit 1"
+      # ── Build the SSM command array for each action ───────────────────────
+      - name: Build SSM commands — Deploy (nuclear rebuild)
+        if: ${{ github.event.inputs.action == 'Deploy' }}
+        id: cmd_deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Interpolate shell vars at workflow time so jq receives literal strings.
+          CLONE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
 
-          COMMANDS=$(jq -nc --arg clone "$CLONE_CMD" --arg ssm_get "$SSM_GET" '[
+          COMMANDS=$(jq -nc \
+            --arg clone_url "$CLONE_URL" \
+            --arg ssm_path  "$SSM_ENV_PATH" \
+            --arg region    "$AWS_REGION" \
+            --arg sha       "${COMMIT_SHA:0:8}" \
+          '[
             "set -euo pipefail",
+
+            "# ── 1. Environment bootstrap ─────────────────────────────────────",
             "export HOME=/home/ec2-user",
-            "export PATH=$PATH:/usr/bin:/usr/local/bin",
+            "export PATH=$PATH:/usr/bin:/usr/local/bin:/home/ec2-user/.local/bin",
+            "echo \"[deploy] starting nuclear rebuild for commit \($sha)\"",
+
+            "# ── 2. Ensure git is installed (fixes Exit Status 127) ───────────",
+            "sudo dnf install -y git",
+
+            "# ── 3. Full purge (remove previous failed/stale deployment) ──────",
             "sudo rm -rf /home/ec2-user/karaadi",
-            $clone,
+
+            "# ── 4. Authenticated clone ───────────────────────────────────────",
+            "git clone \($clone_url) /home/ec2-user/karaadi",
+
+            "# ── 5. Pull env from SSM → .env.production ───────────────────────",
             "mkdir -p /home/ec2-user/karaadi/backend",
-            $ssm_get,
-            "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
-            "cp /home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/.env.production",
-            "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env | xargs)",
-            "cd /home/ec2-user/karaadi/backend && npm install --omit=dev",
-            "npm install -g tsx",
+            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > /home/ec2-user/karaadi/backend/.env.production || exit 1",
+            "[ -s /home/ec2-user/karaadi/backend/.env.production ] || { echo ERROR: .env.production is empty; exit 1; }",
+
+            "# ── 6. Inject env into the current shell (fixes DATABASE_URL crash) ──",
+            "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env.production | xargs)",
+
+            "# ── 7. Install ALL dependencies (dev needed for esbuild build) ───",
+            "cd /home/ec2-user/karaadi/backend && npm install",
+
+            "# ── 8. Generate Prisma client ────────────────────────────────────",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
+
+            "# ── 9. Drop old schema and apply a clean migration ───────────────",
             "cd /home/ec2-user/karaadi/backend && npx prisma migrate reset --force",
+
+            "# ── 10. Seed Somali marketplace data ─────────────────────────────",
             "cd /home/ec2-user/karaadi/backend && npm run import",
-            "pm2 delete all || true",
-            "cd /home/ec2-user/karaadi/backend && pm2 start ecosystem.config.cjs --env production",
+
+            "# ── 11. Bundle server with esbuild ───────────────────────────────",
+            "cd /home/ec2-user/karaadi/backend && npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
+
+            "# ── 12. Start/restart application via pm2 (--update-env is mandatory) ──",
+            "cd /home/ec2-user/karaadi/backend && pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
             "pm2 save",
-            "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
+
+            "# ── 13. Health check ─────────────────────────────────────────────",
+            "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 50; exit 1; }"
           ]')
 
-          COUNT=0
-          for INSTANCE_ID in $INSTANCES; do
-            COUNT=$((COUNT + 1))
-            echo ""
-            echo "::group::[$COUNT/$TOTAL] $INSTANCE_ID"
+          echo "commands<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$COMMANDS"     >> "$GITHUB_OUTPUT"
+          echo "EOF"           >> "$GITHUB_OUTPUT"
+          echo "timeout=600"   >> "$GITHUB_OUTPUT"
 
-            COMMAND_ID=$(aws ssm send-command \
-              --instance-ids "$INSTANCE_ID" \
+      - name: Build SSM commands — Restart (pm2 reload)
+        if: ${{ github.event.inputs.action == 'Restart' }}
+        id: cmd_restart
+        run: |
+          COMMANDS=$(jq -nc '[
+            "set -euo pipefail",
+            "pm2 reload karaadi-backend --update-env || pm2 restart karaadi-backend --update-env",
+            "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 30; exit 1; }"
+          ]')
+          echo "commands<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$COMMANDS"     >> "$GITHUB_OUTPUT"
+          echo "EOF"           >> "$GITHUB_OUTPUT"
+          echo "timeout=120"   >> "$GITHUB_OUTPUT"
+
+      - name: Build SSM commands — Seed-Fix (migrate deploy + re-import)
+        if: ${{ github.event.inputs.action == 'Seed-Fix' }}
+        id: cmd_seedfix
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          COMMANDS=$(jq -nc \
+            --arg ssm_path "$SSM_ENV_PATH" \
+            --arg region   "$AWS_REGION" \
+          '[
+            "set -euo pipefail",
+            "export HOME=/home/ec2-user",
+
+            "# Re-pull env in case SSM was just updated ─────────────────────",
+            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > /home/ec2-user/karaadi/backend/.env.production || exit 1",
+            "[ -s /home/ec2-user/karaadi/backend/.env.production ] || { echo ERROR: .env.production is empty; exit 1; }",
+            "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env.production | xargs)",
+
+            "# Apply any pending migrations (non-destructive) ─────────────────",
+            "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy",
+
+            "# Re-seed marketplace data ────────────────────────────────────────",
+            "cd /home/ec2-user/karaadi/backend && npm run import",
+
+            "# Reload to pick up any env changes ──────────────────────────────",
+            "pm2 reload karaadi-backend --update-env || true",
+            "echo SEED_FIX_OK"
+          ]')
+          echo "commands<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$COMMANDS"     >> "$GITHUB_OUTPUT"
+          echo "EOF"           >> "$GITHUB_OUTPUT"
+          echo "timeout=300"   >> "$GITHUB_OUTPUT"
+
+      # ── Send SSM command to every InService instance (rolling) ───────────
+      - name: Execute on fleet (rolling SSM)
+        env:
+          INSTANCES: ${{ steps.asg.outputs.instances }}
+          ACTION: ${{ github.event.inputs.action }}
+          COMMIT_SHA: ${{ github.sha }}
+          # Each action step writes to its own id; pick the one that ran.
+          CMD_DEPLOY: ${{ steps.cmd_deploy.outputs.commands }}
+          CMD_RESTART: ${{ steps.cmd_restart.outputs.commands }}
+          CMD_SEEDFIX: ${{ steps.cmd_seedfix.outputs.commands }}
+          TIMEOUT_DEPLOY: ${{ steps.cmd_deploy.outputs.timeout }}
+          TIMEOUT_RESTART: ${{ steps.cmd_restart.outputs.timeout }}
+          TIMEOUT_SEEDFIX: ${{ steps.cmd_seedfix.outputs.timeout }}
+        run: |
+          set -euo pipefail
+
+          # Select the right payload ──────────────────────────────────────────
+          case "$ACTION" in
+            Deploy)   COMMANDS="$CMD_DEPLOY";  EXEC_TIMEOUT="$TIMEOUT_DEPLOY"  ;;
+            Restart)  COMMANDS="$CMD_RESTART"; EXEC_TIMEOUT="$TIMEOUT_RESTART" ;;
+            Seed-Fix) COMMANDS="$CMD_SEEDFIX"; EXEC_TIMEOUT="$TIMEOUT_SEEDFIX" ;;
+            *) echo "Unknown action: $ACTION"; exit 1 ;;
+          esac
+
+          # SSM poller — waits up to EXEC_TIMEOUT seconds at 5 s intervals ───
+          run_ssm() {
+            local INSTANCE=$1
+            local MAX_ATTEMPTS=$(( EXEC_TIMEOUT / 5 ))
+
+            CMD_ID=$(aws ssm send-command \
+              --instance-ids "$INSTANCE" \
               --document-name "AWS-RunShellScript" \
-              --comment "deploy-${COMMIT_SHA:0:8}" \
-              --parameters "{\"commands\": $COMMANDS, \"executionTimeout\": [\"300\"]}" \
+              --comment "${ACTION}-${COMMIT_SHA:0:8}" \
+              --parameters "{\"commands\":${COMMANDS},\"executionTimeout\":[\"${EXEC_TIMEOUT}\"]}" \
               --region "$AWS_REGION" \
               --output json | jq -r '.Command.CommandId')
+            echo "  SSM command: $CMD_ID"
 
-            echo "SSM command: $COMMAND_ID"
-
-            # Poll until done — 5 min max at 5s intervals
-            ATTEMPT=0
-            while [ $ATTEMPT -lt 60 ]; do
-              ATTEMPT=$((ATTEMPT + 1))
-
-              INVOCATION=$(aws ssm get-command-invocation \
-                --command-id "$COMMAND_ID" \
-                --instance-id "$INSTANCE_ID" \
+            for i in $(seq 1 "$MAX_ATTEMPTS"); do
+              INV=$(aws ssm get-command-invocation \
+                --command-id "$CMD_ID" \
+                --instance-id "$INSTANCE" \
                 --region "$AWS_REGION" \
                 --output json 2>/dev/null \
                 || echo '{"Status":"InProgress","StandardOutputContent":"","StandardErrorContent":""}')
-
-              STATUS=$(echo "$INVOCATION" | jq -r '.Status')
-              echo "  [$ATTEMPT/60] $STATUS"
-
+              STATUS=$(echo "$INV" | jq -r '.Status')
+              echo "  [$i/$MAX_ATTEMPTS] $STATUS"
               case "$STATUS" in
                 Success)
-                  echo "  Deployed to $INSTANCE_ID"
-                  echo "$INVOCATION" | jq -r '.StandardOutputContent'
-                  break
+                  echo "$INV" | jq -r '.StandardOutputContent'
+                  return 0
                   ;;
                 Failed|Cancelled|TimedOut|Undeliverable|Terminated)
-                  echo "  FAILED on $INSTANCE_ID (status: $STATUS)"
                   echo "--- stdout ---"
-                  echo "$INVOCATION" | jq -r '.StandardOutputContent'
+                  echo "$INV" | jq -r '.StandardOutputContent'
                   echo "--- stderr ---"
-                  echo "$INVOCATION" | jq -r '.StandardErrorContent'
-                  echo "::endgroup::"
-                  echo "Aborting — remaining instances not updated."
-                  exit 1
+                  echo "$INV" | jq -r '.StandardErrorContent'
+                  return 1
                   ;;
                 *)
                   sleep 5
@@ -181,19 +370,25 @@ jobs:
               esac
             done
 
-            if [ $ATTEMPT -ge 60 ]; then
-              echo "Timed out waiting for SSM on $INSTANCE_ID"
-              echo "::endgroup::"
-              exit 1
-            fi
+            echo "ERROR: Timed out waiting for SSM on $INSTANCE"
+            return 1
+          }
 
+          # Rolling execution — abort on first failure ──────────────────────
+          TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
+          COUNT=0
+          for INSTANCE in $INSTANCES; do
+            COUNT=$((COUNT + 1))
+            echo ""
+            echo "::group::[$COUNT/$TOTAL] $ACTION → $INSTANCE"
+            run_ssm "$INSTANCE" || { echo "::endgroup::"; echo "Aborting — $INSTANCE failed."; exit 1; }
             echo "::endgroup::"
 
-            if [ "$COUNT" -lt "$TOTAL" ]; then
-              echo "Waiting 30s before next instance…"
+            if [ "$COUNT" -lt "$TOTAL" ] && [ "$ACTION" = "Deploy" ]; then
+              echo "Waiting 30 s before next instance (rolling deploy)…"
               sleep 30
             fi
           done
 
           echo ""
-          echo "All $TOTAL instance(s) deployed successfully."
+          echo "✅  $ACTION completed on all $TOTAL instance(s)."
