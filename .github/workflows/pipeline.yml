@@ -233,8 +233,8 @@ jobs:
           UPDATED=$(patch_env "ALLOWED_ORIGINS" "https://karaadi.com,https://www.karaadi.com" "$UPDATED")
           [ -n "$COGNITO_POOL" ] && UPDATED=$(patch_env "KARAADI_AWS_COGNITO_USER_POOL_ID" "$COGNITO_POOL" "$UPDATED")
           [ -n "$COGNITO_CLIENT" ] && UPDATED=$(patch_env "KARAADI_AWS_COGNITO_CLIENT_ID" "$COGNITO_CLIENT" "$UPDATED")
-          aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" --type SecureString --overwrite --region "$AWS_REGION"
-          aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" --type SecureString --overwrite --region "$AWS_REGION" 2>/dev/null || true
+          aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" --type SecureString --tier Advanced --overwrite --region "$AWS_REGION"
+          aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" --type SecureString --tier Advanced --overwrite --region "$AWS_REGION" 2>/dev/null || true
           echo "SSM env patched"
 
       - name: Get ASG name
