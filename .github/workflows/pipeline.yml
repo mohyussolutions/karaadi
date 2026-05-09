@@ -251,6 +251,10 @@ jobs:
 
           COMMANDS=$(jq -nc --arg ssm_get "$SSM_GET" '[
             "set -euo pipefail",
+            "export PATH=$PATH:/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin",
+            "command -v git || (curl -fsSL https://rpm.nodesource.com/setup_24.x | bash - && dnf install -y nodejs git)",
+            "command -v node || (curl -fsSL https://rpm.nodesource.com/setup_24.x | bash - && dnf install -y nodejs git)",
+            "command -v pm2 || npm install -g pm2",
             "mkdir -p /home/ec2-user/karaadi/backend",
             $ssm_get,
             "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
