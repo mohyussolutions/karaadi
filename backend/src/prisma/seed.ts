@@ -1,4 +1,5 @@
 import { fileURLToPath } from "url";
+import pg from "pg";
 import { boatItems } from "../seeder/boatSeeder.ts";
 import { carItems } from "../seeder/cars.ts";
 import { userItems } from "../seeder/users.ts";
@@ -16,8 +17,25 @@ import prisma from "../core/utils/db.ts";
 
 const { cities, regions } = somaliaData;
 
+const grantPrivileges = async () => {
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  try {
+    await client.connect();
+    await client.query(`GRANT ALL ON SCHEMA public TO CURRENT_USER`);
+    await client.query(`GRANT ALL ON ALL TABLES IN SCHEMA public TO CURRENT_USER`);
+    await client.query(`GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER`);
+    console.log("DB privileges granted");
+  } catch (err: any) {
+    console.warn("Grant skipped:", err.message);
+  } finally {
+    await client.end();
+  }
+};
+
 export const seedDatabase = async () => {
   const isProd = process.env.NODE_ENV === "production";
+
+  await grantPrivileges();
 
   if (!isProd) {
     await prisma.job.deleteMany();
