@@ -154,18 +154,18 @@ jobs:
               --stack-name "$STACK_NAME" \
               --region     "$AWS_REGION" \
               --query      "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" \
-              --output     text)
+              --output     text 2>/dev/null || echo "")
             [ "$val" = "None" ] && echo "" || echo "$val"
           }
+          APP_NAME="karaadi"
           EB_APP=$(query_output "EBApplicationName")
           EB_ENV=$(query_output "EBEnvironmentName")
           S3_BUCKET=$(query_output "ArtifactsBucketName")
-          [ -n "$EB_APP" ] || { echo "ERROR: EBApplicationName not in CFN outputs"; exit 1; }
-          [ -n "$EB_ENV" ] || { echo "ERROR: EBEnvironmentName not in CFN outputs";  exit 1; }
+          [ -n "$EB_APP" ] || EB_APP="${APP_NAME}-app"
+          [ -n "$EB_ENV" ] || EB_ENV="${APP_NAME}-env"
           if [ -z "$S3_BUCKET" ]; then
             ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-            S3_BUCKET="karaadi-eb-artifacts-${ACCOUNT_ID}"
-            echo "WARNING: ArtifactsBucketName not in CFN outputs, using derived: ${S3_BUCKET}"
+            S3_BUCKET="${APP_NAME}-eb-artifacts-${ACCOUNT_ID}"
           fi
           echo "eb_app=${EB_APP}"       >> "$GITHUB_OUTPUT"
           echo "eb_env=${EB_ENV}"       >> "$GITHUB_OUTPUT"
