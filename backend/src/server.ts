@@ -19,21 +19,18 @@ const startServer = async () => {
     const sub = pub.duplicate();
     await sub.connect();
     socketServer(server, pub, sub);
+    console.log(chalk.green("Redis connected — sockets enabled"));
   } catch (err) {
-    console.error(chalk.yellow("[Redis] unavailable — sockets disabled:"), err);
+    console.error(chalk.yellow("Redis unavailable — sockets disabled:"), err);
   }
 
   server.listen(Number(process.env.PORT) || 8080, "::", () => {
-    console.log(
-      chalk.green(`Server PID ${process.pid} ready on port ${process.env.PORT || 8080}`),
-    );
+    console.log(chalk.green(`Server ready on port ${process.env.PORT || 8080}`));
   });
 
   prisma.$connect()
     .then(() => console.log(chalk.green("DB connected")))
-    .catch((err: unknown) =>
-      console.error(chalk.yellow("[DB] connect failed — will retry:"), err),
-    );
+    .catch((err: unknown) => console.error(chalk.yellow("DB connect failed — will retry:"), err));
 
   setupGracefulShutdown({ server, prisma, redisServer });
 

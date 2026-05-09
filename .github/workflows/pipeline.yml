@@ -159,36 +159,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.BACKEND_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Build backend bundle
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-        run: |
-          cd backend
-          npm ci --omit=dev
-          npx prisma generate
-          npx esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --packages=external --outfile=dist/index.js
-          npx esbuild src/prisma/seed.ts --bundle --platform=node --target=node24 --format=esm --packages=external --outfile=dist/seed.js
-
-      - name: Upload bundle to S3
-        run: |
-          cd backend
-          tar --exclude="._*" --exclude=".DS_Store" -czf /tmp/backend-${{ github.sha }}.tar.gz dist/ src/prisma/ prisma.config.ts package.json package-lock.json
-          aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
-            s3://karaadi-images-108782100045/deployments/backend-${{ github.sha }}.tar.gz
-          aws s3 cp /tmp/backend-${{ github.sha }}.tar.gz \
-            s3://karaadi-images-108782100045/deployments/backend-latest.tar.gz
 
       - name: Fix DATABASE_URL in SSM
         env:
@@ -259,7 +234,6 @@ jobs:
         env:
           ASG: ${{ steps.cfn.outputs.asg }}
           SHA: ${{ github.sha }}
-          S3_BUCKET: karaadi-images-108782100045
         run: |
           set -euo pipefail
 
@@ -272,27 +246,24 @@ jobs:
           TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
           echo "Deploying ${SHA:0:8} to $TOTAL instance(s)"
 
-          COMMANDS=$(jq -nc --arg sha "$SHA" --arg bucket "$S3_BUCKET" --arg region "$AWS_REGION" '[
+          COMMANDS=$(jq -nc --arg region "$AWS_REGION" '[
             "set -euo pipefail",
-            "mkdir -p /home/ec2-user/karaadi/backend",
             ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env || exit 1"),
             "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
             "cp /home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/.env.production",
-            ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
-            "rm -rf /home/ec2-user/karaadi/backend/src/prisma",
-            "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
-            "cd /home/ec2-user/karaadi/backend && npm ci --omit=dev",
+            "cd /home/ec2-user/karaadi && git fetch origin main && git reset --hard origin/main",
+            "cd /home/ec2-user/karaadi/backend && npm ci",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
             "dnf install -y postgresql15 2>/dev/null || yum install -y postgresql15 2>/dev/null || true",
             "python3 -c \"import subprocess,re,os; env=open('/home/ec2-user/karaadi/backend/.env').read(); m=re.search(r'DATABASE_URL=postgresql://([^:]+):([^@]+)@([^:/]+)(?::([0-9]+))?/([^?\\\\s]+)', env); u,p,h,port,db=m.group(1),m.group(2),m.group(3),(m.group(4) or '5432'),m.group(5); e={**os.environ,'PGPASSWORD':p}; subprocess.run(['psql','-h',h,'-p',port,'-U',u,'-d','postgres','-c',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);'],env=e); subprocess.run(['psql','-h',h,'-p',port,'-U',u,'-d','postgres','-c',f'CREATE DATABASE {db} OWNER {u};'],env=e); print('DB_RECREATED')\"",
             "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy",
             "echo --- importing seed data ---",
-            "node --env-file=/home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/dist/seed.js && echo IMPORT_OK || echo IMPORT_FAILED",
+            "cd /home/ec2-user/karaadi/backend && npm run import && echo IMPORT_OK || echo IMPORT_FAILED",
             "pm2 delete karaadi-backend 2>/dev/null || true",
-            "pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
+            "pm2 start npm --name karaadi-backend --cwd /home/ec2-user/karaadi/backend -- run start",
             "pm2 save",
             "env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true",
-            "sleep 20; curl -s http://localhost:8080/health && echo HEALTH_OK; pm2 list"
+            "sleep 10 && curl -s http://localhost:8080/health && echo HEALTH_OK && pm2 list"
           ]')
 
           COUNT=0
@@ -353,7 +324,7 @@ jobs:
           [ -z "$INSTANCES" ] && echo "No instances found" && exit 0
 
           COMMANDS=$(jq -nc '[
-            "pm2 describe karaadi-backend > /dev/null 2>&1 && pm2 restart karaadi-backend --update-env || pm2 start /home/ec2-user/karaadi/backend/dist/index.js --name karaadi-backend --node-args \"--env-file=/home/ec2-user/karaadi/backend/.env\" --max-restarts 10 --restart-delay 3000",
+            "pm2 describe karaadi-backend > /dev/null 2>&1 && pm2 restart karaadi-backend --update-env || pm2 start npm --name karaadi-backend --cwd /home/ec2-user/karaadi/backend -- run start",
             "pm2 save",
             "sleep 10 && curl -sf http://localhost:8080/health && echo SERVER_RUNNING && pm2 list"
           ]')
