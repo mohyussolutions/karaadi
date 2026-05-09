@@ -13,9 +13,9 @@ services:
       - key: PORT
         value: 10000
       - key: DATABASE_URL
-        sync: false
+        value: "postgresql://postgres.lycilntbqqngquwdvwnr:karaadi_password_2025_for_prod@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
       - key: DIRECT_URL
-        sync: false
+        value: "postgresql://postgres.lycilntbqqngquwdvwnr:karaadi_password_2025_for_prod@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
       - key: REDIS_URL
         sync: false
       - key: JWT_SECRET
@@ -51,7 +51,7 @@ services:
       - key: WAAFIPAY_API_USER_ID
         value: "1008816"
       - key: WAAFIPAY_API_KEY
-        sync: false
+        value: API-Q9yhd1f89hJLeXV8lq78hEZaS5CP
       - key: USE_WAAFIPAY_PROD
         value: "true"
       - key: WAAFIPAY_PRODUCTION_URL
@@ -59,7 +59,7 @@ services:
       - key: TIKTOK_CLIENT_KEY
         value: aw7w2mc71navvwzl
       - key: TIKTOK_CLIENT_SECRET
-        sync: false
+        value: 6LXGWoVsW8apQBthEOO5jivtbigGXubz
       - key: FACEBOOK_PAGE_ID
         value: "61569249207022"
       - key: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
