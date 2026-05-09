@@ -203,54 +203,82 @@ jobs:
 
           COMMANDS=$(jq -nc \
             --arg clone_url "$CLONE_URL" \
-            --arg ssm_path  "$SSM_ENV_PATH" \
             --arg region    "$AWS_REGION" \
             --arg stack     "$STACK_NAME" \
-            --arg sha       "${COMMIT_SHA:0:8}" \
+            --arg db_user   "karaadi_database_2025_for_prod" \
+            --arg db_pass   "karaadi_password_2025_for_prod" \
+            --arg db_name   "karaadi" \
           '[
-            "sudo dnf install -y git postgresql15 || sudo yum install -y git postgresql15 || true",
+            "# === SYSTEM SETUP (runs before set -e so install failures are non-fatal) ===",
+            "sudo dnf install -y git 2>&1 | tail -5",
+            "sudo dnf install -y postgresql15 2>&1 | tail -5 || sudo dnf install -y postgresql 2>&1 | tail -5 || true",
+            "command -v git >/dev/null 2>&1 || { echo FATAL_git_not_installed; exit 127; }",
+            "echo \"SYSTEM_OK git=$(git --version) node=$(node --version 2>/dev/null||echo missing)\"",
             "set -euo pipefail",
             "export HOME=/home/ec2-user",
             "export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin",
-            "echo \"[deploy] git $(git --version) | node $(node --version)\"",
-            "echo \"[deploy] === STEP 1: resolve live RDS endpoint from CloudFormation ===\"",
-            "RDS_HOST=$(aws cloudformation describe-stacks --stack-name \($stack) --region \($region) --query \"Stacks[0].Outputs[?OutputKey==\\\"RDSEndpoint\\\"].OutputValue\" --output text 2>/dev/null || true)",
-            "[ -n \"$RDS_HOST\" ] && [ \"$RDS_HOST\" != \"None\" ] || { echo 'FATAL: RDS endpoint not found in CloudFormation outputs. Is the stack deployed?'; exit 1; }",
-            "echo \"[deploy] RDS endpoint: $RDS_HOST\"",
-            "echo \"[deploy] === STEP 2: pull extra secrets from SSM ===\"",
-            "SSM_EXTRAS=$(aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) 2>/dev/null || echo '')",
-            "echo \"[deploy] SSM lines pulled: $(echo \\\"$SSM_EXTRAS\\\" | wc -l)\"",
-            "echo \"[deploy] === STEP 3: build .env in /tmp (survives the rm -rf) ===\"",
-            "KNOWN_KEYS='NODE_ENV|PORT|ALLOWED_ORIGINS|KARAADI_AWS_COGNITO_USER_POOL_ID|KARAADI_AWS_COGNITO_CLIENT_ID|COGNITO_JWKS_URL|BACKEND_URL|NEXT_PUBLIC_FRONTEND_URL|COOKIE_DOMAIN|USE_WAAFIPAY_PROD|AWS_REGION|DATABASE_URL'",
-            "{ echo \"DATABASE_URL=postgresql://karaadi_database_2025_for_prod:karaadi_password_2025_for_prod@${RDS_HOST}:5432/karaadi\"; echo 'NODE_ENV=production'; echo 'PORT=8080'; echo 'ALLOWED_ORIGINS=https://karaadi.com,https://www.karaadi.com'; echo 'KARAADI_AWS_COGNITO_USER_POOL_ID=eu-west-1_mmyv1vz45'; echo 'KARAADI_AWS_COGNITO_CLIENT_ID=29lcmo54mlc692mbsf26j07g7p'; echo 'COGNITO_JWKS_URL=https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_mmyv1vz45/.well-known/jwks.json'; echo 'BACKEND_URL=https://api.karaadi.com'; echo 'NEXT_PUBLIC_FRONTEND_URL=https://karaadi.com'; echo 'COOKIE_DOMAIN=karaadi.com'; echo 'USE_WAAFIPAY_PROD=true'; echo 'AWS_REGION=eu-west-1'; } > /tmp/karaadi.env",
-            "echo \"[deploy] === STEP 4: append extra SSM secrets (skip known keys) ===\"",
-            "echo \"$SSM_EXTRAS\" | grep -v '^#' | grep -v '^$' | grep -v -E \"^($KNOWN_KEYS)=\" >> /tmp/karaadi.env || true",
-            "echo \"[deploy] === STEP 5: verify /tmp/karaadi.env ===\"",
-            "echo \"Total .env lines: $(wc -l < /tmp/karaadi.env)\"",
-            "grep '^DATABASE_URL=' /tmp/karaadi.env && echo '[deploy] DATABASE_URL ✓' || { echo 'FATAL: DATABASE_URL missing'; exit 1; }",
-            "grep '^NODE_ENV='     /tmp/karaadi.env && echo '[deploy] NODE_ENV ✓'",
-            "echo \"[deploy] DATABASE_URL host: $(grep '^DATABASE_URL=' /tmp/karaadi.env | sed 's|.*@||' | cut -d: -f1)\"",
-            "echo \"[deploy] === STEP 6: clone repo ===\"",
+
+            "# === STEP 1: RDS endpoint from CloudFormation ===",
+            "RDS_HOST=$(aws cloudformation describe-stacks --stack-name \($stack) --region \($region) --query \"Stacks[0].Outputs[?OutputKey==\\\"RDSEndpoint\\\"].OutputValue\" --output text 2>&1)",
+            "echo \"RDS_HOST=[$RDS_HOST]\"",
+            "[ -n \"$RDS_HOST\" ] && [ \"$RDS_HOST\" != \"None\" ] || { echo FATAL_RDS_endpoint_not_in_CFN_outputs; exit 1; }",
+
+            "# === STEP 2: assemble DATABASE_URL as a shell variable ===",
+            "DB_URL=\"postgresql://\($db_user):\($db_pass)@${RDS_HOST}:5432/\($db_name)\"",
+            "echo \"DB_URL_HOST_CHECK=$(echo $DB_URL | sed 's|.*@||' | cut -d: -f1)\"",
+
+            "# === STEP 3: clone repo ===",
             "sudo rm -rf /home/ec2-user/karaadi",
+            "mkdir -p /home/ec2-user/karaadi",
             "git clone \($clone_url) /home/ec2-user/karaadi",
-            "echo \"[deploy] === STEP 7: copy .env into cloned repo ===\"",
-            "cp /tmp/karaadi.env /home/ec2-user/karaadi/backend/.env",
-            "grep '^DATABASE_URL=' /home/ec2-user/karaadi/backend/.env || { echo 'FATAL: .env copy failed'; exit 1; }",
-            "echo \"[deploy] .env in repo — $(wc -l < /home/ec2-user/karaadi/backend/.env) lines\"",
+
+            "# === STEP 4: write .env (each key on its own line, no printf tricks) ===",
+            "ENV_FILE=/home/ec2-user/karaadi/backend/.env",
+            "mkdir -p /home/ec2-user/karaadi/backend",
+            "> \"$ENV_FILE\"",
+            "echo \"DATABASE_URL=${DB_URL}\"                                                                                                                   >> \"$ENV_FILE\"",
+            "echo 'NODE_ENV=production'                                                                                                                         >> \"$ENV_FILE\"",
+            "echo 'PORT=8080'                                                                                                                                   >> \"$ENV_FILE\"",
+            "echo 'ALLOWED_ORIGINS=https://karaadi.com,https://www.karaadi.com'                                                                                 >> \"$ENV_FILE\"",
+            "echo 'KARAADI_AWS_COGNITO_USER_POOL_ID=eu-west-1_mmyv1vz45'                                                                                       >> \"$ENV_FILE\"",
+            "echo 'KARAADI_AWS_COGNITO_CLIENT_ID=29lcmo54mlc692mbsf26j07g7p'                                                                                   >> \"$ENV_FILE\"",
+            "echo 'COGNITO_JWKS_URL=https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_mmyv1vz45/.well-known/jwks.json'                                     >> \"$ENV_FILE\"",
+            "echo 'BACKEND_URL=https://api.karaadi.com'                                                                                                         >> \"$ENV_FILE\"",
+            "echo 'NEXT_PUBLIC_FRONTEND_URL=https://karaadi.com'                                                                                               >> \"$ENV_FILE\"",
+            "echo 'COOKIE_DOMAIN=karaadi.com'                                                                                                                   >> \"$ENV_FILE\"",
+            "echo 'USE_WAAFIPAY_PROD=true'                                                                                                                     >> \"$ENV_FILE\"",
+            "echo 'AWS_REGION=eu-west-1'                                                                                                                       >> \"$ENV_FILE\"",
+
+            "# === STEP 5: hard-verify .env ===",
+            "echo \".env_line_count=$(wc -l < $ENV_FILE)\"",
+            "cat \"$ENV_FILE\"",
+            "grep -q '^DATABASE_URL=' \"$ENV_FILE\" || { echo FATAL_DATABASE_URL_missing; exit 1; }",
+            "grep -q '^NODE_ENV='     \"$ENV_FILE\" || { echo FATAL_NODE_ENV_missing;     exit 1; }",
+            "echo ENV_FILE_VERIFIED",
+
+            "# === STEP 6: wait for RDS to accept TCP connections ===",
+            "RDS_READY=0; for i in $(seq 1 18); do if pg_isready -h \"$RDS_HOST\" -p 5432 -t 5 >/dev/null 2>&1; then echo DB_READY_on_attempt_$i; RDS_READY=1; break; fi; echo \"pg_isready attempt $i/18 — waiting 10s\"; sleep 10; done",
+            "[ \"$RDS_READY\" = '1' ] || { echo FATAL_RDS_not_reachable_after_3min; exit 1; }",
+
+            "# === STEP 7: install deps ===",
             "cd /home/ec2-user/karaadi/backend",
-            "echo \"[deploy] === STEP 8: wait for RDS to accept connections ===\"",
-            "for i in $(seq 1 18); do pg_isready -h \"$RDS_HOST\" -p 5432 -t 5 2>/dev/null && echo DB_READY && break; echo \"[$i/18] RDS not accepting connections yet, waiting 10s...\"; sleep 10; done",
-            "pg_isready -h \"$RDS_HOST\" -p 5432 -t 5 || { echo 'FATAL: RDS unreachable after 3 min — check SG inbound rules and subnet routing'; exit 1; }",
-            "echo \"[deploy] === STEP 9: install deps & build ===\"",
             "npm install",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma generate",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma migrate reset --force",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npm run import",
+
+            "# === STEP 8: prisma (hard-inject DATABASE_URL each time) ===",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' \"$ENV_FILE\" | cut -d= -f2-) npx prisma generate",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' \"$ENV_FILE\" | cut -d= -f2-) npx prisma migrate reset --force",
+
+            "# === STEP 9: seed ===",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' \"$ENV_FILE\" | cut -d= -f2-) npm run import",
+
+            "# === STEP 10: build ===",
             "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
-            "echo \"[deploy] === STEP 10: start pm2 ===\"",
+
+            "# === STEP 11: pm2 ===",
             "pm2 startOrRestart ecosystem.config.cjs --update-env",
             "pm2 save",
-            "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 50; exit 1; }"
+            "sleep 10",
+            "curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 50 --nostream; exit 1; }"
           ]')
 
           echo "commands<<EOF" >> "$GITHUB_OUTPUT"
