@@ -23,7 +23,11 @@ import {
 } from "../../types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 
-const jwksUri = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.KARAADI_AWS_COGNITO_USER_POOL_ID}/.well-known/jwks.json`;
+const COGNITO_REGION = process.env.AWS_REGION ?? "eu-west-1";
+const COGNITO_POOL_ID = process.env.KARAADI_AWS_COGNITO_USER_POOL_ID ?? "eu-west-1_W3gH3awFm";
+const COGNITO_CLIENT_ID = process.env.KARAADI_AWS_COGNITO_CLIENT_ID ?? "1oe14kj0nek85esk0o0vi1griv";
+
+const jwksUri = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`;
 
 const jwksClientInstance = jwksClient({
   jwksUri,
@@ -42,14 +46,14 @@ const getKey = (header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) => {
 };
 
 export const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.AWS_REGION,
+  region: COGNITO_REGION,
 });
 
 export const deleteFromCognito = async (cognitoId: string): Promise<void> => {
   try {
     await cognitoClient.send(
       new AdminDeleteUserCommand({
-        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID!,
+        UserPoolId: COGNITO_POOL_ID,
         Username: cognitoId,
       }),
     );
@@ -137,7 +141,7 @@ export const signUp = async (
 
     const response = await cognitoClient.send(
       new SignUpCommand({
-        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: COGNITO_CLIENT_ID,
         Username: email,
         Password: password,
         UserAttributes: userAttributes,
@@ -159,7 +163,7 @@ export const signIn = async (
     const response = await cognitoClient.send(
       new InitiateAuthCommand({
         AuthFlow: "USER_PASSWORD_AUTH",
-        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: COGNITO_CLIENT_ID,
         AuthParameters: { USERNAME: email, PASSWORD: password },
       }),
     );
@@ -269,7 +273,7 @@ export const verifySession = async (
       token,
       getKey,
       {
-        issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.KARAADI_AWS_COGNITO_USER_POOL_ID}`,
+        issuer: `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}`,
         ignoreExpiration: false,
       },
       async (err, decoded) => {
@@ -351,7 +355,7 @@ export const confirmSignUp = async (email: string, code: string) => {
   try {
     await cognitoClient.send(
       new ConfirmSignUpCommand({
-        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: COGNITO_CLIENT_ID,
         Username: email,
         ConfirmationCode: code,
       }),
@@ -458,7 +462,7 @@ export const updateUserRole = async (
 
     await cognitoClient.send(
       new AdminUpdateUserAttributesCommand({
-        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID!,
+        UserPoolId: COGNITO_POOL_ID,
         Username: targetEmail,
         UserAttributes: Object.entries(attributes).map(([key, value]) => ({
           Name: key,
@@ -486,7 +490,7 @@ export const adminUpdateUser = async (
 
     await cognitoClient.send(
       new AdminUpdateUserAttributesCommand({
-        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID!,
+        UserPoolId: COGNITO_POOL_ID,
         Username: username,
         UserAttributes: userAttributes,
       }),
@@ -500,7 +504,7 @@ export const resendVerificationCode = async (email: string) => {
   try {
     await cognitoClient.send(
       new ResendConfirmationCodeCommand({
-        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: COGNITO_CLIENT_ID,
         Username: email,
       }),
     );
@@ -513,7 +517,7 @@ export const forgotPassword = async (email: string) => {
   try {
     await cognitoClient.send(
       new ForgotPasswordCommand({
-        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: COGNITO_CLIENT_ID,
         Username: email,
       }),
     );
@@ -530,7 +534,7 @@ export const resetPassword = async (
   try {
     await cognitoClient.send(
       new ConfirmForgotPasswordCommand({
-        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: COGNITO_CLIENT_ID,
         Username: email,
         ConfirmationCode: resetCode,
         Password: newPassword,
@@ -601,7 +605,7 @@ export const refreshTokenLogic = async (
   const response = await cognitoClient.send(
     new InitiateAuthCommand({
       AuthFlow: "REFRESH_TOKEN_AUTH",
-      ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID!,
+      ClientId: COGNITO_CLIENT_ID,
       AuthParameters: { REFRESH_TOKEN: refreshToken },
     }),
   );
@@ -623,7 +627,7 @@ export const refreshTokenLogicV2 = async (
     const response = await cognitoClient.send(
       new InitiateAuthCommand({
         AuthFlow: "REFRESH_TOKEN_AUTH",
-        ClientId: process.env.KARAADI_AWS_COGNITO_CLIENT_ID || "",
+        ClientId: COGNITO_CLIENT_ID,
         AuthParameters: { REFRESH_TOKEN: refreshToken },
       }),
     );
