@@ -11,15 +11,11 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
 
 env:
   NODE_VERSION: "24"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
-  INFRA_ROLE: arn:aws:iam::108782100045:role/karaadi-infra-deploy
-  BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
-  FRONTEND_ROLE: arn:aws:iam::108782100045:role/karaadi-frontend-deploy
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -103,10 +99,11 @@ jobs:
       - name: Lint template
         run: cfn-lint infrastructure/production.yaml --format json --ignore-checks W1011 || [ $? -eq 4 ]
 
-      - name: Configure AWS (OIDC)
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.INFRA_ROLE }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Deploy stack
@@ -176,10 +173,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS (OIDC)
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.BACKEND_ROLE }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Fix DATABASE_URL in SSM
@@ -367,10 +365,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS (OIDC)
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.FRONTEND_ROLE }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Get Amplify App ID
