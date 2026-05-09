@@ -11,7 +11,11 @@ export const setupSecurity = (app: express.Application) => {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || SECURITY_CONFIG.ALLOWED_ORIGINS.includes(origin)) {
+        if (!origin) return callback(null, true);
+        const isAllowed =
+          SECURITY_CONFIG.ALLOWED_ORIGINS.includes(origin) ||
+          /\.vercel\.app$/.test(origin);
+        if (isAllowed) {
           callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));
