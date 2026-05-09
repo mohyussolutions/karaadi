@@ -7,6 +7,9 @@ overrides = {
     'GitHubOrg': os.environ.get('GITHUB_ORG', ''),
     'GitHubRepo': os.environ.get('GITHUB_REPO_NAME', ''),
     'DomainName': 'karaadi.com',
+    'MinSize': '1',
+    'MaxSize': '1',
+    'DesiredCapacity': '1',
 }
 
 params = []
