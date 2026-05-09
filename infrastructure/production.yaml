@@ -58,6 +58,11 @@ Parameters:
     Type: String
     Default: karaadi
 
+  KeyName:
+    Type: String
+    Default: ""
+    Description: EC2 Key Pair name for SSH access (leave blank to skip)
+
   DBUsername:
     Type: String
     Default: karaadi_admin
@@ -124,6 +129,7 @@ Parameters:
 
 Conditions:
   HasAmplifyToken: !Not [!Equals [!Ref AmplifyGitHubToken, ""]]
+  HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
 
 Resources:
   DatabaseSecret:
@@ -350,6 +356,7 @@ Resources:
       LaunchTemplateData:
         InstanceType: !Ref EC2InstanceType
         ImageId: !Ref AmiId
+        KeyName: !If [HasKeyName, !Ref KeyName, !Ref AWS::NoValue]
         IamInstanceProfile:
           Name: !Ref EC2InstanceProfile
         SecurityGroupIds:

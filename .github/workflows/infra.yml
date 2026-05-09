@@ -9,6 +9,11 @@ on:
         default: deploy
         type: choice
         options: [deploy, destroy]
+      key_name:
+        description: "EC2 Key Pair name for SSH access (optional, must exist in eu-west-1)"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: infrastructure
@@ -77,6 +82,7 @@ jobs:
               DBUsername="$DB_USERNAME" \
               DBPassword="${{ secrets.DB_PASSWORD }}" \
               DomainName="${{ steps.params.outputs.domain }}" \
+              KeyName="${{ inputs.key_name || '' }}" \
             --no-fail-on-empty-changeset \
             --region "$AWS_REGION"
 

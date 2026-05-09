@@ -223,9 +223,10 @@ jobs:
             "echo \"RDS_HOST=[$RDS_HOST]\"",
             "[ -n \"$RDS_HOST\" ] && [ \"$RDS_HOST\" != \"None\" ] || { echo FATAL_RDS_endpoint_not_in_CFN_outputs; exit 1; }",
 
-            "# === STEP 2: assemble DATABASE_URL as a shell variable ===",
-            "DB_URL=\"postgresql://\($db_user):\($db_pass)@${RDS_HOST}:5432/\($db_name)\"",
-            "echo \"DB_URL_HOST_CHECK=$(echo $DB_URL | sed 's|.*@||' | cut -d: -f1)\"",
+            "# === STEP 2: assemble and EXPORT DATABASE_URL as a persistent shell variable ===",
+            "DB_URL=\"postgresql://\\($db_user):\\($db_pass)@${RDS_HOST}:5432/\\($db_name)\"",
+            "export DATABASE_URL=\"${DB_URL}\"",
+            "echo \"DATABASE_URL exported — host=$(echo $DATABASE_URL | sed 's|.*@||' | cut -d: -f1)\""
 
             "# === STEP 3: clone repo ===",
             "sudo rm -rf /home/ec2-user/karaadi",
@@ -255,6 +256,8 @@ jobs:
             "grep -q '^DATABASE_URL=' \"$ENV_FILE\" || { echo FATAL_DATABASE_URL_missing; exit 1; }",
             "grep -q '^NODE_ENV='     \"$ENV_FILE\" || { echo FATAL_NODE_ENV_missing;     exit 1; }",
             "echo ENV_FILE_VERIFIED",
+            "set -a && source \"$ENV_FILE\" && set +a",
+            "echo \"DATABASE_URL after source: $(echo $DATABASE_URL | sed 's|:.*@|:***@|')\"",
 
             "# === STEP 6: wait for RDS to accept TCP connections ===",
             "RDS_READY=0; for i in $(seq 1 18); do if pg_isready -h \"$RDS_HOST\" -p 5432 -t 5 >/dev/null 2>&1; then echo DB_READY_on_attempt_$i; RDS_READY=1; break; fi; echo \"pg_isready attempt $i/18 — waiting 10s\"; sleep 10; done",
@@ -264,12 +267,14 @@ jobs:
             "cd /home/ec2-user/karaadi/backend",
             "npm install",
 
-            "# === STEP 8: prisma (hard-inject DATABASE_URL each time) ===",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' \"$ENV_FILE\" | cut -d= -f2-) npx prisma generate",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' \"$ENV_FILE\" | cut -d= -f2-) npx prisma migrate reset --force",
+            "# === STEP 8: prisma — DATABASE_URL is exported in shell AND injected inline as double-lock ===",
+            "echo \"prisma DATABASE_URL check: $(echo $DATABASE_URL | sed 's|:.*@|:***@|')\"",
+            "[ -n \"$DATABASE_URL\" ] || { echo FATAL_DATABASE_URL_not_exported; exit 1; }",
+            "DATABASE_URL=\"$DATABASE_URL\" npx prisma generate",
+            "DATABASE_URL=\"$DATABASE_URL\" npx prisma migrate reset --force",
 
             "# === STEP 9: seed ===",
-            "DATABASE_URL=$(grep '^DATABASE_URL=' \"$ENV_FILE\" | cut -d= -f2-) npm run import",
+            "DATABASE_URL=\"$DATABASE_URL\" npm run import",
 
             "# === STEP 10: build ===",
             "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
