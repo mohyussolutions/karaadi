@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decodeJwt } from "jose";
+
+// Edge-compatible JWT payload decoder (no Node.js APIs required)
+function decodeJwt(token: string): Record<string, unknown> {
+  const base64Url = token.split(".")[1];
+  if (!base64Url) throw new Error("Invalid JWT");
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const json = atob(base64);
+  return JSON.parse(json);
+}
 
 const ROLE_ROUTES = [
   { pattern: "/dashboard", claim: "custom:isAdmin" },
@@ -34,7 +42,7 @@ export function middleware(req: NextRequest) {
   const idToken = req.cookies.get("idToken")?.value;
   const loginUrl = new URL("/login", req.url);
 
-  let _claims: ReturnType<typeof decodeJwt> | null | false = false;
+  let _claims: Record<string, unknown> | null | false = false;
   const getClaims = () => {
     if (_claims !== false) return _claims;
     if (!idToken) return (_claims = null);
@@ -50,8 +58,10 @@ export function middleware(req: NextRequest) {
       if (!idToken) return NextResponse.redirect(loginUrl);
       const c = getClaims();
       if (!c) return NextResponse.redirect(loginUrl);
-      if (c[route.claim] !== "true") {
-        const ownRoute = ROLE_ROUTES.find((r) => c[r.claim] === "true");
+      if (c[route.claim as string] !== "true") {
+        const ownRoute = ROLE_ROUTES.find(
+          (r) => c[r.claim as string] === "true",
+        );
         return NextResponse.redirect(
           new URL(ownRoute ? ownRoute.pattern : "/login", req.url),
         );
@@ -65,7 +75,7 @@ export function middleware(req: NextRequest) {
   if (idToken && (isPublic || pathname === "/")) {
     const c = getClaims();
     if (c) {
-      const ownRoute = ROLE_ROUTES.find((r) => c[r.claim] === "true");
+      const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
       if (ownRoute)
         return NextResponse.redirect(new URL(ownRoute.pattern, req.url));
     }
@@ -77,7 +87,8 @@ export function middleware(req: NextRequest) {
     try {
       const c = decodeJwt(token);
       const now = Math.floor(Date.now() / 1000);
-      if (!c.exp || c.exp < now) return NextResponse.redirect(loginUrl);
+      const exp = typeof c.exp === "number" ? c.exp : null;
+      if (!exp || exp < now) return NextResponse.redirect(loginUrl);
     } catch {
       return NextResponse.redirect(loginUrl);
     }
