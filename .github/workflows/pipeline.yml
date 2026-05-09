@@ -271,6 +271,7 @@ jobs:
             "mkdir -p /home/ec2-user/karaadi/backend",
             ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env || exit 1"),
             "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
+            "if [ -f /home/ec2-user/karaadi/.env.production ]; then grep -v '^#' /home/ec2-user/karaadi/.env.production | grep '=' >> /home/ec2-user/karaadi/backend/.env; fi",
             ("aws s3 cp s3://" + $bucket + "/deployments/backend-" + $sha + ".tar.gz /tmp/backend.tar.gz --region " + $region),
             "rm -rf /home/ec2-user/karaadi/backend/src/prisma",
             "tar -xzf /tmp/backend.tar.gz -C /home/ec2-user/karaadi/backend",
