@@ -1,11 +1,37 @@
+import path from "path";
+import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
+// Load environment variables from common locations when running locally
+const tryLoadEnv = () => {
+  dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+  const backendRoot = path.resolve(__dirname, "../../../");
+  dotenv.config({ path: path.join(backendRoot, ".env"), override: false });
+  dotenv.config({
+    path: path.join(backendRoot, ".env.local"),
+    override: false,
+  });
+  dotenv.config({
+    path: path.join(backendRoot, "..", ".env.local"),
+    override: false,
+  });
+};
+
+tryLoadEnv();
+
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL is not defined in environment variables");
+  // try once more then fail with helpful guidance
+  tryLoadEnv();
+}
+
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is not defined. Create backend/.env with DATABASE_URL=postgresql://... or export DATABASE_URL in your shell.",
+  );
 }
 
 declare global {
