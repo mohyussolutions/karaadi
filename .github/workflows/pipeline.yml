@@ -251,6 +251,7 @@ jobs:
 
           COMMANDS=$(jq -nc --arg ssm_get "$SSM_GET" '[
             "set -euo pipefail",
+            "mkdir -p /home/ec2-user/karaadi/backend",
             $ssm_get,
             "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
             "cp /home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/.env.production",
