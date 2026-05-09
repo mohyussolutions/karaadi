@@ -107,6 +107,13 @@ jobs:
           fi
           echo "RDS endpoint: $RDS_HOST"
 
+          REDIS_HOST=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='RedisEndpoint'].OutputValue" \
+            --output text 2>/dev/null || echo "")
+          echo "Redis endpoint: ${REDIS_HOST:-<not found>}"
+
           CURRENT=$(aws ssm get-parameter \
             --name "$SSM_ENV_PATH" \
             --with-decryption \
@@ -136,6 +143,7 @@ jobs:
           UPDATED=$(patch_env "COOKIE_DOMAIN"                    "karaadi.com"                                                 "$UPDATED")
           UPDATED=$(patch_env "USE_WAAFIPAY_PROD"                "true"                                                        "$UPDATED")
           UPDATED=$(patch_env "AWS_REGION"                       "eu-west-1"                                                   "$UPDATED")
+          [ -n "$REDIS_HOST" ] && UPDATED=$(patch_env "REDIS_URL" "redis://${REDIS_HOST}:6379" "$UPDATED") || true
 
           aws ssm put-parameter \
             --name "$SSM_ENV_PATH" \
@@ -205,6 +213,7 @@ jobs:
             --arg clone_url "$CLONE_URL" \
             --arg region    "$AWS_REGION" \
             --arg stack     "$STACK_NAME" \
+            --arg ssm_path  "$SSM_ENV_PATH" \
             --arg db_user   "karaadi_database_2025_for_prod" \
             --arg db_pass   "karaadi_password_2025_for_prod" \
             --arg db_name   "karaadi" \
@@ -212,6 +221,7 @@ jobs:
             "# === SYSTEM SETUP (runs before set -e so install failures are non-fatal) ===",
             "sudo dnf install -y git 2>&1 | tail -5",
             "sudo dnf install -y postgresql15 2>&1 | tail -5 || sudo dnf install -y postgresql 2>&1 | tail -5 || true",
+            "npm list -g tsx >/dev/null 2>&1 || npm install -g tsx 2>&1 | tail -3",
             "command -v git >/dev/null 2>&1 || { echo FATAL_git_not_installed; exit 127; }",
             "echo \"SYSTEM_OK git=$(git --version) node=$(node --version 2>/dev/null||echo missing)\"",
             "set -euo pipefail",
@@ -222,6 +232,10 @@ jobs:
             "RDS_HOST=$(aws cloudformation describe-stacks --stack-name \($stack) --region \($region) --query \"Stacks[0].Outputs[?OutputKey==\\\"RDSEndpoint\\\"].OutputValue\" --output text 2>&1)",
             "echo \"RDS_HOST=[$RDS_HOST]\"",
             "[ -n \"$RDS_HOST\" ] && [ \"$RDS_HOST\" != \"None\" ] || { echo FATAL_RDS_endpoint_not_in_CFN_outputs; exit 1; }",
+
+            "# === STEP 1b: Redis endpoint from CloudFormation ===",
+            "REDIS_HOST=$(aws cloudformation describe-stacks --stack-name \($stack) --region \($region) --query \"Stacks[0].Outputs[?OutputKey==\\\"RedisEndpoint\\\"].OutputValue\" --output text 2>/dev/null || echo '')",
+            "echo \"REDIS_HOST=[$REDIS_HOST]\"",
 
             "# === STEP 2: assemble and EXPORT DATABASE_URL as a persistent shell variable ===",
             "DB_URL=\"postgresql://\\($db_user):\\($db_pass)@${RDS_HOST}:5432/\\($db_name)\"",
@@ -238,6 +252,7 @@ jobs:
             "mkdir -p /home/ec2-user/karaadi/backend",
             "> \"$ENV_FILE\"",
             "echo \"DATABASE_URL=${DB_URL}\"                                                                                                                   >> \"$ENV_FILE\"",
+            "echo \"REDIS_URL=redis://${REDIS_HOST}:6379\"                                                                                                     >> \"$ENV_FILE\"",
             "echo 'NODE_ENV=production'                                                                                                                         >> \"$ENV_FILE\"",
             "echo 'PORT=8080'                                                                                                                                   >> \"$ENV_FILE\"",
             "echo 'ALLOWED_ORIGINS=https://karaadi.com,https://www.karaadi.com'                                                                                 >> \"$ENV_FILE\"",
@@ -256,6 +271,11 @@ jobs:
             "grep -q '^DATABASE_URL=' \"$ENV_FILE\" || { echo FATAL_DATABASE_URL_missing; exit 1; }",
             "grep -q '^NODE_ENV='     \"$ENV_FILE\" || { echo FATAL_NODE_ENV_missing;     exit 1; }",
             "echo ENV_FILE_VERIFIED",
+
+            "# === STEP 5b: overlay remaining secrets from SSM (JWT_SECRET, SESSION_SECRET, ENCRYPTION_KEY, S3, WaafiPay, etc.) ===",
+            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) 2>/dev/null | grep -v '^#' | grep '^[A-Z_]' | while IFS= read -r L; do K=\"${L%%=*}\"; grep -q \"^${K}=\" \"$ENV_FILE\" || echo \"$L\" >> \"$ENV_FILE\"; done && echo SSM_OVERLAY_DONE || echo SSM_NO_PARAM",
+            "echo \"env_vars_total=$(grep -c '^[A-Z_]' $ENV_FILE || echo 0)\"",
+
             "set -a && source \"$ENV_FILE\" && set +a",
             "echo \"DATABASE_URL after source: $(echo $DATABASE_URL | sed 's|:.*@|:***@|')\"",
 
@@ -267,19 +287,24 @@ jobs:
             "cd /home/ec2-user/karaadi/backend",
             "npm install",
 
-            "# === STEP 8: prisma — DATABASE_URL is exported in shell AND injected inline as double-lock ===",
-            "echo \"prisma DATABASE_URL check: $(echo $DATABASE_URL | sed 's|:.*@|:***@|')\"",
-            "[ -n \"$DATABASE_URL\" ] || { echo FATAL_DATABASE_URL_not_exported; exit 1; }",
-            "DATABASE_URL=\"$DATABASE_URL\" npx prisma generate",
-            "DATABASE_URL=\"$DATABASE_URL\" npx prisma migrate reset --force",
+            "# === STEP 8: re-export DATABASE_URL directly from .env (double-lock) ===",
+            "export DATABASE_URL=$(grep \"^DATABASE_URL=\" .env | cut -d'=' -f2- | tr -d '\"')",
+            "[ -n \"$DATABASE_URL\" ] || { echo FATAL_DATABASE_URL_not_set; exit 1; }",
+            "echo \"DATABASE_URL re-exported — host=$(echo $DATABASE_URL | sed 's|.*@||' | cut -d: -f1)\"",
 
-            "# === STEP 9: seed ===",
+            "# === STEP 9: generate Prisma client ===",
+            "DATABASE_URL=\"$DATABASE_URL\" npx prisma generate --schema=./src/prisma/schema.prisma",
+
+            "# === STEP 10: type check ===",
+            "npm run build",
+
+            "# === STEP 11: run pending migrations (deploy, not reset) ===",
+            "DATABASE_URL=\"$DATABASE_URL\" npx prisma migrate deploy --schema=./src/prisma/schema.prisma",
+
+            "# === STEP 12: seed database ===",
             "DATABASE_URL=\"$DATABASE_URL\" npm run import",
 
-            "# === STEP 10: build ===",
-            "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
-
-            "# === STEP 11: pm2 ===",
+            "# === STEP 13: pm2 ===",
             "pm2 startOrRestart ecosystem.config.cjs --update-env",
             "pm2 save",
             "sleep 10",

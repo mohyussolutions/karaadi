@@ -2,10 +2,9 @@ module.exports = {
   apps: [
     {
       name: "karaadi-backend",
-      script: "src/server.ts",
+      script: "dist/server.js",
       cwd: "/home/ec2-user/karaadi/backend",
-      interpreter: "tsx",
-      interpreter_args: "--env-file=.env.production",
+      node_args: "--env-file=.env",
       env_production: {
         NODE_ENV: "production",
         PORT: 8080,

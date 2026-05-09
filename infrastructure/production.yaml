@@ -369,7 +369,7 @@ Resources:
               yum update -y
               curl -fsSL https://rpm.nodesource.com/setup_24.x | bash -
               yum install -y nodejs git
-              npm install -g pm2
+              npm install -g pm2 tsx
 
               mkdir -p /home/ec2-user/karaadi
               cd /home/ec2-user/karaadi
@@ -438,10 +438,8 @@ Resources:
                 npx prisma migrate deploy && \
                 node --env-file=.env dist/seed.js || true
 
-              pm2 start /home/ec2-user/karaadi/backend/dist/index.js \
-                --name karaadi-backend \
-                --node-args "--env-file=/home/ec2-user/karaadi/backend/.env" \
-                --max-restarts 10 --restart-delay 3000 2>/dev/null || true
+              pm2 start /home/ec2-user/karaadi/backend/ecosystem.config.cjs \
+                --env production 2>/dev/null || true
               pm2 save
               env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true
             - RdsHost: !GetAtt RDSInstance.Endpoint.Address
