@@ -1,3 +1,8 @@
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -6,6 +11,8 @@ const nextConfig = {
   compress: true,
   eslint: { ignoreDuringBuilds: true },
   httpAgentOptions: { keepAlive: true },
+  outputFileTracingRoot: __dirname,
+  output: "standalone",
 
   experimental: {
     serverActions: { bodySizeLimit: "20mb" },
@@ -29,7 +36,10 @@ const nextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(self)",
+          },
           {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
@@ -38,14 +48,15 @@ const nextConfig = {
       },
       {
         source: "/api/(.*)",
-        headers: [
-          { key: "Cache-Control", value: "no-store, max-age=0" },
-        ],
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
       },
       {
         source: "/_next/static/(.*)",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
       {

@@ -73,8 +73,21 @@ authRouters.post(
       );
       res.json({ token, user: userData });
     } catch (err: any) {
-      console.error("[AUTH] signIn failed:", err?.message ?? err);
-      res.status(401).json({ error: err?.message ?? "Login failed" });
+      console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);
+      const name = err?.name ?? "";
+      let status = 401;
+      let message = err?.message ?? "Login failed";
+      if (name === "UserNotConfirmedException") {
+        message = "Please confirm your email before logging in.";
+      } else if (name === "NotAuthorizedException") {
+        message = "Incorrect email or password.";
+      } else if (name === "UserNotFoundException") {
+        message = "No account found with this email.";
+      } else if (name === "TooManyRequestsException") {
+        status = 429;
+        message = "Too many attempts. Please wait and try again.";
+      }
+      res.status(status).json({ error: message });
     }
   },
 );

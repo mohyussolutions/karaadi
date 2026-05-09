@@ -51,7 +51,10 @@ export async function login(email: string, password: string): Promise<User> {
     body: JSON.stringify({ email, password }),
   });
 
-  if (!response.ok) throw new Error("Login failed");
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error ?? "Login failed");
+  }
   const data: LoginResponse = await response.json();
   const u = (data.user as any) || data;
   return normalizeUser(u) as unknown as User;
