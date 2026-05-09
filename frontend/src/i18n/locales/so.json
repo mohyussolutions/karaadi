@@ -607,6 +607,7 @@
     },
     "farmEquipment": {
       "tractor": "Cagaf",
+      "tractorForSale": "Cagaf Iibka",
       "tools": "Qalabka Beeraha",
       "fertilizerSpreader": "Faafiyaha Bacriminta",
       "harvester": "Makiinada Goosashada",

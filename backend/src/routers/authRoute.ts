@@ -86,6 +86,8 @@ authRouters.post(
       } else if (name === "TooManyRequestsException") {
         status = 429;
         message = "Too many attempts. Please wait and try again.";
+      } else {
+        message = "Login failed. Please try again.";
       }
       res.status(status).json({ error: message });
     }

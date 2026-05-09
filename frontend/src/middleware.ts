@@ -75,9 +75,10 @@ export function middleware(req: NextRequest) {
     const c = getClaims();
     if (c) {
       const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
-      return NextResponse.redirect(
-        new URL(ownRoute ? ownRoute.pattern : "/marketplace", req.url),
-      );
+      const destination = ownRoute ? ownRoute.pattern : "/marketplace";
+      if (!pathname.startsWith(destination)) {
+        return NextResponse.redirect(new URL(destination, req.url));
+      }
     }
   }
 

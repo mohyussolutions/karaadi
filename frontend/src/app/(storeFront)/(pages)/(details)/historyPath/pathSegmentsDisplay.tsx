@@ -17,6 +17,7 @@ const SEGMENT_LABEL_KEYS: Record<string, string> = {
   "boats-for-rent": "subcategories.boats.boatsForRent",
   "boat-engines-for-sale": "subcategories.boats.boatEnginesForSale",
   "boat-parts": "subcategories.boats.boatParts",
+  "tractor-for-sale": "subcategories.farmEquipment.tractorForSale",
   "for-rent": "subcategories.realEstate.forRent",
   "for-sale": "subcategories.realEstate.forSale",
   "land-for-sale": "subcategories.realEstate.landForSale",

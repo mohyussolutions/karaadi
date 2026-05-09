@@ -1,151 +1,94 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
-import LocationSelector from "@/app/(storeFront)/components/shared/SomLocs/regionsandCities";
-import SomaliMap from "@/app/(storeFront)/components/shared/SomLocs/SomaliMap";
+import { useSearchParams } from "next/navigation";
 import { getFarmequipment } from "@/actions/categories/FarmequipmentAction";
-import { categories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
-import { TraktorSubCategoryItem } from "@/app/utils/types/nesSubCategoryTypes";
+import PathSegmentsDisplay from "../../../(details)/historyPath/pathSegmentsDisplay";
 import SearchInput from "@/app/ui/search/SearchInput";
+import WantSell from "@/app/(storeFront)/components/shared/WantToSell/page";
+import Loading from "@/app/ui/loading/Loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
-import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
-import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
+import SubCategoryList from "@/app/(storeFront)/components/navbar/categories/SubCategoryListClient";
+import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { FarmEquipment } from "@/app/utils/types/farmequipment.types";
-import { VEHICLES_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
+import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
+import Pagination from "@/app/(storeFront)/components/shared/Pagination";
+import { farmEquipmentSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
-export default function TractorForSale({
-  initialSubcategory,
-}: { initialSubcategory?: string | null } = {}) {
+const PAGE_SIZE = 12;
+
+export default function TractorForSale() {
   const { t } = useTranslation();
   const { renderError } = useError();
-  const subCategoryLinks = (categories.TraktorTopCategories ||
-    []) as TraktorSubCategoryItem[];
-
   const [items, setItems] = useState<FarmEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
+  const { getRoute } = useGetRoute();
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    initialSubcategory ?? null,
-  );
-  const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<FarmEquipment[]>([]);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [checkedCities, setCheckedCities] = useState<Record<string, boolean>>(
-    {},
-  );
+  const tractorItems = items.filter((item) => {
+    const subCats = Array.isArray(item.subcategory)
+      ? item.subcategory
+      : [item.subcategory || ""];
+    const mainCat = String(item.mainCategory || "").toLowerCase();
+    return (
+      subCats.some((s: string) => s.toLowerCase().includes("tractor")) ||
+      mainCat === "traktor" ||
+      mainCat === "tractor"
+    );
+  });
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        const data = await getFarmequipment();
-        setItems(data || []);
-      } catch (err) {
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
+  const filteredItems = useListingFeed(tractorItems, query, "Farm Equipment");
+  const shuffledItems = useRandomizedItems(filteredItems);
+
+  const loadData = useCallback(async () => {
+    setIsError(false);
+    setIsLoading(true);
+    try {
+      const data = await getFarmequipment();
+      setItems(data || []);
+    } catch {
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
     }
-    loadData();
   }, []);
 
   useEffect(() => {
-    const delayDebounce = setTimeout(async () => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        return;
-      }
-      const results = await getGlobalSearchResults(query);
+    setMounted(true);
+    loadData();
+  }, [loadData]);
 
-      const filtered = (results as any[]).filter((item) => {
-        const mainCat = String(item.mainCategory || "");
-        const type = String(item.type || "").toLowerCase();
-        return (
-          mainCat === "Traktor" ||
-          mainCat === "Farm Equipment" ||
-          type.includes("tractor")
-        );
-      });
+  const displayItems = mounted ? shuffledItems : filteredItems;
+  const visibleItems = displayItems.slice(0, visibleCount);
+  const hasMore = displayItems.length > visibleCount;
 
-      setSearchResults(filtered as FarmEquipment[]);
-    }, 400);
-    return () => clearTimeout(delayDebounce);
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + PAGE_SIZE);
+      setLoadingMore(false);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
   }, [query]);
-
-  const counts = useMemo(() => {
-    const regionCounts: Record<string, number> = {};
-    const cityCounts: Record<string, number> = {};
-
-    items.forEach((item) => {
-      const format = (s: string) =>
-        s.trim().charAt(0).toUpperCase() + s.trim().slice(1).toLowerCase();
-      if (item.region) {
-        const reg = format(item.region);
-        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
-      }
-      if (item.city) {
-        const cit = format(item.city);
-        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
-      }
-    });
-    return { regionCounts, cityCounts };
-  }, [items]);
-
-  const itemsToDisplay = useMemo(() => {
-    let list = query.trim() ? searchResults : items;
-
-    if (selectedSubcategory) {
-      const normalized = selectedSubcategory.toLowerCase();
-      list = list.filter((item) => {
-        const subCats = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory || ""];
-        return (
-          subCats.some((s: string) => s.toLowerCase() === normalized) ||
-          item.title?.toLowerCase().includes(normalized)
-        );
-      });
-    }
-
-    if (selectedRegion) {
-      const activeRegs = selectedRegion.toLowerCase().split(",");
-      list = list.filter(
-        (item) => item.region && activeRegs.includes(item.region.toLowerCase()),
-      );
-    }
-
-    const activeCities = Object.keys(checkedCities)
-      .filter((c) => checkedCities[c])
-      .map((c) => c.toLowerCase());
-
-    if (activeCities.length > 0) {
-      list = list.filter(
-        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
-      );
-    }
-
-    return Array.from(new Map(list.map((item) => [item._id, item])).values());
-  }, [
-    items,
-    searchResults,
-    query,
-    selectedSubcategory,
-    selectedRegion,
-    checkedCities,
-  ]);
 
   if (isError) return renderError(isError);
 
   return (
     <div className="w-full max-w-screen-xl mx-auto px-2 py-2 space-y-4 overflow-x-hidden">
       <ContainerLinks>
-        <SearchInput onSearch={setQuery} defaultValue={query} />
+        <SearchInput defaultValue={query} />
       </ContainerLinks>
 
       <div className="pt-1">
@@ -153,106 +96,68 @@ export default function TractorForSale({
       </div>
 
       <ContainerLinks>
-        <CommonSubCategoryLinks
-          items={subCategoryLinks}
-          selectedId={selectedSubcategory}
-          onSelect={(id) =>
-            setSelectedSubcategory((prev) => (prev === id ? null : id))
-          }
-          t={t}
-        />
+        <SubCategoryList data={farmEquipmentSubCategories} />
       </ContainerLinks>
 
-      <div className="md:hidden px-2">
-      <LocationSelector
-              mobileOnly
-              onFilterChange={(
-                reg,
-                cities,
-              ) => {
-                setSelectedRegion(reg);
-                setCheckedCities(cities);
-              }}
-              selectedRegion={selectedRegion}
-              checkedCities={checkedCities}
-              regionCounts={counts.regionCounts}
-              cityCounts={counts.cityCounts}
-            />
-      </div>
+      <ContainerLinks>
+        <WantSell />
+      </ContainerLinks>
 
-
-      <div className="flex flex-col-reverse md:flex-row gap-4 pt-1">
-        <aside className="hidden md:flex md:flex-col md:w-1/3 space-y-4 md:sticky md:top-14 md:self-start">
-          <ContainerLinks>
-            <LocationSelector
-              desktopOnly
-              onFilterChange={(reg, cities) => {
-                setSelectedRegion(reg);
-                setCheckedCities(cities);
-              }}
-              selectedRegion={selectedRegion}
-              checkedCities={checkedCities}
-              regionCounts={counts.regionCounts}
-              cityCounts={counts.cityCounts}
-            />
-          </ContainerLinks>
-
-          <ContainerLinks>
-            <div className="p-2">
-              <SomaliMap
-                selectedRegion={selectedRegion}
-                onRegionClick={setSelectedRegion}
-                items={items}
-              />
-            </div>
-          </ContainerLinks>
-        </aside>
-
-        <main className="md:w-2/3 w-full space-y-4">
+      {isLoading || !mounted ? (
+        <Loading />
+      ) : (
+        <div className="space-y-4">
           <ContainerLinks>
             <div className="text-sm font-medium text-gray-600 px-3 py-1 flex justify-between items-center">
-              <span>
-                {isLoading ? "Waa la soo dejinayaa..." : "Natiijada la helay"}
+              <span>{t("resultsFound", { defaultValue: "Natiijada la helay:" })}</span>
+              <span className="text-blue-700 font-bold">
+                {displayItems.length} {t("tractors", { defaultValue: "cagafyo" })}
               </span>
-              {!isLoading && (
-                <span className="text-blue-700 font-bold">
-                  {itemsToDisplay.length} qalabka beeraha
-                </span>
+            </div>
+          </ContainerLinks>
+
+          <ContainerLinks>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-3">
+              {visibleItems.length > 0 ? (
+                visibleItems.map((item: any, index: number) => {
+                  const itemId = item._id || item.id;
+                  const routePrefix = getRoute("farmequipment");
+                  const linkHref = itemId
+                    ? `${routePrefix}/${encodeURIComponent(itemId)}`
+                    : "/";
+                  return (
+                    <UniversalCard
+                      key={itemId || index}
+                      id={itemId}
+                      title={item.title}
+                      description={item.description || ""}
+                      city={item.city}
+                      images={item.images}
+                      price={item.price}
+                      category="Farm Equipment"
+                      isBasic30={item.isBasic30}
+                      isStandard60={item.isStandard60}
+                      isPremium90={item.isPremium90}
+                      type={item.type}
+                      linkHref={linkHref}
+                    />
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-12 text-gray-400 text-sm">
+                  {t("noResults", { defaultValue: "Lama helin wax cagafyo ah oo waafaqsan raadintaada." })}
+                </div>
               )}
             </div>
           </ContainerLinks>
 
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loading />
-            </div>
-          ) : (
-            <ContainerLinks>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-3">
-                {itemsToDisplay.length > 0 ? (
-                  itemsToDisplay.map((item) => (
-                    <UniversalCard
-                      key={item._id}
-                      id={item._id}
-                      title={item.title}
-                      description={item.description}
-                      city={item.city}
-                      price={item.price}
-                      images={item.images}
-                      category="Farmequipment"
-                      href={`${VEHICLES_DETAILS}/${item._id || item.id}`}
-                    />
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-sm">
-                    Ma jiraan wax qalab ah oo waafaqsan xogtaada.
-                  </div>
-                )}
-              </div>
-            </ContainerLinks>
-          )}
-        </main>
-      </div>
+          <Pagination
+            hasMore={hasMore}
+            loading={loadingMore}
+            onSeeMore={handleLoadMore}
+          />
+        </div>
+      )}
     </div>
   );
 }
