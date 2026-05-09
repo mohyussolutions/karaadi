@@ -44,7 +44,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: isProd,
-      sameSite: "lax",
+      sameSite: isProd ? "none" : "lax",
       maxAge: SESSION_TIME_MS,
       domain: process.env.COOKIE_DOMAIN,
     },
@@ -88,33 +88,68 @@ apiRouter.use("/feed", feedRouter);
 apiRouter.use("/images", imageRouter);
 
 import prisma from "./core/utils/db.ts";
-apiRouter.get("/items/:id", async (req: import("express").Request, res: import("express").Response) => {
-  const { id } = req.params;
-  const include = { user: { select: { id: true, username: true, profileImage: true, phone: true } } };
-  const [marketplace, car, realEstate, boat, motorcycle, farm] = await Promise.all([
-    (prisma as any).marketplace.findUnique({ where: { id }, include }).catch(() => null),
-    (prisma as any).car.findUnique({ where: { id }, include }).catch(() => null),
-    (prisma as any).realEstate.findUnique({ where: { id }, include }).catch(() => null),
-    (prisma as any).boat.findUnique({ where: { id }, include }).catch(() => null),
-    (prisma as any).motorcycle.findUnique({ where: { id }, include }).catch(() => null),
-    (prisma as any).farmequipment.findUnique({ where: { id }, include }).catch(() => null),
-  ]);
-  let item: any = null;
-  let table = "";
-  if (car) { item = car; table = "cars"; }
-  else if (marketplace) { item = marketplace; table = "marketplace"; }
-  else if (realEstate) { item = realEstate; table = "real-estate"; }
-  else if (boat) { item = boat; table = "boats"; }
-  else if (motorcycle) { item = motorcycle; table = "motorcycles"; }
-  else if (farm) { item = farm; table = "traktor"; }
-  if (!item) return res.status(404).json({ error: "Not found" });
-  const images = ((item.images ?? []) as string[])
-    .map((img, idx) =>
-      img && img.startsWith("data:") ? `api/images/${table}/${id}/${idx}` : img,
-    )
-    .filter((img) => img && img.trim() !== "");
-  res.json({ ...item, images });
-});
+apiRouter.get(
+  "/items/:id",
+  async (req: import("express").Request, res: import("express").Response) => {
+    const { id } = req.params;
+    const include = {
+      user: {
+        select: { id: true, username: true, profileImage: true, phone: true },
+      },
+    };
+    const [marketplace, car, realEstate, boat, motorcycle, farm] =
+      await Promise.all([
+        (prisma as any).marketplace
+          .findUnique({ where: { id }, include })
+          .catch(() => null),
+        (prisma as any).car
+          .findUnique({ where: { id }, include })
+          .catch(() => null),
+        (prisma as any).realEstate
+          .findUnique({ where: { id }, include })
+          .catch(() => null),
+        (prisma as any).boat
+          .findUnique({ where: { id }, include })
+          .catch(() => null),
+        (prisma as any).motorcycle
+          .findUnique({ where: { id }, include })
+          .catch(() => null),
+        (prisma as any).farmequipment
+          .findUnique({ where: { id }, include })
+          .catch(() => null),
+      ]);
+    let item: any = null;
+    let table = "";
+    if (car) {
+      item = car;
+      table = "cars";
+    } else if (marketplace) {
+      item = marketplace;
+      table = "marketplace";
+    } else if (realEstate) {
+      item = realEstate;
+      table = "real-estate";
+    } else if (boat) {
+      item = boat;
+      table = "boats";
+    } else if (motorcycle) {
+      item = motorcycle;
+      table = "motorcycles";
+    } else if (farm) {
+      item = farm;
+      table = "traktor";
+    }
+    if (!item) return res.status(404).json({ error: "Not found" });
+    const images = ((item.images ?? []) as string[])
+      .map((img, idx) =>
+        img && img.startsWith("data:")
+          ? `api/images/${table}/${id}/${idx}`
+          : img,
+      )
+      .filter((img) => img && img.trim() !== "");
+    res.json({ ...item, images });
+  },
+);
 apiRouter.use("/social", socialRouter);
 apiRouter.use("/hage", hageRouter);
 

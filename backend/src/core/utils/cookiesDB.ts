@@ -80,24 +80,25 @@ export const setAuthCookies = async (
   });
 
   if (!res.headersSent) {
+    const isProd = process.env.NODE_ENV === "production";
     res.cookie("idToken", session.token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       maxAge: SESSION_TIME_MS,
     });
 
     res.cookie("accessToken", accessToken || session.token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       maxAge: SESSION_TIME_MS,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   }
