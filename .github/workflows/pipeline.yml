@@ -247,16 +247,18 @@ jobs:
           TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
           echo "Deploying ${SHA:0:8} to $TOTAL instance(s)"
 
-          COMMANDS=$(jq -nc --arg region "$AWS_REGION" '[
+          SSM_GET="aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region $AWS_REGION > /home/ec2-user/karaadi/backend/.env || exit 1"
+
+          COMMANDS=$(jq -nc --arg ssm_get "$SSM_GET" '[
             "set -euo pipefail",
-            ("aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region " + $region + " > /home/ec2-user/karaadi/backend/.env || exit 1"),
+            $ssm_get,
             "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
             "cp /home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/.env.production",
             "cd /home/ec2-user/karaadi && git fetch origin main && git reset --hard origin/main",
             "cd /home/ec2-user/karaadi/backend && npm ci",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
             "dnf install -y postgresql15 2>/dev/null || yum install -y postgresql15 2>/dev/null || true",
-            "python3 -c \"import subprocess,re,os; env=open('/home/ec2-user/karaadi/backend/.env').read(); m=re.search(r'DATABASE_URL=postgresql://([^:]+):([^@]+)@([^:/]+)(?::([0-9]+))?/([^?\\\\s]+)', env); u,p,h,port,db=m.group(1),m.group(2),m.group(3),(m.group(4) or '5432'),m.group(5); e={**os.environ,'PGPASSWORD':p}; subprocess.run(['psql','-h',h,'-p',port,'-U',u,'-d','postgres','-c',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);'],env=e); subprocess.run(['psql','-h',h,'-p',port,'-U',u,'-d','postgres','-c',f'CREATE DATABASE {db} OWNER {u};'],env=e); print('DB_RECREATED')\"",
+            "DB_H=$(grep -E ^DATABASE_URL= /home/ec2-user/karaadi/backend/.env | cut -d@ -f2 | cut -d: -f1) && PGPASSWORD=karaadi_password_2025_for_prod psql -h $DB_H -U karaadi_database_2025_for_prod -d postgres -c \"DROP DATABASE IF EXISTS karaadi WITH (FORCE);\" && PGPASSWORD=karaadi_password_2025_for_prod psql -h $DB_H -U karaadi_database_2025_for_prod -d postgres -c \"CREATE DATABASE karaadi OWNER karaadi_database_2025_for_prod;\" && echo DB_RECREATED",
             "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy",
             "echo --- importing seed data ---",
             "cd /home/ec2-user/karaadi/backend && npm run import && echo IMPORT_OK || echo IMPORT_FAILED",
