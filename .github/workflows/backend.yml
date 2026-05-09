@@ -222,37 +222,40 @@ jobs:
             "# ── 4. Authenticated clone ───────────────────────────────────────",
             "git clone \($clone_url) /home/ec2-user/karaadi",
 
-            "# ── 5. Pull env from SSM → .env.production ───────────────────────",
-            "mkdir -p /home/ec2-user/karaadi/backend",
-            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > /home/ec2-user/karaadi/backend/.env.production || exit 1",
-            "[ -s /home/ec2-user/karaadi/backend/.env.production ] || { echo ERROR: .env.production is empty; exit 1; }",
+            "# ── 5. cd into backend dir — all subsequent commands run from here ──",
+            "cd /home/ec2-user/karaadi/backend",
 
-            "# ── 6. Mirror .env.production → .env (dotenv file-loader) ────────",
-            "cp /home/ec2-user/karaadi/backend/.env.production /home/ec2-user/karaadi/backend/.env",
+            "# ── 6. Pull SSM secret → .env (Prisma looks for exactly this name) ─",
+            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > .env || exit 1",
+            "[ -s .env ] || { echo 'FATAL: .env is empty after SSM pull'; exit 1; }",
 
-            "# ── 7. source into shell (set -a exports every var, incl DATABASE_URL)",
-            "cd /home/ec2-user/karaadi/backend && set -a && source .env.production && set +a",
+            "# ── 7. Validate DATABASE_URL is present in the file ────────────────",
+            "if [ -z \"$(grep '^DATABASE_URL=' .env)\" ]; then echo 'FATAL: DATABASE_URL MISSING FROM .env — check SSM /karaadi/backend/env parameter'; exit 1; fi",
+            "echo \"DATABASE_URL check passed — host: $(grep '^DATABASE_URL=' .env | cut -d'@' -f2- | cut -d'/' -f1)\"",
 
-            "# ── 8. Install ALL dependencies (dev needed for esbuild) ─────────",
-            "cd /home/ec2-user/karaadi/backend && npm install",
+            "# ── 8. Lock 1: export every var into the current shell session ──────",
+            "export $(grep -v '^#' .env | xargs)",
 
-            "# ── 9. Generate Prisma client (hard-injected DATABASE_URL) ────────",
-            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep '^DATABASE_URL=' .env.production | cut -d'=' -f2-) npx prisma generate",
+            "# ── 9. Install ALL dependencies (dev needed for esbuild) ────────────",
+            "npm install",
 
-            "# ── 10. Drop old schema — fresh start (hard-injected DATABASE_URL) ─",
-            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep '^DATABASE_URL=' .env.production | cut -d'=' -f2-) npx prisma migrate reset --force",
+            "# ── 10. Lock 2: generate Prisma client (hard-injected DATABASE_URL) ─",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma generate",
 
-            "# ── 11. Seed Somali marketplace data (hard-injected DATABASE_URL) ──",
-            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep '^DATABASE_URL=' .env.production | cut -d'=' -f2-) npm run import",
+            "# ── 11. Lock 3: drop old schema, fresh migration (hard-injected) ────",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma migrate reset --force",
 
-            "# ── 12. Bundle server with esbuild ───────────────────────────────",
-            "cd /home/ec2-user/karaadi/backend && npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
+            "# ── 12. Seed Somali marketplace data (hard-injected DATABASE_URL) ───",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npm run import",
 
-            "# ── 13. Start/restart pm2 with injected env ──────────────────────",
-            "cd /home/ec2-user/karaadi/backend && pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
+            "# ── 13. Bundle server with esbuild ──────────────────────────────────",
+            "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
+
+            "# ── 14. Start/restart pm2 (--update-env re-reads .env on every start)",
+            "pm2 startOrRestart ecosystem.config.cjs --update-env",
             "pm2 save",
 
-            "# ── 14. Health check ─────────────────────────────────────────────",
+            "# ── 15. Health check ────────────────────────────────────────────────",
             "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 50; exit 1; }"
           ]')
 
@@ -287,20 +290,21 @@ jobs:
           '[
             "set -euo pipefail",
             "export HOME=/home/ec2-user",
+            "cd /home/ec2-user/karaadi/backend",
 
-            "# Re-pull env in case SSM was just updated ─────────────────────",
-            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > /home/ec2-user/karaadi/backend/.env.production || exit 1",
-            "[ -s /home/ec2-user/karaadi/backend/.env.production ] || { echo ERROR: .env.production is empty; exit 1; }",
-            "cp /home/ec2-user/karaadi/backend/.env.production /home/ec2-user/karaadi/backend/.env",
-            "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env.production | xargs)",
+            "# Re-pull .env from SSM (Prisma looks for exactly this filename) ──",
+            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > .env || exit 1",
+            "[ -s .env ] || { echo 'FATAL: .env is empty after SSM pull'; exit 1; }",
+            "if [ -z \"$(grep '^DATABASE_URL=' .env)\" ]; then echo 'FATAL: DATABASE_URL MISSING FROM .env'; exit 1; fi",
+            "export $(grep -v '^#' .env | xargs)",
 
-            "# Apply any pending migrations (non-destructive) ─────────────────",
-            "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy",
+            "# Apply any pending migrations (non-destructive, hard-injected) ───",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma migrate deploy",
 
-            "# Re-seed marketplace data ────────────────────────────────────────",
-            "cd /home/ec2-user/karaadi/backend && npm run import",
+            "# Re-seed marketplace data (hard-injected) ──────────────────────",
+            "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npm run import",
 
-            "# Reload to pick up any env changes ──────────────────────────────",
+            "# Reload pm2 to pick up any env changes ────────────────────────",
             "pm2 reload karaadi-backend --update-env || true",
             "echo SEED_FIX_OK"
           ]')
