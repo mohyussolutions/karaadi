@@ -22,14 +22,12 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  id-token: write
   contents: read
 
 env:
   NODE_VERSION: "20"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-master-backend
-  DEPLOY_ROLE_ARN: ${{ secrets.EB_DEPLOY_ROLE_ARN }}
 
 jobs:
   test:
@@ -143,9 +141,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GHActions-EB-Deploy-${{ github.run_id }}
 
       - name: Resolve CloudFormation outputs
         id: cfn
@@ -250,9 +248,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GHActions-SeedFix-${{ github.run_id }}
 
       - name: Resolve EB instance IDs
         id: instances
