@@ -3,18 +3,16 @@ module.exports = {
     {
       name: "karaadi-backend",
       script: "src/server.ts",
-      cwd: __dirname,
+      cwd: "/home/ec2-user/karaadi/backend",
       interpreter: "tsx",
-      env: {
-        NODE_ENV: "development",
-        PORT: 8080,
-      },
+      interpreter_args: "--env-file=.env.production",
       env_production: {
         NODE_ENV: "production",
         PORT: 8080,
       },
-
       merge_logs: true,
+      max_restarts: 10,
+      restart_delay: 3000,
     },
   ],
 };
