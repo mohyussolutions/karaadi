@@ -182,9 +182,6 @@ jobs:
           else
             echo "Creating bucket ${BUCKET}..."
             aws s3 mb "s3://${BUCKET}" --region "$AWS_REGION"
-            aws s3api put-bucket-lifecycle-configuration \
-              --bucket "$BUCKET" --region "$AWS_REGION" \
-              --lifecycle-configuration '{"Rules":[{"ID":"expire-old-deploys","Status":"Enabled","Expiration":{"Days":30}}]}'
             echo "Bucket ${BUCKET} created"
           fi
 
