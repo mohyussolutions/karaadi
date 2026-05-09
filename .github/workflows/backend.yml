@@ -51,7 +51,7 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-        run: npx prisma generate --schema=./src/prisma/schema.prisma
+        run: npx prisma generate --schema=./src/prisma
 
       - name: TypeScript type-check
         working-directory: backend
@@ -89,7 +89,7 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-        run: npx prisma generate --schema=./src/prisma/schema.prisma
+        run: npx prisma generate --schema=./src/prisma
 
       - name: TypeScript build
         working-directory: backend
