@@ -32,7 +32,8 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               AppName=karaadi \
-              DBPassword="${{ secrets.DB_PASSWORD }}" \
+              DatabaseUrl="${{ secrets.DATABASE_URL }}" \
+              RedisUrl="${{ secrets.REDIS_URL }}" \
               JWTSecret="${{ secrets.JWT_SECRET }}" \
               SessionSecret="${{ secrets.SESSION_SECRET }}" \
               EncryptionKey="${{ secrets.ENCRYPTION_KEY }}" \
