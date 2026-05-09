@@ -14,15 +14,16 @@ const server = http.createServer(app);
 
 const startServer = async () => {
   try {
-    await Promise.all([redisServer.start(), prisma.$connect()]);
+    await prisma.$connect();
 
-    if (redisServer.getClient().isOpen) {
+    if (process.env.REDIS_URL) {
+      await redisServer.start();
       const pub = redisServer.getClient();
       const sub = pub.duplicate();
       await sub.connect();
       socketServer(server, pub, sub);
     } else {
-      console.warn(chalk.yellow("Redis unavailable — sockets running without Redis adapter"));
+      console.warn(chalk.yellow("REDIS_URL not set — sockets running without Redis adapter"));
       socketServer(server);
     }
 
