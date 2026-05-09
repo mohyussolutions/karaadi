@@ -1,13 +1,26 @@
+import path from "node:path";
 import dotenv from "dotenv";
+import { defineConfig } from "prisma/config";
 
-const envFile = process.env.NODE_ENV === "production" ? "../.env.production" : "../.env.local";
-dotenv.config({ path: envFile, debug: false });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), "..", ".env.local"), override: false });
 
-import { defineConfig, env } from "prisma/config";
+const directUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "";
 
 export default defineConfig({
   schema: "./src/prisma",
   datasource: {
-    url: env("DATABASE_URL"),
+    url: directUrl,
+  },
+  migrate: {
+    async adapter() {
+      const { Pool } = await import("pg");
+      const { PrismaPg } = await import("@prisma/adapter-pg");
+      const pool = new Pool({
+        connectionString: directUrl,
+        ssl: { rejectUnauthorized: false },
+      });
+      return new PrismaPg(pool);
+    },
   },
 });

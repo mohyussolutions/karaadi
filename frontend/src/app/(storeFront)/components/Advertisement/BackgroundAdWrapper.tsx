@@ -28,16 +28,14 @@ const BackgroundAdWrapper = ({ children, ad }: AdProps) => {
     );
   };
 
-  if (!ad?.imageUrl) return <>{children}</>;
+  const active = isLoaded && !!ad?.imageUrl;
 
   return (
     <div
-      className={`min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex transition-opacity duration-700 bg-red-400 ${
-        isLoaded ? "opacity-100" : "opacity-0"
-      }`}
-      style={{ backgroundImage: isLoaded ? `url("${ad.imageUrl}")` : "none" }}
+      className={active ? "min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex transition-opacity duration-700" : "min-h-screen relative"}
+      style={active ? { backgroundImage: `url("${ad.imageUrl}")` } : {}}
     >
-      {ad?.link && (
+      {active && ad?.link && (
         <>
           <div
             onClick={handleAdClick}
@@ -49,7 +47,7 @@ const BackgroundAdWrapper = ({ children, ad }: AdProps) => {
           />
         </>
       )}
-      <div className="flex-1 w-full relative z-20">{children}</div>
+      <div className={active ? "flex-1 w-full relative z-20" : ""}>{children}</div>
     </div>
   );
 };

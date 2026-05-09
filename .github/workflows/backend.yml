@@ -17,13 +17,10 @@ permissions:
 
 env:
   NODE_VERSION: "20"
-  AWS_REGION: eu-west-1
-  STACK_NAME: karaadi-production
 
 jobs:
-  # ── Test ─────────────────────────────────────────────────────────────────────
   test:
-    name: Test
+    name: Test & Type-check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +41,7 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: npx prisma generate
 
-      - name: Type check
+      - name: Type-check
         working-directory: backend
         run: npx tsc --noEmit
 
@@ -52,145 +49,36 @@ jobs:
         working-directory: backend
         run: npm test
 
-  # ── Deploy (rolling SSM) ─────────────────────────────────────────────────────
   deploy:
-    name: Rolling Deploy
-    runs-on: ubuntu-latest
+    name: Migrate & Deploy → Render
     needs: test
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/setup-node@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
-      - name: Get ASG name from CloudFormation
-        id: cfn
-        run: |
-          ASG_NAME=$(aws cloudformation describe-stack-resources \
-            --stack-name "$STACK_NAME" \
-            --logical-resource-id BackendAutoScalingGroup \
-            --region "$AWS_REGION" \
-            --query "StackResources[0].PhysicalResourceId" \
-            --output text)
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
 
-          if [ -z "$ASG_NAME" ] || [ "$ASG_NAME" = "None" ]; then
-            echo "ERROR: Could not resolve ASG name from stack $STACK_NAME"
-            exit 1
-          fi
-
-          echo "asg_name=$ASG_NAME" >> "$GITHUB_OUTPUT"
-          echo "ASG: $ASG_NAME"
-
-      - name: Rolling deploy via SSM
+      - name: Generate Prisma client
+        working-directory: backend
         env:
-          ASG_NAME: ${{ steps.cfn.outputs.asg_name }}
-          COMMIT_SHA: ${{ github.sha }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma generate
+
+      - name: Run database migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma db push --accept-data-loss
+
+      - name: Trigger Render deploy
         run: |
-          set -euo pipefail
-
-          # ── Get all InService instance IDs ──────────────────────────────────
-          INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
-            --auto-scaling-group-names "$ASG_NAME" \
-            --region "$AWS_REGION" \
-            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
-            --output text)
-
-          if [ -z "$INSTANCES" ] || [ "$INSTANCES" = "None" ]; then
-            echo "No InService instances found in $ASG_NAME"
-            exit 1
-          fi
-
-          TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
-          echo "Deploying ${COMMIT_SHA:0:8} to $TOTAL instance(s): $INSTANCES"
-
-          # Commands sent to each EC2 instance via SSM
-          COMMANDS=$(jq -nc '[
-            "set -euo pipefail",
-            "cd /home/ec2-user/karaadi",
-            "echo --- git ---",
-            "git fetch origin main && git reset --hard origin/main",
-            "echo --- install ---",
-            "cd backend && npm ci --omit=dev 2>&1",
-            "echo --- migrate ---",
-            "npx prisma migrate deploy 2>&1",
-            "echo --- build ---",
-            "npx esbuild src/server.ts --bundle --platform=node --target=node20 --packages=external --outfile=dist/index.js 2>&1",
-            "echo --- restart ---",
-            "pm2 reload karaadi-backend --update-env 2>&1 || pm2 start dist/index.js --name karaadi-backend 2>&1",
-            "echo --- health ---",
-            "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
-          ]')
-
-          COUNT=0
-          for INSTANCE_ID in $INSTANCES; do
-            COUNT=$((COUNT + 1))
-            echo ""
-            echo "::group::[$COUNT/$TOTAL] $INSTANCE_ID"
-
-            COMMAND_ID=$(aws ssm send-command \
-              --instance-ids "$INSTANCE_ID" \
-              --document-name "AWS-RunShellScript" \
-              --comment "deploy-${COMMIT_SHA:0:8}" \
-              --parameters "{\"commands\": $COMMANDS, \"executionTimeout\": [\"300\"]}" \
-              --region "$AWS_REGION" \
-              --output json | jq -r '.Command.CommandId')
-
-            echo "SSM command: $COMMAND_ID"
-
-            # Poll until done — 5 min max at 5s intervals
-            ATTEMPT=0
-            while [ $ATTEMPT -lt 60 ]; do
-              ATTEMPT=$((ATTEMPT + 1))
-
-              INVOCATION=$(aws ssm get-command-invocation \
-                --command-id "$COMMAND_ID" \
-                --instance-id "$INSTANCE_ID" \
-                --region "$AWS_REGION" \
-                --output json 2>/dev/null \
-                || echo '{"Status":"InProgress","StandardOutputContent":"","StandardErrorContent":""}')
-
-              STATUS=$(echo "$INVOCATION" | jq -r '.Status')
-              echo "  [$ATTEMPT/60] $STATUS"
-
-              case "$STATUS" in
-                Success)
-                  echo "  Deployed to $INSTANCE_ID"
-                  echo "$INVOCATION" | jq -r '.StandardOutputContent'
-                  break
-                  ;;
-                Failed|Cancelled|TimedOut|Undeliverable|Terminated)
-                  echo "  FAILED on $INSTANCE_ID (status: $STATUS)"
-                  echo "--- stdout ---"
-                  echo "$INVOCATION" | jq -r '.StandardOutputContent'
-                  echo "--- stderr ---"
-                  echo "$INVOCATION" | jq -r '.StandardErrorContent'
-                  echo "::endgroup::"
-                  echo "Aborting — remaining instances not updated."
-                  exit 1
-                  ;;
-                *)
-                  sleep 5
-                  ;;
-              esac
-            done
-
-            if [ $ATTEMPT -ge 60 ]; then
-              echo "Timed out waiting for SSM on $INSTANCE_ID"
-              echo "::endgroup::"
-              exit 1
-            fi
-
-            echo "::endgroup::"
-
-            if [ "$COUNT" -lt "$TOTAL" ]; then
-              echo "Waiting 30s before next instance…"
-              sleep 30
-            fi
-          done
-
-          echo ""
-          echo "All $TOTAL instance(s) deployed successfully."
+          curl -sf -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
+          echo "Deploy triggered"
