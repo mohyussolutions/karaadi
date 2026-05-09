@@ -14,7 +14,8 @@ export const setupSecurity = (app: express.Application) => {
         if (!origin) return callback(null, true);
         const isAllowed =
           SECURITY_CONFIG.ALLOWED_ORIGINS.includes(origin) ||
-          /\.vercel\.app$/.test(origin);
+          /\.vercel\.app$/.test(origin) ||
+          /\.amplifyapp\.com$/.test(origin);
         if (isAllowed) {
           callback(null, true);
         } else {
