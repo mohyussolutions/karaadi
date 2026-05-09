@@ -227,32 +227,32 @@ jobs:
             "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > /home/ec2-user/karaadi/backend/.env.production || exit 1",
             "[ -s /home/ec2-user/karaadi/backend/.env.production ] || { echo ERROR: .env.production is empty; exit 1; }",
 
-            "# ── 6a. Copy to .env so prisma.config.ts dotenv loader finds it ─────",
+            "# ── 6. Mirror .env.production → .env (dotenv file-loader) ────────",
             "cp /home/ec2-user/karaadi/backend/.env.production /home/ec2-user/karaadi/backend/.env",
 
-            "# ── 6b. Inject env into the current shell (fixes DATABASE_URL crash) ─",
-            "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env.production | xargs)",
+            "# ── 7. source into shell (set -a exports every var, incl DATABASE_URL)",
+            "cd /home/ec2-user/karaadi/backend && set -a && source .env.production && set +a",
 
-            "# ── 7. Install ALL dependencies (dev needed for esbuild build) ───",
+            "# ── 8. Install ALL dependencies (dev needed for esbuild) ─────────",
             "cd /home/ec2-user/karaadi/backend && npm install",
 
-            "# ── 8. Generate Prisma client ────────────────────────────────────",
-            "cd /home/ec2-user/karaadi/backend && npx prisma generate",
+            "# ── 9. Generate Prisma client (hard-injected DATABASE_URL) ────────",
+            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep '^DATABASE_URL=' .env.production | cut -d'=' -f2-) npx prisma generate",
 
-            "# ── 9. Drop old schema and apply a clean migration ───────────────",
-            "cd /home/ec2-user/karaadi/backend && npx prisma migrate reset --force",
+            "# ── 10. Drop old schema — fresh start (hard-injected DATABASE_URL) ─",
+            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep '^DATABASE_URL=' .env.production | cut -d'=' -f2-) npx prisma migrate reset --force",
 
-            "# ── 10. Seed Somali marketplace data ─────────────────────────────",
-            "cd /home/ec2-user/karaadi/backend && npm run import",
+            "# ── 11. Seed Somali marketplace data (hard-injected DATABASE_URL) ──",
+            "cd /home/ec2-user/karaadi/backend && DATABASE_URL=$(grep '^DATABASE_URL=' .env.production | cut -d'=' -f2-) npm run import",
 
-            "# ── 11. Bundle server with esbuild ───────────────────────────────",
+            "# ── 12. Bundle server with esbuild ───────────────────────────────",
             "cd /home/ec2-user/karaadi/backend && npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
 
-            "# ── 12. Start/restart application via pm2 (--update-env is mandatory) ──",
+            "# ── 13. Start/restart pm2 with injected env ──────────────────────",
             "cd /home/ec2-user/karaadi/backend && pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
             "pm2 save",
 
-            "# ── 13. Health check ─────────────────────────────────────────────",
+            "# ── 14. Health check ─────────────────────────────────────────────",
             "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 50; exit 1; }"
           ]')
 
