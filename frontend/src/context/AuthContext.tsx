@@ -1,5 +1,5 @@
 "use client";
-//
+
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getAuthenticatedUser } from "@/actions/core/authAction";
 import { RawUserData } from "@/app/utils/types/user.types";
