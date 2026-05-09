@@ -145,6 +145,24 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Deploy / update infrastructure stack
+        run: |
+          aws cloudformation deploy \
+            --stack-name "$STACK_NAME" \
+            --template-file "infrastructure/master-backend-stack.yml" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --region "$AWS_REGION" \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              AppName=karaadi \
+              DatabaseUrl="${{ secrets.DATABASE_URL }}" \
+              RedisUrl="${{ secrets.REDIS_URL }}" \
+              JWTSecret="${{ secrets.JWT_SECRET }}" \
+              SessionSecret="${{ secrets.SESSION_SECRET }}" \
+              EncryptionKey="${{ secrets.ENCRYPTION_KEY }}" \
+              WaafiPayApiKey="${{ secrets.WAAFI_PAY_API_KEY }}" \
+              TikTokClientSecret="${{ secrets.TIKTOK_CLIENT_SECRET }}"
+
       - name: Resolve CloudFormation outputs
         id: cfn
         run: |
