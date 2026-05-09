@@ -275,27 +275,27 @@ jobs:
             echo "=== [$COUNT/$TOTAL] $INSTANCE ==="
 
             CMD_ID=""
-            for attempt in $(seq 1 10); do
+            for attempt in $(seq 1 20); do
               CMD_ID=$(aws ssm send-command \
                 --instance-ids "$INSTANCE" \
                 --document-name "AWS-RunShellScript" \
                 --comment "deploy-${SHA:0:8}" \
-                --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"300\"]}" \
+                --parameters "{\"commands\":$COMMANDS,\"executionTimeout\":[\"600\"]}" \
                 --region "$AWS_REGION" \
-                --output json 2>/dev/null | jq -r '.Command.CommandId // empty')
+                --output json 2>/dev/null | jq -r '.Command.CommandId // empty' 2>/dev/null) || true
               [ -n "$CMD_ID" ] && echo "SSM command: $CMD_ID" && break
-              echo "[$attempt/10] SSM not ready, retrying in 15s..."
-              sleep 15
+              echo "[$attempt/20] instance not ready, retrying in 20s..."
+              sleep 20
             done
             [ -n "$CMD_ID" ] || { echo "WARNING: could not reach $INSTANCE via SSM — skipping"; continue; }
 
-            for i in $(seq 1 60); do
+            for i in $(seq 1 90); do
               INV=$(aws ssm get-command-invocation \
                 --command-id "$CMD_ID" --instance-id "$INSTANCE" \
                 --region "$AWS_REGION" --output json 2>/dev/null \
                 || echo '{"Status":"InProgress"}')
               STATUS=$(echo "$INV" | jq -r '.Status')
-              echo "[$i/60] $STATUS"
+              echo "[$i/90] $STATUS"
               case "$STATUS" in
                 Success)
                   echo "--- OUTPUT ---"
@@ -307,7 +307,7 @@ jobs:
                   echo "--- STDERR ---"
                   echo "$INV" | jq -r '.StandardErrorContent'
                   exit 1 ;;
-                *) sleep 10 ;;
+                *) sleep 15 ;;
               esac
             done
 
