@@ -150,24 +150,43 @@ jobs:
         run: |
           set -euo pipefail
           query_output() {
-            aws cloudformation describe-stacks \
+            val=$(aws cloudformation describe-stacks \
               --stack-name "$STACK_NAME" \
               --region     "$AWS_REGION" \
               --query      "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" \
-              --output     text
+              --output     text)
+            [ "$val" = "None" ] && echo "" || echo "$val"
           }
-          EB_APP=$(query_output  "EBApplicationName")
-          EB_ENV=$(query_output  "EBEnvironmentName")
+          EB_APP=$(query_output "EBApplicationName")
+          EB_ENV=$(query_output "EBEnvironmentName")
           S3_BUCKET=$(query_output "ArtifactsBucketName")
-          [ -n "$EB_APP" ]    || { echo "ERROR: EBApplicationName not in CFN outputs"; exit 1; }
-          [ -n "$EB_ENV" ]    || { echo "ERROR: EBEnvironmentName not in CFN outputs";  exit 1; }
-          [ -n "$S3_BUCKET" ] || { echo "ERROR: ArtifactsBucketName not in CFN outputs"; exit 1; }
+          [ -n "$EB_APP" ] || { echo "ERROR: EBApplicationName not in CFN outputs"; exit 1; }
+          [ -n "$EB_ENV" ] || { echo "ERROR: EBEnvironmentName not in CFN outputs";  exit 1; }
+          if [ -z "$S3_BUCKET" ]; then
+            ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+            S3_BUCKET="karaadi-eb-artifacts-${ACCOUNT_ID}"
+            echo "WARNING: ArtifactsBucketName not in CFN outputs, using derived: ${S3_BUCKET}"
+          fi
           echo "eb_app=${EB_APP}"       >> "$GITHUB_OUTPUT"
           echo "eb_env=${EB_ENV}"       >> "$GITHUB_OUTPUT"
           echo "s3_bucket=${S3_BUCKET}" >> "$GITHUB_OUTPUT"
           echo "EB Application : $EB_APP"
           echo "EB Environment : $EB_ENV"
           echo "Artifacts bucket: $S3_BUCKET"
+
+      - name: Ensure artifacts S3 bucket exists
+        run: |
+          BUCKET="${{ steps.cfn.outputs.s3_bucket }}"
+          if aws s3api head-bucket --bucket "$BUCKET" --region "$AWS_REGION" 2>/dev/null; then
+            echo "Bucket ${BUCKET} exists"
+          else
+            echo "Creating bucket ${BUCKET}..."
+            aws s3 mb "s3://${BUCKET}" --region "$AWS_REGION"
+            aws s3api put-bucket-lifecycle-configuration \
+              --bucket "$BUCKET" --region "$AWS_REGION" \
+              --lifecycle-configuration '{"Rules":[{"ID":"expire-old-deploys","Status":"Enabled","Expiration":{"Days":30}}]}'
+            echo "Bucket ${BUCKET} created"
+          fi
 
       - name: Download deployment artifact
         uses: actions/download-artifact@v4
