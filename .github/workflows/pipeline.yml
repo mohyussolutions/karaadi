@@ -259,6 +259,7 @@ jobs:
             $ssm_get,
             "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
             "cp /home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/.env.production",
+            "git config --global --add safe.directory /home/ec2-user/karaadi",
             "cd /home/ec2-user/karaadi && git init -q && git remote add origin https://github.com/mohyussolutions/karaadi.git 2>/dev/null || git remote set-url origin https://github.com/mohyussolutions/karaadi.git && git fetch origin main && git reset --hard origin/main",
             "chown -R ec2-user:ec2-user /home/ec2-user/karaadi",
             "cd /home/ec2-user/karaadi/backend && npm ci",
