@@ -19,18 +19,11 @@ const AuthContext = createContext<AuthContextType>({
 let _cachedSession: { data: any } | null = null;
 let _pendingSession: Promise<RawUserData | null> | null = null;
 
-function hasAuthCookie() {
-  if (typeof document === "undefined") return false;
-  return document.cookie
-    .split(";")
-    .some((c) => c.trim().startsWith("idToken="));
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<RawUserData | null>(
     _cachedSession ? _cachedSession.data : null,
   );
-  const [loading, setLoading] = useState(_cachedSession ? false : true);
+  const [loading, setLoading] = useState(!_cachedSession);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -39,12 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (_cachedSession) {
       setUser(_cachedSession.data);
-      setLoading(false);
-      return;
-    }
-
-    if (!hasAuthCookie()) {
-      _cachedSession = { data: null };
       setLoading(false);
       return;
     }

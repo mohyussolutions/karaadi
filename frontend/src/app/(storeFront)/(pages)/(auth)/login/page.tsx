@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import LoginForm from "./LoginForm";
+import Loading from "@/app/ui/loading/Loading";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -23,7 +24,13 @@ export default function LoginPage() {
     }
   }, [loading, user, router]);
 
-  if (user) return null;
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (user) {
+    return null;
+  }
 
   return <LoginForm />;
 }

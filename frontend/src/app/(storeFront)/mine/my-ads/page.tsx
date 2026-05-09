@@ -9,7 +9,7 @@ import Image from "next/image";
 import Pagination from "@/app/(storeFront)/components/shared/Pagination";
 import { useTranslation } from "react-i18next";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/^(https:\/\/.+):8080(\/|$)/, "$1$2");
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const PAGE_SIZE = 12;
 
 type AdView = {

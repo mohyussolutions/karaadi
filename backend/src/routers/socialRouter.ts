@@ -17,6 +17,8 @@ socialRouter.post("/post", async (req: Request, res: Response) => {
     `[Social] Post queued — item: ${itemId} "${itemTitle}" → ${selected.join(", ") || "none"}`,
   );
 
+  // ...existing code...
+
   return res.json({ queued: true, platforms: selected });
 });
 

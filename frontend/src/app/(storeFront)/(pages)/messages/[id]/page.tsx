@@ -71,6 +71,7 @@ export default function MessagesInbox() {
                 );
                 return;
               }
+              // Optionally, call the real send message logic here
             }}
             onDeleteMessage={() => Promise.resolve()}
             onEditMessage={() => Promise.resolve()}

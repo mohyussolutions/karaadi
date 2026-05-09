@@ -8,74 +8,16 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import { setupSecurity } from "./core/middelware/securityMiddleware.js";
 import { logger } from "./core/middelware/logger.js";
-import { setupServerUtils } from "./core/utils/serverUtils.ts";
-import { SESSION_TIME_MS } from "./config/session-time.ts";
-import { overloadMiddleware } from "./core/middelware/overloadMiddleware.ts";
-import redisServer from "./services/redis/redisServer.ts";
-import prisma from "./core/utils/db.ts";
-import { getDashboardSummary } from "./controllers/dashboardController.ts";
-import marketplaceRoutes from "./routers/marketplaceRouter.ts";
-import boatsRoutes from "./routers/boatsRouter.ts";
-import carsRoutes from "./routers/carsRouter.ts";
-import motorcyclesRoutes from "./routers/motorcyclesRouter.ts";
-import realEstateRouter from "./routers/realEstateRouter.ts";
-import traktorRoutes from "./routers/FarmequipmentRouter.ts";
-import myAdsRouter from "./routers/myAdRoutes.ts";
-import favoriteRoutes from "./routers/favoriteRoutes.ts";
-import recommendationRoutes from "./routers/recommendationsRoute.ts";
-import advertisementRouter from "./routers/advertisementRoutes.ts";
-import notificationRoutes from "./routers/notificationRoute.ts";
-import subscriptionRoute from "./routers/subsRoute.ts";
-import chatRoutes from "./routers/chatRoute.ts";
-import contactUsRouter from "./routers/contactUsRoutes.ts";
-import messageRoutes from "./routers/messageRoute.ts";
-import hageRouter from "./AI/hageRouter.ts";
-import socialRouter from "./routers/socialRouter.ts";
-import feedRouter from "./routers/feedRouter.ts";
-import imageRouter from "./routers/imageRouter.ts";
-import businessPlanRoute from "./routers/businessPlanRoute.ts";
-import businessRoute from "./routers/businessRoute.ts";
-import reportRoutes from "./routers/reportRoute.ts";
-import historySearchRoutes from "./routers/historySearchRoutes.ts";
-import redisStatsRouter from "./routers/redisStatsRouter.ts";
-import locRoutes from "./routers/locRoutes.ts";
-import jobsRouter from "./routers/jobsRouter.ts";
-import filterRouter from "./routers/filterRouter.ts";
-import searchRouter from "./routers/searchRouter.ts";
-import visitorRoute from "./routers/vissedRoute.ts";
-import customerSupportRoutes from "./routers/customersupportRoute.ts";
-import paymentRoutes from "./routers/paymentRoutes.ts";
-import FeeRoutes from "./routers/FeeRoutes.ts";
-import initiateRouter from "./routers/initiateRouter.ts";
-import authRouters from "./routers/authRoute.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
-
-app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
-// Strip API Gateway stage prefix (/prod) forwarded by VPC Link
-app.use((req, _res, next) => {
-  if (req.path.startsWith("/prod/") || req.path === "/prod") {
-    req.url = req.url.replace(/^\/prod/, "") || "/";
-  }
-  next();
-});
-
-app.get("/health", (_req, res) =>
-  res.status(200).json({
-    status: "running",
-    message: "Server is running",
-    env: process.env.NODE_ENV || "development",
-    pid: process.pid,
-    uptime: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
-  }),
+app.get("/health", (req, res) =>
+  res.status(200).json({ status: "OK", pid: process.pid }),
 );
-
 app.use(
   "/assets",
   express.static(path.join(__dirname, "../assets"), { maxAge: "1d" }),
@@ -92,10 +34,9 @@ app.use(cookieParser());
 if (!isProd) app.use(morgan("dev"));
 app.use(compression());
 
-const redisClient = redisServer.getClient?.();
 app.use(
   session({
-    ...(redisClient ? { store: new RedisStore({ client: redisClient }) } : {}),
+    store: new RedisStore({ client: redisServer.getClient() }),
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
@@ -145,11 +86,9 @@ apiRouter.use("/businesses", businessRoute);
 apiRouter.use("/business-plans", businessPlanRoute);
 apiRouter.use("/feed", feedRouter);
 apiRouter.use("/images", imageRouter);
-apiRouter.use("/social", socialRouter);
-apiRouter.use("/hage", hageRouter);
-apiRouter.get("/dashboard/summary", getDashboardSummary);
 
-apiRouter.get("/items/:id", async (req: express.Request, res: express.Response) => {
+import prisma from "./core/utils/db.ts";
+apiRouter.get("/items/:id", async (req: import("express").Request, res: import("express").Response) => {
   const { id } = req.params;
   const include = { user: { select: { id: true, username: true, profileImage: true, phone: true } } };
   const [marketplace, car, realEstate, boat, motorcycle, farm] = await Promise.all([
@@ -168,7 +107,7 @@ apiRouter.get("/items/:id", async (req: express.Request, res: express.Response) 
   else if (boat) { item = boat; table = "boats"; }
   else if (motorcycle) { item = motorcycle; table = "motorcycles"; }
   else if (farm) { item = farm; table = "traktor"; }
-  if (!item) return res.status(404).json({ error: "Not found", message: "Shayga la raadinayay lama helin." });
+  if (!item) return res.status(404).json({ error: "Not found" });
   const images = ((item.images ?? []) as string[])
     .map((img, idx) =>
       img && img.startsWith("data:") ? `api/images/${table}/${id}/${idx}` : img,
@@ -176,6 +115,49 @@ apiRouter.get("/items/:id", async (req: express.Request, res: express.Response) 
     .filter((img) => img && img.trim() !== "");
   res.json({ ...item, images });
 });
+apiRouter.use("/social", socialRouter);
+apiRouter.use("/hage", hageRouter);
+
+import { getDashboardSummary } from "./controllers/dashboardController.ts";
+import { setupServerUtils } from "./core/utils/serverUtils.ts";
+import { SESSION_TIME_MS } from "./config/session-time.ts";
+import { overloadMiddleware } from "./core/middelware/overloadMiddleware.ts";
+import marketplaceRoutes from "./routers/marketplaceRouter.ts";
+import boatsRoutes from "./routers/boatsRouter.ts";
+import carsRoutes from "./routers/carsRouter.ts";
+import motorcyclesRoutes from "./routers/motorcyclesRouter.ts";
+import realEstateRouter from "./routers/realEstateRouter.ts";
+import traktorRoutes from "./routers/FarmequipmentRouter.ts";
+import myAdsRouter from "./routers/myAdRoutes.ts";
+import favoriteRoutes from "./routers/favoriteRoutes.ts";
+import recommendationRoutes from "./routers/recommendationsRoute.ts";
+import advertisementRouter from "./routers/advertisementRoutes.ts";
+import notificationRoutes from "./routers/notificationRoute.ts";
+import subscriptionRoute from "./routers/subsRoute.ts";
+import chatRoutes from "./routers/chatRoute.ts";
+import contactUsRouter from "./routers/contactUsRoutes.ts";
+import messageRoutes from "./routers/messageRoute.ts";
+import hageRouter from "./AI/hageRouter.ts";
+import socialRouter from "./routers/socialRouter.ts";
+import feedRouter from "./routers/feedRouter.ts";
+import imageRouter from "./routers/imageRouter.ts";
+import businessPlanRoute from "./routers/businessPlanRoute.ts";
+import businessRoute from "./routers/businessRoute.ts";
+import reportRoutes from "./routers/reportRoute.ts";
+import historySearchRoutes from "./routers/historySearchRoutes.ts";
+import redisStatsRouter from "./routers/redisStatsRouter.ts";
+import locRoutes from "./routers/locRoutes.ts";
+import jobsRouter from "./routers/jobsRouter.ts";
+import filterRouter from "./routers/filterRouter.ts";
+import searchRouter from "./routers/searchRouter.ts";
+import visitorRoute from "./routers/vissedRoute.ts";
+import customerSupportRoutes from "./routers/customersupportRoute.ts";
+import paymentRoutes from "./routers/paymentRoutes.ts";
+import FeeRoutes from "./routers/FeeRoutes.ts";
+import initiateRouter from "./routers/initiateRouter.ts";
+import authRouters from "./routers/authRoute.ts";
+import redisServer from "./services/redis/redisServer.ts";
+apiRouter.get("/dashboard/summary", getDashboardSummary);
 
 app.use("/api", apiRouter);
 
@@ -189,18 +171,20 @@ app.use(
     try {
       logger.error((err as any)?.stack || err);
     } catch {}
-    res.status(500).json({
-      error: "Server error",
-      message: "Khalad ayaa dhacay. Fadlan mar kale isku day. / An error occurred, please try again.",
-    });
+    const msg =
+      typeof (_req as any).t === "function"
+        ? (_req as any).t("api_errors.server_error")
+        : "Server error";
+    res.status(500).json({ message: msg });
   },
 );
 
-app.use((_req: express.Request, res: express.Response) => {
-  res.status(404).json({
-    error: "Not found",
-    message: "Bogga la raadinayay lama helin. / The page you requested was not found.",
-  });
+app.use((req: express.Request, res: express.Response) => {
+  const msg =
+    typeof (req as any).t === "function"
+      ? (req as any).t("api_errors.not_found")
+      : "Not found";
+  res.status(404).json({ message: msg });
 });
 
 export default app;

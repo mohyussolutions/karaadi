@@ -28,12 +28,16 @@ const BackgroundAdWrapper = ({ children, ad }: AdProps) => {
     );
   };
 
+  if (!ad?.imageUrl) return <>{children}</>;
+
   return (
     <div
-      className="min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex"
-      style={{ backgroundImage: isLoaded && ad?.imageUrl ? `url("${ad.imageUrl}")` : "none" }}
+      className={`min-h-screen w-full bg-fixed bg-center bg-no-repeat bg-cover relative flex transition-opacity duration-700 bg-red-400 ${
+        isLoaded ? "opacity-100" : "opacity-0"
+      }`}
+      style={{ backgroundImage: isLoaded ? `url("${ad.imageUrl}")` : "none" }}
     >
-      {ad?.link && isLoaded && (
+      {ad?.link && (
         <>
           <div
             onClick={handleAdClick}

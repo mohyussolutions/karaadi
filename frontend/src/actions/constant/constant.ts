@@ -1,5 +1,5 @@
 import { GridConfiguration } from "@/app/utils/types/GridConfiguration";
-const BASE_API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/^(https:\/\/.+):8080(\/|$)/, "$1$2");
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export const AUTH_TOKEN_KEY = "auth_token";
 export const PLACEHOLDER_IMAGE =

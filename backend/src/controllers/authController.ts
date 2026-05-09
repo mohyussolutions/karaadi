@@ -133,17 +133,12 @@ export const registerUser = async (
   username: string,
   phone?: string,
 ) => {
-  try {
-    const emailExists = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-    if (emailExists)
-      throw new Error("This email is already in use. Please try another one.");
-  } catch (err: any) {
-    if (err?.message?.includes("already in use")) throw err;
-  }
-
+  const emailExists = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (emailExists)
+    throw new Error("This email is already in use. Please try another one.");
   let cognitoResult: any;
   try {
     cognitoResult = await signUp(email, password, username, phone);
@@ -171,8 +166,8 @@ export const registerUser = async (
         isSupport: false,
       },
     });
-  } catch {
-    // DB unavailable — record will be created on first login via upsert
+  } catch (dbErr: any) {
+    throw new Error(dbErr?.message || "Failed to create user in database");
   }
 
   return cognitoResult;

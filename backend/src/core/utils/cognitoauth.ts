@@ -1,7 +1,6 @@
 import {
   CognitoIdentityProviderClient,
   AdminDeleteUserCommand,
-  AdminConfirmSignUpCommand,
   SignUpCommand,
   InitiateAuthCommand,
   GlobalSignOutCommand,
@@ -155,12 +154,6 @@ export const signUp = async (
         UserAttributes: userAttributes,
       }),
     );
-    await cognitoClient.send(
-      new AdminConfirmSignUpCommand({
-        UserPoolId: process.env.KARAADI_AWS_COGNITO_USER_POOL_ID || "",
-        Username: email,
-      }),
-    ).catch(() => {});
     return response;
   } catch (error: any) {
     throw new Error(error.message);
@@ -202,35 +195,35 @@ export const signIn = async (
     const preferredUsername =
       decodedToken.preferred_username || email.split("@")[0];
 
-    let userRecord: any = null;
-    try {
-      userRecord = await prisma.user.upsert({
-        where: { cognitoId: decodedToken.sub },
-        update: { email: decodedToken.email, username: preferredUsername, isAdmin, isManager, isSupport },
-        create: {
-          cognitoId: decodedToken.sub,
-          email: decodedToken.email,
-          username: preferredUsername,
-          phone: cognitoPhone !== "false" ? cognitoPhone : "",
-          profileImage: cognitoProfileImage !== "false" ? cognitoProfileImage : null,
-          password: "",
-          isAdmin,
-          isManager,
-          isSupport,
-        },
-        select: { id: true, username: true, phone: true, profileImage: true, cognitoId: true },
-      });
-    } catch {
-      userRecord = null;
-    }
-
-    const resolvedUser = {
-      id: userRecord?.id || decodedToken.sub,
-      username: userRecord?.username || preferredUsername,
-      phone: userRecord?.phone || cognitoPhone || "",
-      profileImage: userRecord?.profileImage || cognitoProfileImage || "",
-      cognitoId: userRecord?.cognitoId || decodedToken.sub,
-    };
+    const userRecord = await prisma.user.upsert({
+      where: { cognitoId: decodedToken.sub },
+      update: {
+        email: decodedToken.email,
+        username: preferredUsername,
+        isAdmin,
+        isManager,
+        isSupport,
+      },
+      create: {
+        cognitoId: decodedToken.sub,
+        email: decodedToken.email,
+        username: preferredUsername,
+        phone: cognitoPhone !== "false" ? cognitoPhone : "",
+        profileImage:
+          cognitoProfileImage !== "false" ? cognitoProfileImage : null,
+        password: "",
+        isAdmin,
+        isManager,
+        isSupport,
+      },
+      select: {
+        id: true,
+        username: true,
+        phone: true,
+        profileImage: true,
+        cognitoId: true,
+      },
+    });
 
     if (req?.session) {
       req.session.idToken = idToken;
@@ -238,9 +231,9 @@ export const signIn = async (
       req.session.accessToken = accessToken;
       req.session.user = {
         sub: decodedToken.sub,
-        username: resolvedUser.username,
-        phone: resolvedUser.phone,
-        profileImage: resolvedUser.profileImage,
+        username: userRecord.username,
+        phone: userRecord.phone || "",
+        profileImage: userRecord.profileImage || "",
         isAdmin,
         isManager,
         isSupport,
@@ -254,14 +247,14 @@ export const signIn = async (
       userData: {
         accessToken,
         email,
-        username: resolvedUser.username,
-        phone: resolvedUser.phone,
-        profileImage: resolvedUser.profileImage,
+        username: userRecord.username,
+        phone: userRecord.phone || "",
+        profileImage: userRecord.profileImage || "",
         isAdmin,
         isManager,
         isSupport,
-        cognitoId: resolvedUser.cognitoId,
-        id: resolvedUser.id,
+        cognitoId: userRecord.cognitoId || decodedToken.sub,
+        id: userRecord.id,
       },
     };
   } catch (error: unknown) {

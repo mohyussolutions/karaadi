@@ -19,8 +19,6 @@ export const setupSecurity = (app: express.Application) => {
       },
       credentials: true,
       optionsSuccessStatus: 200,
-      allowedHeaders: ["Content-Type", "Authorization", "Cookie", "X-Access-Token", "Cache-Control", "X-Requested-With"],
-      exposedHeaders: ["Set-Cookie"],
     }),
   );
 

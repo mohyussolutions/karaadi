@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-const BASE_API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/^(https:\/\/.+):8080(\/|$)/, "$1$2");
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export interface WantedPost {

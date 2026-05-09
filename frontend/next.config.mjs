@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
@@ -80,7 +81,6 @@ const nextConfig = {
       { protocol: "https", hostname: "**.imgur.com" },
       { protocol: "http", hostname: "localhost", port: "8080" },
       { protocol: "https", hostname: "api.karaadi.com" },
-      { protocol: "https", hostname: "*.execute-api.eu-west-1.amazonaws.com" },
     ],
   },
 };

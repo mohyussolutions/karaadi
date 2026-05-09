@@ -6,7 +6,7 @@ import { deleteSubscriptionAdmin } from "@/actions/categories/subscriptionsActio
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/^(https:\/\/.+):8080(\/|$)/, "$1$2");
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 interface Subscription {
   id?: string;

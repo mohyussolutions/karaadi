@@ -76,18 +76,31 @@ export default function LocationSelector({
   desktopOnly = false,
 }: LocationSelectorProps) {
   const { t } = useTranslation();
-  const initialCache = getCachedData();
-  const [regions, setRegions] = useState<Region[]>(initialCache?.regions ?? []);
-  const [cities, setCities] = useState<City[]>(initialCache?.cities ?? []);
-  const [isLoading, setIsLoading] = useState(!initialCache);
-  const [expandedRegions, setExpandedRegions] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [expandedRegions, setExpandedRegions] = useState<
+    Record<string, boolean>
+  >({});
   const [open, setOpen] = useState(false);
-  const initialLoadDone = useRef(!!initialCache);
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
-    if (initialLoadDone.current) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || initialLoadDone.current) return;
     initialLoadDone.current = true;
     (async () => {
+      const cached = getCachedData();
+      if (cached) {
+        setRegions(cached.regions);
+        setCities(cached.cities);
+        setIsLoading(false);
+        return;
+      }
       try {
         const [regionsData, citiesData] = await Promise.all([
           getAllRegions(),
@@ -102,7 +115,7 @@ export default function LocationSelector({
         setIsLoading(false);
       }
     })();
-  }, []);
+  }, [mounted]);
 
   useEffect(() => {
     if (!open) return;
@@ -155,6 +168,8 @@ export default function LocationSelector({
     onFilterChange(null, {});
     setExpandedRegions({});
   }, [onFilterChange]);
+
+  if (!mounted) return null;
 
   const regionList = isLoading ? (
     <div className="space-y-2 px-4 py-3">

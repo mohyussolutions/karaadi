@@ -74,12 +74,7 @@ authRouters.post(
       res.json({ token, user: userData });
     } catch (err: any) {
       console.error("[AUTH] signIn failed:", err?.message ?? err);
-      const msg = err?.message ?? "";
-      if (/not confirmed/i.test(msg))
-        return res.status(401).json({ error: "Please confirm your email before logging in. Check your inbox for a confirmation code." });
-      if (/incorrect.*username.*password|not authorized/i.test(msg))
-        return res.status(401).json({ error: "Incorrect email or password." });
-      res.status(401).json({ error: msg || "Login failed" });
+      res.status(401).json({ error: err?.message ?? "Login failed" });
     }
   },
 );
@@ -115,13 +110,7 @@ authRouters.post(
       res.json({ message: "User registered successfully", cognitoResult });
     } catch (error: any) {
       console.error("[REGISTER]", error?.message ?? error);
-      const msg = error?.message ?? "";
-      const isPrismaError = msg.includes("prisma") || msg.includes("Invalid URL") || msg.includes("database");
-      res.status(isPrismaError ? 503 : 400).json({
-        error: isPrismaError
-          ? "Service is temporarily unavailable. Please try again later."
-          : msg || "Registration failed",
-      });
+      res.status(400).json({ error: error?.message ?? "Registration failed" });
     }
   },
 );

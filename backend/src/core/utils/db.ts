@@ -1,41 +1,11 @@
-import path from "path";
-import { fileURLToPath } from "url";
-import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
-// Load environment variables from common locations when running locally
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const tryLoadEnv = () => {
-  dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-  const backendRoot = path.resolve(__dirname, "..", "..", "..");
-  dotenv.config({ path: path.join(backendRoot, ".env"), override: false });
-  dotenv.config({
-    path: path.join(backendRoot, ".env.local"),
-    override: false,
-  });
-  dotenv.config({
-    path: path.join(backendRoot, "..", ".env.local"),
-    override: false,
-  });
-};
-
-tryLoadEnv();
-
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  // try once more then fail with helpful guidance
-  tryLoadEnv();
-}
-
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL is not defined. Create backend/.env with DATABASE_URL=postgresql://... or export DATABASE_URL in your shell.",
-  );
+  throw new Error("DATABASE_URL is not defined in environment variables");
 }
 
 declare global {
@@ -48,7 +18,6 @@ const pool = new pg.Pool({
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
   maxUses: 7500,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
 const adapter = new PrismaPg(pool);

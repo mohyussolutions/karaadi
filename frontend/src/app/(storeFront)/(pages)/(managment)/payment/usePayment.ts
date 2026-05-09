@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useAppDispatch } from "@/store/slices/hooks/hooks";
 import { resetFlow } from "@/store/slices/reducers/listingDraftSlice";
+import { postToFacebook } from "@/actions/categories/socialPostAction";
 import { useIsValidPhone } from "@/app/(storeFront)/components/hooks/useIsValidPhone";
 import {
   MAX_POLL_ATTEMPTS,
@@ -67,6 +68,15 @@ export function usePayment({
         if (!res.ok) throw new Error();
         setPaymentStatus("success");
         toast.success(t("payment.success", "Payment successful! Your listing is now live."));
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        postToFacebook({
+          title: item.title || "",
+          description: item.description || "",
+          price: item.price || 0,
+          imageUrl: Array.isArray(item.images) && item.images[0] ? item.images[0] : undefined,
+          listingUrl: `${origin}${getItemPath(item.mainCategory, item.id || "")}`,
+          category: item.mainCategory || item.category || "",
+        });
         dispatch(resetFlow());
         router.push("/");
       } catch {
@@ -167,6 +177,19 @@ export function usePayment({
                 "Payment successful! Your listing is now live.",
               ),
             );
+            const origin =
+              typeof window !== "undefined" ? window.location.origin : "";
+            postToFacebook({
+              title: item.title || "",
+              description: item.description || "",
+              price: item.price || 0,
+              imageUrl:
+                Array.isArray(item.images) && item.images[0]
+                  ? item.images[0]
+                  : undefined,
+              listingUrl: `${origin}${getItemPath(item.mainCategory, item.id || "")}`,
+              category: item.mainCategory || item.category || "",
+            });
             dispatch(resetFlow());
             router.push("/");
           } else if (statusData.status === "failed") {

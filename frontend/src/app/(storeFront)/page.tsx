@@ -12,7 +12,6 @@ export default function Home() {
       <ContainerLinks>
         <CategoryLinks />
       </ContainerLinks>
-      <p>under the development</p>
       <ContainerLinks>
         <DataFeed />
       </ContainerLinks>

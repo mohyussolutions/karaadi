@@ -1,3 +1,4 @@
+// Utility to resolve image URLs for the app
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 
 export const resolveImageUrl = (url: any): string | null => {

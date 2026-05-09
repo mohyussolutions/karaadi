@@ -13,7 +13,7 @@ import {
 import { SEARCH_HISTORY_ENDPOINTS } from "@/actions/constant/constant";
 import { useGetRoute } from "../hooks/useGetRoute";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/^(https:\/\/.+):8080(\/|$)/, "$1$2");
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 function resolveImage(images: unknown): string | null {
   const arr = Array.isArray(images) ? images : [];

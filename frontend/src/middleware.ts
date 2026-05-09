@@ -14,7 +14,7 @@ const PUBLIC_PREFIXES = [
   "/confirm",
   "/forgot-password",
   "/reset-password",
-  "/marketplace",
+  "/Marketplace",
   "/real-estate",
   "/cars",
   "/boats",

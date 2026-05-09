@@ -1,6 +1,6 @@
 import { SearchResultTypes } from "@/app/utils/types/SearchResult.types";
 
-const BACKEND = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/^(https:\/\/.+):8080(\/|$)/, "$1$2");
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export async function fetchSearch(q: string): Promise<SearchResultTypes[]> {
   if (!q.trim()) return [];

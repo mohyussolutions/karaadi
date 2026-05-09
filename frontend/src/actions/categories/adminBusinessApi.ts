@@ -17,7 +17,7 @@ async function apiFetch(url: string, options?: RequestInit) {
   const headers = await getAuthHeaders();
   const res = await fetch(url, {
     ...options,
-    headers: { ...headers, "Content-Type": "application/json", ...options?.headers } as HeadersInit,
+    headers: { "Content-Type": "application/json", ...headers, ...options?.headers } as HeadersInit,
     cache: "no-store",
   });
   return res;

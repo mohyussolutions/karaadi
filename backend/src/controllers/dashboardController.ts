@@ -77,6 +77,8 @@ async function fetchCityGroups() {
   ]);
 }
 
+// ─── builders (call fetchers, return shaped data) ────────────────────────────
+
 async function getRevenue(since: Date) {
   const payments = await fetchPayments(since);
   const map: Record<string, number> = {};

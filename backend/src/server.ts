@@ -14,37 +14,42 @@ const server = http.createServer(app);
 
 const startServer = async () => {
   try {
-    await redisServer.start();
+    await Promise.all([redisServer.start(), prisma.$connect()]);
+
     const pub = redisServer.getClient();
     const sub = pub.duplicate();
     await sub.connect();
+
     socketServer(server, pub, sub);
-    console.log(chalk.green("Redis connected — sockets enabled"));
+
+    server.listen(Number(process.env.PORT) || 8080, "::", () => {
+      console.log(
+        chalk.green(
+          `Server PID ${process.pid} ready on port ${process.env.PORT}`,
+        ),
+      );
+    });
+
+    setupGracefulShutdown({ server, prisma, redisServer });
+
+    cron.schedule("0 2 */3 * *", runBackup, { timezone: "UTC" });
+
+    setInterval(async () => {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+      } catch (e) {
+        console.warn(
+          chalk.yellow("[Keepalive] DB ping failed — reconnecting…"),
+        );
+        try {
+          await prisma.$connect();
+        } catch {}
+      }
+    }, 60_000);
   } catch (err) {
-    console.error(chalk.yellow("Redis unavailable — sockets disabled:"), err);
+    console.error(chalk.red("Startup failed:"), err);
+    process.exit(1);
   }
-
-  server.listen(Number(process.env.PORT) || 8080, "::", () => {
-    console.log(chalk.green(`Server ready on port ${process.env.PORT || 8080}`));
-  });
-
-  prisma.$connect()
-    .then(() => console.log(chalk.green("DB connected")))
-    .catch((err: unknown) => console.error(chalk.yellow("DB connect failed — will retry:"), err));
-
-  setupGracefulShutdown({ server, prisma, redisServer });
-
-  cron.schedule("0 2 */3 * *", runBackup, { timezone: "UTC" });
-
-  setInterval(async () => {
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-    } catch {
-      try { await prisma.$connect(); } catch {}
-    }
-  }, 60_000);
 };
 
-startServer().catch((err) => {
-  console.error(chalk.red("Fatal startup error:"), err);
-});
+startServer();

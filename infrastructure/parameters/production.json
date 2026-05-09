@@ -1,0 +1,22 @@
+{
+  "Parameters": {
+    "AppName": "karaadi",
+    "Environment": "production",
+    "EC2InstanceType": "t3.small",
+    "DesiredCapacity": "2",
+    "MinSize": "2",
+    "MaxSize": "10",
+    "DBInstanceClass": "db.t3.small",
+    "DBName": "karaadi_production",
+    "DBUsername": "karaadi_admin",
+    "CacheNodeType": "cache.t3.small",
+    "DomainName": "karaadi.com",
+    "GitHubOrg": "mohyussolutions",
+    "GitHubRepo": "karaadi"
+  },
+  "Tags": {
+    "Project": "Karaadi",
+    "Environment": "Production",
+    "ManagedBy": "CloudFormation"
+  }
+}

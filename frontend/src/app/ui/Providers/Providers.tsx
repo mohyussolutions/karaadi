@@ -45,25 +45,28 @@ function I18nSync({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import PersistWrapper from "./PersistWrapper";
 import ThemeApplier from "./ThemeApplier";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <ThemeApplier />
-      <I18nSync>
-        <I18nextProvider i18n={i18n}>
-          <ErrorBoundary>
-            {children}
-            <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              theme="colored"
-              pauseOnFocusLoss={false}
-            />
-          </ErrorBoundary>
-        </I18nextProvider>
-      </I18nSync>
+      <PersistWrapper>
+        <ThemeApplier />
+        <I18nSync>
+          <I18nextProvider i18n={i18n}>
+            <ErrorBoundary>
+              {children}
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                theme="colored"
+                pauseOnFocusLoss={false}
+              />
+            </ErrorBoundary>
+          </I18nextProvider>
+        </I18nSync>
+      </PersistWrapper>
     </Provider>
   );
 }
