@@ -80,8 +80,8 @@ export default function JobsForm({ onNext }: { onNext: () => void }) {
 
   if (!currentUser) return <div className="p-10 text-center">Loading...</div>;
 
-  const experienceLevels = (nesCategories.experienceLevels || []).map((l: any) => ({ value: l.key, label: t(l.labelKey, l.name) }));
-  const educationLevels = (nesCategories.educationLevels || []).map((l: any) => ({ value: l.key, label: t(l.labelKey, l.name) }));
+  const experienceLevels = (nesCategories.experienceLevels || []).map((l: any) => ({ value: l.key, label: t(l.labelKey, l.name) as string }));
+  const educationLevels = (nesCategories.educationLevels || []).map((l: any) => ({ value: l.key, label: t(l.labelKey, l.name) as string }));
   const regionOptions = regions.map((r) => ({ value: r.id, label: r.name }));
 
   return (
