@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(aws ssm *)",
-      "Bash(aws rds *)"
+      "Bash(aws rds *)",
+      "Bash(git -C /Users/mohamed/Documents/karaadi ls-files)"
     ]
   }
 }

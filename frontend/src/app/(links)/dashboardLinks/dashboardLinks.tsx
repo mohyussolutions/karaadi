@@ -252,7 +252,7 @@ export const allCategories: MainCategory[] = [
   {
     key: "Marketplace",
     name: "Marketplace",
-    href: "/Marketplace",
+    href: "/marketplace",
     icon: <LuSofa />,
     so: "Suuq",
     dashboardIcon: FaStore,

@@ -21,7 +21,7 @@ const PUBLIC_PREFIXES = [
   "/confirm",
   "/forgot-password",
   "/reset-password",
-  "/Marketplace",
+  "/marketplace",
   "/real-estate",
   "/cars",
   "/boats",
@@ -76,7 +76,7 @@ export function middleware(req: NextRequest) {
     if (c) {
       const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
       return NextResponse.redirect(
-        new URL(ownRoute ? ownRoute.pattern : "/Marketplace", req.url),
+        new URL(ownRoute ? ownRoute.pattern : "/marketplace", req.url),
       );
     }
   }
