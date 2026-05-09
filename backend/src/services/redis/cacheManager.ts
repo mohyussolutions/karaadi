@@ -13,8 +13,10 @@ class CacheManager {
   private isConnected = false;
 
   private constructor() {
+    const redisUrl = process.env.REDIS_URL || REDIS_CONFIG.URL;
+    const isValidUrl = redisUrl.startsWith("redis://") || redisUrl.startsWith("rediss://");
     this.client = createClient({
-      url: process.env.REDIS_URL || REDIS_CONFIG.URL,
+      url: isValidUrl ? redisUrl : "redis://localhost:6379",
       socket: {
         reconnectStrategy: (retries) => {
           if (retries > REDIS_CONFIG.MAX_RETRIES)
