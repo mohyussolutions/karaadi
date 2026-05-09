@@ -42,9 +42,9 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
-          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
+          NEXT_PUBLIC_API_URL: http://localhost:9000
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: eu-west-1_TESTPOOL
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: testclientid
         run: npm run build
 
   deploy:
