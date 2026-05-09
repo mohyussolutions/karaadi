@@ -34,24 +34,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          RDS_HOST=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
-            --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" \
-            --output text)
-          echo "RDS: $RDS_HOST"
+          RDS_HOST=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" --query "Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue" --output text)
+          COGNITO_POOL=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" --query "Stacks[0].Outputs[?OutputKey=='CognitoUserPoolId'].OutputValue" --output text 2>/dev/null || echo "")
+          COGNITO_CLIENT=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" --query "Stacks[0].Outputs[?OutputKey=='CognitoClientId'].OutputValue" --output text 2>/dev/null || echo "")
+          echo "RDS: $RDS_HOST | Cognito Pool: $COGNITO_POOL | Client: $COGNITO_CLIENT"
 
-          aws ssm put-parameter --name /karaadi/db-master-password \
-            --value "$DB_PASS" --type SecureString --overwrite --region "$AWS_REGION"
+          aws ssm put-parameter --name /karaadi/db-master-password --value "$DB_PASS" --type SecureString --overwrite --region "$AWS_REGION"
 
-          CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env \
-            --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
+          CURRENT=$(aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region "$AWS_REGION")
+          patch_env() { local key=$1 val=$2 content=$3; if echo "$content" | grep -q "^${key}="; then echo "$content" | sed "s|^${key}=.*|${key}=${val}|"; else printf '%s\n%s=%s' "$content" "$key" "$val"; fi; }
+          UPDATED="$CURRENT"
+          UPDATED=$(patch_env "DATABASE_URL" "postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi?connection_limit=20&pool_timeout=20" "$UPDATED")
+          UPDATED=$(patch_env "ALLOWED_ORIGINS" "https://karaadi.com,https://www.karaadi.com" "$UPDATED")
+          [ -n "$COGNITO_POOL" ] && UPDATED=$(patch_env "KARAADI_AWS_COGNITO_USER_POOL_ID" "$COGNITO_POOL" "$UPDATED")
+          [ -n "$COGNITO_CLIENT" ] && UPDATED=$(patch_env "KARAADI_AWS_COGNITO_CLIENT_ID" "$COGNITO_CLIENT" "$UPDATED")
 
-          export NEW_DB_LINE="DATABASE_URL=postgresql://karaadi_admin:${DB_PASS}@${RDS_HOST}:5432/karaadi?connection_limit=20&pool_timeout=20"
-          UPDATED=$(printf '%s' "$CURRENT" | python3 -c \
-            'import sys,os,re;c=sys.stdin.read();l=os.environ["NEW_DB_LINE"];p=re.compile(r"^DATABASE_URL=.*",re.MULTILINE);print(p.sub(l,c) if p.search(c) else c.rstrip()+"\n"+l,end="")')
-
-          aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" \
-            --type SecureString --overwrite --region "$AWS_REGION"
+          aws ssm put-parameter --name /karaadi/backend/env --value "$UPDATED" --type SecureString --overwrite --region "$AWS_REGION"
           echo "SSM updated"
 
       - name: Get ASG name
