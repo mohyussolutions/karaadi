@@ -72,6 +72,7 @@ export default function LoginForm() {
         <input
           type="email"
           autoFocus
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t("auth.login.emailPlaceholder")}
