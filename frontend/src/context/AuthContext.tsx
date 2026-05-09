@@ -1,5 +1,5 @@
 "use client";
-
+//
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getAuthenticatedUser } from "@/actions/core/authAction";
 import { RawUserData } from "@/app/utils/types/user.types";
@@ -21,16 +21,16 @@ let _pendingSession: Promise<RawUserData | null> | null = null;
 
 function hasAuthCookie() {
   if (typeof document === "undefined") return false;
-  return document.cookie.split(";").some((c) => c.trim().startsWith("idToken="));
+  return document.cookie
+    .split(";")
+    .some((c) => c.trim().startsWith("idToken="));
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<RawUserData | null>(
     _cachedSession ? _cachedSession.data : null,
   );
-  const [loading, setLoading] = useState(
-    _cachedSession ? false : true,
-  );
+  const [loading, setLoading] = useState(_cachedSession ? false : true);
   const hasFetched = useRef(false);
 
   useEffect(() => {
