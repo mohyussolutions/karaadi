@@ -99,18 +99,7 @@ export const deleteMyAccount = async (
       try {
         await deleteFromCognito(targetCognitoId);
       } catch (err: any) {
-        if (err && err.message && err.message.includes("security token")) {
-          console.error(
-            "AWS Cognito deletion failed due to invalid credentials.",
-          );
-          console.error(
-            "Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and KARAADI_AWS_COGNITO_USER_POOL_ID environment variables.",
-          );
-        }
-        console.error(
-          `Failed to delete user from Cognito: ${targetCognitoId}`,
-          err,
-        );
+        console.error(`Failed to delete user from Cognito: ${targetCognitoId}`, err);
         return res.status(500).json({
           error: "Failed to delete user from Cognito. Please contact support.",
         });
@@ -258,8 +247,7 @@ export const signIn = async (
       },
     };
   } catch (error: unknown) {
-    if (error instanceof Error) throw new Error(error.message);
-    throw new Error("An unknown error occurred");
+    throw error;
   }
 };
 

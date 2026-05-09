@@ -59,37 +59,25 @@ authRouters.post(
   async (req: Request, res: Response) => {
     const { email, password } = req.body;
     try {
-      const { token, refreshToken, userData } = await signIn(
-        email,
-        password,
-        req,
-        res,
-      );
-      await setAuthCookies(
-        res,
-        { idToken: token, refreshToken },
-        undefined,
-        userData.id,
-      );
+      const { token, refreshToken, userData } = await signIn(email, password, req, res);
+      await setAuthCookies(res, { idToken: token, refreshToken }, undefined, userData.id);
       res.json({ token, user: userData });
     } catch (err: any) {
       console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);
       const name = err?.name ?? "";
-      let status = 401;
-      let message = err?.message ?? "Login failed";
       if (name === "UserNotConfirmedException") {
-        message = "Please confirm your email before logging in.";
-      } else if (name === "NotAuthorizedException") {
-        message = "Incorrect email or password.";
-      } else if (name === "UserNotFoundException") {
-        message = "No account found with this email.";
-      } else if (name === "TooManyRequestsException") {
-        status = 429;
-        message = "Too many attempts. Please wait and try again.";
-      } else {
-        message = "Login failed. Please try again.";
+        return res.status(401).json({ error: "Please confirm your email before logging in." });
       }
-      res.status(status).json({ error: message });
+      if (name === "NotAuthorizedException") {
+        return res.status(401).json({ error: "Incorrect email or password." });
+      }
+      if (name === "UserNotFoundException") {
+        return res.status(401).json({ error: "No account found with this email." });
+      }
+      if (name === "TooManyRequestsException") {
+        return res.status(429).json({ error: "Too many attempts. Please wait and try again." });
+      }
+      return res.status(500).json({ error: "Login failed. Please try again." });
     }
   },
 );
