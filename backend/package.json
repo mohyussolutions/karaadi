@@ -13,8 +13,8 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx --env-file=../.env.local src/prisma/seed.ts",
     "db:reset": "tsx --env-file=../.env.local src/prisma/seed.ts -d",
-    "import": "tsx --env-file=../.env.local src/prisma/seed.ts",
-    "remove": "tsx --env-file=../.env.local src/prisma/seed.ts -d",
+    "import": "tsx --env-file=.env.production src/prisma/seed.ts",
+    "remove": "tsx --env-file=.env.production src/prisma/seed.ts -d",
     "test": "NODE_OPTIONS='--experimental-vm-modules' npx jest --config jest.config.cjs --forceExit --silent"
   },
   "keywords": [],
