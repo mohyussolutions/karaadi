@@ -145,6 +145,35 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Validate referenced AWS resources
+        run: |
+          set -euo pipefail
+          FAILED=0
+          check() {
+            local label="$1" id="$2"
+            shift 2
+            val=$("$@" 2>/dev/null || echo "")
+            if [ -z "$val" ] || [ "$val" = "None" ]; then
+              echo "MISSING  $label: $id"
+              FAILED=1
+            else
+              echo "OK       $label: $id"
+            fi
+          }
+          check "VPC"              "vpc-0f79ad5eec7d93d64"     aws ec2 describe-vpcs           --vpc-ids              vpc-0f79ad5eec7d93d64     --region "$AWS_REGION" --query "Vpcs[0].VpcId"                --output text
+          check "Subnet public-a"  "subnet-053b339f6291b582d"  aws ec2 describe-subnets        --subnet-ids           subnet-053b339f6291b582d  --region "$AWS_REGION" --query "Subnets[0].SubnetId"          --output text
+          check "Subnet private-1" "subnet-084580d7cb9b7a892"  aws ec2 describe-subnets        --subnet-ids           subnet-084580d7cb9b7a892  --region "$AWS_REGION" --query "Subnets[0].SubnetId"          --output text
+          check "Subnet private-2" "subnet-04cd77afc1a7a0561"  aws ec2 describe-subnets        --subnet-ids           subnet-04cd77afc1a7a0561  --region "$AWS_REGION" --query "Subnets[0].SubnetId"          --output text
+          check "Route table"      "rtb-00be7f6ed797b47c8"     aws ec2 describe-route-tables   --route-table-ids      rtb-00be7f6ed797b47c8     --region "$AWS_REGION" --query "RouteTables[0].RouteTableId"  --output text
+          check "SG RDS"           "sg-009778749a1df93c6"      aws ec2 describe-security-groups --group-ids           sg-009778749a1df93c6      --region "$AWS_REGION" --query "SecurityGroups[0].GroupId"    --output text
+          check "SG Redis"         "sg-073285e2466a649d6"      aws ec2 describe-security-groups --group-ids           sg-073285e2466a649d6      --region "$AWS_REGION" --query "SecurityGroups[0].GroupId"    --output text
+          if [ "$FAILED" = "1" ]; then
+            echo ""
+            echo "One or more AWS resources referenced in infrastructure/master-backend-stack.yml do not exist."
+            echo "Update the missing IDs in the template parameter defaults and push again."
+            exit 1
+          fi
+
       - name: Deploy / update infrastructure stack
         run: |
           set -euo pipefail
