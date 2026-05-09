@@ -20,12 +20,10 @@ const nextConfig = {
 
   async redirects() {
     return [
-      { source: "/marketplace", destination: "/marketplace", permanent: true },
-      {
-        source: "/marketplace/:path*",
-        destination: "/marketplace/:path*",
-        permanent: true,
-      },
+      // eslint-disable-next-line prettier/prettier
+      { source: "/Marketplace", destination: "/marketplace", permanent: true },
+      // eslint-disable-next-line prettier/prettier
+      { source: "/Marketplace/:path*", destination: "/marketplace/:path*", permanent: true },
     ];
   },
 
