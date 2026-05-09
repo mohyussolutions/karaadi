@@ -1,0 +1,66 @@
+services:
+  - type: web
+    name: karaadi-backend
+    runtime: node
+    region: frankfurt
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: COOKIE_DOMAIN
+        value: karaadi.com
+      - key: AWS_REGION
+        value: eu-west-1
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: KARAADI_AWS_COGNITO_USER_POOL_ID
+        value: eu-west-1_W3gH3awFm
+      - key: KARAADI_AWS_COGNITO_CLIENT_ID
+        value: 1oe14kj0nek85esk0o0vi1griv
+      - key: COGNITO_JWKS_URL
+        value: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_W3gH3awFm/.well-known/jwks.json
+      - key: PG_POOL_MAX
+        value: 20
+      - key: PAYLOAD_LIMIT
+        value: 20mb
+      - key: WAAFIPAY_MERCHANT_UID
+        value: M0914229
+      - key: WAAFIPAY_API_USER_ID
+        value: "1008816"
+      - key: WAAFIPAY_API_KEY
+        sync: false
+      - key: USE_WAAFIPAY_PROD
+        value: "true"
+      - key: WAAFIPAY_PRODUCTION_URL
+        value: https://api.waafipay.net/asm
+      - key: TIKTOK_CLIENT_KEY
+        value: aw7w2mc71navvwzl
+      - key: TIKTOK_CLIENT_SECRET
+        sync: false
+      - key: FACEBOOK_PAGE_ID
+        value: "61569249207022"
+      - key: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
+        value: "1"
