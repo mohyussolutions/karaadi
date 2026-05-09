@@ -4,8 +4,8 @@ services:
     runtime: node
     region: frankfurt
     rootDir: backend
-    buildCommand: npm ci && npx prisma generate
-    startCommand: npm start
+    buildCommand: cd backend && npm ci && npx prisma generate
+    startCommand: cd backend && npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
