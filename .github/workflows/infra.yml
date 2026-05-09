@@ -2,19 +2,6 @@ name: Deploy Infrastructure
 
 on:
   workflow_dispatch:
-    inputs:
-      DBPassword:
-        description: "RDS master password"
-        required: true
-      JWTSecret:
-        description: "JWT secret"
-        required: true
-      SessionSecret:
-        description: "Session secret"
-        required: true
-      EncryptionKey:
-        description: "Encryption key (32 chars)"
-        required: true
 
 env:
   AWS_REGION: eu-west-1
@@ -45,10 +32,10 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               AppName=karaadi \
-              DBPassword="${{ github.event.inputs.DBPassword }}" \
-              JWTSecret="${{ github.event.inputs.JWTSecret }}" \
-              SessionSecret="${{ github.event.inputs.SessionSecret }}" \
-              EncryptionKey="${{ github.event.inputs.EncryptionKey }}" \
+              DBPassword="${{ secrets.DB_PASSWORD }}" \
+              JWTSecret="${{ secrets.JWT_SECRET }}" \
+              SessionSecret="${{ secrets.SESSION_SECRET }}" \
+              EncryptionKey="${{ secrets.ENCRYPTION_KEY }}" \
               WaafiPayApiKey="${{ secrets.WAAFI_PAY_API_KEY }}" \
               TikTokClientSecret="${{ secrets.TIKTOK_CLIENT_SECRET }}"
 
