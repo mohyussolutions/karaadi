@@ -227,7 +227,10 @@ jobs:
             "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > /home/ec2-user/karaadi/backend/.env.production || exit 1",
             "[ -s /home/ec2-user/karaadi/backend/.env.production ] || { echo ERROR: .env.production is empty; exit 1; }",
 
-            "# ── 6. Inject env into the current shell (fixes DATABASE_URL crash) ──",
+            "# ── 6a. Copy to .env so prisma.config.ts dotenv loader finds it ─────",
+            "cp /home/ec2-user/karaadi/backend/.env.production /home/ec2-user/karaadi/backend/.env",
+
+            "# ── 6b. Inject env into the current shell (fixes DATABASE_URL crash) ─",
             "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env.production | xargs)",
 
             "# ── 7. Install ALL dependencies (dev needed for esbuild build) ───",
@@ -288,6 +291,7 @@ jobs:
             "# Re-pull env in case SSM was just updated ─────────────────────",
             "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > /home/ec2-user/karaadi/backend/.env.production || exit 1",
             "[ -s /home/ec2-user/karaadi/backend/.env.production ] || { echo ERROR: .env.production is empty; exit 1; }",
+            "cp /home/ec2-user/karaadi/backend/.env.production /home/ec2-user/karaadi/backend/.env",
             "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env.production | xargs)",
 
             "# Apply any pending migrations (non-destructive) ─────────────────",
