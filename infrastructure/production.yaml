@@ -3,23 +3,23 @@ Description: Karaadi production infrastructure
 
 Mappings:
   Constants:
-    VpcCidr:          { Value: 10.0.0.0/16 }
-    PublicSubnetACidr:  { Value: 10.0.1.0/24 }
-    PublicSubnetBCidr:  { Value: 10.0.2.0/24 }
+    VpcCidr: { Value: 10.0.0.0/16 }
+    PublicSubnetACidr: { Value: 10.0.1.0/24 }
+    PublicSubnetBCidr: { Value: 10.0.2.0/24 }
     PrivateSubnetACidr: { Value: 10.0.3.0/24 }
     PrivateSubnetBCidr: { Value: 10.0.4.0/24 }
-    BackendPort:        { Value: 8080 }
-    PostgresPort:       { Value: 5432 }
-    RedisPort:          { Value: 6379 }
-    HealthCheckPath:    { Value: /health }
-    NodeVersion:        { Value: 24 }
-    PostgresVersion:    { Value: "15.17" }
-    RedisVersion:       { Value: 7 }
+    BackendPort: { Value: 8080 }
+    PostgresPort: { Value: 5432 }
+    RedisPort: { Value: 6379 }
+    HealthCheckPath: { Value: /health }
+    NodeVersion: { Value: 24 }
+    PostgresVersion: { Value: "15.17" }
+    RedisVersion: { Value: 7 }
     AllocatedStorageGB: { Value: 20 }
     BackupRetentionDays: { Value: 30 }
-    CpuScaleThreshold:  { Value: 65 }
+    CpuScaleThreshold: { Value: 65 }
     ApiThrottlingBurst: { Value: 5000 }
-    ApiThrottlingRate:  { Value: 20000 }
+    ApiThrottlingRate: { Value: 20000 }
 
 Parameters:
   AppName:
@@ -126,7 +126,6 @@ Conditions:
   HasAmplifyToken: !Not [!Equals [!Ref AmplifyGitHubToken, ""]]
 
 Resources:
-
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -230,6 +229,7 @@ Resources:
 
   NatGateway:
     Type: AWS::EC2::NatGateway
+    DependsOn: VPCGatewayAttachment
     Properties:
       AllocationId: !GetAtt NatEIP.AllocationId
       SubnetId: !Ref PublicSubnetA
@@ -326,7 +326,8 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
+                Action:
+                  [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
                 Resource:
                   - !GetAtt ImagesBucket.Arn
                   - !Sub "${ImagesBucket.Arn}/*"
@@ -411,6 +412,16 @@ Resources:
               chown -R ec2-user:ec2-user /home/ec2-user/karaadi
 
               cd /home/ec2-user/karaadi/backend
+
+              echo "[userdata] waiting for RDS to accept connections..."
+              for i in $(seq 1 30); do
+                if pg_isready -h ${RdsHost} -p 5432 -U ${DBUsername} -d ${DBName} -t 5 2>/dev/null; then
+                  echo "[userdata] RDS is ready after ${i} attempts"
+                  break
+                fi
+                echo "[userdata] attempt ${i}/30 — RDS not ready, retrying in 10s..."
+                sleep 10
+              done
               aws s3 cp s3://${BucketName}/deployments/backend-latest.tar.gz /tmp/backend.tar.gz \
                 --region ${AWS::Region} 2>/dev/null && \
                 rm -rf src/prisma && \
@@ -426,22 +437,23 @@ Resources:
                 --max-restarts 10 --restart-delay 3000 2>/dev/null || true
               pm2 save
               env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true
-            - RdsHost:     !GetAtt RDSInstance.Endpoint.Address
-              RedisHost:   !GetAtt RedisCluster.RedisEndpoint.Address
-              CognitoPoolId:   !Ref CognitoUserPool
+            - RdsHost: !GetAtt RDSInstance.Endpoint.Address
+              RedisHost: !GetAtt RedisCluster.RedisEndpoint.Address
+              CognitoPoolId: !Ref CognitoUserPool
               CognitoClientId: !Ref CognitoUserPoolClient
-              ApiId:       !Ref APIGateway
-              BucketName:  !Ref ImagesBucket
+              ApiId: !Ref APIGateway
+              BucketName: !Ref ImagesBucket
 
   BackendAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: RDSInstance
     Properties:
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
       DesiredCapacity: !Ref DesiredCapacity
       VPCZoneIdentifier:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
       LaunchTemplate:
         LaunchTemplateId: !Ref BackendLaunchTemplate
         Version: !GetAtt BackendLaunchTemplate.LatestVersionNumber
@@ -502,6 +514,10 @@ Resources:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Snapshot
     UpdateReplacePolicy: Snapshot
+    DependsOn:
+      - PrivateRoute
+      - PrivateSubnetARouteAssoc
+      - PrivateSubnetBRouteAssoc
     Properties:
       DBInstanceClass: !Ref DBInstanceClass
       Engine: postgres
@@ -567,12 +583,42 @@ Resources:
       AutoVerifiedAttributes:
         - email
       Schema:
-        - { Name: email,        Required: true,  Mutable: true, AttributeDataType: String }
-        - { Name: phone_number, Required: false, Mutable: true, AttributeDataType: String }
-        - { Name: profile,      Required: false, Mutable: true, AttributeDataType: String }
-        - { Name: isAdmin,      Required: false, Mutable: true, AttributeDataType: String }
-        - { Name: isManager,    Required: false, Mutable: true, AttributeDataType: String }
-        - { Name: isSupport,    Required: false, Mutable: true, AttributeDataType: String }
+        - {
+            Name: email,
+            Required: true,
+            Mutable: true,
+            AttributeDataType: String,
+          }
+        - {
+            Name: phone_number,
+            Required: false,
+            Mutable: true,
+            AttributeDataType: String,
+          }
+        - {
+            Name: profile,
+            Required: false,
+            Mutable: true,
+            AttributeDataType: String,
+          }
+        - {
+            Name: isAdmin,
+            Required: false,
+            Mutable: true,
+            AttributeDataType: String,
+          }
+        - {
+            Name: isManager,
+            Required: false,
+            Mutable: true,
+            AttributeDataType: String,
+          }
+        - {
+            Name: isSupport,
+            Required: false,
+            Mutable: true,
+            AttributeDataType: String,
+          }
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -669,10 +715,19 @@ Resources:
       OauthToken: !Ref AmplifyGitHubToken
       IAMServiceRole: !GetAtt AmplifyRole.Arn
       EnvironmentVariables:
-        - { Name: NEXT_PUBLIC_API_URL,              Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod" }
-        - { Name: NEXT_PUBLIC_COGNITO_USER_POOL_ID, Value: !Ref CognitoUserPool }
-        - { Name: NEXT_PUBLIC_COGNITO_CLIENT_ID,    Value: !Ref CognitoUserPoolClient }
-        - { Name: NEXT_PUBLIC_DOMAIN,               Value: !Ref DomainName }
+        - {
+            Name: NEXT_PUBLIC_API_URL,
+            Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod",
+          }
+        - {
+            Name: NEXT_PUBLIC_COGNITO_USER_POOL_ID,
+            Value: !Ref CognitoUserPool,
+          }
+        - {
+            Name: NEXT_PUBLIC_COGNITO_CLIENT_ID,
+            Value: !Ref CognitoUserPoolClient,
+          }
+        - { Name: NEXT_PUBLIC_DOMAIN, Value: !Ref DomainName }
       BuildSpec: |
         version: 1
         frontend:
@@ -744,7 +799,8 @@ Resources:
                 Action: [ssm:GetParameter, ssm:GetParameters, ssm:PutParameter]
                 Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/karaadi/*"
               - Effect: Allow
-                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
+                Action:
+                  [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
                 Resource:
                   - !GetAtt ImagesBucket.Arn
                   - !Sub "${ImagesBucket.Arn}/*"
