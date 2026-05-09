@@ -1,13 +1,17 @@
 import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 // Load environment variables from common locations when running locally
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const tryLoadEnv = () => {
   dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-  const backendRoot = path.resolve(__dirname, "../../../");
+  const backendRoot = path.resolve(__dirname, "..", "..", "..");
   dotenv.config({ path: path.join(backendRoot, ".env"), override: false });
   dotenv.config({
     path: path.join(backendRoot, ".env.local"),
@@ -44,6 +48,7 @@ const pool = new pg.Pool({
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
   maxUses: 7500,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
 const adapter = new PrismaPg(pool);
