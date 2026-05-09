@@ -1,15 +1,5 @@
 name: Backend
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Consolidated workflow — replaces fix-db.yml and restart-backend.yml.
-#
-# Actions:
-#   Deploy    → nuclear purge → clone → env inject → install → prisma reset
-#               → seed → pm2 start
-#   Restart   → pm2 reload karaadi-backend on every InService instance
-#   Seed-Fix  → prisma migrate deploy → npm run import (no purge needed)
-# ─────────────────────────────────────────────────────────────────────────────
-
 on:
   workflow_dispatch:
     inputs:
@@ -28,18 +18,16 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write # Required for OIDC role assumption
+  id-token: write
 
 env:
   NODE_VERSION: "20"
   AWS_REGION: eu-west-1
   STACK_NAME: karaadi-production
   BACKEND_ROLE: arn:aws:iam::108782100045:role/karaadi-backend-deploy
-  # SSM source of truth for all runtime env vars (RDS URL, Cognito, etc.)
   SSM_ENV_PATH: /karaadi/backend/env
 
 jobs:
-  # ── CI Gate (always runs so no broken code ships) ─────────────────────────
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -70,7 +58,6 @@ jobs:
         working-directory: backend
         run: npm test
 
-  # ── Sync SSM → RDS endpoint (runs before every fleet operation) ───────────
   sync-ssm:
     name: Sync SSM env (patch DATABASE_URL from live RDS endpoint)
     runs-on: ubuntu-latest
@@ -109,7 +96,6 @@ jobs:
             --output text \
             --region "$AWS_REGION")
 
-          # Helper: upsert a KEY=value line in an env-file string
           patch_env() {
             local key=$1 val=$2 content=$3
             if echo "$content" | grep -q "^${key}="; then
@@ -143,7 +129,6 @@ jobs:
 
           echo "SSM parameter updated with live RDS endpoint."
 
-  # ── Fleet Operation ────────────────────────────────────────────────────────
   fleet:
     name: "Fleet — ${{ github.event.inputs.action }}"
     runs-on: ubuntu-latest
@@ -187,8 +172,7 @@ jobs:
           echo "instances=$INSTANCES" >> "$GITHUB_OUTPUT"
           echo "Instances: $INSTANCES"
 
-      # ── Build the SSM command array for each action ───────────────────────
-      - name: Build SSM commands — Deploy (nuclear rebuild)
+      - name: Build SSM commands — Deploy
         if: ${{ github.event.inputs.action == 'Deploy' }}
         id: cmd_deploy
         env:
@@ -197,65 +181,46 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          # Interpolate shell vars at workflow time so jq receives literal strings.
           CLONE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
 
           COMMANDS=$(jq -nc \
             --arg clone_url "$CLONE_URL" \
             --arg ssm_path  "$SSM_ENV_PATH" \
             --arg region    "$AWS_REGION" \
+            --arg stack     "$STACK_NAME" \
             --arg sha       "${COMMIT_SHA:0:8}" \
           '[
-            "# ── 0. Install git FIRST — before set -e, before everything ────────",
             "sudo dnf install -y git || sudo yum install -y git || true",
-
-            "# ── 1. Now enable strict mode and bootstrap env ──────────────────",
             "set -euo pipefail",
             "export HOME=/home/ec2-user",
             "export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin",
             "echo \"[deploy] git version: $(git --version)\"",
             "echo \"[deploy] starting nuclear rebuild for commit \($sha)\"",
-
-            "# ── 2. Full purge (remove previous failed/stale deployment) ──────",
             "sudo rm -rf /home/ec2-user/karaadi",
-
-            "# ── 3. Authenticated clone ───────────────────────────────────────",
             "git clone \($clone_url) /home/ec2-user/karaadi",
-
-            "# ── 5. cd into backend dir — all subsequent commands run from here ──",
             "cd /home/ec2-user/karaadi/backend",
-
-            "# ── 6. Pull SSM secret → .env (Prisma looks for exactly this name) ─",
-            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > .env || exit 1",
-            "[ -s .env ] || { echo 'FATAL: .env is empty after SSM pull'; exit 1; }",
-
-            "# ── 7. Validate DATABASE_URL is present in the file ────────────────",
-            "if [ -z \"$(grep '^DATABASE_URL=' .env)\" ]; then echo 'FATAL: DATABASE_URL MISSING FROM .env — check SSM /karaadi/backend/env parameter'; exit 1; fi",
-            "echo \"DATABASE_URL check passed — host: $(grep '^DATABASE_URL=' .env | cut -d'@' -f2- | cut -d'/' -f1)\"",
-
-            "# ── 8. Lock 1: export every var into the current shell session ──────",
+            "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > .env 2>/dev/null || true",
+            "echo '=== .env line count ===' && wc -l .env || true",
+            "echo '=== DATABASE_URL line ===' && grep '^DATABASE_URL=' .env || echo 'NOT FOUND IN FILE'",
+            "if [ -z \"$(grep '^DATABASE_URL=' .env 2>/dev/null)\" ]; then",
+            "  echo 'WARNING: DATABASE_URL not in SSM file — constructing from CloudFormation'",
+            "  RDS_HOST=$(aws cloudformation describe-stacks --stack-name \($stack) --region \($region) --query \"Stacks[0].Outputs[?OutputKey=='RDSEndpoint'].OutputValue\" --output text)",
+            "  echo \"RDS host resolved: ${RDS_HOST}\"",
+            "  DB_URL=\"postgresql://karaadi_database_2025_for_prod:karaadi_password_2025_for_prod@${RDS_HOST}:5432/karaadi\"",
+            "  echo \"DATABASE_URL=${DB_URL}\" >> .env",
+            "  echo 'DATABASE_URL injected from CloudFormation'",
+            "fi",
+            "[ -s .env ] || { echo 'FATAL: .env is empty'; exit 1; }",
+            "grep '^DATABASE_URL=' .env || { echo 'FATAL: DATABASE_URL still missing after fallback'; exit 1; }",
+            "echo \"DATABASE_URL confirmed — host: $(grep '^DATABASE_URL=' .env | cut -d'@' -f2- | cut -d'/' -f1)\"",
             "export $(grep -v '^#' .env | xargs)",
-
-            "# ── 9. Install ALL dependencies (dev needed for esbuild) ────────────",
             "npm install",
-
-            "# ── 10. Lock 2: generate Prisma client (hard-injected DATABASE_URL) ─",
             "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma generate",
-
-            "# ── 11. Lock 3: drop old schema, fresh migration (hard-injected) ────",
             "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma migrate reset --force",
-
-            "# ── 12. Seed Somali marketplace data (hard-injected DATABASE_URL) ───",
             "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npm run import",
-
-            "# ── 13. Bundle server with esbuild ──────────────────────────────────",
             "npx esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/* 2>/dev/null || npx esbuild src/app.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:./node_modules/*",
-
-            "# ── 14. Start/restart pm2 (--update-env re-reads .env on every start)",
             "pm2 startOrRestart ecosystem.config.cjs --update-env",
             "pm2 save",
-
-            "# ── 15. Health check ────────────────────────────────────────────────",
             "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK || { pm2 logs karaadi-backend --lines 50; exit 1; }"
           ]')
 
@@ -291,20 +256,12 @@ jobs:
             "set -euo pipefail",
             "export HOME=/home/ec2-user",
             "cd /home/ec2-user/karaadi/backend",
-
-            "# Re-pull .env from SSM (Prisma looks for exactly this filename) ──",
             "aws ssm get-parameter --name \($ssm_path) --with-decryption --query Parameter.Value --output text --region \($region) > .env || exit 1",
             "[ -s .env ] || { echo 'FATAL: .env is empty after SSM pull'; exit 1; }",
             "if [ -z \"$(grep '^DATABASE_URL=' .env)\" ]; then echo 'FATAL: DATABASE_URL MISSING FROM .env'; exit 1; fi",
             "export $(grep -v '^#' .env | xargs)",
-
-            "# Apply any pending migrations (non-destructive, hard-injected) ───",
             "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npx prisma migrate deploy",
-
-            "# Re-seed marketplace data (hard-injected) ──────────────────────",
             "DATABASE_URL=$(grep '^DATABASE_URL=' .env | cut -d'=' -f2-) npm run import",
-
-            "# Reload pm2 to pick up any env changes ────────────────────────",
             "pm2 reload karaadi-backend --update-env || true",
             "echo SEED_FIX_OK"
           ]')
@@ -313,13 +270,11 @@ jobs:
           echo "EOF"           >> "$GITHUB_OUTPUT"
           echo "timeout=300"   >> "$GITHUB_OUTPUT"
 
-      # ── Send SSM command to every InService instance (rolling) ───────────
       - name: Execute on fleet (rolling SSM)
         env:
           INSTANCES: ${{ steps.asg.outputs.instances }}
           ACTION: ${{ github.event.inputs.action }}
           COMMIT_SHA: ${{ github.sha }}
-          # Each action step writes to its own id; pick the one that ran.
           CMD_DEPLOY: ${{ steps.cmd_deploy.outputs.commands }}
           CMD_RESTART: ${{ steps.cmd_restart.outputs.commands }}
           CMD_SEEDFIX: ${{ steps.cmd_seedfix.outputs.commands }}
@@ -329,7 +284,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Select the right payload ──────────────────────────────────────────
           case "$ACTION" in
             Deploy)   COMMANDS="$CMD_DEPLOY";  EXEC_TIMEOUT="$TIMEOUT_DEPLOY"  ;;
             Restart)  COMMANDS="$CMD_RESTART"; EXEC_TIMEOUT="$TIMEOUT_RESTART" ;;
@@ -337,7 +291,6 @@ jobs:
             *) echo "Unknown action: $ACTION"; exit 1 ;;
           esac
 
-          # SSM poller — waits up to EXEC_TIMEOUT seconds at 5 s intervals ───
           run_ssm() {
             local INSTANCE=$1
             local MAX_ATTEMPTS=$(( EXEC_TIMEOUT / 5 ))
@@ -382,7 +335,6 @@ jobs:
             return 1
           }
 
-          # Rolling execution — abort on first failure ──────────────────────
           TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
           COUNT=0
           for INSTANCE in $INSTANCES; do
