@@ -84,10 +84,11 @@ jobs:
         env:
           ASG_NAME: ${{ steps.cfn.outputs.asg_name }}
           COMMIT_SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
-          # ── Get all InService instance IDs ──────────────────────────────────
           INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
             --auto-scaling-group-names "$ASG_NAME" \
             --region "$AWS_REGION" \
@@ -102,22 +103,24 @@ jobs:
           TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
           echo "Deploying ${COMMIT_SHA:0:8} to $TOTAL instance(s): $INSTANCES"
 
-          # Commands sent to each EC2 instance via SSM
-          COMMANDS=$(jq -nc '[
+          CLONE_CMD="git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git /home/ec2-user/karaadi"
+          SSM_GET="aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region $AWS_REGION > /home/ec2-user/karaadi/backend/.env.production || exit 1"
+
+          COMMANDS=$(jq -nc --arg clone "$CLONE_CMD" --arg ssm_get "$SSM_GET" '[
             "set -euo pipefail",
-            "cd /home/ec2-user/karaadi",
-            "echo --- git ---",
-            "git fetch origin main && git reset --hard origin/main",
-            "echo --- install ---",
-            "cd backend && npm ci --omit=dev 2>&1",
-            "echo --- migrate ---",
-            "npx prisma migrate deploy 2>&1",
-            "echo --- build ---",
-            "npx esbuild src/server.ts --bundle --platform=node --target=node20 --packages=external --outfile=dist/index.js 2>&1",
-            "echo --- restart ---",
-            "pm2 reload karaadi-backend --update-env 2>&1 || pm2 start dist/index.js --name karaadi-backend 2>&1",
-            "echo --- health ---",
-            "sleep 5 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
+            "export HOME=/home/ec2-user",
+            "export PATH=$PATH:/usr/bin:/usr/local/bin",
+            "sudo rm -rf /home/ec2-user/karaadi",
+            $clone,
+            $ssm_get,
+            "[ -s /home/ec2-user/karaadi/backend/.env.production ] || exit 1",
+            "cd /home/ec2-user/karaadi/backend && npm install --omit=dev",
+            "npm install -g tsx",
+            "cd /home/ec2-user/karaadi/backend && npx prisma generate",
+            "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy && npm run import",
+            "cd /home/ec2-user/karaadi/backend && pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
+            "pm2 save",
+            "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
 
           COUNT=0

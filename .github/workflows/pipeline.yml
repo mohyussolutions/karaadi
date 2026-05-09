@@ -235,6 +235,8 @@ jobs:
         env:
           ASG: ${{ steps.cfn.outputs.asg }}
           SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
@@ -247,28 +249,24 @@ jobs:
           TOTAL=$(echo "$INSTANCES" | wc -w | tr -d ' ')
           echo "Deploying ${SHA:0:8} to $TOTAL instance(s)"
 
+          CLONE_CMD="git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git /home/ec2-user/karaadi"
           SSM_GET="aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region $AWS_REGION > /home/ec2-user/karaadi/backend/.env.production || exit 1"
 
-          COMMANDS=$(jq -nc --arg ssm_get "$SSM_GET" '[
+          COMMANDS=$(jq -nc --arg clone "$CLONE_CMD" --arg ssm_get "$SSM_GET" '[
             "set -euo pipefail",
             "export HOME=/home/ec2-user",
             "export PATH=$PATH:/usr/bin:/usr/local/bin",
-            "command -v git || (curl -fsSL https://rpm.nodesource.com/setup_24.x | bash - && dnf install -y nodejs git)",
-            "command -v node || (curl -fsSL https://rpm.nodesource.com/setup_24.x | bash - && dnf install -y nodejs git)",
-            "command -v pm2 || npm install -g pm2",
-            "mkdir -p /home/ec2-user/karaadi/backend",
+            "sudo rm -rf /home/ec2-user/karaadi",
+            $clone,
             $ssm_get,
             "[ -s /home/ec2-user/karaadi/backend/.env.production ] || exit 1",
-            "git config --global --add safe.directory /home/ec2-user/karaadi",
-            "cd /home/ec2-user/karaadi && git init -q && git remote add origin https://github.com/mohyussolutions/karaadi.git 2>/dev/null || git remote set-url origin https://github.com/mohyussolutions/karaadi.git && git fetch origin main && git reset --hard origin/main",
-            "chown -R ec2-user:ec2-user /home/ec2-user/karaadi",
-            "cd /home/ec2-user/karaadi/backend && npm install --production",
-            "npm install -g tsx",
-            "cd /home/ec2-user/karaadi/backend && npx prisma generate",
             "dnf install -y postgresql15 2>/dev/null || yum install -y postgresql15 2>/dev/null || true",
             "DB_H=$(grep -E ^DATABASE_URL= /home/ec2-user/karaadi/backend/.env.production | cut -d@ -f2 | cut -d: -f1) && PGPASSWORD=karaadi_password_2025_for_prod psql -h $DB_H -U karaadi_database_2025_for_prod -d postgres -c \"DROP DATABASE IF EXISTS karaadi WITH (FORCE);\" && PGPASSWORD=karaadi_password_2025_for_prod psql -h $DB_H -U karaadi_database_2025_for_prod -d postgres -c \"CREATE DATABASE karaadi OWNER karaadi_database_2025_for_prod;\" && echo DB_RECREATED",
+            "cd /home/ec2-user/karaadi/backend && npm install --omit=dev",
+            "npm install -g tsx",
+            "cd /home/ec2-user/karaadi/backend && npx prisma generate",
             "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy && npm run import",
-            "cd /home/ec2-user/karaadi/backend && pm2 startOrRestart ecosystem.config.cjs --env production",
+            "cd /home/ec2-user/karaadi/backend && pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
             "pm2 save",
             "sleep 10 && curl -s http://localhost:8080/health && echo HEALTH_OK && pm2 list"
           ]')
