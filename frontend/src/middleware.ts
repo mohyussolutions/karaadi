@@ -38,6 +38,12 @@ const PUBLIC_PREFIXES = [
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith("/Marketplace")) {
+    const rest = pathname.slice("/Marketplace".length);
+    return NextResponse.redirect(new URL("/marketplace" + rest, req.url));
+  }
+
   const idToken = req.cookies.get("idToken")?.value;
   const loginUrl = new URL("/login", req.url);
 

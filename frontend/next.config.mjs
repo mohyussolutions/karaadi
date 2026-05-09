@@ -18,15 +18,6 @@ const nextConfig = {
     ],
   },
 
-  async redirects() {
-    return [
-      // eslint-disable-next-line prettier/prettier
-      { source: "/Marketplace", destination: "/marketplace", permanent: true },
-      // eslint-disable-next-line prettier/prettier
-      { source: "/Marketplace/:path*", destination: "/marketplace/:path*", permanent: true },
-    ];
-  },
-
   async headers() {
     return [
       {
