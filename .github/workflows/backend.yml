@@ -104,7 +104,7 @@ jobs:
           echo "Deploying ${COMMIT_SHA:0:8} to $TOTAL instance(s): $INSTANCES"
 
           CLONE_CMD="git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git /home/ec2-user/karaadi"
-          SSM_GET="aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region $AWS_REGION > /home/ec2-user/karaadi/backend/.env.production || exit 1"
+          SSM_GET="aws ssm get-parameter --name /karaadi/backend/env --with-decryption --query Parameter.Value --output text --region $AWS_REGION > /home/ec2-user/karaadi/backend/.env || exit 1"
 
           COMMANDS=$(jq -nc --arg clone "$CLONE_CMD" --arg ssm_get "$SSM_GET" '[
             "set -euo pipefail",
@@ -112,13 +112,18 @@ jobs:
             "export PATH=$PATH:/usr/bin:/usr/local/bin",
             "sudo rm -rf /home/ec2-user/karaadi",
             $clone,
+            "mkdir -p /home/ec2-user/karaadi/backend",
             $ssm_get,
-            "[ -s /home/ec2-user/karaadi/backend/.env.production ] || exit 1",
+            "[ -s /home/ec2-user/karaadi/backend/.env ] || exit 1",
+            "cp /home/ec2-user/karaadi/backend/.env /home/ec2-user/karaadi/backend/.env.production",
+            "cd /home/ec2-user/karaadi/backend && export $(grep -v \"^#\" .env | xargs)",
             "cd /home/ec2-user/karaadi/backend && npm install --omit=dev",
             "npm install -g tsx",
             "cd /home/ec2-user/karaadi/backend && npx prisma generate",
-            "cd /home/ec2-user/karaadi/backend && npx prisma migrate deploy && npm run import",
-            "cd /home/ec2-user/karaadi/backend && pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
+            "cd /home/ec2-user/karaadi/backend && npx prisma migrate reset --force",
+            "cd /home/ec2-user/karaadi/backend && npm run import",
+            "pm2 delete all || true",
+            "cd /home/ec2-user/karaadi/backend && pm2 start ecosystem.config.cjs --env production",
             "pm2 save",
             "sleep 10 && curl -sf http://localhost:8080/health && echo HEALTH_OK"
           ]')
