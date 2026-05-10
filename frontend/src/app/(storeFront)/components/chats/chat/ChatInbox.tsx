@@ -208,7 +208,7 @@ export default function ChatInbox({
   const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   return (
-    <div className="flex h-full bg-white overflow-hidden sm:rounded-xl sm:border sm:border-gray-200 sm:shadow-sm">
+    <div className="flex flex-1 min-h-0 bg-white overflow-hidden sm:rounded-xl sm:border sm:border-gray-200 sm:shadow-sm">
       {/* Sidebar */}
       <div
         className={`flex flex-col border-r border-gray-200 bg-white ${
@@ -281,7 +281,7 @@ export default function ChatInbox({
 
       {/* Thread panel */}
       <div
-        className={`flex-1 flex flex-col min-w-0 ${
+        className={`flex-1 min-h-0 flex flex-col min-w-0 ${
           showThread ? "flex" : "hidden md:flex"
         }`}
       >

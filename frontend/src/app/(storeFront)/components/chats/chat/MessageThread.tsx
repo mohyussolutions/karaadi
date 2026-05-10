@@ -68,12 +68,10 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       socketService.markAsRead(chatId)
     }
 
-    // Join immediately if already connected; otherwise wait for the connect event
     if (socketService.isConnected()) {
       joinAndMark()
     }
 
-    // Re-join on (re)connect so the room is always joined after network recovery
     const offConnect = socketService.on("connect", joinAndMark)
 
     window.dispatchEvent(new CustomEvent("karaadi:messages-read"))
@@ -201,8 +199,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   }
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden">
-      {/* Header */}
+    <div className="flex flex-col flex-1 min-h-0 bg-white">
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {onBack && (
           <button
@@ -259,7 +256,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 bg-[#f8f9fa]">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-1 bg-[#f8f9fa]">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"} animate-pulse`}>

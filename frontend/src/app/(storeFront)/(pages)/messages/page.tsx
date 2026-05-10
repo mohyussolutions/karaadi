@@ -28,15 +28,16 @@ function MessagesContent() {
   }, [loading, user, router])
 
   return (
-    <div className="-mx-4 sm:mx-0 flex flex-col" style={{ height: 'calc(100dvh - 3.5rem)' }}>
-      <div className="flex-1 overflow-hidden p-0 sm:p-4 lg:p-6">
-        <ChatInbox
-          initialChatId={chatId ? Number(chatId) : undefined}
-          sellerId={sellerId || undefined}
-          itemId={itemId || undefined}
-          itemModel={itemModel || undefined}
-        />
-      </div>
+    <div
+      className="-mx-4 sm:mx-0 flex flex-col overflow-hidden sm:p-4 lg:p-6"
+      style={{ height: 'calc(100dvh - 3.5rem)' }}
+    >
+      <ChatInbox
+        initialChatId={chatId ? Number(chatId) : undefined}
+        sellerId={sellerId || undefined}
+        itemId={itemId || undefined}
+        itemModel={itemModel || undefined}
+      />
     </div>
   )
 }
