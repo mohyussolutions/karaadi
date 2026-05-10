@@ -203,7 +203,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         {onBack && (
           <button
             onClick={onBack}
-            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors md:hidden -ml-1"
+            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors lg:hidden -ml-1"
             aria-label="Tilbake"
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />

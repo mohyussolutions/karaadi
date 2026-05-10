@@ -211,8 +211,8 @@ export default function ChatInbox({
       <div
         className={`flex flex-col border-r border-gray-200 bg-white flex-shrink-0 ${
           showThread && !!activeChatroom
-            ? "hidden md:flex md:w-[320px] lg:w-[360px]"
-            : "flex w-full md:w-[320px] lg:w-[360px]"
+            ? "hidden lg:flex lg:w-[320px] xl:w-[360px]"
+            : "flex w-full lg:w-[320px] xl:w-[360px]"
         }`}
       >
         <div className="px-4 pt-5 pb-3 border-b border-gray-100">
@@ -277,7 +277,7 @@ export default function ChatInbox({
 
       <div
         className={`flex-1 min-h-0 flex flex-col min-w-0 ${
-          showThread && !!activeChatroom ? "flex" : "hidden md:flex"
+          showThread && !!activeChatroom ? "flex" : "hidden lg:flex"
         }`}
       >
         {activeChatId && activeChatroom ? (
