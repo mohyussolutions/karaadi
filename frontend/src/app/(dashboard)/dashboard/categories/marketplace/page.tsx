@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import Image from "next/image";
 import {
@@ -9,13 +9,20 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from "@/app/utils/icons/dashboardIcons";
-import type { AdminMarketplaceItem } from "@/app/utils/types/marketplace.types";
 import {
   marketplaceSubCategories,
   categories,
 } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
-import { PLACEHOLDER_IMAGE, CATEGORY_ENDPOINTS } from "@/actions/constant/constant";
+import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
+import {
+  getAdminMarketplaceItems,
+  deleteAdminMarketplaceItem,
+  updateAdminMarketplaceItemPaidStatus,
+} from "@/actions/categories/marketplaceActions";
+import Pagination from "@/app/(dashboard)/dashboard/components/Pagination";
+
+const PAGE_SIZE = 20;
 
 const ALL_NESTED_ENTRIES = Object.values(categories.marketplaceNestedMap).flat();
 
@@ -35,57 +42,50 @@ function resolveSubcatName(raw: string): string {
 
 export default function MarketplacePage() {
   const { t } = useTranslation();
-  const [items, setItems] = useState<AdminMarketplaceItem[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSubKey, setActiveSubKey] = useState("");
   const [activeNestedKey, setActiveNestedKey] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAdminMarketplaceItems();
+      setItems(data);
+    } catch {
+      setError("Failed to load marketplace items");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(CATEGORY_ENDPOINTS.MARKETPLACE_ADMIN, {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`${res.status}`);
-        const data = await res.json();
-        if (!cancelled) setItems(Array.isArray(data) ? data : []);
-      } catch {
-        if (!cancelled) setError("Failed to load marketplace items");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+    loadData();
+  }, [loadData]);
 
-  const handleDeleteItem = useCallback(async (item: AdminMarketplaceItem) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
-    const itemId = String(item.id);
-    const res = await fetch(CATEGORY_ENDPOINTS.DELETE_ITEM(itemId), {
-      method: "DELETE",
-      credentials: "include",
-    });
-    if (res.ok) setItems((prev) => prev.filter((i) => String(i.id) !== itemId));
-  }, []);
+  const handleTogglePaid = async (id: string, currentStatus: boolean) => {
+    const original = [...items];
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isPaid: !currentStatus } : i)));
+    const ok = await updateAdminMarketplaceItemPaidStatus(id, !currentStatus);
+    if (!ok) {
+      setItems(original);
+      alert("Failed to update payment status");
+    }
+  };
 
-  const handleTogglePaidStatus = useCallback(async (item: AdminMarketplaceItem) => {
-    const newStatus = !item.isPaid;
-    const itemId = String(item.id);
-    const res = await fetch(CATEGORY_ENDPOINTS.UPDATE_ITEM(itemId), {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isPaid: newStatus }),
-    });
-    if (res.ok)
-      setItems((prev) =>
-        prev.map((i) => (String(i.id) === itemId ? { ...i, isPaid: newStatus } : i))
-      );
-  }, []);
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    const original = [...items];
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    const ok = await deleteAdminMarketplaceItem(id);
+    if (!ok) {
+      setItems(original);
+      alert("Failed to delete item");
+    }
+  };
 
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.onerror = null;
@@ -101,7 +101,7 @@ export default function MarketplacePage() {
     let result = items.filter((i) => {
       const cat = (
         (Array.isArray(i.category) ? i.category.join(" ") : i.category) ||
-        (i as any).mainCategory || ""
+        i.mainCategory || ""
       ).toLowerCase();
       return cat.includes(catName) || cat.includes(activeSubKey.toLowerCase());
     });
@@ -119,9 +119,10 @@ export default function MarketplacePage() {
         });
       }
     }
-
     return result;
   }, [items, activeSubKey, activeNestedKey]);
+
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   if (error && items.length === 0) {
     return (
@@ -130,7 +131,7 @@ export default function MarketplacePage() {
           <p className="font-bold">{t("adminTable.error")}</p>
           <p className="text-sm mt-1">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={loadData}
             className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition"
           >
             {t("adminTable.tryAgain")}
@@ -147,10 +148,10 @@ export default function MarketplacePage() {
           title={t("adminTable.marketplace")}
           subCategories={marketplaceSubCategories}
           activeKey={activeSubKey}
-          onChange={(key) => { setActiveSubKey(key); setActiveNestedKey(""); }}
+          onChange={(key) => { setActiveSubKey(key); setActiveNestedKey(""); setVisibleCount(PAGE_SIZE); }}
           nestedMap={categories.marketplaceNestedMap}
           activeNestedKey={activeNestedKey}
-          onNestedChange={setActiveNestedKey}
+          onNestedChange={(key) => { setActiveNestedKey(key); setVisibleCount(PAGE_SIZE); }}
         />
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -175,9 +176,9 @@ export default function MarketplacePage() {
             ? Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-3 animate-pulse h-28" />
               ))
-            : filtered.length > 0
-              ? filtered.map((item, idx) => (
-                  <div key={`m-${item.id}-${idx}`} className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-3 shadow-sm">
+            : visible.length > 0
+              ? visible.map((item) => (
+                  <div key={item.id} className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-3 shadow-sm">
                     <div className="flex gap-3">
                       <Image
                         src={item.images?.[0] || PLACEHOLDER_IMAGE}
@@ -191,13 +192,10 @@ export default function MarketplacePage() {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-gray-900 text-sm truncate">{item.title}</h3>
                         <div className="flex flex-wrap gap-1 mt-0.5">
-                          {item.mainCategory && (
-                            <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">{item.mainCategory}</span>
-                          )}
-                          {(Array.isArray(item.category) ? item.category : [item.category]).filter(Boolean).map((c, i) => (
+                          {(Array.isArray(item.category) ? item.category : [item.category]).filter(Boolean).map((c: string, i: number) => (
                             <span key={i} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">{resolveCatName(c)}</span>
                           ))}
-                          {(Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory]).filter(Boolean).map((s, i) => (
+                          {(Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory]).filter(Boolean).map((s: string, i: number) => (
                             <span key={i} className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">{resolveSubcatName(s)}</span>
                           ))}
                         </div>
@@ -223,7 +221,7 @@ export default function MarketplacePage() {
                     </div>
                     <div className="mt-3 flex gap-2">
                       <button
-                        onClick={() => handleTogglePaidStatus(item)}
+                        onClick={() => handleTogglePaid(item.id, item.isPaid)}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1 transition ${
                           item.isPaid ? "bg-yellow-500 text-white hover:bg-yellow-600" : "bg-green-600 text-white hover:bg-green-700"
                         }`}
@@ -232,7 +230,7 @@ export default function MarketplacePage() {
                         {item.isPaid ? t("adminTable.markUnpaid") : t("adminTable.markPaid")}
                       </button>
                       <button
-                        onClick={() => handleDeleteItem(item)}
+                        onClick={() => handleDelete(item.id)}
                         className="flex-1 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-red-600 transition"
                       >
                         <FaTrashAlt size={11} />
@@ -273,9 +271,9 @@ export default function MarketplacePage() {
                       ))}
                     </tr>
                   ))
-                : filtered.length > 0
-                  ? filtered.map((item, idx) => (
-                      <tr key={`d-${item.id}-${idx}`} className="hover:bg-gray-50 transition">
+                : visible.length > 0
+                  ? visible.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50 transition">
                         <td className="border-b p-3">
                           <Image
                             src={item.images?.[0] || PLACEHOLDER_IMAGE}
@@ -292,13 +290,10 @@ export default function MarketplacePage() {
                         </td>
                         <td className="border-b p-3">
                           <div className="flex flex-wrap gap-1">
-                            {item.mainCategory && (
-                              <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{item.mainCategory}</span>
-                            )}
-                            {(Array.isArray(item.category) ? item.category : [item.category]).filter(Boolean).map((c, i) => (
+                            {(Array.isArray(item.category) ? item.category : [item.category]).filter(Boolean).map((c: string, i: number) => (
                               <span key={i} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{resolveCatName(c)}</span>
                             ))}
-                            {(Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory]).filter(Boolean).map((s, i) => (
+                            {(Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory]).filter(Boolean).map((s: string, i: number) => (
                               <span key={i} className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">{resolveSubcatName(s)}</span>
                             ))}
                           </div>
@@ -340,7 +335,7 @@ export default function MarketplacePage() {
                         <td className="border-b p-3">
                           <div className="flex items-center gap-1">
                             <button
-                              onClick={() => handleTogglePaidStatus(item)}
+                              onClick={() => handleTogglePaid(item.id, item.isPaid)}
                               className={`p-1.5 rounded text-white transition ${item.isPaid ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"}`}
                               title={item.isPaid ? t("adminTable.markUnpaid") : t("adminTable.markPaid")}
                             >
@@ -350,7 +345,7 @@ export default function MarketplacePage() {
                               <FaEdit size={11} />
                             </button>
                             <button
-                              onClick={() => handleDeleteItem(item)}
+                              onClick={() => handleDelete(item.id)}
                               className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition"
                               title={t("adminTable.delete")}
                             >
@@ -370,6 +365,15 @@ export default function MarketplacePage() {
             </tbody>
           </table>
         </div>
+
+        {filtered.length > visibleCount && (
+          <Pagination
+            visibleCount={visibleCount}
+            totalCount={filtered.length}
+            pageSize={PAGE_SIZE}
+            onLoadMore={() => setVisibleCount((p) => p + PAGE_SIZE)}
+          />
+        )}
       </div>
     </div>
   );
