@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -43,6 +43,7 @@ export default function PathSegmentsDisplay() {
   const { t } = useTranslation();
   useLanguage();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => { setMounted(true); }, []);
@@ -59,6 +60,7 @@ export default function PathSegmentsDisplay() {
         <li>
           <Link
             href="/"
+            onClick={(e) => { e.preventDefault(); router.push("/"); }}
             className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium cursor-pointer rounded px-2 py-1.5 sm:px-1 sm:py-0.5 hover:bg-blue-50 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
           >
             <Home className="w-4 h-4 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
