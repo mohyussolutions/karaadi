@@ -83,7 +83,7 @@ export function middleware(req: NextRequest) {
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
   const isAuthPage = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
 
-  if (idToken && (isAuthPage || pathname === "/")) {
+  if (idToken && isAuthPage) {
     const c = getClaims();
     if (c) {
       const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
