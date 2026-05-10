@@ -29,6 +29,16 @@ interface RegionItemProps {
 const formatName = (name: string) =>
   name ? name.charAt(0).toUpperCase() + name.slice(1).toLowerCase() : "";
 
+function lookupCityCount(cityCounts: Record<string, number>, cityName: string): number {
+  const exact = cityCounts[cityName];
+  if (exact !== undefined) return exact;
+  const lower = cityName.toLowerCase();
+  if (cityCounts[lower] !== undefined) return cityCounts[lower];
+  const prefix = lower.slice(0, 5);
+  const match = Object.entries(cityCounts).find(([k]) => k.toLowerCase().startsWith(prefix) || lower.startsWith(k.slice(0, 5)));
+  return match ? match[1] : 0;
+}
+
 const RegionItem = ({
   region,
   isSelected,
@@ -77,7 +87,7 @@ const RegionItem = ({
             key={city.id}
             city={city}
             isSelected={!!checkedCities[city.name]}
-            count={cityCounts[city.name] ?? cityCounts[city.name.toLowerCase()] ?? cityCounts[city.name.charAt(0).toUpperCase() + city.name.slice(1).toLowerCase()] ?? 0}
+            count={lookupCityCount(cityCounts, city.name)}
             onToggle={onCityToggle}
           />
         ))}

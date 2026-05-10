@@ -80,7 +80,7 @@ export default function ElectronicsLinks() {
 
     if (activeCities.length > 0) {
       list = list.filter(
-        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
+        (item) => !item.city ? false : activeCities.some((ac) => item.city.trim().toLowerCase() === ac || item.city.trim().toLowerCase().startsWith(ac.slice(0, 5)) || ac.startsWith(item.city.trim().toLowerCase().slice(0, 5))),
       );
     }
     return list;
@@ -96,15 +96,13 @@ export default function ElectronicsLinks() {
     const regionCounts: Record<string, number> = {};
     const cityCounts: Record<string, number> = {};
     allElectronicsItems.forEach((item) => {
-      const capitalize = (s: string) =>
-        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
       if (item.region) {
-        const reg = capitalize(item.region.trim());
-        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
+        const k_r = item.region.trim().toLowerCase();
+        regionCounts[k_r] = (regionCounts[k_r] || 0) + 1;
       }
       if (item.city) {
-        const cit = capitalize(item.city.trim());
-        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
+        const k_c = item.city.trim().toLowerCase();
+        cityCounts[k_c] = (cityCounts[k_c] || 0) + 1;
       }
     });
     return { regionCounts, cityCounts };

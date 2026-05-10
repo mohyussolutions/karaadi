@@ -192,7 +192,7 @@ export default function LocationSelector({
               currentRegionList.includes(region.name) ||
               regionCities.some((c) => checkedCities[c.name])
             }
-            count={regionCounts[region.name] ?? regionCounts[region.name.toLowerCase()] ?? regionCounts[region.name.charAt(0).toUpperCase() + region.name.slice(1).toLowerCase()] ?? 0}
+            count={regionCounts[region.name] ?? regionCounts[region.name.toLowerCase()] ?? 0}
             cities={regionCities}
             checkedCities={checkedCities}
             cityCounts={cityCounts}

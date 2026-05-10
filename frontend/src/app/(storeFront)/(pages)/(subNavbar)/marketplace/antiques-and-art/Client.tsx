@@ -87,9 +87,13 @@ export default function AntiquesAndArt() {
       .map((c) => c.toLowerCase());
 
     if (activeCities.length > 0) {
-      list = list.filter(
-        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
-      );
+      list = list.filter((item) => {
+        if (!item.city) return false;
+        const itemCity = item.city.trim().toLowerCase();
+        return activeCities.some(
+          (ac) => itemCity === ac || itemCity.startsWith(ac.slice(0, 5)) || ac.startsWith(itemCity.slice(0, 5)),
+        );
+      });
     }
 
     return list;
@@ -101,15 +105,13 @@ export default function AntiquesAndArt() {
     const regionCounts: Record<string, number> = {};
     const cityCounts: Record<string, number> = {};
     allAntiquesItems.forEach((item) => {
-      const capitalize = (s: string) =>
-        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
       if (item.region) {
-        const reg = capitalize(item.region.trim());
-        regionCounts[reg] = (regionCounts[reg] || 0) + 1;
+        const k = item.region.trim().toLowerCase();
+        regionCounts[k] = (regionCounts[k] || 0) + 1;
       }
       if (item.city) {
-        const cit = capitalize(item.city.trim());
-        cityCounts[cit] = (cityCounts[cit] || 0) + 1;
+        const k = item.city.trim().toLowerCase();
+        cityCounts[k] = (cityCounts[k] || 0) + 1;
       }
     });
     return { regionCounts, cityCounts };
