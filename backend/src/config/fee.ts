@@ -7,9 +7,9 @@ export const SERVER_CONFIG = {
 
 export const REDIS_CONFIG = {
   URL: process.env.REDIS_URL || "redis://localhost:6379",
-  MAX_RETRIES: 10,
-  RECONNECT_DELAY: 100,
-  MAX_RECONNECT_DELAY: 3000,
+  MAX_RETRIES: 3,
+  RECONNECT_DELAY: 500,
+  MAX_RECONNECT_DELAY: 2000,
 } as const;
 
 export const CURRENCY = "USD";

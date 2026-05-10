@@ -34,7 +34,10 @@ class CacheManager {
   private setupEventListeners(): void {
     this.client.on("error", (err) => {
       this.isConnected = false;
-      console.error(chalk.red(ERROR_MESSAGES.CLIENT_ERROR), err);
+      const isDnsOrConnection = err?.code === "ENOTFOUND" || err?.code === "ECONNREFUSED";
+      if (!isDnsOrConnection) {
+        console.error(chalk.red(ERROR_MESSAGES.CLIENT_ERROR), err);
+      }
     });
     this.client.on("ready", () => {
       this.isConnected = true;
