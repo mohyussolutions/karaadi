@@ -2,6 +2,7 @@
 
 import { normalizeUser } from "@/app/(storeFront)/components/hooks/useNormalizeUser";
 import { apiUrls } from "../constant/constant";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import {
   NormalizedUser,
   LoginResponse,
@@ -10,10 +11,12 @@ import {
 
 export async function getAuthenticatedUser(): Promise<NormalizedUser | null> {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(apiUrls.VERIFY_SESSION, {
       method: "POST",
       credentials: "include",
       cache: "no-store",
+      headers: headers as HeadersInit,
     });
 
     if (!response.ok) {
