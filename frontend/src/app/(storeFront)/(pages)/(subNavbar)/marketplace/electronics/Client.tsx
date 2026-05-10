@@ -47,27 +47,23 @@ export default function ElectronicsLinks() {
   }, []);
 
   const allElectronicsItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.includes("Electronics & Home Goods")
-        : item.category === "Electronics & Home Goods",
-    );
+    return items.filter((item) => {
+      const cats = Array.isArray(item.category) ? item.category : [item.category];
+      return cats.some((c) => String(c || "").toLowerCase() === "electronics");
+    });
   }, [items]);
 
   const filteredForHook = useMemo(() => {
     let list = [...allElectronicsItems];
 
     if (selectedSubcategory) {
-      const normalized = t(selectedSubcategory).toLowerCase();
+      const selectedKey = selectedSubcategory.split(".").pop() ?? "";
       list = list.filter((item) => {
-        const subs = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory];
-        return subs.some((s) =>
-          String(s || "")
-            .toLowerCase()
-            .includes(normalized),
-        );
+        const subs = Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory];
+        return subs.some((s) => {
+          const stored = String(s || "");
+          return stored === selectedSubcategory || stored.endsWith(`.${selectedKey}`) || stored === selectedKey || stored.toLowerCase().includes(t(selectedSubcategory).toLowerCase());
+        });
       });
     }
 

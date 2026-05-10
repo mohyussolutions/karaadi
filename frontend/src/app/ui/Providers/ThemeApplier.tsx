@@ -13,6 +13,9 @@ export default function ThemeApplier() {
     } else {
       root.classList.remove("dark");
     }
+    return () => {
+      root.classList.remove("dark");
+    };
   }, [mode]);
 
   return null;

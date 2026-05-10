@@ -26,8 +26,9 @@ const startServer = async () => {
         const sub = pub.duplicate();
         await sub.connect();
         socketServer(server, pub, sub);
-      } catch (redisErr) {
-        console.warn(chalk.yellow("Redis unavailable — sockets running without Redis adapter"), redisErr);
+      } catch (redisErr: any) {
+        const host = redisErr?.socketError?.hostname ?? redisErr?.hostname ?? "unknown";
+        console.warn(chalk.yellow(`Redis unavailable (${host}) — sockets running without Redis adapter`));
         socketServer(server);
       }
     } else {

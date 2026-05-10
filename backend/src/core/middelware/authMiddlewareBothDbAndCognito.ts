@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../utils/db.ts";
 import { AuthRequest, DecodedToken } from "../../types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
+import { SESSION_TIME_MS } from "src/config/session-time.ts";
 
 const AUTH_CACHE_TTL = 120;
 
@@ -54,6 +55,11 @@ const loadUserAndSession = async (sub: string, res: Response) => {
     res.clearCookie("accessToken");
     return null;
   }
+
+  const newExpiry = new Date(Date.now() + SESSION_TIME_MS);
+  await prisma.cookie
+    .update({ where: { userId: user.id }, data: { expiresAt: newExpiry } })
+    .catch(() => {});
 
   await cacheManager
     .set(cacheKey, { user, valid: true }, AUTH_CACHE_TTL)

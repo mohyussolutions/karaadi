@@ -28,8 +28,16 @@ class RedisServer {
           console.log(chalk.cyan(`Redis Ready | Usage: ${usage}`));
         }
       }
-    } catch (error) {
-      console.error(chalk.red("Redis connection failed"), error);
+    } catch (error: any) {
+      const isUnreachable =
+        error?.socketError?.code === "ENOTFOUND" ||
+        error?.socketError?.code === "ECONNREFUSED" ||
+        error?.code === "ENOTFOUND" ||
+        error?.code === "ECONNREFUSED";
+      if (!isUnreachable) {
+        console.error(chalk.red("Redis connection failed"), error);
+      }
+      throw error;
     }
   }
 

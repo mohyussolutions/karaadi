@@ -85,7 +85,7 @@ export default function DashboardSearch() {
   };
 
   return (
-    <div className="relative w-full max-w-sm group">
+    <div className="relative hidden sm:block w-full max-w-[180px] md:max-w-sm group">
       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none">
         <FiSearch size={16} />
       </div>

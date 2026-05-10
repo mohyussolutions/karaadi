@@ -46,13 +46,11 @@ function I18nSync({ children }: { children: React.ReactNode }) {
 }
 
 import PersistWrapper from "./PersistWrapper";
-import ThemeApplier from "./ThemeApplier";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <PersistWrapper>
-        <ThemeApplier />
         <I18nSync>
           <I18nextProvider i18n={i18n}>
             <ErrorBoundary>

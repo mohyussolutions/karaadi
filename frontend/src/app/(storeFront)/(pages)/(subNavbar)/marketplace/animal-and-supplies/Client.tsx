@@ -68,24 +68,19 @@ export default function AnimalAndSupplies() {
     loadData();
   }, []);
 
+  const matchAnimal = (item: any) => {
+    const cats = Array.isArray(item.category) ? item.category : [item.category];
+    return cats.some((c: any) => {
+      const s = String(c || "").toLowerCase();
+      return s === "animalandsupplies" || s === "animal" || s.includes("animal");
+    });
+  };
+
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        return;
-      }
+      if (!query.trim()) { setSearchResults([]); return; }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) =>
-        Array.isArray(item.category)
-          ? item.category.includes("Animals & Supplies")
-          : item.category === "Animals & Supplies",
-      );
-      setSearchResults(
-        filtered.map((item: any) => ({
-          id: item.id ?? item._id ?? "",
-          ...item,
-        })),
-      );
+      setSearchResults(results.filter(matchAnimal).map((item: any) => ({ id: item.id ?? item._id ?? "", ...item })));
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [query]);
@@ -93,48 +88,30 @@ export default function AnimalAndSupplies() {
   const regionCityCounts = useMemo(() => {
     const regionCounts: Record<string, number> = {};
     const cityCounts: Record<string, number> = {};
-    const capitalize = (s: string) =>
-      s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-
-    items
-      .filter((item) =>
-        Array.isArray(item.category)
-          ? item.category.includes("Animals & Supplies")
-          : item.category === "Animals & Supplies",
-      )
-      .forEach((item) => {
-        if (item.region) {
-          const reg = capitalize(item.region.trim());
-          regionCounts[reg] = (regionCounts[reg] || 0) + 1;
-        }
-        if (item.city) {
-          const cit = capitalize(item.city.trim());
-          cityCounts[cit] = (cityCounts[cit] || 0) + 1;
-        }
-      });
+    items.filter(matchAnimal).forEach((item) => {
+      if (item.region) {
+        const k = item.region.trim().toLowerCase();
+        regionCounts[k] = (regionCounts[k] || 0) + 1;
+      }
+      if (item.city) {
+        const k = item.city.trim().toLowerCase();
+        cityCounts[k] = (cityCounts[k] || 0) + 1;
+      }
+    });
     return { regionCounts, cityCounts };
   }, [items]);
 
   const itemsToDisplay = useMemo(() => {
-    let list = query.trim()
-      ? searchResults
-      : items.filter((item) =>
-          Array.isArray(item.category)
-            ? item.category.includes("Animals & Supplies")
-            : item.category === "Animals & Supplies",
-        );
+    let list = query.trim() ? searchResults : items.filter(matchAnimal);
 
     if (selectedSubcategory) {
-      const normalized = t(selectedSubcategory).toLowerCase();
+      const selectedKey = selectedSubcategory.split(".").pop() ?? "";
       list = list.filter((item) => {
-        const subs = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory];
-        return subs.some((s) =>
-          String(s || "")
-            .toLowerCase()
-            .includes(normalized),
-        );
+        const subs = Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory];
+        return subs.some((s) => {
+          const stored = String(s || "");
+          return stored === selectedSubcategory || stored.endsWith(`.${selectedKey}`) || stored === selectedKey || stored.toLowerCase().includes(t(selectedSubcategory).toLowerCase());
+        });
       });
     }
 
@@ -224,11 +201,7 @@ export default function AnimalAndSupplies() {
               <SomaliMap
                 selectedRegion={selectedRegion}
                 onRegionClick={setSelectedRegion}
-                items={items.filter((item) =>
-                  Array.isArray(item.category)
-                    ? item.category.includes("Animals & Supplies")
-                    : item.category === "Animals & Supplies",
-                )}
+                items={items.filter(matchAnimal)}
               />
             </div>
           </ContainerLinks>

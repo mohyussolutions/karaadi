@@ -47,24 +47,23 @@ export default function FashionAndAccessories() {
   }, []);
 
   const allFashionItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.includes("Fashion & Accessories")
-        : item.category === "Fashion & Accessories",
-    );
+    return items.filter((item) => {
+      const cats = Array.isArray(item.category) ? item.category : [item.category];
+      return cats.some((c) => String(c || "").toLowerCase() === "sportsandoutdoors" || String(c || "").toLowerCase().includes("sport"));
+    });
   }, [items]);
 
   const filteredForHook = useMemo(() => {
     let list = [...allFashionItems];
 
     if (selectedSubcategory) {
+      const selectedKey = selectedSubcategory.split(".").pop() ?? "";
       list = list.filter((item) => {
-        const subs = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory];
-        return subs.some(
-          (s) => s?.toLowerCase() === selectedSubcategory.toLowerCase(),
-        );
+        const subs = Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory];
+        return subs.some((s) => {
+          const stored = String(s || "");
+          return stored === selectedSubcategory || stored.endsWith(`.${selectedKey}`) || stored === selectedKey || stored.toLowerCase() === selectedSubcategory.toLowerCase();
+        });
       });
     }
 

@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useAppSelector } from "@/store/slices/hooks/hooks";
+import ThemeApplier from "@/app/ui/Providers/ThemeApplier";
 
 const Sidebar = dynamic(() => import("./components/sidebar/Sidebar"), {
   ssr: false,
@@ -25,6 +26,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       suppressHydrationWarning
       className={`flex h-screen overflow-hidden text-gray-900 dark:text-white${isDark ? " bg-gray-950" : " bg-gray-50"}`}
     >
+      <ThemeApplier />
       <Sidebar isOpen={sidebarOpen} toggleSidebar={closeSidebar} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar toggleSidebar={openSidebar} />

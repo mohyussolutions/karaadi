@@ -3,7 +3,10 @@
     "allow": [
       "Bash(aws ssm *)",
       "Bash(aws rds *)",
-      "Bash(git -C /Users/mohamed/Documents/karaadi ls-files)"
+      "Bash(git -C /Users/mohamed/Documents/karaadi ls-files)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

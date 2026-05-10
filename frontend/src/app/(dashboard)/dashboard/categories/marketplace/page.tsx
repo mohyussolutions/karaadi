@@ -368,10 +368,8 @@ export default function MarketplacePage() {
 
         {filtered.length > visibleCount && (
           <Pagination
-            visibleCount={visibleCount}
-            totalCount={filtered.length}
-            pageSize={PAGE_SIZE}
-            onLoadMore={() => setVisibleCount((p) => p + PAGE_SIZE)}
+            hasMore={filtered.length > visibleCount}
+            onSeeMore={() => setVisibleCount((p) => p + PAGE_SIZE)}
           />
         )}
       </div>

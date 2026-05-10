@@ -77,7 +77,7 @@ const RegionItem = ({
             key={city.id}
             city={city}
             isSelected={!!checkedCities[city.name]}
-            count={cityCounts[city.name] || 0}
+            count={cityCounts[city.name] ?? cityCounts[city.name.toLowerCase()] ?? cityCounts[city.name.charAt(0).toUpperCase() + city.name.slice(1).toLowerCase()] ?? 0}
             onToggle={onCityToggle}
           />
         ))}

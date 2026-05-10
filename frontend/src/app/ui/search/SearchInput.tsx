@@ -12,7 +12,11 @@ export interface SearchInputProps {
   onSearch?: (value: string) => void;
 }
 
-export default function SearchInput({ defaultValue = "", placeholder, onSearch }: SearchInputProps) {
+export default function SearchInput({
+  defaultValue = "",
+  placeholder,
+  onSearch,
+}: SearchInputProps) {
   const [text, setText] = useState(defaultValue);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,11 +29,14 @@ export default function SearchInput({ defaultValue = "", placeholder, onSearch }
     setText(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const endsWithDigit = /\d$/.test(val.trim());
-    debounceRef.current = setTimeout(() => {
-      if (val.trim()) saveSearchToDb(val.trim()).catch(() => {});
-      onSearch?.(val);
-      dispatch(val);
-    }, endsWithDigit ? 800 : 400);
+    debounceRef.current = setTimeout(
+      () => {
+        if (val.trim()) saveSearchToDb(val.trim()).catch(() => {});
+        onSearch?.(val);
+        dispatch(val);
+      },
+      endsWithDigit ? 800 : 400,
+    );
   };
 
   const handleClear = () => {
@@ -40,16 +47,17 @@ export default function SearchInput({ defaultValue = "", placeholder, onSearch }
   };
 
   return (
-    <div className="relative w-full group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors">
+    <div className="relative w-full group mt-16">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 group-focus-within:text-blue-600 transition-colors">
         <FiSearch size={22} />
       </div>
       <input
+        suppressHydrationWarning
         type="text"
         value={text}
         onChange={handleChange}
         placeholder={placeholder ?? "Sore Hamar, guri, baabuur, 45 000..."}
-        className="w-full pl-12 pr-12 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-gray-800 text-base font-medium placeholder:text-gray-400 transition-all"
+        className="w-full pl-12 pr-12 py-4 bg-white border-2 border-blue-200 rounded-2xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-800 text-base font-medium placeholder:text-gray-400 transition-all"
       />
       {text && (
         <button

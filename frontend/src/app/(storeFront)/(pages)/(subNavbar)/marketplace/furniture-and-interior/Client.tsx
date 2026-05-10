@@ -68,13 +68,12 @@ export default function FurnitureAndInterior() {
     loadItems();
   }, []);
 
-  const allFurnitureItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.includes("Furniture & Interior")
-        : item.category === "Furniture & Interior",
-    );
-  }, [items]);
+  const matchFurniture = (item: any) => {
+    const cats = Array.isArray(item.category) ? item.category : [item.category];
+    return cats.some((c: any) => String(c || "").toLowerCase() === "furniture");
+  };
+
+  const allFurnitureItems = useMemo(() => items.filter(matchFurniture), [items]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -83,11 +82,7 @@ export default function FurnitureAndInterior() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) =>
-        Array.isArray(item.category)
-          ? item.category.includes("Furniture & Interior")
-          : item.category === "Furniture & Interior",
-      );
+      const filtered = results.filter(matchFurniture);
       const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
         id: item.id ?? item._id ?? "",
         title: item.title ?? "",
@@ -133,16 +128,13 @@ export default function FurnitureAndInterior() {
     let list = query.trim() ? searchResults : allFurnitureItems;
 
     if (selectedSubcategory) {
-      const normalized = t(selectedSubcategory).toLowerCase();
+      const selectedKey = selectedSubcategory.split(".").pop() ?? "";
       list = list.filter((item) => {
-        const subs = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory];
-        return subs.some((s) =>
-          String(s || "")
-            .toLowerCase()
-            .includes(normalized),
-        );
+        const subs = Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory];
+        return subs.some((s) => {
+          const stored = String(s || "");
+          return stored === selectedSubcategory || stored.endsWith(`.${selectedKey}`) || stored === selectedKey || stored.toLowerCase().includes(t(selectedSubcategory).toLowerCase());
+        });
       });
     }
 
