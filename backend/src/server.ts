@@ -20,11 +20,16 @@ const startServer = async () => {
     const validRedis = redisUrl.startsWith("redis://") || redisUrl.startsWith("rediss://");
 
     if (validRedis) {
-      await redisServer.start();
-      const pub = redisServer.getClient();
-      const sub = pub.duplicate();
-      await sub.connect();
-      socketServer(server, pub, sub);
+      try {
+        await redisServer.start();
+        const pub = redisServer.getClient();
+        const sub = pub.duplicate();
+        await sub.connect();
+        socketServer(server, pub, sub);
+      } catch (redisErr) {
+        console.warn(chalk.yellow("Redis unavailable — sockets running without Redis adapter"), redisErr);
+        socketServer(server);
+      }
     } else {
       console.warn(chalk.yellow("No valid REDIS_URL — sockets running without Redis adapter"));
       socketServer(server);
