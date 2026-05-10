@@ -78,6 +78,7 @@ export default function ChatInbox({
           setShowThread(true);
         })
         .catch(() => {
+          setShowThread(false);
           roomsPromise.then((rooms) => setChatrooms(rooms));
         })
         .finally(() => setLoading(false));
@@ -208,11 +209,11 @@ export default function ChatInbox({
   return (
     <div className="flex flex-1 min-h-0 bg-white overflow-hidden sm:rounded-xl sm:border sm:border-gray-200 sm:shadow-sm">
       <div
-        className={`flex flex-col border-r border-gray-200 bg-white ${
-          showThread
+        className={`flex flex-col border-r border-gray-200 bg-white flex-shrink-0 ${
+          showThread && !!activeChatroom
             ? "hidden md:flex md:w-[320px] lg:w-[360px]"
             : "flex w-full md:w-[320px] lg:w-[360px]"
-        } flex-shrink-0`}
+        }`}
       >
         <div className="px-4 pt-5 pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2 mb-3">
@@ -276,7 +277,7 @@ export default function ChatInbox({
 
       <div
         className={`flex-1 min-h-0 flex flex-col min-w-0 ${
-          showThread ? "flex" : "hidden md:flex"
+          showThread && !!activeChatroom ? "flex" : "hidden md:flex"
         }`}
       >
         {activeChatId && activeChatroom ? (
