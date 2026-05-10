@@ -35,15 +35,15 @@ export default function LoginForm() {
       if (loggedInUser) {
         setUser(loggedInUser);
 
-        // The backend sets these cookies via Set-Cookie, but browsers block
-        // cross-origin cookies (karaadi.onrender.com → amplifyapp.com).
-        // Setting them here from JS makes them same-origin on the Amplify
-        // domain so the middleware can read them on every request.
         const maxAge = "max-age=3600; path=/; SameSite=Lax";
+        // local
         document.cookie = `token=${loggedInUser.token}; ${maxAge}`;
+        document.cookie = `user-role=${loggedInUser.isSupport ? "support" : loggedInUser.isManager ? "manager" : "admin"}; ${maxAge}`;
+        // ---------
+        // production — browsers block cross-origin Set-Cookie from karaadi.onrender.com,
+        // so we set idToken/accessToken here as same-origin cookies on the Amplify domain
         document.cookie = `idToken=${loggedInUser.token}; ${maxAge}`;
         document.cookie = `accessToken=${loggedInUser.accessToken}; ${maxAge}`;
-        document.cookie = `user-role=${loggedInUser.isSupport ? "support" : loggedInUser.isManager ? "manager" : "admin"}; ${maxAge}`;
 
         if (loggedInUser.isAdmin) {
           router.push("/dashboard");
