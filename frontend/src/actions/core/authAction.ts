@@ -66,6 +66,8 @@ export async function login(email: string, password: string): Promise<User> {
 }
 
 export async function logout(): Promise<void> {
+  const headers = await getAuthHeaders();
+
   clearAuthCookies();
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem("accessToken");
@@ -76,7 +78,7 @@ export async function logout(): Promise<void> {
     sessionStorage.removeItem("refreshToken");
     sessionStorage.removeItem("user");
   }
-  const headers = await getAuthHeaders();
+
   fetch(apiUrls.LOGOUT, {
     method: "POST",
     headers: headers as HeadersInit,

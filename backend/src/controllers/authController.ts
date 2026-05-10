@@ -2,6 +2,7 @@ import { serverError } from "src/core/utils/serverError.ts";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import cacheManager from "src/services/redis/cacheManager.ts";
 
 import prisma from "src/core/utils/db.ts";
 import {
@@ -330,12 +331,30 @@ export const resetPasswordIncontroller = async (
 
 export const logout = async (req: Request, res: Response) => {
   try {
-    res.clearCookie("token");
-    res.clearCookie("idToken");
-    res.clearCookie("refreshToken");
     const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith("Bearer "))
-      await cognitoSignOut(authHeader.split(" ")[1]);
+    const token =
+      authHeader?.startsWith("Bearer ")
+        ? authHeader.split(" ")[1]
+        : (req.cookies?.idToken ?? req.cookies?.token);
+
+    if (token) {
+      const decoded = jwt.decode(token) as { sub?: string } | null;
+      if (decoded?.sub) {
+        const user = await prisma.user.findUnique({
+          where: { cognitoId: decoded.sub },
+          select: { id: true },
+        });
+        if (user) {
+          await prisma.cookie.deleteMany({ where: { userId: user.id } }).catch(() => {});
+          await cacheManager.delete(`auth:session:${decoded.sub}`).catch(() => {});
+        }
+      }
+      await cognitoSignOut(token).catch(() => {});
+    }
+
+    ["token", "idToken", "accessToken", "refreshToken"].forEach((c) =>
+      res.clearCookie(c),
+    );
     res.status(200).json({ success: true });
   } catch {
     res.status(200).json({ success: true });
