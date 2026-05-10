@@ -193,7 +193,6 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
-    // Auto-resize textarea
     e.target.style.height = "48px"
     e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
   }
@@ -235,7 +234,6 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         </div>
       </div>
 
-      {/* Item card banner */}
       {chatroom.itemTitle && (
         <div className="flex items-center gap-3 px-4 py-2.5 bg-[#f8f9fa] border-b border-gray-100 flex-shrink-0">
           {chatroom.itemImage && (
@@ -255,7 +253,6 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         </div>
       )}
 
-      {/* Messages */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-1 bg-[#f8f9fa]">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
@@ -303,7 +300,6 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         <div ref={endRef} />
       </div>
 
-      {/* Input */}
       <div
         className="bg-white border-t border-gray-200 px-4 pt-3 flex-shrink-0"
         style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
