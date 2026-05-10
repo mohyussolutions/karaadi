@@ -19,8 +19,7 @@ export default async function StoreFrontLayout({
     <>
       <LanguageSync />
       <Navbar initialIsAuthenticated={initialIsAuthenticated} />
-      <div className="h-14 bg-white" />
-      <main className="flex-grow">
+      <main className="flex-grow pt-14">
         <TrackVisitor />
         <AdFetcher>
           <Container>
