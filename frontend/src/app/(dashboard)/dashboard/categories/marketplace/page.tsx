@@ -142,7 +142,7 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         <DashboardSubNav
           title={t("adminTable.marketplace")}
@@ -156,7 +156,7 @@ export default function MarketplacePage() {
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl px-4 py-2 shadow-sm flex items-center gap-2">
-            <span className="text-gray-500 text-xs font-medium">{t("adminTable.total")}:</span>
+            <span className="text-gray-500 dark:text-gray-400 text-xs font-medium">{t("adminTable.total")}:</span>
             {loading ? (
               <span className="w-12 h-4 bg-gray-100 rounded animate-pulse inline-block" />
             ) : (
@@ -165,7 +165,7 @@ export default function MarketplacePage() {
           </div>
           {!loading && filtered.length !== items.length && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl px-4 py-2 shadow-sm flex items-center gap-2">
-              <span className="text-gray-500 text-xs font-medium">{t("adminTable.showing")}:</span>
+              <span className="text-gray-500 dark:text-gray-400 text-xs font-medium">{t("adminTable.showing")}:</span>
               <span className="text-lg font-bold text-blue-600">{filtered.length.toLocaleString()}</span>
             </div>
           )}
@@ -190,7 +190,7 @@ export default function MarketplacePage() {
                         unoptimized
                       />
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 text-sm truncate">{item.title}</h3>
+                        <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate">{item.title}</h3>
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {(Array.isArray(item.category) ? item.category : [item.category]).filter(Boolean).map((c: string, i: number) => (
                             <span key={i} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">{resolveCatName(c)}</span>
@@ -204,20 +204,20 @@ export default function MarketplacePage() {
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                       <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-gray-400">{t("adminTable.city")}</span>
+                        <span className="text-gray-400 dark:text-gray-500">{t("adminTable.city")}</span>
                         <p className="font-medium truncate">{item.city}</p>
                       </div>
                       <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-gray-400">{t("adminTable.status")}</span>
+                        <span className="text-gray-400 dark:text-gray-500">{t("adminTable.status")}</span>
                         <p className={`font-medium ${item.isPaid ? "text-green-600" : "text-red-600"}`}>
                           {item.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                         </p>
                       </div>
                     </div>
                     <div className="mt-2 bg-gray-50 p-2 rounded-lg text-xs">
-                      <p className="text-gray-400 mb-0.5">{t("adminTable.seller")}</p>
+                      <p className="text-gray-400 dark:text-gray-500 mb-0.5">{t("adminTable.seller")}</p>
                       <p className="font-medium truncate">{item.user?.username || "N/A"}</p>
-                      <p className="text-gray-500 truncate">{item.user?.email}</p>
+                      <p className="text-gray-500 dark:text-gray-400 truncate">{item.user?.email}</p>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <button
@@ -240,7 +240,7 @@ export default function MarketplacePage() {
                   </div>
                 ))
               : (
-                <div className="text-center py-10 text-gray-500 border border-dashed rounded-lg">
+                <div className="text-center py-10 text-gray-500 dark:text-gray-400 border border-dashed dark:border-gray-700 rounded-lg">
                   {t("adminTable.noItems")}
                 </div>
               )}
@@ -317,7 +317,7 @@ export default function MarketplacePage() {
                             />
                             <div className="min-w-0">
                               <p className="text-xs font-semibold truncate">{item.user?.username}</p>
-                              <p className="text-xs text-gray-500 truncate">{item.user?.email}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.user?.email}</p>
                             </div>
                           </div>
                         </td>
@@ -357,7 +357,7 @@ export default function MarketplacePage() {
                     ))
                   : (
                     <tr>
-                      <td colSpan={8} className="text-center py-10 text-gray-500 text-sm">
+                      <td colSpan={8} className="text-center py-10 text-gray-500 dark:text-gray-400 text-sm">
                         {t("adminTable.noItems")}
                       </td>
                     </tr>

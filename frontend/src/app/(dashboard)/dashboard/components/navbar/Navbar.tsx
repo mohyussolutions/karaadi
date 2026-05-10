@@ -3,8 +3,7 @@
 import { logout } from "@/actions/core/authAction";
 import DashboardSearch from "@/app/(dashboard)/dashboard/components/search/DashboardSearch";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { Suspense, useCallback, useEffect, useState } from "react";
+import React, { Suspense, useCallback, useState } from "react";
 import { FaUser, FaBars } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -18,19 +17,16 @@ interface NavbarProps {
 
 export default function Navbar({ toggleSidebar }: NavbarProps) {
   const [showDropdown, setShowDropdown] = useState(false);
-  const router = useRouter();
   const { user, setUser } = useAuth();
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const mode = useAppSelector((s) => s.theme?.mode ?? "light");
 
-  useEffect(() => { router.prefetch("/login"); }, [router]);
-
-  const handleLogged = useCallback(() => {
+  const handleLogged = useCallback(async () => {
     setUser(null);
-    logout();
-    router.push("/login");
-  }, [router, setUser]);
+    await logout();
+    window.location.href = "/login";
+  }, [setUser]);
 
   const toggleDropdown = useCallback(() => setShowDropdown((p) => !p), []);
   const closeDropdown = useCallback(() => setShowDropdown(false), []);
@@ -101,13 +97,13 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
                     <div className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border-b dark:border-gray-700 truncate" suppressHydrationWarning>
                       {user?.username || user?.email || "Admin"}
                     </div>
-                    <Link href="/dashboard/profile" className="block px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700" onClick={closeDropdown} suppressHydrationWarning>
+                    <Link href="/dashboard/profile" className="block px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 mt-1" onClick={closeDropdown} suppressHydrationWarning>
                       {t("dashboard.nav.profile")}
                     </Link>
-                    <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700" onClick={closeDropdown} suppressHydrationWarning>
+                    <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" onClick={closeDropdown} suppressHydrationWarning>
                       {t("dashboard.nav.settings")}
                     </Link>
-                    <button onClick={handleLogged} className="w-full px-4 py-2 text-sm text-left text-red-500 rounded hover:bg-gray-100 dark:hover:bg-gray-700" suppressHydrationWarning>
+                    <button onClick={handleLogged} className="w-full px-4 py-2 text-sm text-left text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 mt-1 border-t border-gray-100 dark:border-gray-700 pt-2" suppressHydrationWarning>
                       {t("dashboard.nav.logout")}
                     </button>
                   </div>

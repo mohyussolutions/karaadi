@@ -17,16 +17,13 @@ export async function POST(req: NextRequest) {
     maxAge: SESSION_MAX_AGE,
   };
 
-  // httpOnly — hidden from JS, readable by middleware
   res.cookies.set("idToken", idToken, { ...base, httpOnly: true });
   res.cookies.set("token", idToken, { ...base, httpOnly: true });
 
-  // JS-readable — needed by getAuthHeaders() for cross-origin API calls
   if (accessToken) {
     res.cookies.set("accessToken", accessToken, { ...base, httpOnly: false });
   }
 
-  // role is non-sensitive, JS-readable for UI hints
   if (role) {
     res.cookies.set("user-role", role, { ...base, httpOnly: false });
   }

@@ -32,7 +32,6 @@ export async function getAuthHeaders(token?: string): Promise<HeadersWithAuth> {
     if (typeof window === "undefined") {
       authToken = await getServerToken();
     } else {
-      // idToken is httpOnly (not readable by JS) — use accessToken for cross-origin API calls
       authToken =
         getClientCookie("accessToken") ||
         getClientCookie("idToken") ||
