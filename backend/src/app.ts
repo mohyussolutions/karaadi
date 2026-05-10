@@ -20,7 +20,7 @@ app.use(
     origin: "https://main.d2vxkvyn6xd6kq.amplifyapp.com",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires", "X-Access-Token"],
   }),
 );
 

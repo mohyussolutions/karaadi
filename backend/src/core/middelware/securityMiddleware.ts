@@ -23,6 +23,7 @@ export const setupSecurity = (app: express.Application) => {
         }
       },
       credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires", "X-Access-Token"],
       optionsSuccessStatus: 200,
     }),
   );
