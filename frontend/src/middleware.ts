@@ -33,6 +33,7 @@ const PUBLIC_PREFIXES = [
   "/motorcycles",
   "/jobs",
   "/about",
+  "/help",
   "/contact",
   "/search",
   "/item",
