@@ -23,6 +23,12 @@ const SEGMENT_LABEL_KEYS: Record<string, string> = {
   "land-for-sale": "subcategories.realEstate.landForSale",
   "farm-for-sale": "subcategories.realEstate.farmForSale",
   commercial: "subcategories.realEstate.commercial",
+  "antiques-and-art": "subcategories.marketplace.antiques",
+  electronics: "subcategories.marketplace.electronics",
+  "animal-and-supplies": "subcategories.marketplace.animalAndSupplies",
+  "sports-and-outdoors": "subcategories.marketplace.sportsAndOutdoors",
+  furniture: "subcategories.marketplace.furniture",
+  "fashion-and-accessories": "subcategories.marketplace.fashion",
 };
 
 function humanize(segment: string) {

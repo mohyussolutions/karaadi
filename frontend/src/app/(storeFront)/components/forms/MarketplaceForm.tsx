@@ -102,7 +102,8 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
         category: formData.category ? [formData.category] : [],
         subcategory: formData.subCategory ? [formData.subCategory] : [],
         categoryTag: formData.category, condition: formData.condition,
-        region: formData.region, city: formData.city, images: imagesBase64, isPaid: false, feeAmount: fee, businessId: businessId || undefined, website: formData.website || undefined,
+        region: regions.find((r) => r.id === formData.region)?.name || formData.region,
+        city: formData.city, images: imagesBase64, isPaid: false, feeAmount: fee, businessId: businessId || undefined, website: formData.website || undefined,
       };
       const result: any = await createMarketplaceItem(payload, user.token || (user as any).accessToken);
       const createdId = result.id || result._id;

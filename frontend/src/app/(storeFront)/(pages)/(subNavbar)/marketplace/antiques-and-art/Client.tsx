@@ -47,27 +47,31 @@ export default function AntiquesAndArt() {
   }, []);
 
   const allAntiquesItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.includes("Antiques & Art")
-        : item.category === "Antiques & Art",
-    );
+    return items.filter((item) => {
+      const cats = Array.isArray(item.category) ? item.category : [item.category];
+      return cats.some((c) => {
+        const s = String(c || "").toLowerCase();
+        return s === "antiques" || s.includes("antique");
+      });
+    });
   }, [items]);
 
   const filteredForHook = useMemo(() => {
     let list = [...allAntiquesItems];
 
     if (selectedSubcategory) {
-      const normalized = t(selectedSubcategory).toLowerCase();
+      const selectedKey = selectedSubcategory.split(".").pop() ?? "";
       list = list.filter((item) => {
-        const subs = Array.isArray(item.subcategory)
-          ? item.subcategory
-          : [item.subcategory];
-        return subs.some((s) =>
-          String(s || "")
-            .toLowerCase()
-            .includes(normalized),
-        );
+        const subs = Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory];
+        return subs.some((s) => {
+          const stored = String(s || "");
+          return (
+            stored === selectedSubcategory ||
+            stored.endsWith(`.${selectedKey}`) ||
+            stored === selectedKey ||
+            stored.toLowerCase().includes(t(selectedSubcategory).toLowerCase())
+          );
+        });
       });
     }
 
