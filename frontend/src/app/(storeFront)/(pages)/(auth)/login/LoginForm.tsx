@@ -35,12 +35,23 @@ export default function LoginForm() {
       if (loggedInUser) {
         setUser(loggedInUser);
 
-        const maxAge = "max-age=3600; path=/; SameSite=Lax";
-        document.cookie = `token=${loggedInUser.token}; ${maxAge}`;
-        document.cookie = `user-role=${loggedInUser.isSupport ? "support" : loggedInUser.isManager ? "manager" : "admin"}; ${maxAge}`;
-        // --- production: set as same-origin to bypass cross-origin cookie block ---
-        document.cookie = `idToken=${loggedInUser.token}; ${maxAge}`;
-        document.cookie = `accessToken=${loggedInUser.accessToken}; ${maxAge}`;
+        const role = loggedInUser.isAdmin
+          ? "admin"
+          : loggedInUser.isManager
+          ? "manager"
+          : loggedInUser.isSupport
+          ? "support"
+          : "user";
+
+        await fetch("/api/auth/set-cookie", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idToken: loggedInUser.token,
+            accessToken: loggedInUser.accessToken,
+            role,
+          }),
+        });
 
         if (loggedInUser.isAdmin) {
           router.push("/dashboard");

@@ -30,11 +30,7 @@ export async function getAuthenticatedUser(): Promise<NormalizedUser | null> {
 }
 
 export function clearAuthCookies() {
-  ["idToken", "accessToken", "token", "refreshToken", "user-role"].forEach(
-    (c) => {
-      document.cookie = `${c}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-    },
-  );
+  fetch("/api/auth/clear-cookie", { method: "POST" }).catch(() => {});
 }
 
 export async function login(email: string, password: string): Promise<User> {
