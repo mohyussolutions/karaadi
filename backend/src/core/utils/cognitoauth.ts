@@ -188,35 +188,44 @@ export const signIn = async (
     const preferredUsername =
       decodedToken.preferred_username || email.split("@")[0];
 
-    const userRecord = await prisma.user.upsert({
+    const select = { id: true, username: true, phone: true, profileImage: true, cognitoId: true } as const;
+
+    let userRecord = await prisma.user.findUnique({
       where: { cognitoId: decodedToken.sub },
-      update: {
-        email: decodedToken.email,
-        username: preferredUsername,
-        isAdmin,
-        isManager,
-        isSupport,
-      },
-      create: {
-        cognitoId: decodedToken.sub,
-        email: decodedToken.email,
-        username: preferredUsername,
-        phone: cognitoPhone !== "false" ? cognitoPhone : "",
-        profileImage:
-          cognitoProfileImage !== "false" ? cognitoProfileImage : null,
-        password: "",
-        isAdmin,
-        isManager,
-        isSupport,
-      },
-      select: {
-        id: true,
-        username: true,
-        phone: true,
-        profileImage: true,
-        cognitoId: true,
-      },
+      select,
     });
+
+    if (userRecord) {
+      userRecord = await prisma.user.update({
+        where: { cognitoId: decodedToken.sub },
+        data: { email: decodedToken.email, username: preferredUsername, isAdmin, isManager, isSupport },
+        select,
+      });
+    } else {
+      const byEmail = await prisma.user.findUnique({ where: { email: decodedToken.email } });
+      if (byEmail) {
+        userRecord = await prisma.user.update({
+          where: { email: decodedToken.email },
+          data: { cognitoId: decodedToken.sub, username: preferredUsername, isAdmin, isManager, isSupport },
+          select,
+        });
+      } else {
+        userRecord = await prisma.user.create({
+          data: {
+            cognitoId: decodedToken.sub,
+            email: decodedToken.email,
+            username: preferredUsername,
+            phone: cognitoPhone !== "false" ? cognitoPhone : "",
+            profileImage: cognitoProfileImage !== "false" ? cognitoProfileImage : null,
+            password: "",
+            isAdmin,
+            isManager,
+            isSupport,
+          },
+          select,
+        });
+      }
+    }
 
     if (req?.session) {
       req.session.idToken = idToken;
