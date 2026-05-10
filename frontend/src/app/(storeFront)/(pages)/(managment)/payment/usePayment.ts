@@ -20,6 +20,7 @@ import {
 import type { PaymentStatus } from "./constants";
 import { getItemPath } from "@/app/(storeFront)/components/hooks/getItemPath";
 import type { UsePaymentProps } from "@/app/utils/types/payment.types";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export function usePayment({
   item,
@@ -59,10 +60,10 @@ export function usePayment({
     if (total === 0) {
       setProcessing(true);
       try {
+        const headers = await getAuthHeaders();
         const res = await fetch(AD_PATCH_URL(item.id), {
           method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...(headers as any), "Content-Type": "application/json" },
           body: JSON.stringify({ isPaid: true, planId: plan?.id }),
         });
         if (!res.ok) throw new Error();
@@ -116,10 +117,10 @@ export function usePayment({
             planId: plan?.id,
           };
 
+      const authHeaders = await getAuthHeaders();
       const initiateRes = await fetch(initiateEndpoint, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...(authHeaders as any), "Content-Type": "application/json" },
         body: JSON.stringify(initiateBody),
       });
 

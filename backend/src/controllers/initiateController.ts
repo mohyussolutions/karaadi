@@ -56,12 +56,10 @@ async function markAdPaid(
       `[PAYMENT] markAdPaid found adId=${adId} model=${name} userId=${ad.userId}`,
     );
 
-    // Get active SubPlan for expiry + tier calculation
     const subPlan = await prisma.subPlan.findFirst({
       where: { isActive: true },
     });
 
-    // Validate the planId FK — if invalid, skip it (don't let a bad FK crash the whole update)
     const effectivePlanId = planId || ad.planId;
     let validPlanId: string | undefined;
     if (effectivePlanId) {
@@ -248,8 +246,18 @@ export async function waafiInitiate(req: Request, res: Response) {
 export async function waafiStatus(req: Request, res: Response) {
   try {
     const { ref } = req.params;
-    const data = await cacheManager.get(`payment:${ref}`);
-    return res.json(data ?? { status: "pending" });
+    const cached = await cacheManager.get(`payment:${ref}`);
+    if (cached) return res.json(cached);
+
+    const payment = await prisma.payment.findFirst({
+      where: { transactionId: ref },
+      select: { status: true },
+    }).catch(() => null);
+
+    if (payment) {
+      return res.json({ status: payment.status === "COMPLETED" ? "success" : "failed" });
+    }
+    return res.json({ status: "pending" });
   } catch {
     return res.json({ status: "pending" });
   }
@@ -356,8 +364,18 @@ export async function mobileInitiate(req: Request, res: Response) {
 export async function mobileStatus(req: Request, res: Response) {
   try {
     const { ref } = req.params;
-    const data = await cacheManager.get(`payment:${ref}`);
-    return res.json(data ?? { status: "pending" });
+    const cached = await cacheManager.get(`payment:${ref}`);
+    if (cached) return res.json(cached);
+
+    const payment = await prisma.payment.findFirst({
+      where: { transactionId: ref },
+      select: { status: true },
+    }).catch(() => null);
+
+    if (payment) {
+      return res.json({ status: payment.status === "COMPLETED" ? "success" : "failed" });
+    }
+    return res.json({ status: "pending" });
   } catch {
     return res.json({ status: "pending" });
   }
