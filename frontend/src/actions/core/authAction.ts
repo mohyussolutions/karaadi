@@ -18,14 +18,10 @@ export async function getAuthenticatedUser(): Promise<NormalizedUser | null> {
       cache: "no-store",
       headers: headers as HeadersInit,
     });
-
     if (!response.ok) {
-      if (response.status === 401) {
-        clearAuthCookies();
-      }
+      if (response.status === 401) clearAuthCookies();
       return null;
     }
-
     const data = await response.json();
     return data.user;
   } catch {
@@ -34,16 +30,11 @@ export async function getAuthenticatedUser(): Promise<NormalizedUser | null> {
 }
 
 export function clearAuthCookies() {
-  const cookies = [
-    "idToken",
-    "accessToken",
-    "token",
-    "refreshToken",
-    "user-role",
-  ];
-  cookies.forEach((c) => {
-    document.cookie = `${c}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-  });
+  ["idToken", "accessToken", "token", "refreshToken", "user-role"].forEach(
+    (c) => {
+      document.cookie = `${c}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    },
+  );
 }
 
 export async function login(email: string, password: string): Promise<User> {
@@ -64,7 +55,6 @@ export async function login(email: string, password: string): Promise<User> {
     await new Promise((r) => setTimeout(r, 3000));
     response = await doLogin();
   }
-
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     throw new Error(data?.error || "Login failed");
@@ -74,7 +64,7 @@ export async function login(email: string, password: string): Promise<User> {
   return normalizeUser(u) as unknown as User;
 }
 
-export function logout(token?: string): void {
+export async function logout(): Promise<void> {
   clearAuthCookies();
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem("accessToken");
@@ -85,11 +75,10 @@ export function logout(token?: string): void {
     sessionStorage.removeItem("refreshToken");
     sessionStorage.removeItem("user");
   }
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers = await getAuthHeaders();
   fetch(apiUrls.LOGOUT, {
     method: "POST",
-    headers,
+    headers: headers as HeadersInit,
     credentials: "include",
     keepalive: true,
   }).catch(() => {});
@@ -102,7 +91,6 @@ export async function register(
 ): Promise<User> {
   const response = await fetch(apiUrls.REGISTER, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, email, password }),
   });
@@ -116,7 +104,6 @@ export async function register(
 export async function confirmEmail(email: string, code: string): Promise<void> {
   await fetch(apiUrls.CONFIRM, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, code }),
   });
@@ -143,10 +130,12 @@ export async function resetPassword(
 }
 
 export async function getProfile(): Promise<User> {
+  const headers = await getAuthHeaders();
   const res = await fetch(apiUrls.PROFILE, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
+    headers: headers as HeadersInit,
   });
   if (!res.ok) throw new Error("Profile failed");
   return res.json();
@@ -155,37 +144,47 @@ export async function getProfile(): Promise<User> {
 export async function updateProfile(
   formData: FormData,
 ): Promise<{ success: boolean; data: User | null }> {
+  const headers = await getAuthHeaders();
   const res = await fetch(apiUrls.UPDATE_PROFILE, {
     method: "PUT",
     credentials: "include",
+    headers: { Authorization: (headers as any).Authorization ?? "" },
     body: formData,
   });
   return { success: res.ok, data: res.ok ? await res.json() : null };
 }
 
 export async function deleteAccount(): Promise<{ success: boolean }> {
+  const headers = await getAuthHeaders();
   const user = await getAuthenticatedUser();
   const res = await fetch(apiUrls.DELETE_ACCOUNT, {
     method: "DELETE",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      ...(headers as any),
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ id: user?._id }),
   });
   return { success: res.ok };
 }
 
 export async function getUsers(): Promise<User[]> {
+  const headers = await getAuthHeaders();
   const res = await fetch(apiUrls.USERS.BASE, {
     method: "POST",
     credentials: "include",
+    headers: headers as HeadersInit,
   });
   return res.ok ? res.json() : [];
 }
 
 export async function getUserById(id: string): Promise<User> {
+  const headers = await getAuthHeaders();
   const res = await fetch(apiUrls.USERS.BY_ID(id), {
     method: "POST",
     credentials: "include",
+    headers: headers as HeadersInit,
   });
   if (!res.ok) throw new Error("Fetch failed");
   return res.json();
@@ -194,10 +193,11 @@ export async function getUserById(id: string): Promise<User> {
 export async function updatePhone(
   phone: string,
 ): Promise<{ success: boolean; phone?: string; error?: string }> {
+  const headers = await getAuthHeaders();
   const res = await fetch(apiUrls.UPDATE_PHONE, {
     method: "PUT",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: headers as HeadersInit,
     body: JSON.stringify({ phone }),
   });
   const data = await res.json();
@@ -207,11 +207,13 @@ export async function updatePhone(
 export async function updateProfileImage(
   file: File,
 ): Promise<{ success: boolean; profileImage?: string }> {
+  const headers = await getAuthHeaders();
   const formData = new FormData();
   formData.append("profileImage", file);
   const res = await fetch(apiUrls.UPDATE_PROFILE, {
     method: "PUT",
     credentials: "include",
+    headers: { Authorization: (headers as any).Authorization ?? "" },
     body: formData,
   });
   const data = await res.json();

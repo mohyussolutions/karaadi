@@ -7,6 +7,7 @@ import {
   RecommendationItem,
 } from "@/app/utils/types/recommendation";
 import { RECOMMENDATION_ENDPOINTS } from "../constant/constant";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 export async function fetchRecommendations(
   userId?: string | null,
@@ -85,9 +86,10 @@ export async function trackItemView(
   userId?: string | null,
 ): Promise<boolean> {
   if (!userId) return false;
+  const headers = await getAuthHeaders();
   const res = await fetch(RECOMMENDATION_ENDPOINTS.TRACK_VIEW, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ externalId, category, userId }),
     cache: "no-store",

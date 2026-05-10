@@ -53,10 +53,11 @@ export async function markNotificationAsRead(id: string) {
 
 export async function deleteNotification(id: string) {
   if (!id) return;
+  const headers = await getAuthHeaders();
   const res = await fetch(API_ENDPOINTS.NOTIFICATIONS.DELETE_NOTIFICATION(id), {
     method: "DELETE",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
   return res.ok ? res.json() : null;
 }
@@ -66,20 +67,22 @@ export async function markAllNotificationsAsRead(
   category?: string,
 ) {
   const url = `${API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_NOTIFICATIONS_READ(userId)}${category ? `?category=${category}` : ""}`;
+  const headers = await getAuthHeaders();
   const res = await fetch(url, {
     method: "PATCH",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
   return res.ok ? res.json() : null;
 }
 
 export async function clearAllNotifications(userId: string, category?: string) {
   const url = `${API_ENDPOINTS.NOTIFICATIONS.CLEAR_ALL_NOTIFICATIONS(userId)}${category ? `?category=${category}` : ""}`;
+  const headers = await getAuthHeaders();
   const res = await fetch(url, {
     method: "DELETE",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
   return res.ok ? res.json() : null;
 }
