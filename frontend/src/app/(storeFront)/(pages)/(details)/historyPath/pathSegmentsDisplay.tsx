@@ -2,7 +2,6 @@
 
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
@@ -87,12 +86,13 @@ export default function PathSegmentsDisplay() {
                     {label}
                   </span>
                 ) : (
-                  <Link
-                    href={path}
-                    className="text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium capitalize cursor-pointer rounded px-2 py-1.5 sm:px-1 sm:py-0.5 hover:bg-blue-50 transition-colors text-base sm:text-sm min-h-[44px] sm:min-h-0 flex items-center touch-manipulation"
+                  <button
+                    type="button"
+                    onClick={() => router.push(path)}
+                    className="text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium capitalize cursor-pointer rounded px-2 py-1.5 sm:px-1 sm:py-0.5 hover:bg-blue-50 transition-colors text-base sm:text-sm min-h-[44px] sm:min-h-0 flex items-center touch-manipulation select-none"
                   >
                     {label}
-                  </Link>
+                  </button>
                 )}
               </li>
             </React.Fragment>
