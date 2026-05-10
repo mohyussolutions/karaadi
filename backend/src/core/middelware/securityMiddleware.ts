@@ -51,6 +51,7 @@ export const setupSecurity = (app: express.Application) => {
     message: "Too many requests, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
   });
 
   const speedLimiter = slowDown({
@@ -78,4 +79,5 @@ export const loginLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
