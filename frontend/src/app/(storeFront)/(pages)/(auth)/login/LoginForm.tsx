@@ -38,6 +38,7 @@ export default function LoginForm() {
         const maxAge = "max-age=3600; path=/; SameSite=Lax";
         document.cookie = `token=${loggedInUser.token}; ${maxAge}`;
         document.cookie = `user-role=${loggedInUser.isSupport ? "support" : loggedInUser.isManager ? "manager" : "admin"}; ${maxAge}`;
+        // --- production: set as same-origin to bypass cross-origin cookie block ---
         document.cookie = `idToken=${loggedInUser.token}; ${maxAge}`;
         document.cookie = `accessToken=${loggedInUser.accessToken}; ${maxAge}`;
 
