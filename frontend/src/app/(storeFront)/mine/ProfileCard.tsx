@@ -19,7 +19,7 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
   const [imageError, setImageError] = useState(false);
 
   const handleLogout = () => {
-    logout(accessToken || user?.token || "");
+    logout();
     window.location.href = "/";
   };
 
