@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
@@ -13,6 +14,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
+
+app.use(
+  cors({
+    origin: "https://main.d2vxkvyn6xd6kq.amplifyapp.com",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
 app.disable("x-powered-by");
 if (isProd) app.set("trust proxy", 1);
 
@@ -30,7 +41,6 @@ setupSecurity(app);
 app.get("/health", (req, res) =>
   res.status(200).json({ status: "OK", pid: process.pid }),
 );
-setupServerUtils(app);
 
 app.use(cookieParser());
 if (!isProd) app.use(morgan("dev"));
@@ -58,105 +68,8 @@ app.use(
 app.use(overloadMiddleware);
 
 const apiRouter = express.Router();
-apiRouter.use("/marketplace", marketplaceRoutes);
-apiRouter.use("/cars", carsRoutes);
-apiRouter.use("/boats", boatsRoutes);
-apiRouter.use("/motorcycles", motorcyclesRoutes);
-apiRouter.use("/real-estate", realEstateRouter);
-apiRouter.use("/traktor", traktorRoutes);
-apiRouter.use("/ads", myAdsRouter);
-apiRouter.use("/favorites", favoriteRoutes);
-apiRouter.use("/recommendations", recommendationRoutes);
-apiRouter.use("/advertisements", advertisementRouter);
-apiRouter.use("/notifications", notificationRoutes);
-apiRouter.use("/subscription", subscriptionRoute);
-apiRouter.use("/chats", chatRoutes);
-apiRouter.use("/messages", messageRoutes);
-apiRouter.use("/contactUs", contactUsRouter);
-apiRouter.use("/users", authRouters);
-apiRouter.use("/payments", initiateRouter);
-apiRouter.use("/payments", paymentRoutes);
-apiRouter.use("/Fee", FeeRoutes);
-apiRouter.use("/customers", customerSupportRoutes);
-apiRouter.use("/visitors", visitorRoute);
-apiRouter.use("/search", searchRouter);
-apiRouter.use("/filtering", filterRouter);
-apiRouter.use("/jobs", jobsRouter);
-apiRouter.use("/locations", locRoutes);
-apiRouter.use("/redis", redisStatsRouter);
-apiRouter.use("/history-search", historySearchRoutes);
-apiRouter.use("/reports", reportRoutes);
-apiRouter.use("/businesses", businessRoute);
-apiRouter.use("/business-plans", businessPlanRoute);
-apiRouter.use("/feed", feedRouter);
-apiRouter.use("/images", imageRouter);
 
 import prisma from "./core/utils/db.ts";
-apiRouter.get(
-  "/items/:id",
-  async (req: import("express").Request, res: import("express").Response) => {
-    const { id } = req.params;
-    const include = {
-      user: {
-        select: { id: true, username: true, profileImage: true, phone: true },
-      },
-    };
-    const [marketplace, car, realEstate, boat, motorcycle, farm] =
-      await Promise.all([
-        (prisma as any).marketplace
-          .findUnique({ where: { id }, include })
-          .catch(() => null),
-        (prisma as any).car
-          .findUnique({ where: { id }, include })
-          .catch(() => null),
-        (prisma as any).realEstate
-          .findUnique({ where: { id }, include })
-          .catch(() => null),
-        (prisma as any).boat
-          .findUnique({ where: { id }, include })
-          .catch(() => null),
-        (prisma as any).motorcycle
-          .findUnique({ where: { id }, include })
-          .catch(() => null),
-        (prisma as any).farmequipment
-          .findUnique({ where: { id }, include })
-          .catch(() => null),
-      ]);
-    let item: any = null;
-    let table = "";
-    if (car) {
-      item = car;
-      table = "cars";
-    } else if (marketplace) {
-      item = marketplace;
-      table = "marketplace";
-    } else if (realEstate) {
-      item = realEstate;
-      table = "real-estate";
-    } else if (boat) {
-      item = boat;
-      table = "boats";
-    } else if (motorcycle) {
-      item = motorcycle;
-      table = "motorcycles";
-    } else if (farm) {
-      item = farm;
-      table = "traktor";
-    }
-    if (!item) return res.status(404).json({ error: "Not found" });
-    const images = ((item.images ?? []) as string[])
-      .map((img, idx) =>
-        img && img.startsWith("data:")
-          ? `api/images/${table}/${id}/${idx}`
-          : img,
-      )
-      .filter((img) => img && img.trim() !== "");
-    res.json({ ...item, images });
-  },
-);
-apiRouter.use("/social", socialRouter);
-apiRouter.use("/hage", hageRouter);
-
 import { getDashboardSummary } from "./controllers/dashboardController.ts";
 import { setupServerUtils } from "./core/utils/serverUtils.ts";
 import { SESSION_TIME_MS } from "./config/session-time.ts";
@@ -197,27 +110,100 @@ import initiateRouter from "./routers/initiateRouter.ts";
 import authRouters from "./routers/authRoute.ts";
 import redisServer from "./services/redis/redisServer.ts";
 import cacheManager from "./services/redis/cacheManager.ts";
+
+setupServerUtils(app);
+
+apiRouter.use("/marketplace", marketplaceRoutes);
+apiRouter.use("/cars", carsRoutes);
+apiRouter.use("/boats", boatsRoutes);
+apiRouter.use("/motorcycles", motorcyclesRoutes);
+apiRouter.use("/real-estate", realEstateRouter);
+apiRouter.use("/traktor", traktorRoutes);
+apiRouter.use("/ads", myAdsRouter);
+apiRouter.use("/favorites", favoriteRoutes);
+apiRouter.use("/recommendations", recommendationRoutes);
+apiRouter.use("/advertisements", advertisementRouter);
+apiRouter.use("/notifications", notificationRoutes);
+apiRouter.use("/subscription", subscriptionRoute);
+apiRouter.use("/chats", chatRoutes);
+apiRouter.use("/messages", messageRoutes);
+apiRouter.use("/contactUs", contactUsRouter);
+apiRouter.use("/users", authRouters);
+apiRouter.use("/payments", initiateRouter);
+apiRouter.use("/payments", paymentRoutes);
+apiRouter.use("/Fee", FeeRoutes);
+apiRouter.use("/customers", customerSupportRoutes);
+apiRouter.use("/visitors", visitorRoute);
+apiRouter.use("/search", searchRouter);
+apiRouter.use("/filtering", filterRouter);
+apiRouter.use("/jobs", jobsRouter);
+apiRouter.use("/locations", locRoutes);
+apiRouter.use("/redis", redisStatsRouter);
+apiRouter.use("/history-search", historySearchRoutes);
+apiRouter.use("/reports", reportRoutes);
+apiRouter.use("/businesses", businessRoute);
+apiRouter.use("/business-plans", businessPlanRoute);
+apiRouter.use("/feed", feedRouter);
+apiRouter.use("/images", imageRouter);
+
+apiRouter.get("/items/:id", async (req, res) => {
+  const { id } = req.params;
+  const include = {
+    user: {
+      select: { id: true, username: true, profileImage: true, phone: true },
+    },
+  };
+  const [marketplace, car, realEstate, boat, motorcycle, farm] =
+    await Promise.all([
+      (prisma as any).marketplace
+        .findUnique({ where: { id }, include })
+        .catch(() => null),
+      (prisma as any).car
+        .findUnique({ where: { id }, include })
+        .catch(() => null),
+      (prisma as any).realEstate
+        .findUnique({ where: { id }, include })
+        .catch(() => null),
+      (prisma as any).boat
+        .findUnique({ where: { id }, include })
+        .catch(() => null),
+      (prisma as any).motorcycle
+        .findUnique({ where: { id }, include })
+        .catch(() => null),
+      (prisma as any).farmequipment
+        .findUnique({ where: { id }, include })
+        .catch(() => null),
+    ]);
+
+  let item = car || marketplace || realEstate || boat || motorcycle || farm;
+  let table = car
+    ? "cars"
+    : marketplace
+      ? "marketplace"
+      : realEstate
+        ? "real-estate"
+        : boat
+          ? "boats"
+          : motorcycle
+            ? "motorcycles"
+            : farm
+              ? "traktor"
+              : "";
+
+  if (!item) return res.status(404).json({ error: "Not found" });
+  const images = ((item.images ?? []) as string[])
+    .map((img, idx) =>
+      img && img.startsWith("data:") ? `api/images/${table}/${id}/${idx}` : img,
+    )
+    .filter((img) => img && img.trim() !== "");
+  res.json({ ...item, images });
+});
+
+apiRouter.use("/social", socialRouter);
+apiRouter.use("/hage", hageRouter);
 apiRouter.get("/dashboard/summary", getDashboardSummary);
 
 app.use("/api", apiRouter);
-
-app.use(
-  (
-    err: unknown,
-    _req: express.Request,
-    res: express.Response,
-    _next: express.NextFunction,
-  ) => {
-    try {
-      logger.error((err as any)?.stack || err);
-    } catch {}
-    const msg =
-      typeof (_req as any).t === "function"
-        ? (_req as any).t("api_errors.server_error")
-        : "Server error";
-    res.status(500).json({ message: msg });
-  },
-);
 
 app.use((req: express.Request, res: express.Response) => {
   const msg =
