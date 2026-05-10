@@ -357,6 +357,7 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
       category,
       subcategory,
       businessId,
+      name: _name,
       ...marketplaceData
     } = req.body;
     let expiryDate = null;

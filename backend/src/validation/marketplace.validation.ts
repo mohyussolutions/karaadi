@@ -14,7 +14,6 @@ export const createMarketplaceItemSchema = z.object({
   images: s.images,
   condition: s.optShortStr(),
   categoryTag: s.optShortStr(),
-  name: s.optShortStr(),
   businessId: z.preprocess(
     (v) => (v === "$undefined" || v === "" ? undefined : v),
     z.string().max(128).optional(),

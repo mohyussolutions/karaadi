@@ -97,7 +97,7 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
       const imagesBase64 = await toBase64();
       const fee = getFee(formData.category);
       const payload = {
-        userId: user._id || user.id, name: formData.title, title: formData.title,
+        userId: user._id || user.id, title: formData.title,
         description: formData.description, price: Number(formData.price), mainCategory,
         category: formData.category ? [formData.category] : [],
         subcategory: formData.subCategory ? [formData.subCategory] : [],
