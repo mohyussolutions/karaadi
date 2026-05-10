@@ -7,7 +7,11 @@ const SWR_CONFIG = {
   errorRetryCount: 2,
 };
 
-export function useListingData<T>(key: string, fetcher: () => Promise<T[]>) {
-  const { data, error, isLoading } = useSWR<T[]>(key, fetcher, SWR_CONFIG);
+export function useListingData<T>(key: string, fetcher: () => Promise<T[] | null>) {
+  const { data, error, isLoading } = useSWR<T[]>(
+    key,
+    () => fetcher().then((r) => r ?? []),
+    SWR_CONFIG,
+  );
   return { items: data ?? [], isLoading, isError: !!error };
 }
