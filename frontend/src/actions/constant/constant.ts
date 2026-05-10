@@ -51,7 +51,7 @@ const createUserEndpoint = (base: string, userId: string): string =>
 
 const API_PATHS = {
   USERS: "/api/users",
-  ADS: "/api/ads",
+  ADS: "/api/listings",
   CARS: "/api/cars",
   BOATS: "/api/boats",
   MOTORCYCLES: "/api/motorcycles",

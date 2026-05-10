@@ -109,6 +109,7 @@ apiRouter.use("/boats", boatsRoutes);
 apiRouter.use("/motorcycles", motorcyclesRoutes);
 apiRouter.use("/real-estate", realEstateRouter);
 apiRouter.use("/traktor", traktorRoutes);
+apiRouter.use("/listings", myAdsRouter);
 apiRouter.use("/ads", myAdsRouter);
 apiRouter.use("/favorites", favoriteRoutes);
 apiRouter.use("/recommendations", recommendationRoutes);
