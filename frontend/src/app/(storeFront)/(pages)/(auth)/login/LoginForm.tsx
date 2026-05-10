@@ -35,6 +35,10 @@ export default function LoginForm() {
       if (loggedInUser) {
         setUser(loggedInUser);
 
+        // The backend sets these cookies via Set-Cookie, but browsers block
+        // cross-origin cookies (karaadi.onrender.com → amplifyapp.com).
+        // Setting them here from JS makes them same-origin on the Amplify
+        // domain so the middleware can read them on every request.
         const maxAge = "max-age=3600; path=/; SameSite=Lax";
         document.cookie = `token=${loggedInUser.token}; ${maxAge}`;
         document.cookie = `idToken=${loggedInUser.token}; ${maxAge}`;
