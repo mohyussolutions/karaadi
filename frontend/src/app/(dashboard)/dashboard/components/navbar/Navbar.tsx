@@ -1,6 +1,6 @@
 "use client";
 
-import { logout, clearAuthCookies } from "@/actions/core/authAction";
+import { logout } from "@/actions/core/authAction";
 import DashboardSearch from "@/app/(dashboard)/dashboard/components/search/DashboardSearch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,11 +27,9 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
   useEffect(() => { router.prefetch("/login"); }, [router]);
 
   const handleLogged = useCallback(() => {
-    clearAuthCookies();
-    sessionStorage.removeItem("user");
     setUser(null);
-    router.push("/login");
     logout();
+    router.push("/login");
   }, [router, setUser]);
 
   const toggleDropdown = useCallback(() => setShowDropdown((p) => !p), []);
@@ -70,7 +68,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
             onClick={() => dispatch(toggleTheme())}
             aria-label="Toggle theme"
             suppressHydrationWarning
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-indigo-200 dark:border-yellow-500/50 bg-indigo-50 dark:bg-yellow-500/10 hover:bg-indigo-100 dark:hover:bg-yellow-500/20 transition-all"
+            className="flex items-center gap-1 p-2 rounded-xl border-2 border-indigo-200 dark:border-yellow-500/50 bg-indigo-50 dark:bg-yellow-500/10 hover:bg-indigo-100 dark:hover:bg-yellow-500/20 transition-all"
           >
             {mode === "dark" ? (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-yellow-400">
@@ -81,7 +79,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
                 <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
               </svg>
             )}
-            <span className="text-xs font-bold text-indigo-700 dark:text-yellow-400">
+            <span className="hidden sm:block text-xs font-bold text-indigo-700 dark:text-yellow-400">
               {mode === "dark" ? "Light" : "Dark"}
             </span>
           </button>
@@ -98,7 +96,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
             {showDropdown && (
               <>
                 <div className="fixed inset-0 z-40" onClick={closeDropdown} />
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50">
+                <div className="absolute right-0 mt-2 w-48 min-w-[160px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50">
                   <div className="p-2">
                     <div className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border-b dark:border-gray-700 truncate" suppressHydrationWarning>
                       {user?.username || user?.email || "Admin"}
