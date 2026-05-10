@@ -16,9 +16,7 @@ export default function SummaryPaymentPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { item, plan } = useAppSelector((state) => state.listingDraft);
-  const { user, loading: authLoading } = useAuth
-    ? useAuth()
-    : { user: null, loading: false };
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (authLoading) return;
@@ -109,5 +107,3 @@ export default function SummaryPaymentPage() {
     </div>
   );
 }
-
-//

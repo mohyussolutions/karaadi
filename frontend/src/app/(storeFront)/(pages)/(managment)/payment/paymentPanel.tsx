@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { FaCheckCircle, FaMobileAlt, FaLock } from "react-icons/fa";
 import { PAYMENT_METHODS, MAX_POLL_ATTEMPTS } from "./constants";
 import type { PaymentMethod, PaymentStatus } from "./constants";
-import { useIsValidPhone } from "@/app/(storeFront)/components/hooks/useIsValidPhone";
 import { useIsFree } from "@/app/(storeFront)/components/hooks/useIsFree";
 
 interface Props {
@@ -200,7 +199,7 @@ function PhoneInput({ phoneNumber, setPhoneNumber, phoneError, setPhoneError }: 
         onChange={(e) => {
           const val = e.target.value.replace(/\s/g, "");
           setPhoneNumber(val);
-          if (phoneError && useIsValidPhone(val)) setPhoneError("");
+          if (phoneError) setPhoneError("");
         }}
         className={`w-full px-3 py-2.5 border rounded-lg text-sm font-medium outline-none transition-all bg-white ${
           phoneError

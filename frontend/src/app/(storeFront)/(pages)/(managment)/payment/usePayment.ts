@@ -49,12 +49,12 @@ export function usePayment({
     }
   }, []);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     stopPolling();
     setPollAttempt(0);
     setPaymentStatus("idle");
     setProcessing(false);
-  };
+  }, [stopPolling]);
 
   const handlePayment = async () => {
     if (total === 0) {
