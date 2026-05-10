@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
 app.disable("x-powered-by");
+if (isProd) app.set("trust proxy", 1);
 
 app.use(
   "/assets",
@@ -37,7 +38,9 @@ app.use(compression());
 
 app.use(
   session({
-    store: new RedisStore({ client: redisServer.getClient() }),
+    store: cacheManager.isReady()
+      ? new RedisStore({ client: redisServer.getClient() })
+      : undefined,
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
@@ -193,6 +196,7 @@ import FeeRoutes from "./routers/FeeRoutes.ts";
 import initiateRouter from "./routers/initiateRouter.ts";
 import authRouters from "./routers/authRoute.ts";
 import redisServer from "./services/redis/redisServer.ts";
+import cacheManager from "./services/redis/cacheManager.ts";
 apiRouter.get("/dashboard/summary", getDashboardSummary);
 
 app.use("/api", apiRouter);
