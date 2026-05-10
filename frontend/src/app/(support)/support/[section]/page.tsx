@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CONTACT_ENDPOINTS, REPORT_ENDPOINTS } from "@/actions/constant/constant";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 type Ticket = {
   id: string | number;
@@ -38,12 +39,13 @@ const STATUS_COLOR: Record<string, string> = {
 
 async function fetchSectionData(section: string): Promise<SupportItem[]> {
   try {
+    const h = await getAuthHeaders();
     if (section === "messages") {
-      const res = await fetch(CONTACT_ENDPOINTS.TICKETS, { cache: "no-store" });
+      const res = await fetch(CONTACT_ENDPOINTS.TICKETS, { cache: "no-store", headers: h as HeadersInit });
       return res.ok ? await res.json() : [];
     }
     if (section === "reports") {
-      const res = await fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store" });
+      const res = await fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store", headers: h as HeadersInit });
       if (!res.ok) return [];
       const data = await res.json();
       return Array.isArray(data) ? data : data?.reports ?? [];

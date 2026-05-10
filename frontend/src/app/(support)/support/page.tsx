@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 import { CONTACT_ENDPOINTS, REPORT_ENDPOINTS } from "@/actions/constant/constant";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 type SupportLink = {
   label?: string;
@@ -68,10 +69,11 @@ export default function StreamlinedDashboard() {
 
   const fetchData = useCallback(async () => {
     try {
+      const h = await getAuthHeaders();
       const [ticketsRes, statsRes, reportsRes] = await Promise.all([
-        fetch(CONTACT_ENDPOINTS.TICKETS, { cache: "no-store" }).catch(() => null),
-        fetch(CONTACT_ENDPOINTS.STATS, { cache: "no-store" }).catch(() => null),
-        fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store" }).catch(() => null),
+        fetch(CONTACT_ENDPOINTS.TICKETS, { cache: "no-store", headers: h as HeadersInit }).catch(() => null),
+        fetch(CONTACT_ENDPOINTS.STATS, { cache: "no-store", headers: h as HeadersInit }).catch(() => null),
+        fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store", headers: h as HeadersInit }).catch(() => null),
       ]);
 
       const tickets = ticketsRes?.ok ? await ticketsRes.json() : [];

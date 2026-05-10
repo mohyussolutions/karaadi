@@ -9,6 +9,16 @@ import ChatInputArea from "./InputTextarea";
 import { Trash2 } from "lucide-react";
 import { API_ENDPOINTS, SOCKET_EVENTS } from "@/actions/constant/sockets";
 import { ChatSystemProps } from "@/app/utils/types/chat";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+
+async function authFetch(url: string, options: RequestInit = {}) {
+  const h = await getAuthHeaders();
+  return fetch(url, {
+    credentials: "include",
+    ...options,
+    headers: { ...(h as any), ...(options.headers as any) },
+  });
+}
 
 export default function ChatSystem({
   currentUserId,
@@ -60,9 +70,8 @@ export default function ChatSystem({
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const response = await fetch(
+        const response = await authFetch(
           API_ENDPOINTS.CHATS.USER_CHATS(currentUserId),
-          { credentials: "include" },
         );
         if (response.ok) {
           const existingChats = await response.json();
@@ -99,14 +108,13 @@ export default function ChatSystem({
               chatToSelect = existingChat;
             } else {
               try {
-                const findResponse = await fetch(
+                const findResponse = await authFetch(
                   API_ENDPOINTS.CHATS.FIND_CONVERSATION(
                     currentUserId,
                     sellerId,
                     itemId,
                     "Marketplace",
                   ),
-                  { credentials: "include" },
                 );
                 if (findResponse.ok) {
                   const foundChat = await findResponse.json();
@@ -178,9 +186,8 @@ export default function ChatSystem({
         socket.emit(SOCKET_EVENTS.EMIT.LEAVE_CHAT, selectedChat.id);
       }
 
-      const response = await fetch(
+      const response = await authFetch(
         API_ENDPOINTS.CHATS.CHAT_MESSAGES(chatId, currentUserId),
-        { credentials: "include" },
       );
 
       if (response.ok) {
@@ -202,9 +209,8 @@ export default function ChatSystem({
 
   const createNewChat = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.CHATS.CREATE, {
+      const response = await authFetch(API_ENDPOINTS.CHATS.CREATE, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           senderId: currentUserId,
@@ -303,9 +309,8 @@ export default function ChatSystem({
     });
 
     try {
-      const response = await fetch(API_ENDPOINTS.MESSAGES.SEND, {
+      const response = await authFetch(API_ENDPOINTS.MESSAGES.SEND, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chatId: String(targetChatId),
@@ -382,9 +387,9 @@ export default function ChatSystem({
       );
     if (!confirmed) return;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         API_ENDPOINTS.CHATS.DELETE(chatId, currentUserId),
-        { method: "DELETE", credentials: "include" },
+        { method: "DELETE" },
       );
       if (response.ok) {
         setChats((prev) => prev.filter((chat) => chat.id !== chatId));
@@ -419,11 +424,10 @@ export default function ChatSystem({
 
   const handleDeleteMessage = async (messageId: number | string) => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         API_ENDPOINTS.MESSAGES.DELETE_MESSAGE(Number(messageId)),
         {
           method: "DELETE",
-          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: currentUserId }),
         },
@@ -441,11 +445,10 @@ export default function ChatSystem({
     newContent: string,
   ) => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         API_ENDPOINTS.MESSAGES.UPDATE_MESSAGE(Number(messageId)),
         {
           method: "PUT",
-          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: newContent, userId: currentUserId }),
         },

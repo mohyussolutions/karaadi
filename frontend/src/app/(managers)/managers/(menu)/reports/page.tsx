@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { REPORT_ENDPOINTS } from "@/actions/constant/constant";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 type Report = {
   id: string | number;
@@ -36,9 +37,10 @@ export default function ReportsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const h = await getAuthHeaders();
       const [reportsRes, statsRes] = await Promise.all([
-        fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store" }),
-        fetch(REPORT_ENDPOINTS.STATS, { cache: "no-store" }).catch(() => null),
+        fetch(REPORT_ENDPOINTS.GET_ALL, { cache: "no-store", headers: h as HeadersInit }),
+        fetch(REPORT_ENDPOINTS.STATS, { cache: "no-store", headers: h as HeadersInit }).catch(() => null),
       ]);
 
       if (reportsRes.ok) {
