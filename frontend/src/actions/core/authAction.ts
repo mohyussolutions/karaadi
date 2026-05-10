@@ -61,6 +61,7 @@ export async function login(email: string, password: string): Promise<User> {
   }
   const data: LoginResponse = await response.json();
   const u = (data.user as any) || data;
+  if (data.token && !u.token) u.token = data.token;
   return normalizeUser(u) as unknown as User;
 }
 
