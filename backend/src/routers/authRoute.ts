@@ -60,7 +60,7 @@ authRouters.post(
     const { email, password } = req.body;
     try {
       const { token, refreshToken, userData } = await signIn(email, password, req, res);
-      await setAuthCookies(res, { idToken: token, refreshToken }, undefined, userData.id);
+      await setAuthCookies(res, { idToken: token, refreshToken, accessToken: userData.accessToken }, undefined, userData.id);
       res.json({ token, user: userData });
     } catch (err: any) {
       console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);

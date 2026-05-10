@@ -35,8 +35,11 @@ export default function LoginForm() {
       if (loggedInUser) {
         setUser(loggedInUser);
 
-        document.cookie = `token=${loggedInUser.token}; path=/; max-age=3600; SameSite=Lax`;
-        document.cookie = `user-role=${loggedInUser.isSupport ? "support" : loggedInUser.isManager ? "manager" : "admin"}; path=/; max-age=3600; SameSite=Lax`;
+        const maxAge = "max-age=3600; path=/; SameSite=Lax";
+        document.cookie = `token=${loggedInUser.token}; ${maxAge}`;
+        document.cookie = `idToken=${loggedInUser.token}; ${maxAge}`;
+        document.cookie = `accessToken=${loggedInUser.accessToken}; ${maxAge}`;
+        document.cookie = `user-role=${loggedInUser.isSupport ? "support" : loggedInUser.isManager ? "manager" : "admin"}; ${maxAge}`;
 
         if (loggedInUser.isAdmin) {
           router.push("/dashboard");
