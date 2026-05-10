@@ -15,8 +15,14 @@ export const createMarketplaceItemSchema = z.object({
   condition: s.optShortStr(),
   categoryTag: s.optShortStr(),
   name: s.optShortStr(),
-  businessId: z.string().max(128).optional(),
-  website: z.string().url().max(512).optional().or(z.literal("")),
+  businessId: z.preprocess(
+    (v) => (v === "$undefined" || v === "" ? undefined : v),
+    z.string().max(128).optional(),
+  ),
+  website: z.preprocess(
+    (v) => (v === "$undefined" || v === "" ? undefined : v),
+    z.string().url().max(512).optional(),
+  ),
   isPaid: z.boolean().optional(),
   planId: z.string().max(128).optional(),
   planAmount: z.number().min(0).max(s.LIMITS.PRICE_MAX).optional(),

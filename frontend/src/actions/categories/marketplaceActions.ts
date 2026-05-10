@@ -85,12 +85,24 @@ export async function updateAdminMarketplaceItemPaidStatus(
   return res.ok;
 }
 
+function stripUndefined(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(stripUndefined);
+  if (obj && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([, v]) => v !== "$undefined" && v !== undefined)
+        .map(([k, v]) => [k, stripUndefined(v)]),
+    );
+  }
+  return obj === "$undefined" ? undefined : obj;
+}
+
 export async function createMarketplaceItem(data: any, token?: string) {
   const headers = await getAuthHeaders(token);
   const res = await fetch(apiUrlsForCategoryTotals.Marketplace, {
     method: "POST",
     headers: headers as HeadersInit,
-    body: JSON.stringify(data),
+    body: JSON.stringify(stripUndefined(data)),
   });
 
   const result = await res.json();
