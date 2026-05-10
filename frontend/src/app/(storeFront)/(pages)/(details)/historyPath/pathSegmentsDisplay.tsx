@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { ChevronRight, Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 
@@ -50,32 +51,53 @@ export default function PathSegmentsDisplay() {
   const segments = pathname?.slice(1).split("/") || [];
   if (segments.length === 0) return null;
 
+  const lastIndex = segments.length - 1;
+
   return (
-    <div className="ml-2 mt-4">
-      <div className="flex flex-wrap gap-1 items-center text-sm font-mono text-blue-600 mb-6">
-        <Link href="/" className="hover:underline capitalize">
-          {t("nav.home", { defaultValue: "Home" })}
-        </Link>
+    <nav aria-label="Breadcrumb" className="ml-2 mt-4 mb-6">
+      <ol className="flex flex-wrap items-center gap-1 text-sm">
+        {/* Home */}
+        <li>
+          <Link
+            href="/"
+            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium cursor-pointer rounded px-1 py-0.5 hover:bg-blue-50 transition-colors"
+          >
+            <Home className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>{t("nav.home", { defaultValue: "Home" })}</span>
+          </Link>
+        </li>
+
         {segments.map((segment, index) => {
           const path = "/" + segments.slice(0, index + 1).join("/");
           const key = SEGMENT_LABEL_KEYS[segment];
           const label = key
             ? t(key, { defaultValue: humanize(segment) })
             : humanize(decodeURIComponent(segment));
+          const isLast = index === lastIndex;
 
           return (
             <React.Fragment key={index}>
-              <span>/</span>
-              <Link
-                href={path}
-                className="hover:underline capitalize transition-colors duration-200"
-              >
-                {label}
-              </Link>
+              <li aria-hidden="true">
+                <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              </li>
+              <li>
+                {isLast ? (
+                  <span className="text-gray-500 font-medium px-1 py-0.5 capitalize" aria-current="page">
+                    {label}
+                  </span>
+                ) : (
+                  <Link
+                    href={path}
+                    className="text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium capitalize cursor-pointer rounded px-1 py-0.5 hover:bg-blue-50 transition-colors"
+                  >
+                    {label}
+                  </Link>
+                )}
+              </li>
             </React.Fragment>
           );
         })}
-      </div>
-    </div>
+      </ol>
+    </nav>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "next/navigation";
 import { getFarmequipment } from "@/actions/categories/FarmequipmentAction";
@@ -18,16 +18,15 @@ import { FarmEquipment } from "@/app/utils/types/farmequipment.types";
 import { farmEquipmentSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
 import Pagination from "@/app/(storeFront)/components/shared/Pagination";
+import { useListingData } from "@/app/(storeFront)/components/hooks/useListingData";
 
 const PAGE_SIZE = 12;
 
 function TractorLinks() {
   const { t } = useTranslation();
   const { renderError } = useError();
-  const [items, setItems] = useState<FarmEquipment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-  
+  const { items, isLoading, isError } = useListingData<FarmEquipment>("farmequipment", getFarmequipment);
+
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const filteredItems = useListingFeed(items, query, "Farm Equipment");
@@ -35,24 +34,6 @@ function TractorLinks() {
   const { getRoute } = useGetRoute();
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  const loadData = useCallback(async () => {
-    setIsError(false);
-    setIsLoading(true);
-    try {
-      const data = await getFarmequipment();
-      setItems(data || []);
-    } catch {
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    
-    loadData();
-  }, [loadData]);
 
   const displayItems = shuffledItems;
   const visibleItems = displayItems.slice(0, visibleCount);

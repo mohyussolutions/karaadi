@@ -208,7 +208,7 @@ export default function ChatInbox({
   const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   return (
-    <div className="flex h-full bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+    <div className="flex h-full bg-white overflow-hidden sm:rounded-xl sm:border sm:border-gray-200 sm:shadow-sm">
       {/* Sidebar */}
       <div
         className={`flex flex-col border-r border-gray-200 bg-white ${

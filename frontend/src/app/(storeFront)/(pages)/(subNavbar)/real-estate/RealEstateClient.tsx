@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "next/navigation";
 import { getRealEstateListings } from "@/actions/categories/realEstateActions";
@@ -18,16 +18,15 @@ import { RealEstate } from "@/app/utils/types/realestate.types";
 import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/RandomizedItemShowcase";
 import Pagination from "@/app/(storeFront)/components/shared/Pagination";
+import { useListingData } from "@/app/(storeFront)/components/hooks/useListingData";
 
 const PAGE_SIZE = 12;
 
 function RealEstateLinks() {
   const { t } = useTranslation();
   const { renderError } = useError();
-  const [items, setItems] = useState<RealEstate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-  
+  const { items, isLoading, isError } = useListingData<RealEstate>("real-estate", getRealEstateListings);
+
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const filteredItems = useListingFeed(items, query, "Real Estate");
@@ -35,24 +34,6 @@ function RealEstateLinks() {
   const { getRoute } = useGetRoute();
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  const loadData = useCallback(async () => {
-    setIsError(false);
-    setIsLoading(true);
-    try {
-      const data = await getRealEstateListings();
-      setItems(data || []);
-    } catch {
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    
-    loadData();
-  }, [loadData]);
 
   const displayItems = shuffledItems;
   const visibleItems = displayItems.slice(0, visibleCount);

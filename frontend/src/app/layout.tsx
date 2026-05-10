@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "./ui/Providers/Providers";
@@ -15,6 +15,12 @@ export const metadata: Metadata = {
   title: "Karaadi",
   description: "iska gad ama soo gado alaabo",
   icons: { icon: "/logo.jpg" },
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

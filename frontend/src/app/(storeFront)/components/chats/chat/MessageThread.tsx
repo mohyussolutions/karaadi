@@ -201,7 +201,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {onBack && (
@@ -307,7 +307,10 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-gray-200 px-4 py-3 flex-shrink-0">
+      <div
+        className="bg-white border-t border-gray-200 px-4 pt-3 flex-shrink-0"
+        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+      >
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -323,17 +326,17 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
           <button
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className={`p-2.5 rounded-full flex-shrink-0 transition-all ${
+            className={`p-3 rounded-full flex-shrink-0 transition-all ${
               !input.trim() || sending
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : "bg-[#0063fb] text-white hover:bg-blue-700 active:scale-90 shadow-sm"
             }`}
             aria-label="Send"
           >
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
-        <p className="text-[10px] text-gray-400 mt-1.5 text-center">Enter for å sende · Shift+Enter for ny linje</p>
+        <p className="text-[10px] text-gray-400 mt-1.5 text-center hidden sm:block">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   )

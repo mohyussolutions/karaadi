@@ -15,7 +15,10 @@ const nextConfig = {
       "react-i18next",
       "i18next",
       "date-fns",
+      "@vis.gl/react-google-maps",
+      "swr",
     ],
+    scrollRestoration: true,
   },
 
   async headers() {
@@ -42,6 +45,12 @@ const nextConfig = {
         headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
       },
       {
+        source: "/(marketplace|cars|boats|real-estate|motorcycles|farmequipment)(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=600" },
+        ],
+      },
+      {
         source: "/_next/static/(.*)",
         headers: [
           {
@@ -62,7 +71,9 @@ const nextConfig = {
 
   images: {
     formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 3600,
+    minimumCacheTTL: 86400,
+    deviceSizes: [375, 640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
     remotePatterns: [
       { protocol: "https", hostname: "**.istockphoto.com" },
       { protocol: "https", hostname: "images.pexels.com" },

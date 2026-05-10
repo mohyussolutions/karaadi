@@ -407,13 +407,23 @@ export function VehicleDetailsContent({
             </button>
 
             {itemUser?.phone && (
-              <button
-                onClick={() => setShowPhone((p) => !p)}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.99]"
-              >
-                <Phone size={15} />
-                {showPhone ? itemUser.phone : "Show phone number"}
-              </button>
+              showPhone ? (
+                <a
+                  href={`tel:${itemUser.phone}`}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-all active:scale-[0.99]"
+                >
+                  <Phone size={15} />
+                  {itemUser.phone}
+                </a>
+              ) : (
+                <button
+                  onClick={() => setShowPhone(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.99]"
+                >
+                  <Phone size={15} />
+                  Show phone number
+                </button>
+              )
             )}
           </div>
 
@@ -489,15 +499,23 @@ export function VehicleDetailsContent({
           <p className="text-xs text-gray-500 truncate">{vehicle.title}</p>
         </div>
         {itemUser?.phone && (
-          <button
-            onClick={() => setShowPhone((p) => !p)}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
-          >
-            <Phone size={15} />
-            <span className="text-xs">
-              {showPhone ? itemUser.phone : "Phone"}
-            </span>
-          </button>
+          showPhone ? (
+            <a
+              href={`tel:${itemUser.phone}`}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-green-200 text-green-700 bg-green-50 font-bold text-sm hover:bg-green-100 transition-all active:scale-[0.97] flex-shrink-0"
+            >
+              <Phone size={15} />
+              <span className="text-xs">{itemUser.phone}</span>
+            </a>
+          ) : (
+            <button
+              onClick={() => setShowPhone(true)}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
+            >
+              <Phone size={15} />
+              <span className="text-xs">Phone</span>
+            </button>
+          )
         )}
         <button
           onClick={handleSendMessage}

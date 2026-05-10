@@ -2,6 +2,7 @@
 
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
+import useSWR from "swr";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { AiOutlineHeart, AiOutlineZoomIn } from "react-icons/ai";
 import Image from "next/image";
@@ -37,8 +38,16 @@ export default function ProductDetails() {
   const params = useParams();
   const id = params?.id as string;
 
-  const [item, setItem] = useState<ItemData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: rawItem, isLoading: loading } = useSWR<ItemData>(
+    id ? `${API}/api/items/${id}` : null,
+    (url: string) => fetch(url).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
+    { revalidateOnFocus: false, dedupingInterval: 30_000 },
+  );
+  const item = useMemo(
+    () => (rawItem ? { ...rawItem, id: (rawItem as any)._id || rawItem.id } : null),
+    [rawItem],
+  );
+
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -53,35 +62,12 @@ export default function ProductDetails() {
   }, [router]);
 
   useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-    let mounted = true;
-
-    (async () => {
-      try {
-        const res = await fetch(`${API}/api/items/${id}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("not found");
-        const data = await res.json();
-        if (mounted) {
-          const resolved = { ...data, id: data._id || data.id };
-          setItem(resolved);
-          const cat = Array.isArray(resolved.category)
-            ? resolved.category[0]
-            : (resolved.category ?? "marketplace");
-          trackItemView(resolved.id!, cat, user?.id ?? null);
-        }
-      } catch {}
-      if (mounted) setLoading(false);
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+    if (!item?.id) return;
+    const cat = Array.isArray(item.category)
+      ? item.category[0]
+      : (item.category ?? "marketplace");
+    trackItemView(item.id, cat, user?.id ?? null);
+  }, [item?.id]);
 
   const images = useMemo(() => {
     const raw = item?.images;
@@ -379,13 +365,23 @@ export default function ProductDetails() {
               </button>
 
               {itemUser?.phone && (
-                <button
-                  onClick={() => setShowPhone((p) => !p)}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.99]"
-                >
-                  <Phone size={15} />
-                  {showPhone ? itemUser.phone : "Show phone number"}
-                </button>
+                showPhone ? (
+                  <a
+                    href={`tel:${itemUser.phone}`}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-all active:scale-[0.99]"
+                  >
+                    <Phone size={15} />
+                    {itemUser.phone}
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => setShowPhone(true)}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.99]"
+                  >
+                    <Phone size={15} />
+                    Show phone number
+                  </button>
+                )
               )}
             </div>
           )}
@@ -440,15 +436,23 @@ export default function ProductDetails() {
             <p className="text-xs text-gray-500 truncate">{item.title}</p>
           </div>
           {itemUser?.phone && (
-            <button
-              onClick={() => setShowPhone((p) => !p)}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
-            >
-              <Phone size={15} />
-              <span className="text-xs">
-                {showPhone ? itemUser.phone : "Phone"}
-              </span>
-            </button>
+            showPhone ? (
+              <a
+                href={`tel:${itemUser.phone}`}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-green-200 text-green-700 bg-green-50 font-bold text-sm hover:bg-green-100 transition-all active:scale-[0.97] flex-shrink-0"
+              >
+                <Phone size={15} />
+                <span className="text-xs">{itemUser.phone}</span>
+              </a>
+            ) : (
+              <button
+                onClick={() => setShowPhone(true)}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.97] flex-shrink-0"
+              >
+                <Phone size={15} />
+                <span className="text-xs">Phone</span>
+              </button>
+            )
           )}
           <button
             onClick={handleSendMessage}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "next/navigation";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
@@ -18,15 +18,26 @@ import { useRandomizedItems } from "@/app/(storeFront)/components/hooks/Randomiz
 import { useGetRoute } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import Pagination from "@/app/(storeFront)/components/shared/Pagination";
 import { marketplaceSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
+import { useListingData } from "@/app/(storeFront)/components/hooks/useListingData";
 
 const PAGE_SIZE = 12;
+
+const marketplaceFetcher = async (): Promise<any[]> => {
+  const res = await fetch(`${BASE_API_URL}/api/marketplace`);
+  if (!res.ok) throw new Error("fetch failed");
+  const result = await res.json();
+  const list = Array.isArray(result) ? result : (result?.data ?? []);
+  return list.map((it: any) => ({
+    ...it,
+    _id: String(it._id ?? it.id ?? ""),
+    id: String(it._id ?? it.id ?? ""),
+  }));
+};
 
 export default function MarketplaceClient() {
   const { t } = useTranslation();
 
-  const [items, setItems] = useState<MarketplaceItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
+  const { items, isLoading, isError } = useListingData<MarketplaceItem>("marketplace", marketplaceFetcher);
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const filteredItems = useListingFeed(items, query, "marketplace");
@@ -34,32 +45,6 @@ export default function MarketplaceClient() {
   const { getRoute } = useGetRoute();
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  const loadData = useCallback(async () => {
-    setIsError(false);
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${BASE_API_URL}/api/marketplace`);
-      if (!res.ok) throw new Error();
-      const result = await res.json();
-      const list = Array.isArray(result) ? result : (result?.data ?? []);
-      setItems(
-        list.map((it: any) => ({
-          ...it,
-          _id: String(it._id ?? it.id ?? ""),
-          id: String(it._id ?? it.id ?? ""),
-        })),
-      );
-    } catch {
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   const displayItems = shuffledItems;
   const visibleItems = displayItems.slice(0, visibleCount);
