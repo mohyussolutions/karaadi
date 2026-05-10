@@ -1,5 +1,5 @@
 import { GridConfiguration } from "@/app/utils/types/GridConfiguration";
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://karaadi.onrender.com";
 
 export const AUTH_TOKEN_KEY = "auth_token";
 export const PLACEHOLDER_IMAGE =
@@ -235,7 +235,7 @@ export const GEO_ENDPOINTS = {
   GET_ALL_REGIONS: createEndpoint(`${API_PATHS.LOCATIONS}/regions`),
   GET_ALL_CITIES: createEndpoint(`${API_PATHS.LOCATIONS}/cities`),
   GET_GEO_STATS: createEndpoint(`${API_PATHS.LOCATIONS}/stats`),
-  SYNC_DATA: createEndpoint("/sync"),
+  SYNC_DATA: createEndpoint(`${API_PATHS.LOCATIONS}/sync`),
   GET_REGION_BY_ID: (id: string) =>
     createIdEndpoint(`${API_PATHS.LOCATIONS}/regions`, id),
   ADD_REGION: createEndpoint(`${API_PATHS.LOCATIONS}/regions`),

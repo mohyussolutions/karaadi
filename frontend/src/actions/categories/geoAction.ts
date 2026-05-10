@@ -15,10 +15,9 @@ export const getTotalOfRegions = async (): Promise<number> => {
 };
 
 export const getAllRegions = async (): Promise<Region[]> => {
-  const headers = await getAuthHeaders();
   const [regRes, cityRes] = await Promise.all([
-    fetch(geoEndpoints.GET_ALL_REGIONS, { headers: headers as HeadersInit, next: { revalidate: 300 } }),
-    fetch(geoEndpoints.GET_ALL_CITIES, { headers: headers as HeadersInit, next: { revalidate: 300 } }),
+    fetch(geoEndpoints.GET_ALL_REGIONS, { next: { revalidate: 300 } }),
+    fetch(geoEndpoints.GET_ALL_CITIES, { next: { revalidate: 300 } }),
   ]);
   if (!regRes.ok) return [];
   const regions: Region[] = await regRes.json();
@@ -67,14 +66,10 @@ export const deleteRegion = async (id: string) => {
 };
 
 export const getAllCities = async (regionId?: string) => {
-  const headers = await getAuthHeaders();
   const url = regionId
     ? `${geoEndpoints.GET_ALL_CITIES}?regionId=${regionId}`
     : geoEndpoints.GET_ALL_CITIES;
-  const res = await fetch(url, {
-    headers: headers as HeadersInit,
-    next: { revalidate: 300 },
-  });
+  const res = await fetch(url, { next: { revalidate: 300 } });
   return res.ok ? await res.json() : [];
 };
 
