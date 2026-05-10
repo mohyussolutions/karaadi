@@ -29,10 +29,10 @@ function MessagesContent() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 overflow-hidden flex justify-center z-10 sm:p-4 lg:p-6"
+      className="fixed inset-x-0 bottom-0 flex flex-col z-10 sm:p-4 lg:p-6"
       style={{ top: '3rem' }}
     >
-      <div className="w-full max-w-[64.5rem] h-full flex flex-col min-h-0">
+      <div className="flex-1 min-h-0 mx-auto w-full max-w-[64.5rem] flex flex-col">
         <ChatInbox
           initialChatId={chatId ? Number(chatId) : undefined}
           sellerId={sellerId || undefined}

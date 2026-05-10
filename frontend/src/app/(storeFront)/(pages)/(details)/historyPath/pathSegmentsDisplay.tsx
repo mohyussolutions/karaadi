@@ -58,14 +58,14 @@ export default function PathSegmentsDisplay() {
     <nav aria-label="Breadcrumb" className="ml-2 mt-4 mb-6">
       <ol className="flex flex-wrap items-center gap-1 text-sm sm:text-sm">
         <li>
-          <Link
-            href="/"
-            onClick={(e) => { e.preventDefault(); router.push("/"); }}
-            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium cursor-pointer rounded px-2 py-1.5 sm:px-1 sm:py-0.5 hover:bg-blue-50 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium cursor-pointer rounded px-2 py-1.5 sm:px-1 sm:py-0.5 hover:bg-blue-50 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation select-none"
           >
             <Home className="w-4 h-4 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
             <span className="text-base sm:text-sm">{t("nav.home", { defaultValue: "Home" })}</span>
-          </Link>
+          </button>
         </li>
 
         {segments.map((segment, index) => {
