@@ -55,15 +55,14 @@ export default function PathSegmentsDisplay() {
 
   return (
     <nav aria-label="Breadcrumb" className="ml-2 mt-4 mb-6">
-      <ol className="flex flex-wrap items-center gap-1 text-sm">
-        {/* Home */}
+      <ol className="flex flex-wrap items-center gap-1 text-sm sm:text-sm">
         <li>
           <Link
             href="/"
-            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium cursor-pointer rounded px-1 py-0.5 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium cursor-pointer rounded px-2 py-1.5 sm:px-1 sm:py-0.5 hover:bg-blue-50 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation"
           >
-            <Home className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>{t("nav.home", { defaultValue: "Home" })}</span>
+            <Home className="w-4 h-4 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+            <span className="text-base sm:text-sm">{t("nav.home", { defaultValue: "Home" })}</span>
           </Link>
         </li>
 
@@ -78,17 +77,17 @@ export default function PathSegmentsDisplay() {
           return (
             <React.Fragment key={index}>
               <li aria-hidden="true">
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gray-400 flex-shrink-0" />
               </li>
               <li>
                 {isLast ? (
-                  <span className="text-gray-500 font-medium px-1 py-0.5 capitalize" aria-current="page">
+                  <span className="text-gray-500 font-medium px-2 py-1.5 sm:px-1 sm:py-0.5 capitalize text-base sm:text-sm" aria-current="page">
                     {label}
                   </span>
                 ) : (
                   <Link
                     href={path}
-                    className="text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium capitalize cursor-pointer rounded px-1 py-0.5 hover:bg-blue-50 transition-colors"
+                    className="text-blue-600 hover:text-blue-800 active:text-blue-900 font-medium capitalize cursor-pointer rounded px-2 py-1.5 sm:px-1 sm:py-0.5 hover:bg-blue-50 transition-colors text-base sm:text-sm min-h-[44px] sm:min-h-0 flex items-center touch-manipulation"
                   >
                     {label}
                   </Link>
