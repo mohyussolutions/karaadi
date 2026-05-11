@@ -216,16 +216,16 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
-      <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-white border-b border-gray-100 flex-shrink-0">
         {otherAvatar ? (
           <img
             src={otherAvatar}
             alt={otherName}
-            className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
             onError={(e) => { e.currentTarget.style.display = "none" }}
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {(otherName || "?").charAt(0).toUpperCase()}
           </div>
         )}
@@ -233,7 +233,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-sm leading-tight truncate">{otherName}</p>
           {chatroom.itemTitle && (
-            <p className="text-[11px] text-gray-400 truncate leading-tight">
+            <p className="text-[11px] text-gray-400 truncate leading-tight mt-0.5">
               {chatroom.itemTitle}
               {chatroom.itemPrice ? ` · ${chatroom.itemPrice.toLocaleString("en-US")} kr` : ""}
             </p>
@@ -292,18 +292,18 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         <div aria-hidden="true" />
       </div>
 
-      <div className="bg-white border-t border-gray-100 px-2 py-2 flex-shrink-0">
-        <div className="flex items-end gap-1.5">
+      <div className="bg-white border-t border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 flex-shrink-0">
+        <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Message…"
+            placeholder="Write a message…"
             disabled={sending}
             rows={1}
-            className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all touch-manipulation"
-            style={{ fontSize: "16px", height: "44px", maxHeight: "110px", overflowY: "auto", lineHeight: "1.4" }}
+            className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all touch-manipulation text-sm"
+            style={{ fontSize: "16px", height: "44px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4" }}
           />
           <button
             type="button"
@@ -312,7 +312,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center transition-all touch-manipulation select-none ${
               !input.trim() || sending
                 ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                : "bg-[#0063fb] text-white active:scale-90 shadow-md"
+                : "bg-[#0063fb] text-white active:scale-90 shadow-sm"
             }`}
             aria-label="Send"
           >

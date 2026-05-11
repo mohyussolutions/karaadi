@@ -170,18 +170,18 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         }}
         className="lg:w-[300px] xl:w-[340px] lg:bg-white"
       >
-        <div className="hidden lg:flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0">
-          <h1 className="text-base font-bold text-gray-900 flex-1">Messages</h1>
-          {totalUnread > 0 && (
-            <span className="bg-blue-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-              {totalUnread}
-            </span>
-          )}
-        </div>
-        <div className="hidden lg:block px-4 pb-3 border-b border-gray-100 flex-shrink-0">
+        <div className="hidden lg:flex flex-col px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0 gap-3">
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-gray-900 flex-1">Messages</h1>
+            {totalUnread > 0 && (
+              <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                {totalUnread}
+              </span>
+            )}
+          </div>
           <input
             type="search"
-            placeholder="Search…"
+            placeholder="Search conversations…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 placeholder:text-gray-400 touch-manipulation text-sm"
@@ -296,11 +296,14 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-4">
-            <div className="w-16 h-16 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3 shadow-sm">
-              <MessageSquare className="w-8 h-8 text-gray-300" />
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-4 gap-3">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+              <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
             </div>
-            <p className="text-sm font-semibold text-gray-500">Select a conversation</p>
+            <div>
+              <p className="text-sm font-semibold text-gray-600">No conversation selected</p>
+              <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">Pick one from the list</p>
+            </div>
           </div>
         )}
       </div>

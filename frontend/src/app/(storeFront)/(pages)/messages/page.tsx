@@ -33,11 +33,11 @@ function MessagesContent() {
 
   return (
     <div
-      className="fixed inset-x-0 z-10"
+      className="fixed inset-x-0 z-10 bg-gray-100"
       style={{ top: "3rem", bottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="absolute inset-0 sm:p-4 lg:p-6">
-        <div className="w-full h-full max-w-[64.5rem] mx-auto sm:rounded-xl sm:overflow-hidden sm:border sm:border-gray-200 sm:shadow-sm">
+        <div className="w-full h-full max-w-[64.5rem] mx-auto rounded-none sm:rounded-2xl sm:overflow-hidden sm:border sm:border-gray-200 sm:shadow-md">
           <ChatInbox
             initialChatId={searchParams.get("chatId") ? Number(searchParams.get("chatId")) : undefined}
             sellerId={searchParams.get("sellerId") || undefined}
