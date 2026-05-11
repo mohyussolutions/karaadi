@@ -117,8 +117,8 @@ export default function AnimalAndSupplies() {
       ? searchResults
       : items.filter((item) =>
           Array.isArray(item.category)
-            ? item.category.includes("Animals & Supplies")
-            : item.category === "Animals & Supplies",
+            ? item.category.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "animalandsupplies" || s === t("subcategories.marketplace.animalAndSupplies", { lng: "en" }).toLowerCase(); })
+            : (() => { const s = String(item.category || "").toLowerCase(); return s === "animalandsupplies" || s === t("subcategories.marketplace.animalAndSupplies", { lng: "en" }).toLowerCase(); })(),
         );
 
     if (selectedSubcategory) {
@@ -138,16 +138,16 @@ export default function AnimalAndSupplies() {
     if (selectedRegion) {
       const activeRegs = selectedRegion.toLowerCase().split(",");
       list = list.filter(
-        (item) => item.region && activeRegs.includes(item.region.toLowerCase()),
+        (item) => item.region && activeRegs.includes(item.region.trim().toLowerCase()),
       );
     }
 
     const activeCities = Object.keys(checkedCities)
       .filter((c) => checkedCities[c])
-      .map((c) => c.toLowerCase());
+      .map((c) => c.trim().toLowerCase());
     if (activeCities.length > 0) {
       list = list.filter(
-        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
+        (item) => item.city && activeCities.includes(item.city.trim().toLowerCase()),
       );
     }
 

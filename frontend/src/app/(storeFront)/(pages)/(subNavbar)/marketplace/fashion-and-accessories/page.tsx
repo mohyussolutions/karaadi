@@ -83,11 +83,11 @@ export default function FashionAndAccessories() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) =>
-        Array.isArray(item.category)
-          ? item.category.includes("Fashion & Accessories")
-          : item.category === "Fashion & Accessories",
-      );
+      const enLabel = t("subcategories.marketplace.fashion", { lng: "en" }).toLowerCase();
+      const filtered = results.filter((item: any) => {
+        const cats = Array.isArray(item.category) ? item.category : [item.category];
+        return cats.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "fashion" || s === enLabel; });
+      });
       const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
         id: item.id ?? item._id ?? "",
         title: item.title ?? "",
@@ -146,17 +146,17 @@ export default function FashionAndAccessories() {
     if (selectedRegion) {
       const activeRegs = selectedRegion.toLowerCase().split(",");
       list = list.filter(
-        (item) => item.region && activeRegs.includes(item.region.toLowerCase()),
+        (item) => item.region && activeRegs.includes(item.region.trim().toLowerCase()),
       );
     }
 
     const activeCities = Object.keys(checkedCities)
       .filter((city) => checkedCities[city])
-      .map((c) => c.toLowerCase());
+      .map((c) => c.trim().toLowerCase());
 
     if (activeCities.length > 0) {
       list = list.filter(
-        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
+        (item) => item.city && activeCities.includes(item.city.trim().toLowerCase()),
       );
     }
     return Array.from(new Map(list.map((item) => [item.id, item])).values());

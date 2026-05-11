@@ -83,11 +83,11 @@ export default function FurnitureAndInterior() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const filtered = results.filter((item: any) =>
-        Array.isArray(item.category)
-          ? item.category.includes("Furniture & Interior")
-          : item.category === "Furniture & Interior",
-      );
+      const enLabel = t("subcategories.marketplace.furniture", { lng: "en" }).toLowerCase();
+      const filtered = results.filter((item: any) => {
+        const cats = Array.isArray(item.category) ? item.category : [item.category];
+        return cats.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "furniture" || s === enLabel; });
+      });
       const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
         id: item.id ?? item._id ?? "",
         title: item.title ?? "",
@@ -147,17 +147,17 @@ export default function FurnitureAndInterior() {
     if (selectedRegion) {
       const activeRegs = selectedRegion.toLowerCase().split(",");
       list = list.filter(
-        (item) => item.region && activeRegs.includes(item.region.toLowerCase()),
+        (item) => item.region && activeRegs.includes(item.region.trim().toLowerCase()),
       );
     }
 
     const activeCities = Object.keys(checkedCities)
       .filter((city) => checkedCities[city])
-      .map((c) => c.toLowerCase());
+      .map((c) => c.trim().toLowerCase());
 
     if (activeCities.length > 0) {
       list = list.filter(
-        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
+        (item) => item.city && activeCities.includes(item.city.trim().toLowerCase()),
       );
     }
 

@@ -74,17 +74,17 @@ export default function ElectronicsLinks() {
     if (selectedRegion) {
       const activeRegs = selectedRegion.toLowerCase().split(",");
       list = list.filter(
-        (item) => item.region && activeRegs.includes(item.region.toLowerCase()),
+        (item) => item.region && activeRegs.includes(item.region.trim().toLowerCase()),
       );
     }
 
     const activeCities = Object.keys(checkedCities)
       .filter((c) => checkedCities[c])
-      .map((c) => c.toLowerCase());
+      .map((c) => c.trim().toLowerCase());
 
     if (activeCities.length > 0) {
       list = list.filter(
-        (item) => item.city && activeCities.includes(item.city.toLowerCase()),
+        (item) => item.city && activeCities.includes(item.city.trim().toLowerCase()),
       );
     }
     return list;
