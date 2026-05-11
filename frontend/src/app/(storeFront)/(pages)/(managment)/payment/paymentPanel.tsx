@@ -40,7 +40,7 @@ export default function PaymentPanel({
 }: Props) {
   const isFree = useIsFree(total);
   return (
-    <div className="lg:w-1/3 bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
+    <div className="w-full lg:w-1/3 bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
       <PollingOverlay processing={processing} paymentStatus={paymentStatus} pollAttempt={pollAttempt} handleRetry={handleRetry} />
       <SuccessOverlay paymentStatus={paymentStatus} isFree={isFree} />
       <PanelHeader isFree={isFree} />

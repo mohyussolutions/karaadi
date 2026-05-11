@@ -47,10 +47,9 @@ export default function AntiquesAndArt() {
   }, []);
 
   const allAntiquesItems = useMemo(() => {
-    const enLabel = t("subcategories.marketplace.antiques", { lng: "en" }).toLowerCase();
     return items.filter((item) => {
       const cats = Array.isArray(item.category) ? item.category : [item.category];
-      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "antiques" || s === enLabel; });
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "antiques"; });
     });
   }, [items, t]);
 

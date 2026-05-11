@@ -69,10 +69,9 @@ export default function FashionAndAccessories() {
   }, []);
 
   const allFashionItems = useMemo(() => {
-    const enLabel = t("subcategories.marketplace.fashion", { lng: "en" }).toLowerCase();
     return items.filter((item) => {
       const cats = Array.isArray(item.category) ? item.category : [item.category];
-      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "fashion" || s === enLabel; });
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "fashion"; });
     });
   }, [items, t]);
 
@@ -83,10 +82,9 @@ export default function FashionAndAccessories() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const enLabel = t("subcategories.marketplace.fashion", { lng: "en" }).toLowerCase();
       const filtered = results.filter((item: any) => {
         const cats = Array.isArray(item.category) ? item.category : [item.category];
-        return cats.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "fashion" || s === enLabel; });
+        return cats.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "fashion"; });
       });
       const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
         id: item.id ?? item._id ?? "",

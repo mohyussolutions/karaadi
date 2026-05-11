@@ -69,10 +69,9 @@ export default function FurnitureAndInterior() {
   }, []);
 
   const allFurnitureItems = useMemo(() => {
-    const enLabel = t("subcategories.marketplace.furniture", { lng: "en" }).toLowerCase();
     return items.filter((item) => {
       const cats = Array.isArray(item.category) ? item.category : [item.category];
-      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "furniture" || s === enLabel; });
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "furniture"; });
     });
   }, [items, t]);
 
@@ -83,10 +82,9 @@ export default function FurnitureAndInterior() {
         return;
       }
       const results = await getGlobalSearchResults(query);
-      const enLabel = t("subcategories.marketplace.furniture", { lng: "en" }).toLowerCase();
       const filtered = results.filter((item: any) => {
         const cats = Array.isArray(item.category) ? item.category : [item.category];
-        return cats.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "furniture" || s === enLabel; });
+        return cats.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "furniture"; });
       });
       const mappedResults: MarketplaceItem[] = filtered.map((item: any) => ({
         id: item.id ?? item._id ?? "",

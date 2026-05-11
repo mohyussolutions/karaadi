@@ -79,7 +79,7 @@ export default function SummaryPaymentPage() {
           </p>
         </header>
 
-        <div className="flex flex-col lg:flex-row gap-5 items-start">
+        <div className="flex flex-col-reverse lg:flex-row gap-5 items-start">
           <ListingSummaryPanel
             item={item}
             plan={plan}

@@ -301,8 +301,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       </div>
 
       <div
-        className="bg-white border-t border-gray-200 px-4 pt-3 flex-shrink-0"
-        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        className="bg-white border-t border-gray-200 px-4 py-3 flex-shrink-0"
       >
         <div className="flex items-end gap-2">
           <textarea

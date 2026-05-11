@@ -47,10 +47,9 @@ export default function FashionAndAccessories() {
   }, []);
 
   const allFashionItems = useMemo(() => {
-    const enLabel = t("subcategories.marketplace.sportsAndOutdoors", { lng: "en" }).toLowerCase();
     return items.filter((item) => {
       const cats = Array.isArray(item.category) ? item.category : [item.category];
-      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "sportsandoutdoors" || s === enLabel; });
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "sportsandoutdoors"; });
     });
   }, [items, t]);
 

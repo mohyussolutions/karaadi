@@ -47,10 +47,9 @@ export default function ElectronicsLinks() {
   }, []);
 
   const allElectronicsItems = useMemo(() => {
-    const enLabel = t("subcategories.marketplace.electronics", { lng: "en" }).toLowerCase();
     return items.filter((item) => {
       const cats = Array.isArray(item.category) ? item.category : [item.category];
-      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "electronics" || s === enLabel; });
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "electronics"; });
     });
   }, [items, t]);
 

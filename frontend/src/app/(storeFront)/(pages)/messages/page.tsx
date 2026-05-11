@@ -30,7 +30,7 @@ function MessagesContent() {
   return (
     <div
       className="fixed inset-x-0 bottom-0 flex flex-col z-10 sm:p-4 lg:p-6"
-      style={{ top: '3rem' }}
+      style={{ top: '3rem', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex-1 min-h-0 mx-auto w-full max-w-[64.5rem] flex flex-col">
         <ChatInbox
