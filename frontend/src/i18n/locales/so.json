@@ -220,7 +220,7 @@
     "Marketplace": "Suuq",
     "RealEstate": "hantida maguurtada ah",
     "Cars": "Gawaarida",
-    "Boats": "Doomo",
+    "Boats": "Doomaha",
     "farmequipment": "Qalabka Beeraha",
     "Motorcycles": "Mootooyin",
     "Jobs": "Shaqo",
@@ -527,8 +527,8 @@
     }
   },
   "createBoats": {
-    "title": "Xayeysiis Doomo",
-    "pageTitle": "Doomo",
+    "title": "Xayeysiis Doomaha",
+    "pageTitle": "Doomaha",
     "mainCategory": "Qaybta Weyn",
     "category": "Qaybta",
     "city": "Magaalo / City",
@@ -564,7 +564,7 @@
     "Home": "Hoyga",
     "Marketplace": "Suuq",
     "Cars": "Gawaari",
-    "Boats": "Doomo",
+    "Boats": "Doomaha",
     "Motorcycles": "Mooto",
     "Real Estate": "Guryo",
     "Farmequipment": "Qalab Beeraha",
@@ -685,10 +685,10 @@
       "other": "Kale"
     },
     "boats": {
-      "boatsForSale": "Doomo Iibka",
-      "boatsForRent": "Doomo Kirada",
-      "boatEnginesForSale": "Matoorada Doomo",
-      "boatParts": "Qaybaha Doomo"
+      "boatsForSale": "Doomaha Iibka",
+      "boatsForRent": "Doomaha Kirada",
+      "boatEnginesForSale": "Matoorada Doomaha",
+      "boatParts": "Qaybaha Doomaha"
     },
     "boatsNested": {
       "boatsForSale": {

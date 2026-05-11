@@ -100,14 +100,12 @@ export default function ElectronicsLinks() {
     const regionCounts: Record<string, number> = {};
     const cityCounts: Record<string, number> = {};
     allElectronicsItems.forEach((item) => {
-      const capitalize = (s: string) =>
-        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
       if (item.region) {
-        const reg = capitalize(item.region.trim());
+        const reg = item.region.trim().toLowerCase();
         regionCounts[reg] = (regionCounts[reg] || 0) + 1;
       }
       if (item.city) {
-        const cit = capitalize(item.city.trim());
+        const cit = item.city.trim().toLowerCase();
         cityCounts[cit] = (cityCounts[cit] || 0) + 1;
       }
     });
