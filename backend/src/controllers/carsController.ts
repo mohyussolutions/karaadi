@@ -2,20 +2,14 @@ import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import prisma from "src/core/utils/db.ts";
 import { convertImages } from "src/core/utils/imageUtils.ts";
-import {
-  calculateExpiryDate,
-  formatExpiryDate,
-  getDaysUntilExpiry,
-  getDefaultExpiryDate,
-  isExpired,
-} from "src/hooks/useExpire.ts";
+import { calculateExpiryDate, getDefaultExpiryDate } from "src/hooks/useExpire.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { CarQuery, CreateCarBody, PaymentUpdateBody } from "src/types/index.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { getBusinessListingFlags, checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
-import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
+import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS } from "src/config/shared.constants.ts";
 import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS, selectUserBasic, selectUserMinimal, formatItem} from "src/config/constants/cars.constants.ts";
 
 

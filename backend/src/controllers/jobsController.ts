@@ -3,15 +3,10 @@ import { AuthRequest } from "src/types/user.types.ts";
 import { CACHE_KEYS, CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import prisma from "src/core/utils/db.ts";
-import {
-  calculateExpiryDate,
-  getDaysUntilExpiry,
-  formatExpiryDate,
-  isExpired,
-} from "src/hooks/useExpire.ts";
+import { calculateExpiryDate } from "src/hooks/useExpire.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
-import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
+import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS } from "src/config/shared.constants.ts";
 import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, selectUserBasic, formatItem} from "src/config/constants/jobs.constants.ts";
 
 

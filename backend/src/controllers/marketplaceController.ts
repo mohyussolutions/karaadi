@@ -3,16 +3,11 @@ import prisma from "src/core/utils/db.ts";
 import { getBusinessListingFlags, checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 import { convertImages } from "src/core/utils/imageUtils.ts";
 
-import {
-  calculateExpiryDate,
-  getDaysUntilExpiry,
-  formatExpiryDate,
-  isExpired,
-} from "src/hooks/useExpire.ts";
+import { calculateExpiryDate } from "src/hooks/useExpire.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
-import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
+import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS } from "src/config/shared.constants.ts";
 import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS, selectUserBasic, formatItem} from "src/config/constants/marketplace.constants.ts";
 
 

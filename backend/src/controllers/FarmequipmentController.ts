@@ -4,17 +4,21 @@ import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { convertImages } from "src/core/utils/imageUtils.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
-import {
-  calculateExpiryDate,
-  getDaysUntilExpiry,
-  formatExpiryDate,
-  isExpired,
-} from "src/hooks/useExpire.ts";
-import { AuthRequest, CreateFarmequipmentBody } from "src/types/index.ts";
+import { getDaysUntilExpiry, formatExpiryDate, isExpired } from "src/hooks/useExpire.ts";
+import { AuthRequest } from "src/types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
-import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
-import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, DEFAULT_VALUES, CACHE_KEYS, selectUserBasic, selectUserMinimal, prepareTractorData, formatItem} from "src/config/constants/farmequipment.constants.ts";
+import { SORT_DIRECTION } from "src/config/shared.constants.ts";
+import {
+  FIELD_NAMES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  CACHE_KEYS,
+  selectUserBasic,
+  selectUserMinimal,
+  prepareTractorData,
+  formatItem,
+} from "src/config/constants/farmequipment.constants.ts";
 
 
 export const createfarmequipment = async (req: AuthRequest, res: Response) => {

@@ -2,21 +2,25 @@ import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import prisma from "src/core/utils/db.ts";
 import { convertImages } from "src/core/utils/imageUtils.ts";
-import {
-  calculateExpiryDate,
-  formatExpiryDate,
-  getDaysUntilExpiry,
-  getDefaultExpiryDate,
-  isExpired,
-} from "src/hooks/useExpire.ts";
+import { calculateExpiryDate, getDefaultExpiryDate } from "src/hooks/useExpire.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { CreateBoatBody, PaymentUpdateBody } from "src/types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
-import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
-import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, DEFAULT_VALUES, CACHE_KEYS, selectUserBasic, selectUserMinimal, boatInclude, ensureSingleString, formatBoat} from "src/config/constants/boats.constants.ts";
+import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS } from "src/config/shared.constants.ts";
+import {
+  FIELD_NAMES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  DEFAULT_VALUES,
+  CACHE_KEYS,
+  selectUserMinimal,
+  boatInclude,
+  ensureSingleString,
+  formatBoat,
+} from "src/config/constants/boats.constants.ts";
 
 
 export const patchBoatIsPaid = async (req: Request, res: Response) => {

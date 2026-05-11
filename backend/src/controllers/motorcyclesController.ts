@@ -3,17 +3,12 @@ import prisma from "src/core/utils/db.ts";
 import { Prisma } from "@prisma/client";
 import { convertImages } from "src/core/utils/imageUtils.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
-import {
-  calculateExpiryDate,
-  getDaysUntilExpiry,
-  formatExpiryDate,
-  isExpired,
-} from "src/hooks/useExpire.ts";
+import { calculateExpiryDate } from "src/hooks/useExpire.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
-import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
+import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS } from "src/config/shared.constants.ts";
 import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, DEFAULT_VALUES, CACHE_KEYS, selectUserBasic, formatItem} from "src/config/constants/motorcycles.constants.ts";
 
 
