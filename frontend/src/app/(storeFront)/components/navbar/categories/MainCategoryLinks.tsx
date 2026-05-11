@@ -44,7 +44,7 @@ const CategoryLinks = memo(function CategoryLinks() {
                   {category.icon}
                 </div>
               )}
-              <p className="font-semibold text-[11px] text-center leading-tight m-0 text-gray-700 group-hover:text-blue-600 transition-colors duration-200">
+              <p className="font-semibold text-[13px] text-center leading-tight m-0 text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
                 {translatedTitle}
               </p>
             </div>

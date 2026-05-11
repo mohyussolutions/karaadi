@@ -35,12 +35,12 @@ const CARD_SIZE: Record<number, { card: string; icon: string; label: string }> =
   3: {
     card: "py-3 px-2 min-h-[76px]",
     icon: "w-9 h-9 rounded-xl text-[18px]",
-    label: "text-[10px] font-semibold",
+    label: "text-[12px] font-semibold",
   },
   4: {
     card: "py-3 px-2 min-h-[76px]",
     icon: "w-9 h-9 rounded-xl text-[18px]",
-    label: "text-[10px] font-semibold",
+    label: "text-[12px] font-semibold",
   },
 };
 
@@ -72,7 +72,7 @@ const SubCategoryList = memo(function SubCategoryList({
               <div className={`${size.icon} flex items-center justify-center bg-gray-100 text-gray-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-200`}>
                 {item.icon}
               </div>
-              <p className={`${size.label} text-center leading-tight m-0 text-gray-700 group-hover:text-blue-600 transition-colors duration-200`}>
+              <p className={`${size.label} text-center leading-tight m-0 text-gray-900 group-hover:text-blue-600 transition-colors duration-200`}>
                 {label}
               </p>
             </div>

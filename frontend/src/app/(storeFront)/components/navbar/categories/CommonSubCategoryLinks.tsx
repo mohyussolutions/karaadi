@@ -37,10 +37,10 @@ export const CommonSubCategoryLinks = ({
             key={id}
             type="button"
             onClick={() => onSelect(id)}
-            className={`group flex items-center gap-2 rounded-full px-4 py-2.5 font-semibold text-[12px] whitespace-nowrap transition-all duration-200 active:scale-[0.97] outline-none ${
+            className={`group flex items-center gap-2 rounded-full px-4 py-2.5 font-semibold text-sm whitespace-nowrap transition-all duration-200 active:scale-[0.97] outline-none ${
               isActive
                 ? "bg-blue-600 text-white shadow-sm"
-                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                : "bg-white text-gray-900 hover:bg-blue-50 hover:text-blue-600"
             }`}
           >
             <span
