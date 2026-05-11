@@ -54,8 +54,8 @@ export default function PathSegmentsDisplay() {
   const lastIndex = segments.length - 1;
 
   return (
-    <nav aria-label="Breadcrumb" className="ml-2 mt-4 mb-6">
-      <ol className="flex flex-wrap items-center gap-1 text-sm sm:text-sm">
+    <nav aria-label="Breadcrumb" className="mt-4 mb-6 overflow-x-auto scrollbar-hide">
+      <ol className="flex flex-nowrap items-center gap-1 text-sm whitespace-nowrap px-2">
         <li>
           <button
             type="button"
