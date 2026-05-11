@@ -302,7 +302,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         <div aria-hidden="true" />
       </div>
 
-      <div className="bg-white border-t border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 flex-shrink-0">
+      <div className="bg-white border-t border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 flex-shrink-0" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}>
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -313,7 +313,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             disabled={sending}
             rows={1}
             className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all touch-manipulation text-sm"
-            style={{ fontSize: "16px", height: "44px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4" }}
+            style={{ fontSize: "16px", height: "48px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4" }}
           />
           <button
             type="button"

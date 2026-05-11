@@ -172,7 +172,6 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         style={{
           flexShrink: 0,
           height: "100%",
-          display: "flex",
           flexDirection: "column",
           borderRight: "1px solid #e5e7eb",
           backgroundColor: "white",
@@ -245,7 +244,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       </div>
 
       <div
-        style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}
+        style={{ flex: 1, flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}
         className={showThread ? "flex" : "hidden lg:flex"}
       >
         {activeChatId && activeChatroom ? (
