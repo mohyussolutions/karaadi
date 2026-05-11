@@ -27,6 +27,17 @@ function MessagesContent() {
     }
   }, [loading, user, router])
 
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    const footer = document.querySelector("footer") as HTMLElement | null
+    if (footer) footer.style.display = "none"
+    return () => {
+      document.body.style.overflow = prev
+      if (footer) footer.style.display = ""
+    }
+  }, [])
+
   return (
     <div
       className="fixed inset-x-0 flex flex-col z-10"
