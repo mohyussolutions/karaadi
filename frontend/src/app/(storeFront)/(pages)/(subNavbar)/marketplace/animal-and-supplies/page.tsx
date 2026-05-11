@@ -77,8 +77,8 @@ export default function AnimalAndSupplies() {
       const results = await getGlobalSearchResults(query);
       const filtered = results.filter((item: any) =>
         Array.isArray(item.category)
-          ? item.category.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "animalandsupplies" || s.includes("animal"); })
-          : (() => { const s = String(item.category || "").toLowerCase(); return s === "animalandsupplies" || s.includes("animal"); })(),
+          ? item.category.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "animalandsupplies" || s === t("subcategories.marketplace.animalAndSupplies", { lng: "en" }).toLowerCase(); })
+          : (() => { const s = String(item.category || "").toLowerCase(); return s === "animalandsupplies" || s === t("subcategories.marketplace.animalAndSupplies", { lng: "en" }).toLowerCase(); })(),
       );
       setSearchResults(
         filtered.map((item: any) => ({
@@ -99,8 +99,8 @@ export default function AnimalAndSupplies() {
     items
       .filter((item) =>
         Array.isArray(item.category)
-          ? item.category.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "animalandsupplies" || s.includes("animal"); })
-          : (() => { const s = String(item.category || "").toLowerCase(); return s === "animalandsupplies" || s.includes("animal"); })(),
+          ? item.category.some((c: string) => { const s = String(c || "").toLowerCase(); return s === "animalandsupplies" || s === t("subcategories.marketplace.animalAndSupplies", { lng: "en" }).toLowerCase(); })
+          : (() => { const s = String(item.category || "").toLowerCase(); return s === "animalandsupplies" || s === t("subcategories.marketplace.animalAndSupplies", { lng: "en" }).toLowerCase(); })(),
       )
       .forEach((item) => {
         if (item.region) {

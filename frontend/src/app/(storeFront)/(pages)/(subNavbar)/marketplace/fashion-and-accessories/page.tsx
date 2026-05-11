@@ -69,12 +69,12 @@ export default function FashionAndAccessories() {
   }, []);
 
   const allFashionItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.some((c: string) => String(c || "").toLowerCase() === "fashion")
-        : String(item.category || "").toLowerCase() === "fashion",
-    );
-  }, [items]);
+    const enLabel = t("subcategories.marketplace.fashion", { lng: "en" }).toLowerCase();
+    return items.filter((item) => {
+      const cats = Array.isArray(item.category) ? item.category : [item.category];
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "fashion" || s === enLabel; });
+    });
+  }, [items, t]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {

@@ -69,12 +69,12 @@ export default function FurnitureAndInterior() {
   }, []);
 
   const allFurnitureItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.some((c: string) => String(c || "").toLowerCase() === "furniture")
-        : String(item.category || "").toLowerCase() === "furniture",
-    );
-  }, [items]);
+    const enLabel = t("subcategories.marketplace.furniture", { lng: "en" }).toLowerCase();
+    return items.filter((item) => {
+      const cats = Array.isArray(item.category) ? item.category : [item.category];
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "furniture" || s === enLabel; });
+    });
+  }, [items, t]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
