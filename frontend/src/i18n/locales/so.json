@@ -243,6 +243,38 @@
     "submit": "Gudbi Xayeysiiska",
     "submitting": "Gudbinaya..."
   },
+  "createMarketplace": {
+    "heading": "Abuur Xayeysiis Suuq",
+    "mainCategoryLabel": "Qaybta Ugu Weyn",
+    "categoryLabel": "Summada Qaybta",
+    "selectCategory": "Dooro Qaybta",
+    "subCategoryLabel": "Qayb-hoosaadka",
+    "selectSubcategory": "Dooro Qayb-hoosaadka",
+    "titleLabel": "Cinwaanka",
+    "titlePlaceholder": "Tusaale: Telefoon Samsung – Xaalad Wanaagsan",
+    "conditionLabel": "Xaaladda",
+    "selectCondition": "Dooro Xaaladda",
+    "conditions": {
+      "new": "Cusub",
+      "usedLikeNew": "La Isticmaalay – Sida Cusub",
+      "usedGood": "La Isticmaalay – Wanaagsan",
+      "usedFair": "La Isticmaalay – Dhexdhexaad ah"
+    },
+    "descriptionLabel": "Faahfaahin",
+    "descriptionPlaceholder": "Faahfaahi shayga si wanaagsan...",
+    "regionLabel": "Gobol",
+    "selectRegion": "Dooro Gobol",
+    "priceLabel": "Qiimaha ($)",
+    "websiteLabel": "Websaydka",
+    "optional": "Ikhtiyaari",
+    "websitePlaceholder": "https://websaydkaaga.com",
+    "upload": "Soo geli sawirrada",
+    "fillRequired": "Fadlan buuxi banaanada muhiimka ah",
+    "registering": "Waa la diiwaan galiyaa...",
+    "successMessage": "Xayeysiiska waa la gudbiyey!",
+    "errorMessage": "Cillad ayaa dhacday",
+    "submit": "Gudbi Xayeysiiska"
+  },
   "createRealEstate": {
     "title": "Guryaha, hantida maguurtada ah",
     "mainCategory": "Qaybta Ugu Muhiimsan",

@@ -22,24 +22,30 @@ import CheckoutSteps from "@/app/(storeFront)/components/checkout/CheckoutSteps"
 import SelectField from "./SelectField";
 
 const MARKETPLACE_CATEGORIES = [
-  { key: "antiques", label: "Antiques & Art" },
-  { key: "electronics", label: "Electronics" },
-  { key: "animalAndSupplies", label: "Animals & Supplies" },
-  { key: "sportsAndOutdoors", label: "Sports & Outdoors" },
-  { key: "furniture", label: "Furniture" },
-  { key: "fashion", label: "Fashion" },
+  { key: "antiques", labelKey: "subcategories.marketplace.antiques" },
+  { key: "electronics", labelKey: "subcategories.marketplace.electronics" },
+  { key: "animalAndSupplies", labelKey: "subcategories.marketplace.animalAndSupplies" },
+  { key: "sportsAndOutdoors", labelKey: "subcategories.marketplace.sportsAndOutdoors" },
+  { key: "furniture", labelKey: "subcategories.marketplace.furniture" },
+  { key: "fashion", labelKey: "subcategories.marketplace.fashion" },
 ];
 const SCHOOL_CATEGORIES = [
-  { key: "primarySchool", label: "Primary School" },
-  { key: "secondarySchool", label: "Secondary School" },
-  { key: "university", label: "University / College" },
-  { key: "vocationalTraining", label: "Vocational Training" },
-  { key: "onlineCourses", label: "Online Courses" },
-  { key: "tuition", label: "Tutoring / Tuition" },
-  { key: "other", label: "Other" },
+  { key: "primarySchool", labelKey: "school.primarySchool" },
+  { key: "secondarySchool", labelKey: "school.secondarySchool" },
+  { key: "university", labelKey: "school.university" },
+  { key: "vocationalTraining", labelKey: "school.vocationalTraining" },
+  { key: "onlineCourses", labelKey: "school.onlineCourses" },
+  { key: "tuition", labelKey: "school.tuition" },
+  { key: "other", labelKey: "school.other" },
 ];
 const MARKETPLACE_FEE_MAPPING: Record<string, string> = { antiques: "art", electronics: "electronics", animalAndSupplies: "animal", sportsAndOutdoors: "sports", furniture: "furniture", fashion: "fashion" };
-const CONDITION_OPTIONS = ["New", "Used – Like New", "Used – Good", "Used – Fair"];
+
+const CONDITION_KEYS = [
+  { value: "New", key: "createMarketplace.conditions.new" },
+  { value: "Used – Like New", key: "createMarketplace.conditions.usedLikeNew" },
+  { value: "Used – Good", key: "createMarketplace.conditions.usedGood" },
+  { value: "Used – Fair", key: "createMarketplace.conditions.usedFair" },
+];
 
 export default function MarketplaceForm({ onNext, businessId, mainCategory = "Marketplace" }: { onNext: () => void; businessId?: string; mainCategory?: "Marketplace" | "Schools" }) {
   const router = useRouter();
@@ -89,10 +95,10 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
     e.preventDefault();
     if (!user || isLoading) return;
     if (["category", "subCategory", "price", "title", "description", "condition", "region", "city"].some((k) => !(formData as any)[k]) || images.length === 0) {
-      return toast.error(t("createMotorcycle.fillRequired"));
+      return toast.error(t("createMarketplace.fillRequired"));
     }
     setIsLoading(true);
-    const toastId = toast.loading(t("createMotorcycle.registering"));
+    const toastId = toast.loading(t("createMarketplace.registering"));
     try {
       const imagesBase64 = await toBase64();
       const fee = getFee(formData.category);
@@ -108,22 +114,25 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
       const result: any = await createMarketplaceItem(payload, user.token || (user as any).accessToken);
       const createdId = result.id || result._id;
       if (result.success && createdId) {
-        toast.update(toastId, { render: t("createMotorcycle.successMessage"), type: "success", isLoading: false, autoClose: 2000 });
+        toast.update(toastId, { render: t("createMarketplace.successMessage"), type: "success", isLoading: false, autoClose: 2000 });
         dispatch(updateItem({ ...payload, id: String(createdId) }));
         setTimeout(() => onNext(), 1200);
       } else {
-        toast.update(toastId, { render: result.error || result.message || t("createMotorcycle.errorMessage"), type: "error", isLoading: false, autoClose: 3000 });
+        toast.update(toastId, { render: result.error || result.message || t("createMarketplace.errorMessage"), type: "error", isLoading: false, autoClose: 3000 });
       }
     } catch {
-      toast.update(toastId, { render: t("createMotorcycle.errorMessage"), type: "error", isLoading: false, autoClose: 3000 });
+      toast.update(toastId, { render: t("createMarketplace.errorMessage"), type: "error", isLoading: false, autoClose: 3000 });
     } finally { setIsLoading(false); }
   };
 
   if (authLoading || dataLoading) return <div className="h-screen flex items-center justify-center"><Loading /></div>;
 
-  const catOptions = (mainCategory === "Schools" ? SCHOOL_CATEGORIES : MARKETPLACE_CATEGORIES).map((c) => ({ value: c.key, label: c.label }));
+  const catOptions = (mainCategory === "Schools" ? SCHOOL_CATEGORIES : MARKETPLACE_CATEGORIES).map((c) => ({
+    value: c.key,
+    label: t(c.labelKey, { defaultValue: c.key }),
+  }));
   const subCatOptions = getNestedSubcategories().map((s: any) => ({ value: s.labelKey || s.key || s, label: t(s.labelKey || s.name || s) }));
-  const conditionOptions = CONDITION_OPTIONS.map((c) => ({ value: c, label: c }));
+  const conditionOptions = CONDITION_KEYS.map((c) => ({ value: c.value, label: t(c.key, { defaultValue: c.value }) }));
   const regionOptions = regions.map((r) => ({ value: r.id, label: r.name }));
 
   return (
@@ -131,12 +140,12 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
       {!businessId && <CheckoutSteps step1 step2 />}
       <div className="text-center mb-10">
         <div className="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"><FaShoppingBag className="text-4xl text-blue-600" /></div>
-        <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">Create Marketplace Listing</h1>
+        <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">{t("createMarketplace.heading")}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Main Category</label>
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.mainCategoryLabel")}</label>
           <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
             <FaShoppingBag className="text-blue-500" />
             <input type="text" readOnly value={formData.mainCategory} className="bg-transparent outline-none font-black text-blue-700 w-full" />
@@ -145,33 +154,33 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Category Tag</label>
-            <SelectField value={formData.category} onChange={(v) => setFormData({ ...formData, category: v, subCategory: "" })} options={catOptions} placeholder="Select Category" />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.categoryLabel")}</label>
+            <SelectField value={formData.category} onChange={(v) => setFormData({ ...formData, category: v, subCategory: "" })} options={catOptions} placeholder={t("createMarketplace.selectCategory")} />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Subcategory</label>
-            <SelectField value={formData.subCategory} onChange={(v) => setFormData({ ...formData, subCategory: v })} options={subCatOptions} placeholder="Select Subcategory" disabled={!formData.category} />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.subCategoryLabel")}</label>
+            <SelectField value={formData.subCategory} onChange={(v) => setFormData({ ...formData, subCategory: v })} options={subCatOptions} placeholder={t("createMarketplace.selectSubcategory")} disabled={!formData.category} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Title</label>
-          <input placeholder="e.g. Samsung Galaxy S23 – Excellent Condition" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} maxLength={200} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" required />
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.titleLabel")}</label>
+          <input placeholder={t("createMarketplace.titlePlaceholder")} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} maxLength={200} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" required />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Condition</label>
-          <SelectField value={formData.condition} onChange={(v) => setFormData({ ...formData, condition: v })} options={conditionOptions} placeholder="Select Condition" />
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.conditionLabel")}</label>
+          <SelectField value={formData.condition} onChange={(v) => setFormData({ ...formData, condition: v })} options={conditionOptions} placeholder={t("createMarketplace.selectCondition")} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Description</label>
-            <textarea placeholder="Describe your item in detail..." rows={5} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} maxLength={5000} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold" required />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.descriptionLabel")}</label>
+            <textarea placeholder={t("createMarketplace.descriptionPlaceholder")} rows={5} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} maxLength={5000} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold" required />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Region</label>
-            <SelectField value={formData.region} onChange={(v) => setFormData({ ...formData, region: v, city: "" })} options={regionOptions} placeholder="Select Region" />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.regionLabel")}</label>
+            <SelectField value={formData.region} onChange={(v) => setFormData({ ...formData, region: v, city: "" })} options={regionOptions} placeholder={t("createMarketplace.selectRegion")} />
           </div>
         </div>
 
@@ -180,15 +189,15 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
         {businessId && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Website</label>
-              <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">Optional</span>
+              <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.websiteLabel")}</label>
+              <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">{t("createMarketplace.optional")}</span>
             </div>
-            <input type="url" placeholder="https://yourwebsite.com" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} maxLength={512} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" />
+            <input type="url" placeholder={t("createMarketplace.websitePlaceholder")} value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} maxLength={512} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" />
           </div>
         )}
 
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Price ($)</label>
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t("createMarketplace.priceLabel")}</label>
           <div className="relative">
             <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
             <input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} min={0} max={100000000} className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500" required />
@@ -196,11 +205,11 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
         </div>
 
         <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
-          <ImageUpload images={images} onAdd={addImages} onRemove={removeImage} label={t("createMotorcycle.upload")} />
+          <ImageUpload images={images} onAdd={addImages} onRemove={removeImage} label={t("createMarketplace.upload")} />
         </div>
 
         <button type="submit" disabled={isLoading} className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-gray-200 flex items-center justify-center">
-          {isLoading ? <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" /> : t("createMotorcycle.submit")}
+          {isLoading ? <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" /> : t("createMarketplace.submit")}
         </button>
       </form>
     </div>
