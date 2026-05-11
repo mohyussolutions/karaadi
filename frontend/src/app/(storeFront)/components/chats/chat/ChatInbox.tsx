@@ -160,31 +160,31 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
 
       <div
         style={{
-          width: "76px",
+          width: "62px",
           flexShrink: 0,
           height: "100%",
           display: "flex",
           flexDirection: "column",
           borderRight: "1px solid #e5e7eb",
-          backgroundColor: "white",
+          backgroundColor: "#f8fafc",
         }}
-        className="lg:w-[320px] xl:w-[360px]"
+        className="lg:w-[300px] xl:w-[340px] lg:bg-white"
       >
-        <div className="hidden lg:block px-4 pt-4 pb-3 border-b border-gray-100" style={{ flexShrink: 0 }}>
-          <div className="flex items-center gap-2 mb-3">
-            <h1 className="text-lg font-bold text-gray-900">Messages</h1>
-            {totalUnread > 0 && (
-              <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center">
-                {totalUnread}
-              </span>
-            )}
-          </div>
+        <div className="hidden lg:flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0">
+          <h1 className="text-base font-bold text-gray-900 flex-1">Messages</h1>
+          {totalUnread > 0 && (
+            <span className="bg-blue-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+              {totalUnread}
+            </span>
+          )}
+        </div>
+        <div className="hidden lg:block px-4 pb-3 border-b border-gray-100 flex-shrink-0">
           <input
             type="search"
-            placeholder="Search conversations…"
+            placeholder="Search…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 placeholder:text-gray-400 touch-manipulation"
+            className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 placeholder:text-gray-400 touch-manipulation text-sm"
             style={{ fontSize: "16px" }}
           />
         </div>
@@ -200,7 +200,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex justify-center lg:justify-start items-center gap-3 px-2 lg:px-4 py-3 border-b border-gray-100 animate-pulse">
-                <div className="w-11 h-11 rounded-full bg-gray-200 flex-shrink-0" />
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
                 <div className="hidden lg:flex flex-col flex-1 gap-2">
                   <div className="h-3 bg-gray-200 rounded w-24" />
                   <div className="h-2.5 bg-gray-100 rounded w-36" />
@@ -208,10 +208,10 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
               </div>
             ))
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 px-2 text-center gap-2">
-              <MessageSquare className="w-7 h-7 text-gray-300" />
-              <p className="hidden lg:block text-xs text-gray-400 font-medium">
-                {search ? "No results" : "No conversations yet"}
+            <div className="flex flex-col items-center justify-center py-8 px-2 text-center gap-1.5">
+              <MessageSquare className="w-6 h-6 text-gray-300" />
+              <p className="hidden lg:block text-xs text-gray-400">
+                {search ? "No results" : "No conversations"}
               </p>
             </div>
           ) : (
@@ -237,28 +237,33 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
                   <button
                     type="button"
                     onClick={() => handleSelect(room.chatId)}
-                    className="lg:hidden w-full flex items-center justify-center py-2 border-b border-gray-100 touch-manipulation"
-                    style={{ backgroundColor: isActive ? "#eff6ff" : "transparent" }}
+                    className="lg:hidden w-full flex items-center justify-center py-2.5 border-b border-gray-100 touch-manipulation transition-colors"
+                    style={{ backgroundColor: isActive ? "#dbeafe" : "transparent" }}
                   >
                     <div className="relative">
                       {otherAvatar ? (
                         <img
                           src={otherAvatar}
                           alt={otherName}
-                          className="w-11 h-11 rounded-full object-cover"
-                          style={{ outline: isActive ? "2px solid #3b82f6" : "2px solid transparent", outlineOffset: "1px" }}
+                          className="w-10 h-10 rounded-full object-cover"
+                          style={{
+                            boxShadow: isActive ? "0 0 0 2px #3b82f6" : "0 0 0 2px transparent",
+                          }}
                           onError={(e) => { e.currentTarget.style.display = "none" }}
                         />
                       ) : (
                         <div
-                          className="w-11 h-11 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base"
-                          style={{ outline: isActive ? "2px solid #3b82f6" : "2px solid transparent", outlineOffset: "1px" }}
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                          style={{
+                            backgroundColor: "#3b82f6",
+                            boxShadow: isActive ? "0 0 0 2px #1d4ed8" : "none",
+                          }}
                         >
                           {(otherName || "?").charAt(0).toUpperCase()}
                         </div>
                       )}
                       {unread > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
                           {unread > 9 ? "9+" : unread}
                         </span>
                       )}
