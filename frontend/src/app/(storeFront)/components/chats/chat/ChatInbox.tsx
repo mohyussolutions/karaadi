@@ -26,25 +26,16 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const [loading, setLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<number | null>(initialChatId ?? null);
   const [search, setSearch] = useState("");
-  const [showThread, setShowThread] = useState(!!initialChatId || !!(sellerId && itemId));
   const chatroomsRef = useRef<Chatroom[]>([]);
   const activeChatIdRef = useRef<number | null>(activeChatId);
 
   const currentUserId = user?._id || user?.id || "";
 
-  useEffect(() => {
-    chatroomsRef.current = chatrooms;
-  }, [chatrooms]);
+  useEffect(() => { chatroomsRef.current = chatrooms; }, [chatrooms]);
+  useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
 
   useEffect(() => {
-    activeChatIdRef.current = activeChatId;
-  }, [activeChatId]);
-
-  useEffect(() => {
-    if (!currentUserId) {
-      setLoading(true);
-      return;
-    }
+    if (!currentUserId) { setLoading(true); return; }
 
     if (initialChatId) {
       getUserChatrooms(currentUserId).then((rooms) => {
@@ -56,27 +47,22 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     }
 
     if (sellerId && itemId) {
-      const roomsPromise = getUserChatrooms(currentUserId);
-      const chatPromise = createOrGetChat({
+      const roomsP = getUserChatrooms(currentUserId);
+      const chatP = createOrGetChat({
         senderId: currentUserId,
         receiverId: sellerId,
         itemId,
         itemModel: itemModel || "Marketplace",
       });
-
-      Promise.all([roomsPromise, chatPromise])
+      Promise.all([roomsP, chatP])
         .then(([rooms, newRoom]) => {
           setChatrooms(() => {
             const exists = rooms.some((r) => r.chatId === newRoom.chatId);
             return exists ? rooms : [newRoom, ...rooms];
           });
           setActiveChatId(newRoom.chatId);
-          setShowThread(true);
         })
-        .catch(() => {
-          setShowThread(false);
-          roomsPromise.then((rooms) => setChatrooms(rooms));
-        })
+        .catch(() => roomsP.then((rooms) => setChatrooms(rooms)))
         .finally(() => setLoading(false));
       return;
     }
@@ -91,27 +77,20 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     if (!currentUserId) return;
     socketService.connect(currentUserId);
 
-    const handleNew = (data: unknown) => {
+    const off = socketService.on("newMessage", (data: unknown) => {
       const { chatId, message } = data as { chatId: string; message: any };
       const numId = Number(chatId);
       if (!numId || !message) return;
 
       setChatrooms((prev) => {
         const idx = prev.findIndex((c) => c.chatId === numId);
-
         if (idx === -1) {
           getUserChatrooms(currentUserId).then((rooms) => {
             const fresh = rooms.find((r) => r.chatId === numId);
-            if (fresh) {
-              setChatrooms((cur) => {
-                if (cur.some((c) => c.chatId === numId)) return cur;
-                return [fresh, ...cur];
-              });
-            }
+            if (fresh) setChatrooms((cur) => cur.some((c) => c.chatId === numId) ? cur : [fresh, ...cur]);
           });
           return prev;
         }
-
         const updated = [...prev];
         const room = { ...updated[idx] };
         room.lastMessage = message.content;
@@ -122,9 +101,8 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         updated.splice(idx, 1);
         return [room, ...updated];
       });
-    };
+    });
 
-    const off = socketService.on("newMessage", handleNew);
     return () => off();
   }, [currentUserId]);
 
@@ -132,25 +110,17 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     const room = chatroomsRef.current.find((c) => c.chatId === chatId);
     const unread = room?.unreadCount || 0;
     setActiveChatId(chatId);
-    setShowThread(true);
     setChatrooms((prev) => prev.map((c) => (c.chatId === chatId ? { ...c, unreadCount: 0 } : c)));
     if (unread > 0 && typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("karaadi:messages-read", { detail: { unread } }));
     }
   }, []);
 
-  const handleBack = useCallback(() => {
-    setShowThread(false);
-  }, []);
-
   const handleDelete = useCallback(async (chatId: number) => {
     const ok = await deleteChatroom(chatId, currentUserId);
     if (!ok) return;
     setChatrooms((prev) => prev.filter((c) => c.chatId !== chatId));
-    if (activeChatId === chatId) {
-      setActiveChatId(null);
-      setShowThread(false);
-    }
+    if (activeChatId === chatId) setActiveChatId(null);
   }, [currentUserId, activeChatId]);
 
   const handleNewMessage = useCallback((chatId: number, lastMessage: string, lastMessageAt: string) => {
@@ -186,18 +156,12 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
 
   const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
-  const listPanelClass = showThread && !!activeChatroom
-    ? "hidden lg:flex lg:flex-col lg:w-[320px] xl:w-[360px] lg:flex-shrink-0 lg:min-h-0 lg:border-r lg:border-gray-200 lg:bg-white"
-    : "flex flex-col w-full lg:w-[320px] xl:w-[360px] flex-shrink-0 min-h-0 border-r border-gray-200 bg-white";
-
-  const threadPanelClass = showThread && !!activeChatroom
-    ? "flex flex-1 flex-col min-h-0 min-w-0"
-    : "hidden lg:flex lg:flex-1 lg:flex-col lg:min-h-0 lg:min-w-0";
-
   return (
-    <div className="flex flex-1 min-h-0 h-full bg-white overflow-hidden sm:rounded-xl sm:border sm:border-gray-200 sm:shadow-sm">
-      <div className={listPanelClass}>
-        <div className="px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0">
+    <div className="flex w-full h-full bg-white overflow-hidden sm:rounded-xl sm:border sm:border-gray-200 sm:shadow-sm">
+
+      <div className="flex flex-col h-full w-[72px] sm:w-[88px] lg:w-[320px] xl:w-[360px] flex-shrink-0 border-r border-gray-200 bg-white">
+
+        <div className="hidden lg:block px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-2 mb-3">
             <h1 className="text-lg font-bold text-gray-900">Messages</h1>
             {totalUnread > 0 && (
@@ -217,61 +181,100 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         </div>
 
         <div
-          className="flex-1 min-h-0 overflow-y-auto"
+          className="flex-1 overflow-y-auto"
           style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
           {loading ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 animate-pulse">
-                <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-gray-200 rounded w-28" />
-                  <div className="h-3 bg-gray-100 rounded w-44" />
-                  <div className="h-3 bg-gray-100 rounded w-36" />
+            <>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-4 py-3 border-b border-gray-100 animate-pulse">
+                  <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-full bg-gray-200 flex-shrink-0" />
+                  <div className="hidden lg:flex flex-1 flex-col gap-2">
+                    <div className="h-3.5 bg-gray-200 rounded w-28" />
+                    <div className="h-3 bg-gray-100 rounded w-44" />
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <MessageSquare className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="font-semibold text-gray-700">No conversations</p>
-              <p className="text-sm text-gray-400 mt-1">
-                {search ? "No results found" : "Start by contacting a seller"}
+            <div className="flex flex-col items-center justify-center py-8 px-2 text-center">
+              <MessageSquare className="w-7 h-7 text-gray-300 mb-1" />
+              <p className="hidden lg:block text-xs text-gray-400 font-medium">
+                {search ? "No results" : "No conversations"}
               </p>
             </div>
           ) : (
-            filtered.map((room) => (
-              <ConversationRow
-                key={room.chatId}
-                chatroom={room}
-                isActive={activeChatId === room.chatId}
-                currentUserId={currentUserId}
-                onClick={handleSelect}
-                onDelete={handleDelete}
-              />
-            ))
+            filtered.map((room) => {
+              const isSender = room.senderId === currentUserId;
+              const otherName = isSender ? room.receiverName : room.senderName;
+              const otherAvatar = isSender ? room.receiverAvatar : room.senderAvatar;
+              const unread = room.unreadCount || 0;
+              const isActive = activeChatId === room.chatId;
+
+              return (
+                <div key={room.chatId}>
+                  <div
+                    className="hidden lg:block"
+                    onClick={() => handleSelect(room.chatId)}
+                  >
+                    <ConversationRow
+                      chatroom={room}
+                      isActive={isActive}
+                      currentUserId={currentUserId}
+                      onClick={handleSelect}
+                      onDelete={handleDelete}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(room.chatId)}
+                    className={`lg:hidden w-full flex items-center justify-center py-2.5 border-b border-gray-100 transition-colors touch-manipulation ${
+                      isActive ? "bg-blue-50" : "active:bg-gray-50"
+                    }`}
+                  >
+                    <div className="relative">
+                      {otherAvatar ? (
+                        <img
+                          src={otherAvatar}
+                          alt={otherName}
+                          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ${isActive ? "ring-blue-500" : "ring-transparent"}`}
+                          onError={(e) => { e.currentTarget.style.display = "none" }}
+                        />
+                      ) : (
+                        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base ring-2 ${isActive ? "ring-blue-500" : "ring-transparent"}`}>
+                          {(otherName || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {unread > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                          {unread > 9 ? "9+" : unread}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
 
-      <div className={threadPanelClass}>
+      <div className="flex flex-1 flex-col min-w-0 h-full">
         {activeChatId && activeChatroom ? (
           <MessageThread
             chatId={activeChatId}
             chatroom={activeChatroom}
             currentUserId={currentUserId}
-            onBack={handleBack}
+            onBack={undefined}
             onNewMessage={handleNewMessage}
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-6">
-            <div className="w-20 h-20 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-4 shadow-sm">
-              <MessageSquare className="w-10 h-10 text-gray-300" />
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3 shadow-sm">
+              <MessageSquare className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300" />
             </div>
-            <p className="text-lg font-semibold text-gray-600">Select a conversation</p>
-            <p className="text-sm text-gray-400 mt-1">Choose a conversation from the list</p>
+            <p className="text-sm sm:text-base font-semibold text-gray-500">Select a conversation</p>
           </div>
         )}
       </div>

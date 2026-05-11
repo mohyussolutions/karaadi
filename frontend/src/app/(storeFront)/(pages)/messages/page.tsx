@@ -8,7 +8,7 @@ import Loading from "@/app/ui/loading/Loading"
 
 const ChatInbox = dynamic(
   () => import("@/app/(storeFront)/components/chats/chat/ChatInbox"),
-  { ssr: false, loading: () => <div className="h-full flex items-center justify-center"><Loading /></div> },
+  { ssr: false, loading: () => <div className="w-full h-full flex items-center justify-center"><Loading /></div> },
 )
 
 function MessagesContent() {
@@ -22,9 +22,7 @@ function MessagesContent() {
   const itemModel = searchParams.get("itemModel")
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login?redirect=/messages")
-    }
+    if (!loading && !user) router.replace("/login?redirect=/messages")
   }, [loading, user, router])
 
   useEffect(() => {
@@ -40,13 +38,13 @@ function MessagesContent() {
 
   return (
     <div
-      className="fixed inset-x-0 z-10 flex flex-col"
+      className="fixed inset-x-0 z-10 overflow-hidden"
       style={{
-        top: '3rem',
-        bottom: 'env(safe-area-inset-bottom, 0px)',
+        top: "3rem",
+        height: "calc(100svh - 3rem - env(safe-area-inset-bottom, 0px))",
       }}
     >
-      <div className="flex-1 min-h-0 h-full mx-auto w-full max-w-[64.5rem] flex flex-col sm:p-4 lg:p-6">
+      <div className="h-full w-full max-w-[64.5rem] mx-auto flex flex-col sm:p-4 lg:p-6">
         <ChatInbox
           initialChatId={chatId ? Number(chatId) : undefined}
           sellerId={sellerId || undefined}

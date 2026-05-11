@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { ChevronLeft, Send, Loader2 } from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 import MessageBubble from "./MessageBubble"
 import { getChatroomMessages, sendChatMessage } from "@/services/chatService"
 import { socketService } from "@/actions/sockets/socketServiceAction"
@@ -215,19 +215,8 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-white">
-      <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors lg:hidden -ml-1 touch-manipulation"
-            aria-label="Back"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-        )}
-
+    <div className="flex flex-col flex-1 min-h-0 h-full bg-white">
+      <div className="flex items-center gap-3 px-3 sm:px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {otherAvatar ? (
           <img
             src={otherAvatar}
