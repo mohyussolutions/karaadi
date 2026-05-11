@@ -3,6 +3,7 @@
 import React, { useState, useRef, ChangeEvent } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 import { saveSearchToDb } from "@/actions/categories/searchHistoryAction";
+import { useTranslation } from "react-i18next";
 
 export const SEARCH_EVENT = "karaadi:search";
 
@@ -17,6 +18,7 @@ export default function SearchInput({
   placeholder,
   onSearch,
 }: SearchInputProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState(defaultValue);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,7 +58,7 @@ export default function SearchInput({
         type="text"
         value={text}
         onChange={handleChange}
-        placeholder={placeholder ?? "Sore Hamar, guri, baabuur, 45 000..."}
+        placeholder={placeholder ?? t("search", "Search Hamar, house, car, 45 000...")}
         className="w-full pl-12 pr-12 py-4 bg-white border-2 border-blue-200 rounded-2xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-800 text-base font-medium placeholder:text-gray-400 transition-all"
       />
       {text && (
