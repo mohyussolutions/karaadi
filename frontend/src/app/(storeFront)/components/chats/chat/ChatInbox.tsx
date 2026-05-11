@@ -280,6 +280,16 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
             onBack={undefined}
             onNewMessage={handleNewMessage}
           />
+        ) : activeChatId && !activeChatroom && loading ? (
+          <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
+            <div style={{ flex: 1 }} />
+            <div className="bg-white border-t border-gray-200 px-3 py-3 flex-shrink-0">
+              <div className="flex items-end gap-2">
+                <div className="flex-1 h-12 bg-gray-100 rounded-2xl animate-pulse" />
+                <div className="w-11 h-11 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-4">
             <div className="w-16 h-16 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3 shadow-sm">

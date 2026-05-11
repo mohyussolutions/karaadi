@@ -16,9 +16,7 @@ export interface SocialPostResult {
   error?: string;
 }
 
-export async function postToTikTok(
-  payload: SocialPostPayload,
-): Promise<SocialPostResult> {
+export async function postToTikTok(payload: SocialPostPayload): Promise<SocialPostResult> {
   const accessToken = process.env.TIKTOK_ACCESS_TOKEN;
 
   if (!accessToken) {
@@ -26,14 +24,15 @@ export async function postToTikTok(
   }
 
   if (!payload.imageUrl) {
-    return { platform: "tiktok", success: false, error: "No image URL provided for photo post" };
+    return { platform: "tiktok", success: false, error: "No image provided" };
   }
 
   const caption = [
-    payload.title,
-    `$${payload.price}`,
-    payload.description,
-    payload.listingUrl,
+    `🛒 ${payload.title}`,
+    payload.price ? `💰 $${payload.price}` : "",
+    payload.description ? payload.description.slice(0, 300) : "",
+    `🔗 ${payload.listingUrl}`,
+    "#Karaadi #Somalia #ForSale",
   ]
     .filter(Boolean)
     .join("\n")
@@ -74,9 +73,7 @@ export async function postToTikTok(
   }
 }
 
-export async function postToFacebook(
-  payload: SocialPostPayload,
-): Promise<SocialPostResult> {
+export async function postToFacebook(payload: SocialPostPayload): Promise<SocialPostResult> {
   const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
   const pageId = process.env.FACEBOOK_PAGE_ID;
 
@@ -84,41 +81,38 @@ export async function postToFacebook(
     return { platform: "facebook", success: false, error: "Facebook credentials not configured" };
   }
 
-  const caption = [
-    payload.title,
-    `$${payload.price}`,
-    payload.description,
-    payload.listingUrl,
+  const message = [
+    `🛒 ${payload.title}`,
+    payload.price ? `💰 $${payload.price}` : "",
+    payload.description ? payload.description.slice(0, 400) : "",
+    `\n👉 View listing: ${payload.listingUrl}`,
+    "#Karaadi #Somalia #ForSale",
   ]
     .filter(Boolean)
     .join("\n");
 
   try {
-    let endpoint: string;
-    let body: Record<string, string>;
+    let res: Response;
 
     if (payload.imageUrl) {
-      endpoint = `https://graph.facebook.com/v19.0/${pageId}/photos`;
-      body = {
-        url: payload.imageUrl,
-        caption,
-      };
+      res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          url: payload.imageUrl,
+          caption: message,
+        }),
+      });
     } else {
-      endpoint = `https://graph.facebook.com/v19.0/${pageId}/feed`;
-      body = {
-        message: caption,
-        link: payload.listingUrl,
-      };
+      res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          message,
+          link: payload.listingUrl,
+        }),
+      });
     }
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(body),
-    });
 
     const data = await res.json();
 
@@ -137,9 +131,7 @@ export async function postToAllPlatforms(
   platforms: ("tiktok" | "facebook")[] = ["tiktok", "facebook"],
 ): Promise<SocialPostResult[]> {
   const tasks: Promise<SocialPostResult>[] = [];
-
   if (platforms.includes("tiktok")) tasks.push(postToTikTok(payload));
   if (platforms.includes("facebook")) tasks.push(postToFacebook(payload));
-
   return Promise.all(tasks);
 }
