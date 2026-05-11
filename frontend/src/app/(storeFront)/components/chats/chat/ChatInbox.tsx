@@ -178,7 +178,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         }}
         className={`${showThread ? "hidden lg:flex lg:w-[300px] xl:w-[340px]" : "flex w-full lg:w-[300px] xl:w-[340px]"}`}
       >
-        <div className="flex flex-col px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0 gap-3">
+        <div className="flex flex-col px-4 pt-4 pb-3 border-b border-gray-200 flex-shrink-0 gap-3 shadow-sm">
           <div className="flex items-center gap-2">
             <h1 className="text-base font-bold text-gray-900 flex-1">Messages</h1>
             {totalUnread > 0 && (
@@ -192,7 +192,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
             placeholder="Search conversations…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 placeholder:text-gray-400 touch-manipulation text-sm"
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#0063fb] bg-gray-50 placeholder:text-gray-400 touch-manipulation text-sm font-medium text-gray-900"
             style={{ fontSize: "16px" }}
           />
         </div>

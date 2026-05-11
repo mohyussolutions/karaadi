@@ -216,7 +216,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
-      <div className="flex items-center gap-2.5 px-3 sm:px-4 py-2.5 sm:py-3 bg-white border-b border-gray-100 flex-shrink-0">
+      <div className="flex items-center gap-2.5 px-3 sm:px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm">
         {onBack && (
           <button
             type="button"
@@ -302,8 +302,8 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         <div aria-hidden="true" />
       </div>
 
-      <div className="bg-white border-t border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 flex-shrink-0" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}>
-        <div className="flex items-end gap-2">
+      <div className="bg-white border-t border-gray-200 px-3 py-2.5 flex-shrink-0" style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex items-end gap-2.5">
           <textarea
             ref={textareaRef}
             value={input}
@@ -312,21 +312,21 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             placeholder="Write a message…"
             disabled={sending}
             rows={1}
-            className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all touch-manipulation text-sm"
-            style={{ fontSize: "16px", height: "48px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4" }}
+            className="flex-1 resize-none rounded-2xl border-2 border-gray-200 bg-gray-50 px-4 py-2.5 focus:outline-none focus:border-[#0063fb] focus:bg-white placeholder:text-gray-400 transition-all touch-manipulation font-medium"
+            style={{ fontSize: "16px", height: "48px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4", color: "#111827" }}
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center transition-all touch-manipulation select-none ${
+            className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center transition-all touch-manipulation select-none shadow-md ${
               !input.trim() || sending
-                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                : "bg-[#0063fb] text-white active:scale-90 shadow-sm"
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                : "bg-[#0063fb] text-white active:scale-90 active:shadow-sm"
             }`}
             aria-label="Send"
           >
-            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-[18px] h-[18px]" />}
           </button>
         </div>
       </div>
