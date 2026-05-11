@@ -13,30 +13,8 @@ import { CACHE_TTL } from "src/config/config.constants.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
-import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS } from "src/controllers/constants/marketplace.constants.ts";
+import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS, selectUserBasic, formatItem} from "src/config/constants/marketplace.constants.ts";
 
-
-const selectUserBasic = {
-  select: {
-    [FIELD_NAMES.ID]: true,
-    [FIELD_NAMES.USERNAME]: true,
-    [FIELD_NAMES.EMAIL]: true,
-    [FIELD_NAMES.PHONE]: true,
-    [FIELD_NAMES.PROFILE_IMAGE]: true,
-  },
-};
-
-const formatItem = (item: any) => ({
-  ...item,
-  isExpired: isExpired(item[FIELD_NAMES.EXPIRY_DATE]),
-  [FIELD_NAMES.STATUS]: isExpired(item[FIELD_NAMES.EXPIRY_DATE])
-    ? LISTING_STATUS.EXPIRED
-    : item[FIELD_NAMES.IS_PAID]
-      ? LISTING_STATUS.ACTIVE
-      : LISTING_STATUS.PENDING,
-  daysUntilExpiry: getDaysUntilExpiry(item[FIELD_NAMES.EXPIRY_DATE]),
-  formattedExpiry: formatExpiryDate(item[FIELD_NAMES.EXPIRY_DATE]),
-});
 
 export const getAllMarketplaceItemsAdmin = async (
   req: Request,

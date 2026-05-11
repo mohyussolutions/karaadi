@@ -15,34 +15,8 @@ import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { getBusinessListingFlags, checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
-import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS } from "src/controllers/constants/realEstate.constants.ts";
+import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS, selectUserBasic, selectUserMinimal, formatItem} from "src/config/constants/realEstate.constants.ts";
 
-
-const selectUserBasic = {
-  select: {
-    id: true,
-    username: true,
-    email: true,
-    phone: true,
-    profileImage: true,
-  },
-};
-
-const selectUserMinimal = {
-  select: { username: true },
-};
-
-const formatItem = (item: any) => ({
-  ...item,
-  isExpired: isExpired(item.expiryDate),
-  status: isExpired(item.expiryDate)
-    ? LISTING_STATUS.EXPIRED
-    : item.isPaid
-      ? LISTING_STATUS.ACTIVE
-      : LISTING_STATUS.PENDING,
-  daysUntilExpiry: getDaysUntilExpiry(item.expiryDate),
-  formattedExpiry: formatExpiryDate(item.expiryDate),
-});
 
 export const getAllRealEstates = async (req: Request, res: Response) => {
   try {

@@ -16,86 +16,8 @@ import { CreateBoatBody, PaymentUpdateBody } from "src/types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
-import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, DEFAULT_VALUES, CACHE_KEYS } from "src/controllers/constants/boats.constants.ts";
+import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, DEFAULT_VALUES, CACHE_KEYS, selectUserBasic, selectUserMinimal, boatInclude, ensureSingleString, formatBoat} from "src/config/constants/boats.constants.ts";
 
-
-const selectUserBasic = {
-  select: {
-    [FIELD_NAMES.ID]: true,
-    [FIELD_NAMES.USERNAME]: true,
-    [FIELD_NAMES.EMAIL]: true,
-    [FIELD_NAMES.PHONE]: true,
-    [FIELD_NAMES.PROFILE_IMAGE]: true,
-  },
-};
-
-const selectUserMinimal = {
-  select: {
-    [FIELD_NAMES.USERNAME]: true,
-  },
-};
-
-const boatInclude = {
-  [FIELD_NAMES.USER]: selectUserBasic,
-  [FIELD_NAMES.FEE]: true,
-  [FIELD_NAMES.PLAN]: true,
-};
-
-const ensureSingleString = (id: any): string => {
-  return Array.isArray(id) ? id[0] : id || "";
-};
-
-const formatBoat = (boat: any) => {
-  if (!boat) return null;
-
-  const expired = isExpired(boat[FIELD_NAMES.EXPIRY_DATE]);
-
-  if (expired && boat[FIELD_NAMES.IS_PAID]) {
-    prisma.boat
-      .update({
-        where: { [FIELD_NAMES.ID]: boat[FIELD_NAMES.ID] },
-        data: { [FIELD_NAMES.IS_PAID]: false },
-      })
-      .catch(() => {});
-    boat[FIELD_NAMES.IS_PAID] = false;
-  }
-
-  let planName = "Basic 30 Days";
-  if (boat[FIELD_NAMES.PLAN]) {
-    if (boat[FIELD_NAMES.PLAN_AMOUNT] === boat[FIELD_NAMES.PLAN].premium90)
-      planName = "Premium 90 Days";
-    else if (
-      boat[FIELD_NAMES.PLAN_AMOUNT] === boat[FIELD_NAMES.PLAN].standard60
-    )
-      planName = "Standard 60 Days";
-  }
-
-  return {
-    ...boat,
-    [FIELD_NAMES.IS_EXPIRED]: expired,
-    [FIELD_NAMES.STATUS]: expired
-      ? LISTING_STATUS.EXPIRED
-      : boat[FIELD_NAMES.IS_PAID]
-        ? LISTING_STATUS.ACTIVE
-        : LISTING_STATUS.PENDING,
-    [FIELD_NAMES.DAYS_UNTIL_EXPIRY]: getDaysUntilExpiry(
-      boat[FIELD_NAMES.EXPIRY_DATE],
-    ),
-    [FIELD_NAMES.FORMATTED_EXPIRY]: formatExpiryDate(
-      boat[FIELD_NAMES.EXPIRY_DATE],
-    ),
-    [FIELD_NAMES.SELECTED_PLAN]: boat[FIELD_NAMES.PLAN]
-      ? {
-          [FIELD_NAMES.NAME]: planName,
-          [FIELD_NAMES.DURATION]: expired
-            ? 0
-            : getDaysUntilExpiry(boat[FIELD_NAMES.EXPIRY_DATE]),
-          [FIELD_NAMES.PRICE]: boat[FIELD_NAMES.PLAN_AMOUNT],
-          [FIELD_NAMES.DETAILS]: boat[FIELD_NAMES.PLAN],
-        }
-      : null,
-  };
-};
 
 export const patchBoatIsPaid = async (req: Request, res: Response) => {
   try {

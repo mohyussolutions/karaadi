@@ -12,24 +12,8 @@ import {
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
-import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES } from "src/controllers/constants/jobs.constants.ts";
+import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, selectUserBasic, formatItem} from "src/config/constants/jobs.constants.ts";
 
-
-const selectUserBasic = {
-  select: { username: true, email: true, phone: true, profileImage: true },
-};
-
-const formatItem = (item: any) => ({
-  ...item,
-  isExpired: isExpired(item.expiryDate),
-  status: isExpired(item.expiryDate)
-    ? LISTING_STATUS.EXPIRED
-    : item.isPaid
-      ? LISTING_STATUS.ACTIVE
-      : LISTING_STATUS.PENDING,
-  daysUntilExpiry: getDaysUntilExpiry(item.expiryDate),
-  formattedExpiry: formatExpiryDate(item.expiryDate),
-});
 
 export const getTotalJobs = async (req: Request, res: Response) => {
   try {
