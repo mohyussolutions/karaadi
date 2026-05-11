@@ -26,14 +26,17 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
 
   return (
     <div
-      className={`relative flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 transition-colors cursor-pointer
+      role="button"
+      tabIndex={0}
+      className={`relative flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 transition-colors cursor-pointer touch-manipulation select-none
         ${isActive
           ? "bg-[#f0f7ff] border-l-[3px] border-l-[#0063fb]"
-          : "hover:bg-gray-50 border-l-[3px] border-l-transparent"
+          : "active:bg-gray-100 hover:bg-gray-50 border-l-[3px] border-l-transparent"
         }`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onClick(chatroom.chatId)}
+      onKeyDown={(e) => e.key === "Enter" && onClick(chatroom.chatId)}
     >
       {/* Avatar */}
       <div className="flex-shrink-0 relative mt-0.5">
@@ -42,13 +45,18 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
             src={otherAvatar}
             alt={otherName}
             className="w-12 h-12 rounded-full object-cover"
-            onError={(e) => { e.currentTarget.style.display = "none" }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty("display", "flex");
+            }}
           />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
-            {otherName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        ) : null}
+        <div
+          className="w-12 h-12 rounded-full bg-blue-500 items-center justify-center text-white font-bold text-lg flex-shrink-0"
+          style={{ display: otherAvatar ? "none" : "flex" }}
+        >
+          {(otherName || "?").charAt(0).toUpperCase()}
+        </div>
         {unread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#0063fb] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
             {unread > 9 ? "9+" : unread}
