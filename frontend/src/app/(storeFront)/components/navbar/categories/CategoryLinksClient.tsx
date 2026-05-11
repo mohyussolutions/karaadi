@@ -1,2 +1,4 @@
 "use client";
-export { default } from "./MainCategoryLinks";
+import dynamic from "next/dynamic";
+
+export default dynamic(() => import("./MainCategoryLinks"), { ssr: false });
