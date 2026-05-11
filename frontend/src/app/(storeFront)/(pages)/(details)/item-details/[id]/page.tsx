@@ -314,9 +314,14 @@ export default function ProductDetails() {
                       handleHeartClick();
                     }}
                     aria-label="Save to favorites"
-                    className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                    className="relative bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
                   >
                     <AiOutlineHeart className="w-5 h-5 text-red-500" />
+                    {savedCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none shadow-sm">
+                        {savedCount > 99 ? "99+" : savedCount}
+                      </span>
+                    )}
                   </span>
                   <span className="bg-white/90 p-2.5 rounded-full shadow-md text-gray-700">
                     <AiOutlineZoomIn className="w-5 h-5" />
@@ -384,12 +389,6 @@ export default function ProductDetails() {
               <p className="text-sm text-gray-500 flex items-center gap-1">
                 📍{item.city ? ` ${item.city}` : ""}
                 {item.region ? ` — ${item.region}` : ""}
-              </p>
-            )}
-            {savedCount > 0 && (
-              <p className="text-xs text-gray-400 flex items-center gap-1">
-                <span>🤍</span>
-                {savedCount} {savedCount === 1 ? "person" : "people"} saved this
               </p>
             )}
           </div>
