@@ -81,7 +81,6 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       const { chatId, message } = data as { chatId: string; message: any };
       const numId = Number(chatId);
       if (!numId || !message) return;
-
       setChatrooms((prev) => {
         const idx = prev.findIndex((c) => c.chatId === numId);
         if (idx === -1) {
@@ -157,11 +156,21 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   return (
-    <div className="flex w-full h-full bg-white overflow-hidden sm:rounded-xl sm:border sm:border-gray-200 sm:shadow-sm">
+    <div style={{ display: "flex", flexDirection: "row", width: "100%", height: "100%", backgroundColor: "white" }}>
 
-      <div className="flex flex-col h-full w-[72px] sm:w-[88px] lg:w-[320px] xl:w-[360px] flex-shrink-0 border-r border-gray-200 bg-white">
-
-        <div className="hidden lg:block px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0">
+      <div
+        style={{
+          width: "76px",
+          flexShrink: 0,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          borderRight: "1px solid #e5e7eb",
+          backgroundColor: "white",
+        }}
+        className="lg:w-[320px] xl:w-[360px]"
+      >
+        <div className="hidden lg:block px-4 pt-4 pb-3 border-b border-gray-100" style={{ flexShrink: 0 }}>
           <div className="flex items-center gap-2 mb-3">
             <h1 className="text-lg font-bold text-gray-900">Messages</h1>
             {totalUnread > 0 && (
@@ -181,26 +190,28 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         </div>
 
         <div
-          className="flex-1 overflow-y-auto"
-          style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+          } as React.CSSProperties}
         >
           {loading ? (
-            <>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-4 py-3 border-b border-gray-100 animate-pulse">
-                  <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-full bg-gray-200 flex-shrink-0" />
-                  <div className="hidden lg:flex flex-1 flex-col gap-2">
-                    <div className="h-3.5 bg-gray-200 rounded w-28" />
-                    <div className="h-3 bg-gray-100 rounded w-44" />
-                  </div>
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex justify-center lg:justify-start items-center gap-3 px-2 lg:px-4 py-3 border-b border-gray-100 animate-pulse">
+                <div className="w-11 h-11 rounded-full bg-gray-200 flex-shrink-0" />
+                <div className="hidden lg:flex flex-col flex-1 gap-2">
+                  <div className="h-3 bg-gray-200 rounded w-24" />
+                  <div className="h-2.5 bg-gray-100 rounded w-36" />
                 </div>
-              ))}
-            </>
+              </div>
+            ))
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-2 text-center">
-              <MessageSquare className="w-7 h-7 text-gray-300 mb-1" />
+            <div className="flex flex-col items-center justify-center py-10 px-2 text-center gap-2">
+              <MessageSquare className="w-7 h-7 text-gray-300" />
               <p className="hidden lg:block text-xs text-gray-400 font-medium">
-                {search ? "No results" : "No conversations"}
+                {search ? "No results" : "No conversations yet"}
               </p>
             </div>
           ) : (
@@ -213,10 +224,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
 
               return (
                 <div key={room.chatId}>
-                  <div
-                    className="hidden lg:block"
-                    onClick={() => handleSelect(room.chatId)}
-                  >
+                  <div className="hidden lg:block">
                     <ConversationRow
                       chatroom={room}
                       isActive={isActive}
@@ -229,25 +237,28 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
                   <button
                     type="button"
                     onClick={() => handleSelect(room.chatId)}
-                    className={`lg:hidden w-full flex items-center justify-center py-2.5 border-b border-gray-100 transition-colors touch-manipulation ${
-                      isActive ? "bg-blue-50" : "active:bg-gray-50"
-                    }`}
+                    className="lg:hidden w-full flex items-center justify-center py-2 border-b border-gray-100 touch-manipulation"
+                    style={{ backgroundColor: isActive ? "#eff6ff" : "transparent" }}
                   >
                     <div className="relative">
                       {otherAvatar ? (
                         <img
                           src={otherAvatar}
                           alt={otherName}
-                          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ${isActive ? "ring-blue-500" : "ring-transparent"}`}
+                          className="w-11 h-11 rounded-full object-cover"
+                          style={{ outline: isActive ? "2px solid #3b82f6" : "2px solid transparent", outlineOffset: "1px" }}
                           onError={(e) => { e.currentTarget.style.display = "none" }}
                         />
                       ) : (
-                        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base ring-2 ${isActive ? "ring-blue-500" : "ring-transparent"}`}>
+                        <div
+                          className="w-11 h-11 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base"
+                          style={{ outline: isActive ? "2px solid #3b82f6" : "2px solid transparent", outlineOffset: "1px" }}
+                        >
                           {(otherName || "?").charAt(0).toUpperCase()}
                         </div>
                       )}
                       {unread > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                           {unread > 9 ? "9+" : unread}
                         </span>
                       )}
@@ -260,7 +271,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col min-w-0 h-full">
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}>
         {activeChatId && activeChatroom ? (
           <MessageThread
             chatId={activeChatId}
@@ -271,10 +282,10 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3 shadow-sm">
-              <MessageSquare className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300" />
+            <div className="w-16 h-16 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3 shadow-sm">
+              <MessageSquare className="w-8 h-8 text-gray-300" />
             </div>
-            <p className="text-sm sm:text-base font-semibold text-gray-500">Select a conversation</p>
+            <p className="text-sm font-semibold text-gray-500">Select a conversation</p>
           </div>
         )}
       </div>

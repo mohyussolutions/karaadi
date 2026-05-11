@@ -215,7 +215,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 h-full bg-white">
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
       <div className="flex items-center gap-3 px-3 sm:px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {otherAvatar ? (
           <img
@@ -262,8 +262,8 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
       <div
         ref={scrollAreaRef}
-        className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-1 bg-gray-50"
-        style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        className="px-4 py-4 space-y-1 bg-gray-50"
+        style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", minHeight: 0 } as React.CSSProperties}
       >
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (

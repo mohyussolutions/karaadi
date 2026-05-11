@@ -16,11 +16,6 @@ function MessagesContent() {
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
 
-  const chatId = searchParams.get("chatId")
-  const sellerId = searchParams.get("sellerId")
-  const itemId = searchParams.get("itemId")
-  const itemModel = searchParams.get("itemModel")
-
   useEffect(() => {
     if (!loading && !user) router.replace("/login?redirect=/messages")
   }, [loading, user, router])
@@ -38,19 +33,18 @@ function MessagesContent() {
 
   return (
     <div
-      className="fixed inset-x-0 z-10 overflow-hidden"
-      style={{
-        top: "3rem",
-        height: "calc(100svh - 3rem - env(safe-area-inset-bottom, 0px))",
-      }}
+      className="fixed inset-x-0 z-10"
+      style={{ top: "3rem", bottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="h-full w-full max-w-[64.5rem] mx-auto flex flex-col sm:p-4 lg:p-6">
-        <ChatInbox
-          initialChatId={chatId ? Number(chatId) : undefined}
-          sellerId={sellerId || undefined}
-          itemId={itemId || undefined}
-          itemModel={itemModel || undefined}
-        />
+      <div className="absolute inset-0 sm:p-4 lg:p-6">
+        <div className="w-full h-full max-w-[64.5rem] mx-auto sm:rounded-xl sm:overflow-hidden sm:border sm:border-gray-200 sm:shadow-sm">
+          <ChatInbox
+            initialChatId={searchParams.get("chatId") ? Number(searchParams.get("chatId")) : undefined}
+            sellerId={searchParams.get("sellerId") || undefined}
+            itemId={searchParams.get("itemId") || undefined}
+            itemModel={searchParams.get("itemModel") || undefined}
+          />
+        </div>
       </div>
     </div>
   )
