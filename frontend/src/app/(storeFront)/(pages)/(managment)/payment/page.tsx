@@ -41,6 +41,7 @@ export default function SummaryPaymentPage() {
     processing,
     pollAttempt,
     paymentStatus,
+    shareUrl,
     total,
     planPrice,
     itemFee,
@@ -92,6 +93,7 @@ export default function SummaryPaymentPage() {
             paymentStatus={paymentStatus}
             pollAttempt={pollAttempt}
             total={total}
+            shareUrl={shareUrl}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
             phoneNumber={phoneNumber}

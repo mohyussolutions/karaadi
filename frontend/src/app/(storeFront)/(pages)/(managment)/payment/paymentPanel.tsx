@@ -12,6 +12,7 @@ interface Props {
   paymentStatus: PaymentStatus;
   pollAttempt: number;
   total: number;
+  shareUrl: string;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
   phoneNumber: string;
@@ -28,6 +29,7 @@ export default function PaymentPanel({
   paymentStatus,
   pollAttempt,
   total,
+  shareUrl,
   paymentMethod,
   setPaymentMethod,
   phoneNumber,
@@ -42,7 +44,7 @@ export default function PaymentPanel({
   return (
     <div className="w-full lg:w-1/3 bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
       <PollingOverlay processing={processing} paymentStatus={paymentStatus} pollAttempt={pollAttempt} handleRetry={handleRetry} />
-      <SuccessOverlay paymentStatus={paymentStatus} isFree={isFree} />
+      <SuccessOverlay paymentStatus={paymentStatus} isFree={isFree} shareUrl={shareUrl} />
       <PanelHeader isFree={isFree} />
       <div className="p-5 space-y-5">
         <TotalDisplay total={total} />
@@ -86,20 +88,95 @@ function PollingOverlay({ processing, paymentStatus, pollAttempt, handleRetry }:
   );
 }
 
-function SuccessOverlay({ paymentStatus, isFree }: { paymentStatus: PaymentStatus; isFree: boolean }) {
+function SuccessOverlay({ paymentStatus, isFree, shareUrl }: { paymentStatus: PaymentStatus; isFree: boolean; shareUrl: string }) {
   const { t } = useTranslation();
+  const [copied, setCopied] = React.useState(false);
+
   if (paymentStatus !== "success") return null;
+
+  const text = encodeURIComponent(t("payment.shareText", "Check out my listing on Karaadi!"));
+  const url = encodeURIComponent(shareUrl);
+
+  const socials = [
+    {
+      label: "WhatsApp",
+      bg: "bg-[#25D366]",
+      href: `https://wa.me/?text=${text}%20${url}`,
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.532 5.853L.057 23.786a.5.5 0 0 0 .619.633l6.102-1.598A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.878 0-3.638-.512-5.145-1.402l-.36-.214-3.827 1.002 1.025-3.735-.234-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      ),
+    },
+    {
+      label: "Telegram",
+      bg: "bg-[#2AABEE]",
+      href: `https://t.me/share/url?url=${url}&text=${text}`,
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.43 13.885 4.46 12.95c-.658-.204-.672-.658.136-.977l10.57-4.075c.548-.197 1.027.12.728.323z"/></svg>
+      ),
+    },
+    {
+      label: "Facebook",
+      bg: "bg-[#1877F2]",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><path d="M24 12.073C24 5.445 18.627 0 12 0S0 5.445 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+      ),
+    },
+    {
+      label: "X",
+      bg: "bg-black",
+      href: `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      ),
+    },
+  ];
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
-    <div className="absolute inset-0 bg-white flex flex-col items-center justify-center rounded-2xl z-50">
+    <div className="absolute inset-0 bg-white flex flex-col items-center justify-center rounded-2xl z-50 px-5">
       <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-3">
         <FaCheckCircle className="text-green-500" size={36} />
       </div>
-      <p className="font-bold text-green-600 text-lg">
+      <p className="font-bold text-green-600 text-lg text-center">
         {isFree
           ? t("payment.confirmedTitle", "Listing Confirmed!")
           : t("payment.successTitle", "Payment Successful!")}
       </p>
-      <p className="mt-1 text-xs text-gray-400">{t("payment.redirecting", "Redirecting...")}</p>
+      <p className="mt-1 text-xs text-gray-400 mb-5">
+        {t("payment.sharePrompt", "Share your listing on social media")}
+      </p>
+
+      <div className="flex gap-3 mb-4">
+        {socials.map((s) => (
+          <a
+            key={s.label}
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={s.label}
+            className={`${s.bg} w-11 h-11 rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform touch-manipulation`}
+          >
+            {s.icon}
+          </a>
+        ))}
+      </div>
+
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 active:scale-95 transition-all touch-manipulation mb-4"
+      >
+        <FaLock size={10} />
+        {copied ? t("payment.copied", "Copied!") : t("payment.copyLink", "Copy Link")}
+      </button>
+
+      <p className="text-[10px] text-gray-400">{t("payment.redirecting", "Redirecting in a few seconds...")}</p>
     </div>
   );
 }

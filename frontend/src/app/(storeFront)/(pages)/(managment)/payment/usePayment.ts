@@ -36,6 +36,7 @@ export function usePayment({
   const [processing, setProcessing] = useState(false);
   const [pollAttempt, setPollAttempt] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
+  const [shareUrl, setShareUrl] = useState("");
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const planPrice = plan?.price || 0;
@@ -67,19 +68,21 @@ export function usePayment({
           body: JSON.stringify({ isPaid: true, planId: plan?.id }),
         });
         if (!res.ok) throw new Error();
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const itemPath = getItemPath(item.mainCategory, item.id || "");
+        const listingUrl = `${origin}${itemPath}`;
+        setShareUrl(listingUrl);
         setPaymentStatus("success");
         toast.success(t("payment.success", "Payment successful! Your listing is now live."));
-        const origin = typeof window !== "undefined" ? window.location.origin : "";
         postToFacebook({
           title: item.title || "",
           description: item.description || "",
           price: item.price || 0,
           imageUrl: Array.isArray(item.images) && item.images[0] ? item.images[0] : undefined,
-          listingUrl: `${origin}${getItemPath(item.mainCategory, item.id || "")}`,
+          listingUrl,
           category: item.mainCategory || item.category || "",
         });
-        dispatch(resetFlow());
-        router.push("/");
+        setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 9000);
       } catch {
         setProcessing(false);
         setPaymentStatus("failed");
@@ -170,16 +173,19 @@ export function usePayment({
 
           if (statusData.status === "success") {
             stopPolling();
-            setPaymentStatus("success");
             setProcessing(false);
+            const origin =
+              typeof window !== "undefined" ? window.location.origin : "";
+            const itemPath2 = getItemPath(item.mainCategory, item.id || "");
+            const listingUrl2 = `${origin}${itemPath2}`;
+            setShareUrl(listingUrl2);
+            setPaymentStatus("success");
             toast.success(
               t(
                 "payment.success",
                 "Payment successful! Your listing is now live.",
               ),
             );
-            const origin =
-              typeof window !== "undefined" ? window.location.origin : "";
             postToFacebook({
               title: item.title || "",
               description: item.description || "",
@@ -188,11 +194,10 @@ export function usePayment({
                 Array.isArray(item.images) && item.images[0]
                   ? item.images[0]
                   : undefined,
-              listingUrl: `${origin}${getItemPath(item.mainCategory, item.id || "")}`,
+              listingUrl: listingUrl2,
               category: item.mainCategory || item.category || "",
             });
-            dispatch(resetFlow());
-            router.push("/");
+            setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 9000);
           } else if (statusData.status === "failed") {
             stopPolling();
             setPaymentStatus("failed");
@@ -219,6 +224,7 @@ export function usePayment({
     processing,
     pollAttempt,
     paymentStatus,
+    shareUrl,
     total,
     planPrice,
     itemFee,

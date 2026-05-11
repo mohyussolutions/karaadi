@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import { FiTrash2 } from "react-icons/fi"
 import type { ConversationRowProps } from "@/app/utils/types/chat.types"
 
@@ -22,23 +22,37 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
   const otherName = isSender ? chatroom.receiverName : chatroom.senderName
   const otherAvatar = isSender ? chatroom.receiverAvatar : chatroom.senderAvatar
   const unread = chatroom.unreadCount || 0
-  const [hovered, setHovered] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
+  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const startLongPress = useCallback(() => {
+    longPressRef.current = setTimeout(() => setShowDelete(true), 500)
+  }, [])
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current)
+      longPressRef.current = null
+    }
+  }, [])
 
   return (
     <div
       role="button"
       tabIndex={0}
-      className={`relative flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 transition-colors cursor-pointer touch-manipulation select-none
-        ${isActive
+      className={`relative flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 cursor-pointer touch-manipulation select-none transition-colors ${
+        isActive
           ? "bg-[#f0f7ff] border-l-[3px] border-l-[#0063fb]"
           : "active:bg-gray-100 hover:bg-gray-50 border-l-[3px] border-l-transparent"
-        }`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={() => onClick(chatroom.chatId)}
+      }`}
+      onMouseEnter={() => setShowDelete(true)}
+      onMouseLeave={() => setShowDelete(false)}
+      onTouchStart={startLongPress}
+      onTouchEnd={cancelLongPress}
+      onTouchCancel={cancelLongPress}
+      onClick={() => { cancelLongPress(); onClick(chatroom.chatId) }}
       onKeyDown={(e) => e.key === "Enter" && onClick(chatroom.chatId)}
     >
-      {/* Avatar */}
       <div className="flex-shrink-0 relative mt-0.5">
         {otherAvatar ? (
           <img
@@ -47,7 +61,7 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
             className="w-12 h-12 rounded-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = "none";
-              (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty("display", "flex");
+              (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty("display", "flex")
             }}
           />
         ) : null}
@@ -64,7 +78,6 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
         )}
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2 mb-0.5">
           <span className={`text-sm truncate ${unread > 0 ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
@@ -87,13 +100,12 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
         </p>
       </div>
 
-      {/* Delete button */}
-      {hovered && (
+      {showDelete && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete(chatroom.chatId) }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-          title="Delete conversation"
+          onClick={(e) => { e.stopPropagation(); setShowDelete(false); onDelete(chatroom.chatId) }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors touch-manipulation"
+          aria-label="Delete conversation"
         >
           <FiTrash2 size={15} />
         </button>

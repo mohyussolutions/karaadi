@@ -131,36 +131,36 @@ const NotificationsComponent = () => {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col min-h-screen font-sans">
-      <header className="sticky top-0 z-20 border-b bg-white px-4 py-4 md:px-6 md:py-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
-        <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-zinc-900">
-          Ogeysiisyo
+    <div className="flex flex-col min-h-screen font-sans bg-gray-50">
+      <header className="sticky top-0 z-20 border-b bg-white px-4 py-3 sm:px-6 sm:py-4 flex flex-row justify-between items-center gap-3 shadow-sm">
+        <h1 className="text-base sm:text-lg font-black uppercase tracking-tighter text-zinc-900">
+          {i18n.t("notifications.title", "Notifications")}
         </h1>
-        <div className="flex w-full sm:w-auto gap-2">
+        <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("unread")}
-            className={`flex-1 sm:flex-none px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full transition-all border ${
+            className={`px-3 py-2 min-h-[36px] text-[10px] font-black uppercase tracking-widest rounded-full transition-all border touch-manipulation select-none ${
               activeTab === "unread"
-                ? "shadow-md border-zinc-900 text-white bg-zinc-900"
-                : "border-zinc-200 text-zinc-500 bg-white hover:bg-zinc-50"
+                ? "border-zinc-900 text-white bg-zinc-900"
+                : "border-zinc-200 text-zinc-500 bg-white active:bg-zinc-50"
             }`}
           >
-            Aan la akhriyin ({unreadCount})
+            {i18n.t("notifications.unread", "Unread")} ({unreadCount})
           </button>
           <button
             onClick={() => setActiveTab("all")}
-            className={`flex-1 sm:flex-none px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full transition-all border ${
+            className={`px-3 py-2 min-h-[36px] text-[10px] font-black uppercase tracking-widest rounded-full transition-all border touch-manipulation select-none ${
               activeTab === "all"
-                ? "shadow-md border-zinc-900 text-white bg-zinc-900"
-                : "border-zinc-200 text-zinc-500 bg-white hover:bg-zinc-50"
+                ? "border-zinc-900 text-white bg-zinc-900"
+                : "border-zinc-200 text-zinc-500 bg-white active:bg-zinc-50"
             }`}
           >
-            Dhamaan
+            {i18n.t("notifications.all", "All")}
           </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}>
         <div className="max-w-4xl mx-auto">
           {isFetching ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">

@@ -43,7 +43,7 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
   if (!user) return null;
 
   return (
-    <div className="relative w-full mx-auto bg-white rounded-[2.5rem] p-6 md:p-10 mt-10 border border-gray-100 shadow-sm transition-all duration-300 group">
+    <div className="relative w-full mx-auto bg-white rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-6 md:p-10 mt-4 sm:mt-10 border border-gray-100 shadow-sm transition-all duration-300 group">
       <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-8 w-full">
           <div className="flex items-center justify-center w-full md:w-auto">

@@ -40,7 +40,7 @@ function MessagesContent() {
 
   return (
     <div
-      className="fixed inset-x-0 flex flex-col z-10"
+      className="fixed inset-x-0 z-10 flex flex-col"
       style={{
         top: '3rem',
         bottom: 'env(safe-area-inset-bottom, 0px)',

@@ -123,7 +123,9 @@ export default function SocialShareModal({
             onClick={handlePost}
             className="flex-1 py-3 bg-[#0063fb] text-white rounded-2xl font-black hover:bg-blue-700 transition"
           >
-            {tiktok ? t("social.post", "Post!") : t("common.continue", "Continue")}
+            {tiktok
+              ? t("social.post", "Post!")
+              : t("common.continue", "Continue")}
           </button>
         </div>
       </div>

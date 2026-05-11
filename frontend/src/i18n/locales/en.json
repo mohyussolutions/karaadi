@@ -566,6 +566,7 @@
     },
     "farmEquipment": {
       "tractor": "Tractor",
+      "tractorForSale": "Tractor For Sale",
       "tools": "Farm Tools",
       "fertilizerSpreader": "Fertilizer Spreader",
       "harvester": "Grain Harvester",
@@ -725,6 +726,8 @@
       "Tech": "IT & Tech",
       "Finance": "Finance & Accounting",
       "Education": "Education",
+      "Healthcare": "Healthcare",
+      "Hospitality": "Hospitality",
       "links": {
         "it": "IT Jobs",
         "airport": "Airport Jobs",

@@ -39,7 +39,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const [otherTyping, setOtherTyping] = useState(false)
-  const endRef = useRef<HTMLDivElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const typingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typingEmitRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -49,8 +49,18 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   const otherAvatar = isSender ? chatroom.receiverAvatar : chatroom.senderAvatar
   const otherUserId = isSender ? chatroom.receiverId : chatroom.senderId
 
-  const scrollToBottom = useCallback(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" })
+  const scrollToBottom = useCallback((instant = false) => {
+    const el = scrollAreaRef.current
+    if (!el) return
+    if (instant) {
+      el.scrollTop = el.scrollHeight
+    } else {
+      try {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+      } catch {
+        el.scrollTop = el.scrollHeight
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -58,7 +68,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     getChatroomMessages(chatId, currentUserId).then((msgs) => {
       setMessages(msgs)
       setLoading(false)
-      setTimeout(scrollToBottom, 80)
+      setTimeout(() => scrollToBottom(true), 50)
     })
 
     socketService.connect(currentUserId)
@@ -74,7 +84,9 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
     const offConnect = socketService.on("connect", joinAndMark)
 
-    window.dispatchEvent(new CustomEvent("karaadi:messages-read"))
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("karaadi:messages-read"))
+    }
 
     return () => {
       offConnect()
@@ -104,7 +116,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         if (prev.some((m) => m.id === mapped.id)) return prev
         return [...prev, mapped]
       })
-      setTimeout(scrollToBottom, 50)
+      setTimeout(() => scrollToBottom(false), 50)
       onNewMessage?.(chatId, msg.content, mapped.timestamp)
     }
 
@@ -132,37 +144,41 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     const off3 = socketService.on("userTyping", handleTyping)
 
     return () => {
-      off1()
-      off2()
-      off3()
+      off1(); off2(); off3()
       if (typingClearRef.current) clearTimeout(typingClearRef.current)
       if (typingEmitRef.current) clearTimeout(typingEmitRef.current)
     }
   }, [chatId, currentUserId, otherName, otherAvatar, onNewMessage, scrollToBottom])
 
   useEffect(() => {
-    scrollToBottom()
+    scrollToBottom(false)
   }, [messages.length, scrollToBottom])
 
-  const handleSend = async () => {
+  const resetTextarea = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "48px"
+    }
+  }
+
+  const handleSend = useCallback(async () => {
     const text = sanitize(input)
     if (!text || sending) return
     setInput("")
-    if (textareaRef.current) textareaRef.current.style.height = "48px"
+    resetTextarea()
     setSending(true)
     const tempId = -Date.now()
     const optimistic: ChatMessage = {
       id: tempId,
       chatId,
       senderId: currentUserId,
-      senderName: "Du",
+      senderName: "You",
       senderAvatar: null,
       content: text,
       timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     }
     setMessages((prev) => [...prev, optimistic])
-    setTimeout(scrollToBottom, 50)
+    setTimeout(() => scrollToBottom(true), 30)
 
     try {
       const saved = await sendChatMessage({ chatId, senderId: currentUserId, receiverId: otherUserId, content: text })
@@ -175,7 +191,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     } finally {
       setSending(false)
     }
-  }
+  }, [input, sending, chatId, currentUserId, otherUserId, onNewMessage, scrollToBottom])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -193,8 +209,9 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
-    e.target.style.height = "48px"
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
+    const ta = e.target
+    ta.style.height = "auto"
+    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`
   }
 
   return (
@@ -202,9 +219,10 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {onBack && (
           <button
+            type="button"
             onClick={onBack}
-            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors lg:hidden -ml-1"
-            aria-label="Tilbake"
+            className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors lg:hidden -ml-1 touch-manipulation"
+            aria-label="Back"
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
@@ -214,12 +232,12 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
           <img
             src={otherAvatar}
             alt={otherName}
-            className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-white"
+            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
             onError={(e) => { e.currentTarget.style.display = "none" }}
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base flex-shrink-0">
-            {otherName.charAt(0).toUpperCase()}
+            {(otherName || "?").charAt(0).toUpperCase()}
           </div>
         )}
 
@@ -235,7 +253,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       </div>
 
       {chatroom.itemTitle && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#f8f9fa] border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex-shrink-0">
           {chatroom.itemImage && (
             <img
               src={chatroom.itemImage}
@@ -253,7 +271,11 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-1 bg-[#f8f9fa]">
+      <div
+        ref={scrollAreaRef}
+        className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-1 bg-gray-50"
+        style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+      >
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"} animate-pulse`}>
@@ -297,12 +319,10 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             )}
           </>
         )}
-        <div ref={endRef} />
+        <div aria-hidden="true" />
       </div>
 
-      <div
-        className="bg-white border-t border-gray-200 px-4 py-3 flex-shrink-0"
-      >
+      <div className="bg-white border-t border-gray-200 px-3 py-3 flex-shrink-0">
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -312,23 +332,23 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             placeholder={`Message ${otherName}…`}
             disabled={sending}
             rows={1}
-            className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all"
-            style={{ height: "48px", maxHeight: "120px", overflowY: "auto" }}
+            className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0063fb] focus:border-transparent placeholder:text-gray-400 transition-all touch-manipulation"
+            style={{ fontSize: "16px", height: "48px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4" }}
           />
           <button
+            type="button"
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className={`p-3 rounded-full flex-shrink-0 transition-all ${
+            className={`p-3 rounded-full flex-shrink-0 transition-all touch-manipulation select-none ${
               !input.trim() || sending
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-[#0063fb] text-white hover:bg-blue-700 active:scale-90 shadow-sm"
+                : "bg-[#0063fb] text-white active:scale-90 shadow-sm"
             }`}
             aria-label="Send"
           >
             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
-        <p className="text-[10px] text-gray-400 mt-1.5 text-center hidden sm:block">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   )

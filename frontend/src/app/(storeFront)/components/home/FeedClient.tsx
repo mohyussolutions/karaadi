@@ -168,6 +168,7 @@ export default function FeedClient({
                 <UniversalCard
                   key={(item.id ?? item._id ?? idx) as string}
                   {...item}
+                  priority={idx < 8}
                 />
               ))}
             </div>
@@ -187,6 +188,7 @@ export default function FeedClient({
           <UniversalCard
             key={(item.id ?? item._id ?? idx) as string}
             {...item}
+            priority={idx < 8}
           />
         ))}
       </div>

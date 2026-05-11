@@ -9,10 +9,11 @@ import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
 import { formatPrice, getValidImageUrl, truncateText } from "./cardUtils";
 
 type Props =
-  | { item: UniversalCardProps }
-  | (UniversalCardProps & { item?: never });
+  | { item: UniversalCardProps; priority?: boolean }
+  | (UniversalCardProps & { item?: never; priority?: boolean });
 
 export default function UniversalCard(props: Props) {
+  const priority = props.priority ?? false;
   const data: UniversalCardProps =
     "item" in props && props.item ? props.item : (props as UniversalCardProps);
 
@@ -79,6 +80,8 @@ export default function UniversalCard(props: Props) {
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                priority={priority}
+                loading={priority ? "eager" : "lazy"}
                 onError={handleImgError}
               />
             )

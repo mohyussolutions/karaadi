@@ -16,8 +16,8 @@ export default function AccountOptionsClient({
   const { activeLanguage } = useLanguage();
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4rem)" }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         {accountOptions.map((item, idx) => {
           const Icon = item.icon;
           const isAccount =
@@ -42,8 +42,8 @@ export default function AccountOptionsClient({
           );
 
           return (
-            <Link key={idx} href={item.href} className="block h-full">
-              <div className="flex items-start gap-4 border border-gray-100 rounded-xl p-5 shadow-sm bg-white transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 h-full min-h-[140px]">
+            <Link key={idx} href={item.href} className="block h-full touch-manipulation select-none">
+              <div className="flex items-center gap-4 border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm bg-white active:scale-[0.98] active:bg-gray-50 transition-all duration-200 h-full min-h-[72px] sm:min-h-[140px] sm:items-start sm:flex-col sm:gap-3">
                 <div className={`${item.colorClass} shrink-0`}>
                   {Icon ? <Icon size={24} /> : null}
                 </div>

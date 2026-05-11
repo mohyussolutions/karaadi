@@ -12,10 +12,12 @@ import { BASE_API_URL as API } from "@/actions/constant/BASE_API_URL";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { useAuth } from "@/context/AuthContext";
-import { MessageSquare, Phone } from "lucide-react";
+import { MessageSquare, Phone, ChevronRight, Home } from "lucide-react";
 import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
 import { trackItemView } from "@/actions/categories/RecommendationActions";
 import ZoomedImageModal from "../../zoomed/ZoomedImageModal";
+import { SEGMENT_LABEL_KEYS } from "../../historyPath/pathSegmentsDisplay";
+import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 
 interface ItemData {
   _id?: string;
@@ -32,10 +34,29 @@ interface ItemData {
   maGaday?: boolean;
 }
 
+const CATEGORY_SEGMENT: Record<string, string> = {
+  antiques: "antiques",
+  electronics: "electronics",
+  animalAndSupplies: "animal-and-supplies",
+  sportsAndOutdoors: "sports-and-outdoors",
+  furniture: "furniture",
+  fashion: "fashion",
+};
+
+const CATEGORY_HREF: Record<string, string> = {
+  antiques: "/marketplace/antiques-and-art",
+  electronics: "/marketplace/electronics",
+  animalAndSupplies: "/marketplace/animal-and-supplies",
+  sportsAndOutdoors: "/marketplace/sports-and-outdoors",
+  furniture: "/marketplace/furniture-and-interior",
+  fashion: "/marketplace/fashion-and-accessories",
+};
+
 export default function ProductDetails() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
+  const { language } = useLanguage();
   const id = params?.id as string;
 
   const { data: rawItem, isLoading: loading } = useSWR<ItemData>(
@@ -216,13 +237,51 @@ export default function ProductDetails() {
 
   return (
     <div className="my-12 px-4 md:px-6 min-h-screen max-w-7xl mx-auto pb-24 md:pb-0">
-      <div className="mb-6 font-mono text-sm flex items-center gap-1 flex-wrap text-gray-400">
-        <span className="text-blue-600 font-bold capitalize">
-          {Array.isArray(item?.category)
-            ? item.category[0]
-            : (item?.category ?? "Marketplace")}
-        </span>
-      </div>
+      <nav aria-label="Breadcrumb" className="mb-6 overflow-x-auto scrollbar-hide">
+        <ol className="flex flex-nowrap items-center gap-1 text-sm whitespace-nowrap">
+          {(() => {
+            const rawCat = Array.isArray(item?.category) ? item.category[0] : (item?.category ?? "");
+            const seg = CATEGORY_SEGMENT[rawCat] ?? rawCat.toLowerCase();
+            const entry = SEGMENT_LABEL_KEYS[seg];
+            const catLabel = entry ? (language === "so" ? entry.so : entry.en) : rawCat;
+            const catHref = CATEGORY_HREF[rawCat] ?? "/marketplace";
+            return (
+              <>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/")}
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium px-1 py-1 rounded hover:bg-blue-50 transition-colors touch-manipulation select-none min-h-[44px] sm:min-h-0"
+                  >
+                    <Home className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{language === "so" ? "Hoyga" : "Home"}</span>
+                  </button>
+                </li>
+                <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-gray-400" /></li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => router.push(catHref)}
+                    className="text-blue-600 hover:text-blue-800 font-medium px-1 py-1 rounded hover:bg-blue-50 transition-colors touch-manipulation select-none min-h-[44px] sm:min-h-0"
+                  >
+                    {catLabel}
+                  </button>
+                </li>
+                {item?.title && (
+                  <>
+                    <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-gray-400" /></li>
+                    <li>
+                      <span className="text-gray-500 font-medium px-1 truncate max-w-[160px] sm:max-w-xs inline-block align-middle">
+                        {item.title}
+                      </span>
+                    </li>
+                  </>
+                )}
+              </>
+            );
+          })()}
+        </ol>
+      </nav>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start min-w-0">
         <div className="space-y-4 min-w-0">
