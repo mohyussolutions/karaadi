@@ -34,7 +34,7 @@ function MessagesContent() {
   return (
     <div
       className="fixed inset-x-0 z-10"
-      style={{ top: "3rem", bottom: "env(safe-area-inset-bottom, 0px)", backgroundColor: "#f8f9fa" }}
+      style={{ top: "3rem", bottom: "env(safe-area-inset-bottom, 0px)", backgroundColor: "#fefdfd" }}
     >
       <div className="absolute inset-0 sm:p-4 lg:p-6">
         <div className="w-full h-full max-w-[64.5rem] mx-auto rounded-none sm:rounded-2xl sm:overflow-hidden sm:border sm:border-gray-200 sm:shadow-md">

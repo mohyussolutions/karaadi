@@ -131,7 +131,7 @@ const NotificationsComponent = () => {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col min-h-screen font-sans bg-gray-50">
+    <div className="flex flex-col min-h-screen font-sans" style={{ backgroundColor: "#fefdfd" }}>
       <header className="sticky top-0 z-20 border-b bg-white px-4 py-3 sm:px-6 sm:py-4 flex flex-row justify-between items-center gap-3 shadow-sm">
         <h1 className="text-base sm:text-lg font-black uppercase tracking-tighter text-zinc-900">
           {i18n.t("notifications.title", "Notifications")}
