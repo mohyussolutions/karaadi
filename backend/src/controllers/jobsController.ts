@@ -12,33 +12,8 @@ import {
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
+import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES } from "src/controllers/constants/jobs.constants.ts";
 
-
-const FIELD_NAMES = {
-  CATEGORY: "category",
-  SUBCATEGORY: "subcategory",
-  PLAN_AMOUNT: "planAmount",
-  PLAN_ID: "planId",
-  IS_PAID: "isPaid",
-  EXPIRY_DATE: "expiryDate",
-  TITLE: "title",
-  DESCRIPTION: "description",
-  CREATED_AT: "createdAt",
-  UPDATED_AT: "updatedAt",
-} as const;
-
-const ERROR_MESSAGES = {
-  SERVER_ERROR: "Server Error",
-  INVALID_ID: "Invalid ID format",
-  NOT_FOUND: "Job not found",
-  CREATE_FAILED: "Create failed",
-  UPDATE_FAILED: "Update failed",
-  ITEM_NOT_FOUND: "Item not found",
-} as const;
-
-const SUCCESS_MESSAGES = {
-  DELETED: "Job deleted successfully",
-} as const;
 
 const selectUserBasic = {
   select: { username: true, email: true, phone: true, profileImage: true },

@@ -13,58 +13,8 @@ import { CACHE_TTL } from "src/config/config.constants.ts";
 import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
+import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS } from "src/controllers/constants/marketplace.constants.ts";
 
-
-const FIELD_NAMES = {
-  ID: "id",
-  TITLE: "title",
-  PRICE: "price",
-  DESCRIPTION: "description",
-  MAIN_CATEGORY: "mainCategory",
-  CATEGORY: "category",
-  SUBCATEGORY: "subcategory",
-  REGION: "region",
-  CITY: "city",
-  IMAGES: "images",
-  CREATED_AT: "createdAt",
-  EXPIRY_DATE: "expiryDate",
-  IS_PAID: "isPaid",
-  IS_BASIC_30: "isBasic30",
-  IS_STANDARD_60: "isStandard60",
-  IS_PREMIUM_90: "isPremium90",
-  MA_GADAY: "maGaday",
-  USER: "user",
-  FEE: "fee",
-  PLAN: "plan",
-  USERNAME: "username",
-  EMAIL: "email",
-  PHONE: "phone",
-  PROFILE_IMAGE: "profileImage",
-  USER_ID: "userId",
-  PLAN_ID: "planId",
-  PLAN_AMOUNT: "planAmount",
-  MARKETPLACE_ID: "marketplaceId",
-  STATUS: "status",
-  PAID_AT: "paidAt",
-  SUCCESS: "success",
-  DATA: "data",
-  MESSAGE: "message",
-  ERROR: "error",
-  FOUND_BY_FALLBACK: "foundByFallback",
-  SO: "so",
-  EXTRA: "extra",
-} as const;
-
-const ERROR_MESSAGES = {
-  SERVER_ERROR: "Server Error",
-  ITEM_NOT_FOUND: "Item not found",
-  INVALID_DATA: "Invalid data",
-  UPDATE_FAILED: "Update failed",
-} as const;
-
-const SUCCESS_MESSAGES = {
-  DELETED: "Item deleted successfully",
-} as const;
 
 const selectUserBasic = {
   select: {
@@ -74,15 +24,6 @@ const selectUserBasic = {
     [FIELD_NAMES.PHONE]: true,
     [FIELD_NAMES.PROFILE_IMAGE]: true,
   },
-};
-
-const CACHE_KEYS = {
-  ALL_ADMIN: "marketplace:admin:all",
-  TOTAL: "marketplace:total",
-  PAID_TOTAL: "marketplace:paid:total",
-  UNPAID_TOTAL: "marketplace:unpaid:total",
-  ALL_PAID: () => `marketplace:all:v2`,
-  DETAIL: (id: string) => `marketplace:detail:${id}`,
 };
 
 const formatItem = (item: any) => ({

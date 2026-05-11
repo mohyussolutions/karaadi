@@ -15,45 +15,8 @@ import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { getBusinessListingFlags, checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
+import { FIELD_NAMES, ERROR_MESSAGES, SUCCESS_MESSAGES, CACHE_KEYS } from "src/controllers/constants/realEstate.constants.ts";
 
-
-const FIELD_NAMES = {
-  CATEGORY: "category",
-  SUBCATEGORY: "subcategory",
-  PLAN_AMOUNT: "planAmount",
-  PLAN_ID: "planId",
-  IS_PAID: "isPaid",
-  EXPIRY_DATE: "expiryDate",
-  TITLE: "title",
-  DESCRIPTION: "description",
-  CREATED_AT: "createdAt",
-  USER_ID: "userId",
-  PRICE: "price",
-  MAIN_CATEGORY: "mainCategory",
-  REGION: "region",
-  CITY: "city",
-  COUNTY: "county",
-  IMAGES: "images",
-  BEDROOMS: "bedrooms",
-  BATHROOMS: "bathrooms",
-  SQUARE_FEET: "squareFeet",
-  ADDRESS: "address",
-  HAS_GARAGE: "hasGarage",
-  HAS_GARDEN: "hasGarden",
-} as const;
-
-const ERROR_MESSAGES = {
-  SERVER_ERROR: "Server Error",
-  PROPERTY_NOT_FOUND: "Property not found",
-  MISSING_FIELDS: "Missing required fields",
-  CREATION_FAILED: "Creation failed",
-  UPDATE_FAILED: "Update failed",
-  ITEM_NOT_FOUND: "Item not found",
-} as const;
-
-const SUCCESS_MESSAGES = {
-  DELETED: "Property deleted successfully",
-} as const;
 
 const selectUserBasic = {
   select: {
@@ -67,14 +30,6 @@ const selectUserBasic = {
 
 const selectUserMinimal = {
   select: { username: true },
-};
-
-const CACHE_KEYS = {
-  ALL_ADMIN: "realestate:admin:all",
-  TOTAL: "realestate:total",
-  ALL_PAID: (page: number, limit: number) =>
-    `realestate:paid:page:${page}:limit:${limit}`,
-  DETAIL: (id: string) => `realestate:detail:${id}`,
 };
 
 const formatItem = (item: any) => ({
