@@ -3,18 +3,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaCheckCircle, FaMobileAlt } from "react-icons/fa";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { PAYMENT_METHODS, MAX_POLL_ATTEMPTS } from "./constants";
 import type { PaymentMethod, PaymentStatus } from "./constants";
 import { useIsFree } from "@/app/(storeFront)/components/hooks/useIsFree";
-import { postToFacebook, postToTikTok } from "@/actions/categories/socialPostAction";
-
-interface ItemDetails {
-  title: string;
-  description: string;
-  price: number;
-  imageUrl?: string;
-}
 
 interface Props {
   processing: boolean;
@@ -22,7 +13,6 @@ interface Props {
   pollAttempt: number;
   total: number;
   shareUrl: string;
-  itemDetails: ItemDetails;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
   phoneNumber: string;
@@ -40,7 +30,6 @@ export default function PaymentPanel({
   pollAttempt,
   total,
   shareUrl,
-  itemDetails,
   paymentMethod,
   setPaymentMethod,
   phoneNumber,
@@ -54,25 +43,57 @@ export default function PaymentPanel({
   const isFree = useIsFree(total);
   return (
     <div className="w-full lg:w-1/3 bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
-      <PollingOverlay processing={processing} paymentStatus={paymentStatus} pollAttempt={pollAttempt} handleRetry={handleRetry} />
-      <SuccessOverlay paymentStatus={paymentStatus} isFree={isFree} shareUrl={shareUrl} itemDetails={itemDetails} />
+      <PollingOverlay
+        processing={processing}
+        paymentStatus={paymentStatus}
+        pollAttempt={pollAttempt}
+        handleRetry={handleRetry}
+      />
+      <SuccessOverlay
+        paymentStatus={paymentStatus}
+        isFree={isFree}
+        shareUrl={shareUrl}
+      />
       <PanelHeader isFree={isFree} />
       <div className="p-5 space-y-5">
         <TotalDisplay total={total} />
         {!isFree && (
           <>
-            <PaymentMethodSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
-            <PhoneInput phoneNumber={phoneNumber} setPhoneNumber={setPhoneNumber} phoneError={phoneError} setPhoneError={setPhoneError} />
+            <PaymentMethodSelector
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+            />
+            <PhoneInput
+              phoneNumber={phoneNumber}
+              setPhoneNumber={setPhoneNumber}
+              phoneError={phoneError}
+              setPhoneError={setPhoneError}
+            />
           </>
         )}
-        <FailedRetry paymentStatus={paymentStatus} isFree={isFree} handleRetry={handleRetry} />
+        <FailedRetry
+          paymentStatus={paymentStatus}
+          isFree={isFree}
+          handleRetry={handleRetry}
+        />
       </div>
-      <PaymentActions processing={processing} paymentStatus={paymentStatus} total={total} handleBack={handleBack} handlePayment={handlePayment} />
+      <PaymentActions
+        processing={processing}
+        paymentStatus={paymentStatus}
+        total={total}
+        handleBack={handleBack}
+        handlePayment={handlePayment}
+      />
     </div>
   );
 }
 
-function PollingOverlay({ processing, paymentStatus, pollAttempt, handleRetry }: {
+function PollingOverlay({
+  processing,
+  paymentStatus,
+  pollAttempt,
+  handleRetry,
+}: {
   processing: boolean;
   paymentStatus: PaymentStatus;
   pollAttempt: number;
@@ -87,7 +108,8 @@ function PollingOverlay({ processing, paymentStatus, pollAttempt, handleRetry }:
         {t("payment.waitingConfirmation", "Waiting for confirmation...")}
       </p>
       <p className="mt-1 text-xs text-gray-400">
-        {t("payment.attempt", "Attempt")} {pollAttempt} {t("payment.of", "of")} {MAX_POLL_ATTEMPTS}
+        {t("payment.attempt", "Attempt")} {pollAttempt} {t("payment.of", "of")}{" "}
+        {MAX_POLL_ATTEMPTS}
       </p>
       <button
         onClick={handleRetry}
@@ -99,40 +121,28 @@ function PollingOverlay({ processing, paymentStatus, pollAttempt, handleRetry }:
   );
 }
 
-type PostState = "idle" | "loading" | "done" | "error";
-
-function SuccessOverlay({ paymentStatus, isFree, shareUrl, itemDetails }: {
+function SuccessOverlay({
+  paymentStatus,
+  isFree,
+  shareUrl,
+}: {
   paymentStatus: PaymentStatus;
   isFree: boolean;
   shareUrl: string;
-  itemDetails: ItemDetails;
 }) {
   const { t } = useTranslation();
-  const [fbState, setFbState] = React.useState<PostState>("idle");
-  const [ttState, setTtState] = React.useState<PostState>("idle");
+  const [copied, setCopied] = React.useState(false);
 
   if (paymentStatus !== "success") return null;
 
-  const payload = {
-    title: itemDetails.title,
-    description: itemDetails.description,
-    price: itemDetails.price,
-    imageUrl: itemDetails.imageUrl,
-    listingUrl: shareUrl,
-  };
+  const url = encodeURIComponent(shareUrl);
+  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
 
-  const handleFacebook = async () => {
-    if (fbState !== "idle") return;
-    setFbState("loading");
-    const result = await postToFacebook(payload);
-    setFbState(result.success ? "done" : "error");
-  };
-
-  const handleTikTok = async () => {
-    if (ttState !== "idle") return;
-    setTtState("loading");
-    const result = await postToTikTok(payload);
-    setTtState(result.success ? "done" : "error");
+  const handleCopyForTikTok = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
   };
 
   return (
@@ -147,101 +157,79 @@ function SuccessOverlay({ paymentStatus, isFree, shareUrl, itemDetails }: {
           : t("payment.successTitle", "Payment Successful!")}
       </p>
       <p className="text-xs text-gray-500 text-center mb-6">
-        {t("payment.sharePrompt", "Would you like to post your listing on social media?")}
+        {t("payment.sharePrompt", "Share your listing on social media?")}
       </p>
 
       <div className="w-full space-y-3 mb-5">
-        <PlatformCard
-          name="Facebook"
-          color="#1877F2"
-          state={fbState}
-          onPost={handleFacebook}
-          icon={
+        <a
+          href={fbShareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-blue-50 hover:border-blue-300 active:scale-[0.99] transition-all touch-manipulation select-none"
+        >
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#1877F2]">
             <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
               <path d="M24 12.073C24 5.445 18.627 0 12 0S0 5.445 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
             </svg>
-          }
-          doneLabel={t("payment.postedFb", "Posted to Facebook page!")}
-          note={t("payment.fbNote", "Viewers can click to see the full listing")}
-        />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 text-sm">Facebook</p>
+            <p className="text-xs text-gray-400">
+              {t("payment.fbNote", "Opens Facebook — post to your page")}
+            </p>
+          </div>
+          <svg
+            className="w-4 h-4 text-gray-400 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
+          </svg>
+        </a>
 
-        <PlatformCard
-          name="TikTok"
-          color="#010101"
-          state={ttState}
-          onPost={handleTikTok}
-          icon={
+        <button
+          type="button"
+          onClick={handleCopyForTikTok}
+          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-gray-50 active:scale-[0.99] transition-all touch-manipulation select-none text-left"
+        >
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-black">
             <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
               <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.12 8.12 0 0 0 4.74 1.51V6.75a4.85 4.85 0 0 1-.97-.06z" />
             </svg>
-          }
-          doneLabel={t("payment.postedTt", "Posted to TikTok!")}
-          note={itemDetails.imageUrl ? undefined : t("payment.ttNoImage", "Image required for TikTok post")}
-        />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 text-sm">TikTok</p>
+            <p className="text-xs text-gray-400">
+              {copied
+                ? t("payment.linkCopied", "Link copied! Paste it in TikTok ✓")
+                : t("payment.ttNote", "Copy link — paste in TikTok app")}
+            </p>
+          </div>
+          <svg
+            className="w-4 h-4 text-gray-400 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+        </button>
       </div>
 
       <p className="text-[10px] text-gray-400 text-center">
         {t("payment.redirecting", "Redirecting in a few seconds…")}
       </p>
-    </div>
-  );
-}
-
-function PlatformCard({ name, color, state, onPost, icon, doneLabel, note }: {
-  name: string;
-  color: string;
-  state: PostState;
-  onPost: () => void;
-  icon: React.ReactNode;
-  doneLabel: string;
-  note?: string;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: color }}
-      >
-        {icon}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-gray-900 text-sm">{name}</p>
-        {state === "done" ? (
-          <p className="text-xs text-green-600 font-medium">{doneLabel}</p>
-        ) : state === "error" ? (
-          <p className="text-xs text-red-500 font-medium">{t("payment.postError", "Failed. Try again later.")}</p>
-        ) : note ? (
-          <p className="text-xs text-gray-400">{note}</p>
-        ) : (
-          <p className="text-xs text-gray-400">{t("payment.postToPage", "Post to page with item details & link")}</p>
-        )}
-      </div>
-
-      <button
-        type="button"
-        onClick={onPost}
-        disabled={state !== "idle"}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition touch-manipulation flex-shrink-0"
-        style={{
-          backgroundColor: state === "done" ? "#dcfce7" : state === "error" ? "#fef2f2" : color,
-          color: state === "done" ? "#16a34a" : state === "error" ? "#dc2626" : "white",
-          opacity: state === "loading" ? 0.7 : 1,
-          cursor: state !== "idle" ? "default" : "pointer",
-        }}
-      >
-        {state === "loading" ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : state === "done" ? (
-          <CheckCircle2 className="w-3.5 h-3.5" />
-        ) : state === "error" ? (
-          <XCircle className="w-3.5 h-3.5" />
-        ) : (
-          t("payment.postYes", "Post")
-        )}
-      </button>
     </div>
   );
 }
@@ -264,20 +252,31 @@ function TotalDisplay({ total }: { total: number }) {
   const { t } = useTranslation();
   const isFree = useIsFree(total);
   return (
-    <div className={`border rounded-xl p-4 text-center ${isFree ? "bg-green-50 border-green-100" : "bg-blue-50 border-blue-100"}`}>
-      <p className={`text-xs uppercase tracking-widest font-semibold mb-1 ${isFree ? "text-green-500" : "text-blue-400"}`}>
+    <div
+      className={`border rounded-xl p-4 text-center ${isFree ? "bg-green-50 border-green-100" : "bg-blue-50 border-blue-100"}`}
+    >
+      <p
+        className={`text-xs uppercase tracking-widest font-semibold mb-1 ${isFree ? "text-green-500" : "text-blue-400"}`}
+      >
         {t("payment.totalAmount", "Total Amount")}
       </p>
       {isFree ? (
-        <p className="text-3xl font-extrabold text-green-600">{t("payment.free", "Free")}</p>
+        <p className="text-3xl font-extrabold text-green-600">
+          {t("payment.free", "Free")}
+        </p>
       ) : (
-        <p className="text-3xl font-extrabold text-blue-600">${total.toLocaleString()}</p>
+        <p className="text-3xl font-extrabold text-blue-600">
+          ${total.toLocaleString()}
+        </p>
       )}
     </div>
   );
 }
 
-function PaymentMethodSelector({ paymentMethod, setPaymentMethod }: {
+function PaymentMethodSelector({
+  paymentMethod,
+  setPaymentMethod,
+}: {
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
 }) {
@@ -305,8 +304,15 @@ function PaymentMethodSelector({ paymentMethod, setPaymentMethod }: {
               onChange={() => setPaymentMethod(method.key)}
               className="w-4 h-4 accent-blue-600"
             />
-            <FaMobileAlt className={paymentMethod === method.key ? "text-blue-500" : "text-gray-300"} size={14} />
-            <span className={`text-sm font-semibold flex-1 ${paymentMethod === method.key ? "text-gray-900" : "text-gray-500"}`}>
+            <FaMobileAlt
+              className={
+                paymentMethod === method.key ? "text-blue-500" : "text-gray-300"
+              }
+              size={14}
+            />
+            <span
+              className={`text-sm font-semibold flex-1 ${paymentMethod === method.key ? "text-gray-900" : "text-gray-500"}`}
+            >
               {method.label}
             </span>
           </label>
@@ -316,7 +322,12 @@ function PaymentMethodSelector({ paymentMethod, setPaymentMethod }: {
   );
 }
 
-function PhoneInput({ phoneNumber, setPhoneNumber, phoneError, setPhoneError }: {
+function PhoneInput({
+  phoneNumber,
+  setPhoneNumber,
+  phoneError,
+  setPhoneError,
+}: {
   phoneNumber: string;
   setPhoneNumber: (v: string) => void;
   phoneError: string;
@@ -345,16 +356,23 @@ function PhoneInput({ phoneNumber, setPhoneNumber, phoneError, setPhoneError }: 
         }`}
       />
       <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
-        Waafi / EVC: <strong className="text-gray-500">61</strong>XXXXXXX &nbsp;·&nbsp;
-        Zaad: <strong className="text-gray-500">63</strong>XXXXXXX &nbsp;·&nbsp;
-        E-Dahab: <strong className="text-gray-500">68</strong>XXXXXXX
+        Waafi / EVC: <strong className="text-gray-500">61</strong>XXXXXXX
+        &nbsp;·&nbsp; Zaad: <strong className="text-gray-500">63</strong>XXXXXXX
+        &nbsp;·&nbsp; E-Dahab: <strong className="text-gray-500">68</strong>
+        XXXXXXX
       </p>
-      {phoneError && <p className="text-red-500 text-xs font-medium mt-1.5">{phoneError}</p>}
+      {phoneError && (
+        <p className="text-red-500 text-xs font-medium mt-1.5">{phoneError}</p>
+      )}
     </div>
   );
 }
 
-function FailedRetry({ paymentStatus, isFree, handleRetry }: {
+function FailedRetry({
+  paymentStatus,
+  isFree,
+  handleRetry,
+}: {
   paymentStatus: PaymentStatus;
   isFree: boolean;
   handleRetry: () => void;
@@ -365,20 +383,34 @@ function FailedRetry({ paymentStatus, isFree, handleRetry }: {
     <div className="bg-red-50 border border-red-200 rounded-xl p-4">
       <p className="text-red-700 font-semibold text-sm mb-3">
         {isFree
-          ? t("payment.freeFailedMessage", "Failed to confirm your listing. Please try again.")
-          : t("payment.failedMessage", "Payment failed. Please check your phone and try again.")}
+          ? t(
+              "payment.freeFailedMessage",
+              "Failed to confirm your listing. Please try again.",
+            )
+          : t(
+              "payment.failedMessage",
+              "Payment failed. Please check your phone and try again.",
+            )}
       </p>
       <button
         onClick={handleRetry}
         className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-lg transition touch-manipulation"
       >
-        {isFree ? t("payment.tryAgain", "Try Again") : t("payment.retry", "Retry Payment")}
+        {isFree
+          ? t("payment.tryAgain", "Try Again")
+          : t("payment.retry", "Retry Payment")}
       </button>
     </div>
   );
 }
 
-function PaymentActions({ processing, paymentStatus, total, handleBack, handlePayment }: {
+function PaymentActions({
+  processing,
+  paymentStatus,
+  total,
+  handleBack,
+  handlePayment,
+}: {
   processing: boolean;
   paymentStatus: PaymentStatus;
   total: number;
@@ -399,7 +431,9 @@ function PaymentActions({ processing, paymentStatus, total, handleBack, handlePa
           onClick={handlePayment}
           disabled={processing || paymentStatus === "success"}
           className={`flex-1 py-2.5 active:scale-[0.98] text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed text-sm touch-manipulation ${
-            total === 0 ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"
+            total === 0
+              ? "bg-green-600 hover:bg-green-700"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
           {processing ? (

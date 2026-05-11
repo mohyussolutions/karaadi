@@ -94,12 +94,6 @@ export default function SummaryPaymentPage() {
             pollAttempt={pollAttempt}
             total={total}
             shareUrl={shareUrl}
-            itemDetails={{
-              title: item.title || "",
-              description: typeof item.description === "string" ? item.description : Array.isArray(item.description) ? (item.description as string[]).join(" ") : "",
-              price: Number(item.price) || 0,
-              imageUrl: Array.isArray(item.images) && item.images[0] ? item.images[0] : undefined,
-            }}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
             phoneNumber={phoneNumber}
