@@ -25,6 +25,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<number | null>(initialChatId ?? null);
+  const [showThread, setShowThread] = useState(!!initialChatId || !!(sellerId && itemId));
   const [search, setSearch] = useState("");
   const chatroomsRef = useRef<Chatroom[]>([]);
   const activeChatIdRef = useRef<number | null>(activeChatId);
@@ -41,6 +42,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       getUserChatrooms(currentUserId).then((rooms) => {
         setChatrooms(rooms);
         setActiveChatId(initialChatId);
+        setShowThread(true);
         setLoading(false);
       });
       return;
@@ -61,6 +63,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
             return exists ? rooms : [newRoom, ...rooms];
           });
           setActiveChatId(newRoom.chatId);
+          setShowThread(true);
         })
         .catch(() => roomsP.then((rooms) => setChatrooms(rooms)))
         .finally(() => setLoading(false));
@@ -109,17 +112,25 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     const room = chatroomsRef.current.find((c) => c.chatId === chatId);
     const unread = room?.unreadCount || 0;
     setActiveChatId(chatId);
+    setShowThread(true);
     setChatrooms((prev) => prev.map((c) => (c.chatId === chatId ? { ...c, unreadCount: 0 } : c)));
     if (unread > 0 && typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("karaadi:messages-read", { detail: { unread } }));
     }
   }, []);
 
+  const handleBack = useCallback(() => {
+    setShowThread(false);
+  }, []);
+
   const handleDelete = useCallback(async (chatId: number) => {
     const ok = await deleteChatroom(chatId, currentUserId);
     if (!ok) return;
     setChatrooms((prev) => prev.filter((c) => c.chatId !== chatId));
-    if (activeChatId === chatId) setActiveChatId(null);
+    if (activeChatId === chatId) {
+      setActiveChatId(null);
+      setShowThread(false);
+    }
   }, [currentUserId, activeChatId]);
 
   const handleNewMessage = useCallback((chatId: number, lastMessage: string, lastMessageAt: string) => {
@@ -134,6 +145,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   }, []);
 
   const activeChatroom = chatrooms.find((c) => c.chatId === activeChatId);
+  const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   const filtered = chatrooms
     .filter((c) => {
@@ -153,24 +165,21 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       return tb - ta;
     });
 
-  const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
-
   return (
     <div style={{ display: "flex", flexDirection: "row", width: "100%", height: "100%", backgroundColor: "white" }}>
 
       <div
         style={{
-          width: "62px",
           flexShrink: 0,
           height: "100%",
           display: "flex",
           flexDirection: "column",
           borderRight: "1px solid #e5e7eb",
-          backgroundColor: "#f8fafc",
+          backgroundColor: "white",
         }}
-        className="lg:w-[300px] xl:w-[340px] lg:bg-white"
+        className={`${showThread ? "hidden lg:flex lg:w-[300px] xl:w-[340px]" : "flex w-full lg:w-[300px] xl:w-[340px]"}`}
       >
-        <div className="hidden lg:flex flex-col px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0 gap-3">
+        <div className="flex flex-col px-4 pt-4 pb-3 border-b border-gray-100 flex-shrink-0 gap-3">
           <div className="flex items-center gap-2">
             <h1 className="text-base font-bold text-gray-900 flex-1">Messages</h1>
             {totalUnread > 0 && (
@@ -199,110 +208,72 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         >
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex justify-center lg:justify-start items-center gap-3 px-2 lg:px-4 py-3 border-b border-gray-100 animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
-                <div className="hidden lg:flex flex-col flex-1 gap-2">
-                  <div className="h-3 bg-gray-200 rounded w-24" />
-                  <div className="h-2.5 bg-gray-100 rounded w-36" />
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 animate-pulse">
+                <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 bg-gray-200 rounded w-28" />
+                  <div className="h-3 bg-gray-100 rounded w-44" />
+                  <div className="h-3 bg-gray-100 rounded w-36" />
                 </div>
               </div>
             ))
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-2 text-center gap-1.5">
-              <MessageSquare className="w-6 h-6 text-gray-300" />
-              <p className="hidden lg:block text-xs text-gray-400">
-                {search ? "No results" : "No conversations"}
-              </p>
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+                <MessageSquare className="w-7 h-7 text-gray-300" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">No conversations</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {search ? "No results found" : "Start by contacting a seller"}
+                </p>
+              </div>
             </div>
           ) : (
-            filtered.map((room) => {
-              const isSender = room.senderId === currentUserId;
-              const otherName = isSender ? room.receiverName : room.senderName;
-              const otherAvatar = isSender ? room.receiverAvatar : room.senderAvatar;
-              const unread = room.unreadCount || 0;
-              const isActive = activeChatId === room.chatId;
-
-              return (
-                <div key={room.chatId}>
-                  <div className="hidden lg:block">
-                    <ConversationRow
-                      chatroom={room}
-                      isActive={isActive}
-                      currentUserId={currentUserId}
-                      onClick={handleSelect}
-                      onDelete={handleDelete}
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(room.chatId)}
-                    className="lg:hidden w-full flex items-center justify-center py-2.5 border-b border-gray-100 touch-manipulation transition-colors"
-                    style={{ backgroundColor: isActive ? "#dbeafe" : "transparent" }}
-                  >
-                    <div className="relative">
-                      {otherAvatar ? (
-                        <img
-                          src={otherAvatar}
-                          alt={otherName}
-                          className="w-10 h-10 rounded-full object-cover"
-                          style={{
-                            boxShadow: isActive ? "0 0 0 2px #3b82f6" : "0 0 0 2px transparent",
-                          }}
-                          onError={(e) => { e.currentTarget.style.display = "none" }}
-                        />
-                      ) : (
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                          style={{
-                            backgroundColor: "#3b82f6",
-                            boxShadow: isActive ? "0 0 0 2px #1d4ed8" : "none",
-                          }}
-                        >
-                          {(otherName || "?").charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      {unread > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                          {unread > 9 ? "9+" : unread}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                </div>
-              );
-            })
+            filtered.map((room) => (
+              <ConversationRow
+                key={room.chatId}
+                chatroom={room}
+                isActive={activeChatId === room.chatId}
+                currentUserId={currentUserId}
+                onClick={handleSelect}
+                onDelete={handleDelete}
+              />
+            ))
           )}
         </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}>
+      <div
+        style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}
+        className={showThread ? "flex" : "hidden lg:flex"}
+      >
         {activeChatId && activeChatroom ? (
           <MessageThread
             chatId={activeChatId}
             chatroom={activeChatroom}
             currentUserId={currentUserId}
-            onBack={undefined}
+            onBack={handleBack}
             onNewMessage={handleNewMessage}
           />
         ) : activeChatId && !activeChatroom && loading ? (
           <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
             <div style={{ flex: 1 }} />
-            <div className="bg-white border-t border-gray-200 px-3 py-3 flex-shrink-0">
+            <div className="bg-white border-t border-gray-100 px-3 py-2.5 flex-shrink-0">
               <div className="flex items-end gap-2">
-                <div className="flex-1 h-12 bg-gray-100 rounded-2xl animate-pulse" />
-                <div className="w-11 h-11 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
+                <div className="flex-1 h-11 bg-gray-100 rounded-2xl animate-pulse" />
+                <div className="w-10 h-10 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-4 gap-3">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-              <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-6 gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+              <MessageSquare className="w-7 h-7 text-gray-300" />
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-600">No conversation selected</p>
-              <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">Pick one from the list</p>
+              <p className="text-xs text-gray-400 mt-0.5">Pick one from the list</p>
             </div>
           </div>
         )}
