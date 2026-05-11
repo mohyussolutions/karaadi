@@ -56,6 +56,7 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
 
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [descTouched, setDescTouched] = useState(false);
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
   const { images, addImages, removeImage, toBase64 } = useImageUpload();
@@ -88,12 +89,24 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
     load();
   }, []);
 
+  const descHasLink = /https?:\/\/|www\./i.test(formData.description);
+  const descError = descTouched
+    ? formData.description.length < 10
+      ? t("createMarketplace.descTooShort", "Description must be at least 10 characters")
+      : descHasLink
+      ? t("createMarketplace.descNoLinks", "Links are not allowed in the description")
+      : null
+    : null;
+
   const getFee = useCallback((cat: string) => activeFeeConfig ? Number(activeFeeConfig[MARKETPLACE_FEE_MAPPING[cat]] || 0) : 0, [activeFeeConfig]);
   const getNestedSubcategories = () => formData.category ? (nesCategories.marketplaceNestedMap as any)[formData.category] || [] : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || isLoading) return;
+    setDescTouched(true);
+    if (formData.description.length < 10) return toast.error(t("createMarketplace.descTooShort", "Description must be at least 10 characters"));
+    if (descHasLink) return toast.error(t("createMarketplace.descNoLinks", "Links are not allowed in the description"));
     if (["category", "subCategory", "price", "title", "description", "condition", "region", "city"].some((k) => !(formData as any)[k]) || images.length === 0) {
       return toast.error(t("createMarketplace.fillRequired"));
     }
@@ -176,7 +189,22 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.descriptionLabel")}</label>
-            <textarea placeholder={t("createMarketplace.descriptionPlaceholder")} rows={5} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} maxLength={5000} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold" required />
+            <textarea
+              placeholder={t("createMarketplace.descriptionPlaceholder")}
+              rows={5}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onBlur={() => setDescTouched(true)}
+              maxLength={5000}
+              className={`w-full border-2 p-4 rounded-2xl outline-none font-bold transition-colors ${
+                descError
+                  ? "border-red-400 bg-red-50 focus:border-red-500"
+                  : "border-gray-100 bg-gray-50 focus:border-blue-500"
+              }`}
+              required
+            />
+            {descError && <p className="text-xs font-bold text-red-500 ml-1">{descError}</p>}
+            <p className="text-[11px] text-gray-400 ml-1">{formData.description.length}/5000</p>
           </div>
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createMarketplace.regionLabel")}</label>
