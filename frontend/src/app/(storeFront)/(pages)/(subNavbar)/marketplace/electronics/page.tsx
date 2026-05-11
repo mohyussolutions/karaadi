@@ -47,11 +47,10 @@ export default function ElectronicsLinks() {
   }, []);
 
   const allElectronicsItems = useMemo(() => {
-    return items.filter((item) =>
-      Array.isArray(item.category)
-        ? item.category.includes("Electronics & Home Goods")
-        : item.category === "Electronics & Home Goods",
-    );
+    return items.filter((item) => {
+      const cats = Array.isArray(item.category) ? item.category : [item.category];
+      return cats.some((c) => { const s = String(c || "").toLowerCase(); return s === "electronics" || s.includes("electronic"); });
+    });
   }, [items]);
 
   const filteredForHook = useMemo(() => {

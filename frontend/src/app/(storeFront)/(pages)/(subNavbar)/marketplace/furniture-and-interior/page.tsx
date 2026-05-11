@@ -71,8 +71,8 @@ export default function FurnitureAndInterior() {
   const allFurnitureItems = useMemo(() => {
     return items.filter((item) =>
       Array.isArray(item.category)
-        ? item.category.includes("Furniture & Interior")
-        : item.category === "Furniture & Interior",
+        ? item.category.some((c: string) => String(c || "").toLowerCase() === "furniture")
+        : String(item.category || "").toLowerCase() === "furniture",
     );
   }, [items]);
 

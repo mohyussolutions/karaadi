@@ -71,8 +71,8 @@ export default function FashionAndAccessories() {
   const allFashionItems = useMemo(() => {
     return items.filter((item) =>
       Array.isArray(item.category)
-        ? item.category.includes("Fashion & Accessories")
-        : item.category === "Fashion & Accessories",
+        ? item.category.some((c: string) => String(c || "").toLowerCase() === "fashion")
+        : String(item.category || "").toLowerCase() === "fashion",
     );
   }, [items]);
 
