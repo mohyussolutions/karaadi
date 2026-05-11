@@ -227,6 +227,7 @@ export const getAllMarketplaceItems = async (req: Request, res: Response) => {
       async () => {
         return await prisma.marketplace.findMany({
           where: {
+            [FIELD_NAMES.IS_PAID]: true,
             OR: [
               { [FIELD_NAMES.EXPIRY_DATE]: null },
               { [FIELD_NAMES.EXPIRY_DATE]: { gt: new Date() } },
@@ -383,6 +384,9 @@ export const createMarketplaceItem = async (req: Request, res: Response) => {
       }
     }
 
+    if (marketplaceData.city) marketplaceData.city = marketplaceData.city.trim().toLowerCase();
+    if (marketplaceData.region) marketplaceData.region = marketplaceData.region.trim().toLowerCase();
+
     const newItem = await prisma.marketplace.create({
       data: {
         ...marketplaceData,
@@ -508,6 +512,8 @@ export const updateMarketplacePayment = async (req: Request, res: Response) => {
 export const updateMarketplaceItem = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (req.body.city) req.body.city = req.body.city.trim().toLowerCase();
+    if (req.body.region) req.body.region = req.body.region.trim().toLowerCase();
     const updateData: Record<string, any> = {};
     for (const key in req.body) {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) {
