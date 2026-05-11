@@ -142,6 +142,7 @@ export const FAVORITE_ENDPOINTS = {
   BASE: createEndpoint(API_PATHS.FAVORITES),
   MY_FAVORITES: createEndpoint(`${API_PATHS.FAVORITES}/my`),
   COUNT: createEndpoint(`${API_PATHS.FAVORITES}/count`),
+  ITEM_SAVED_COUNT: (itemId: string) => createEndpoint(`${API_PATHS.FAVORITES}/item/${itemId}/count`),
   ADD: createEndpoint(API_PATHS.FAVORITES),
   GET_BY_ID: (id: string) => createIdEndpoint(API_PATHS.FAVORITES, id),
   DELETE: (id: string) => createIdEndpoint(API_PATHS.FAVORITES, id),

@@ -25,6 +25,7 @@ import Recommendations from "@/app/(storeFront)/components/Recommendations/Recom
 import { trackItemView } from "@/actions/categories/RecommendationActions";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import { VEHICLE_CONFIG } from "./VEHICLE_CONFIG";
+import { useItemSavedCount } from "@/app/(storeFront)/components/hooks/usertotalsavedAfocrite";
 import dynamic from "next/dynamic";
 
 import type { VehicleType, VehicleItem } from "@/app/utils/types/vehicle";
@@ -138,6 +139,7 @@ export function VehicleDetailsContent({
   }, [vehicle, id, vehicleType, user]);
 
   const config = VEHICLE_CONFIG[vehicleType];
+  const { count: savedCount } = useItemSavedCount(vehicle?.id);
   const images = useMemo(
     () =>
       (vehicle?.images ?? [])
@@ -365,6 +367,12 @@ export function VehicleDetailsContent({
               <p className="text-sm text-gray-500">
                 📍 {vehicle.region}
                 {vehicle.city ? `, ${vehicle.city}` : ""}
+              </p>
+            )}
+            {savedCount > 0 && (
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                <span>🤍</span>
+                {savedCount} {savedCount === 1 ? "person" : "people"} saved this
               </p>
             )}
           </div>

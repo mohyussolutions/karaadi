@@ -13,29 +13,8 @@ import {
 import { AuthRequest, CreateFarmequipmentBody } from "src/types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
+import { PLAN_TYPES, SORT_DIRECTION, PAYMENT_STATUS, LISTING_STATUS } from "src/config/shared.constants.ts";
 
-const PLAN_TYPES = {
-  BASIC: "basic30",
-  STANDARD: "standard60",
-  PREMIUM: "premium90",
-} as const;
-
-const SORT_DIRECTION = {
-  DESC: "desc",
-  ASC: "asc",
-} as const;
-
-const PAYMENT_STATUS = {
-  COMPLETED: "COMPLETED",
-  PENDING: "PENDING",
-  FAILED: "FAILED",
-} as const;
-
-const LISTING_STATUS = {
-  ACTIVE: "active",
-  EXPIRED: "expired",
-  PENDING: "pending",
-} as const;
 
 const FIELD_NAMES = {
   ID: "id",

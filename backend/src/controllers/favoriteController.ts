@@ -204,6 +204,17 @@ export const deleteFavorite = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getItemSavedCount = async (req: AuthRequest, res: Response) => {
+  try {
+    const itemId = ensureString(req.params.itemId);
+    if (!itemId) return res.status(400).json({ message: "Item ID required" });
+    const count = await prisma.favorite.count({ where: { itemId } });
+    res.status(200).json({ count });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to count saves" });
+  }
+};
+
 export const getFavoritesCount = async (req: AuthRequest, res: Response) => {
   try {
     const userId = getUserId(req);

@@ -18,6 +18,7 @@ import { trackItemView } from "@/actions/categories/RecommendationActions";
 import ZoomedImageModal from "../../zoomed/ZoomedImageModal";
 import { SEGMENT_LABEL_KEYS } from "../../historyPath/pathSegmentsDisplay";
 import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
+import { useItemSavedCount } from "@/app/(storeFront)/components/hooks/usertotalsavedAfocrite";
 
 interface ItemData {
   _id?: string;
@@ -68,6 +69,8 @@ export default function ProductDetails() {
     () => (rawItem ? { ...rawItem, id: (rawItem as any)._id || rawItem.id } : null),
     [rawItem],
   );
+
+  const { count: savedCount } = useItemSavedCount(item?.id);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -381,6 +384,12 @@ export default function ProductDetails() {
               <p className="text-sm text-gray-500 flex items-center gap-1">
                 📍{item.city ? ` ${item.city}` : ""}
                 {item.region ? ` — ${item.region}` : ""}
+              </p>
+            )}
+            {savedCount > 0 && (
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                <span>🤍</span>
+                {savedCount} {savedCount === 1 ? "person" : "people"} saved this
               </p>
             )}
           </div>
