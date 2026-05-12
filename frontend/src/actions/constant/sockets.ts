@@ -45,6 +45,10 @@ const API_PATHS = {
   NOTIFICATIONS: "/api/notifications",
 } as const;
 
+export const PROXY_CHATS = {
+  USER_CHATS: (userId: string) => `/api/chats/user/${userId}`,
+} as const;
+
 export const CHATS = {
   CREATE: url(`${API_PATHS.CHATS}/create`),
   ADMIN_ALL: url(`${API_PATHS.CHATS}/admin/all`),

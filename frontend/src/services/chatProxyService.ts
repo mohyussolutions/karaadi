@@ -1,4 +1,5 @@
 import type { Chatroom } from "@/app/utils/types/chat.types";
+import { PROXY_CHATS } from "@/actions/constant/sockets";
 
 function mapChat(chat: any): Chatroom {
   const item =
@@ -30,7 +31,7 @@ function mapChat(chat: any): Chatroom {
 
 export async function getUserChatrooms(userId: string, _token?: string): Promise<Chatroom[]> {
   try {
-    const res = await fetch(`/api/chats/user/${userId}`, { cache: "no-store" });
+    const res = await fetch(PROXY_CHATS.USER_CHATS(userId), { cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data) ? data.map(mapChat) : [];
