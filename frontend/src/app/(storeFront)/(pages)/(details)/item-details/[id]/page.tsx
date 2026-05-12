@@ -13,7 +13,11 @@ import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { useAuth } from "@/context/AuthContext";
 import { MessageSquare, Phone, ChevronRight, Home } from "lucide-react";
-import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
+import dynamic from "next/dynamic";
+const Recommendations = dynamic(
+  () => import("@/app/(storeFront)/components/Recommendations/Recommendations"),
+  { ssr: false },
+);
 import { trackItemView } from "@/actions/categories/RecommendationActions";
 import ZoomedImageModal from "../../zoomed/ZoomedImageModal";
 import { SEGMENT_LABEL_KEYS } from "../../historyPath/pathSegmentsDisplay";
@@ -63,7 +67,7 @@ export default function ProductDetails() {
   const { data: rawItem, isLoading: loading } = useSWR<ItemData>(
     id ? `${API}/api/items/${id}` : null,
     (url: string) => fetch(url).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
-    { revalidateOnFocus: false, dedupingInterval: 30_000 },
+    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 60_000 },
   );
   const item = useMemo(
     () => (rawItem ? { ...rawItem, id: (rawItem as any)._id || rawItem.id } : null),
@@ -87,10 +91,9 @@ export default function ProductDetails() {
 
   useEffect(() => {
     if (!item?.id) return;
-    const cat = Array.isArray(item.category)
-      ? item.category[0]
-      : (item.category ?? "marketplace");
-    trackItemView(item.id, cat, user?.id ?? null);
+    const cat = Array.isArray(item.category) ? item.category[0] : (item.category ?? "marketplace");
+    const t = setTimeout(() => trackItemView(item.id!, cat, user?.id ?? null), 2000);
+    return () => clearTimeout(t);
   }, [item?.id]);
 
   const images = useMemo(() => {
@@ -540,7 +543,6 @@ export default function ProductDetails() {
         <SaveFavoriteModel
           onConfirm={handleModalConfirm}
           onCancel={() => setShowModal(false)}
-          backgroundImage={images[0]}
         />
       )}
 

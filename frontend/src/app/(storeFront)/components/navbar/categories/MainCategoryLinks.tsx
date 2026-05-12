@@ -34,7 +34,6 @@ const CategoryLinks = memo(function CategoryLinks() {
           <Link
             key={category.key}
             href={category.href}
-            prefetch={true}
             {...(isExternal ? EXTERNAL_LINK_PROPS : {})}
             className="group no-underline"
           >

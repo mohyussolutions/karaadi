@@ -132,6 +132,13 @@ function SuccessOverlay({
 }) {
   const { t } = useTranslation();
   const [copied, setCopied] = React.useState(false);
+  const [countdown, setCountdown] = React.useState(25);
+
+  React.useEffect(() => {
+    if (paymentStatus !== "success") return;
+    const id = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, [paymentStatus]);
 
   if (paymentStatus !== "success") return null;
 
@@ -156,9 +163,15 @@ function SuccessOverlay({
           ? t("payment.confirmedTitle", "Listing Confirmed!")
           : t("payment.successTitle", "Payment Successful!")}
       </p>
-      <p className="text-xs text-gray-500 text-center mb-6">
-        {t("payment.sharePrompt", "Share your listing on social media?")}
-      </p>
+
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 mb-5 text-center w-full">
+        <p className="text-xs font-bold text-indigo-700 mb-0.5">
+          {t("payment.sharePrompt", "Reach more buyers — share your listing!")}
+        </p>
+        <p className="text-[10px] text-indigo-400">
+          {t("payment.shareSubPrompt", "People who click will land on your listing page")}
+        </p>
+      </div>
 
       <div className="w-full space-y-3 mb-5">
         <a
@@ -173,23 +186,13 @@ function SuccessOverlay({
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm">Facebook</p>
+            <p className="font-bold text-gray-900 text-sm">Share on Facebook</p>
             <p className="text-xs text-gray-400">
-              {t("payment.fbNote", "Opens Facebook — post to your page")}
+              {t("payment.fbNote", "Opens Facebook share dialog")}
             </p>
           </div>
-          <svg
-            className="w-4 h-4 text-gray-400 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-            />
+          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
         </a>
 
@@ -204,32 +207,33 @@ function SuccessOverlay({
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm">TikTok</p>
+            <p className="font-bold text-gray-900 text-sm">Share on TikTok</p>
             <p className="text-xs text-gray-400">
               {copied
-                ? t("payment.linkCopied", "Link copied! Paste it in TikTok ✓")
-                : t("payment.ttNote", "Copy link — paste in TikTok app")}
+                ? t("payment.linkCopied", "Link copied! Open TikTok and paste it ✓")
+                : t("payment.ttNote", "Copies link — open TikTok and paste")}
             </p>
           </div>
-          <svg
-            className="w-4 h-4 text-gray-400 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
+          {copied ? (
+            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg flex-shrink-0">
+              COPIED
+            </span>
+          ) : (
+            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          )}
         </button>
       </div>
 
-      <p className="text-[10px] text-gray-400 text-center">
-        {t("payment.redirecting", "Redirecting in a few seconds…")}
-      </p>
+      <a
+        href="/"
+        className="w-full text-center py-2.5 text-sm font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition touch-manipulation"
+      >
+        {countdown > 0
+          ? t("payment.skipWithCountdown", `Skip — going home in ${countdown}s`)
+          : t("payment.goHome", "Go to homepage")}
+      </a>
     </div>
   );
 }

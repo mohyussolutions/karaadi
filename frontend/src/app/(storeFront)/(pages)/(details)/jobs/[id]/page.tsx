@@ -493,7 +493,6 @@ const JobDetailsPage = () => {
         <SaveFavoriteModel
           onConfirm={handleModalConfirm}
           onCancel={() => setShowModal(false)}
-          backgroundImage={images[0]}
         />
       )}
 

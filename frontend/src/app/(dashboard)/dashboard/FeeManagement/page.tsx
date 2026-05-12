@@ -248,7 +248,7 @@ const FeeManagement = () => {
               </h3>
               <button
                 onClick={() => setIsOpen(true)}
-                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
               >
                 EDIT
               </button>

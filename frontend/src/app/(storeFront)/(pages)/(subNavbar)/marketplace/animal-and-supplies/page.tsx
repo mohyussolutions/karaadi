@@ -15,7 +15,7 @@ import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/cat
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { MarketplaceItem } from "@/app/utils/types/marketplace.types";
 import { ITEM_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { getGlobalSearchResults } from "@/actions/search/globalSearch";
 import { AnimalAndSuppliesNestedSub } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
 export default function AnimalAndSupplies() {

@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from "@/actions/constant/sockets";
 import { useAppDispatch } from "@/store/slices/hooks/hooks";
 import {
   setUnreadCount,
+  setNotifications,
   decrementUnread,
 } from "@/store/slices/reducers/notificationsSlice";
 import { socketService } from "@/actions/sockets/socketServiceAction";
@@ -37,9 +38,17 @@ export function useNavNotificationCount(userId: string | undefined) {
         const data = await res.json();
         const list = data.notifications || data || [];
         if (active && Array.isArray(list)) {
-          const unread = list.filter((n: any) => !n.isRead).length;
+          const mapped = list.map((n: any) => ({
+            id: n.id || n._id || String(Date.now()),
+            type: n.category || n.type || "notification",
+            message: n.message || "",
+            link: n.link || "/notifications",
+            read: !!n.isRead,
+            createdAt: n.createdAt || new Date().toISOString(),
+          }));
+          dispatch(setNotifications(mapped));
+          const unread = mapped.filter((n) => !n.read).length;
           setNotificationCount(unread);
-          dispatch(setUnreadCount(unread));
         }
       } catch {
         if (active) setNotificationCount(0);

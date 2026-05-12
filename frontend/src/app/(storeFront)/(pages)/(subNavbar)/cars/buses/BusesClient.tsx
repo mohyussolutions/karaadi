@@ -15,7 +15,7 @@ import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/cat
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import { Car } from "@/app/utils/types/cars.types";
 import { VEHICLES_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { getGlobalSearchResults } from "@/actions/search/globalSearch";
 
 export default function Buses({ initialData = [] }: { initialData?: any[] }) {
   const { t } = useTranslation();

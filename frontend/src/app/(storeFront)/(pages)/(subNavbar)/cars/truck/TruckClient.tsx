@@ -15,7 +15,7 @@ import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
 import { VEHICLES_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import { Car } from "@/app/utils/types/cars.types";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { getGlobalSearchResults } from "@/actions/search/globalSearch";
 
 export default function Truck({ initialData = [] }: { initialData?: any[] }) {
   const { t } = useTranslation();

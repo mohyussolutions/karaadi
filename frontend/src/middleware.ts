@@ -39,6 +39,9 @@ const PUBLIC_PREFIXES = [
   "/item",
   "/vehicles",
   "/item-details",
+  "/Terms",
+  "/privacy",
+  "/cookies",
 ];
 
 export function middleware(req: NextRequest) {

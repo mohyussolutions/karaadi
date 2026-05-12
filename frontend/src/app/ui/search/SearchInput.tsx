@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, ChangeEvent } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
-import { saveSearchToDb } from "@/actions/categories/searchHistoryAction";
+import { saveSearchToDb } from "@/actions/search/searchHistory";
 import { useTranslation } from "react-i18next";
 
 export const SEARCH_EVENT = "karaadi:search";

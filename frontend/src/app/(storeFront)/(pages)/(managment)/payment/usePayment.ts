@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useAppDispatch } from "@/store/slices/hooks/hooks";
 import { resetFlow } from "@/store/slices/reducers/listingDraftSlice";
-import { postToFacebook } from "@/actions/categories/socialPostAction";
+import { postToFacebook, postToTikTok } from "@/actions/categories/socialPostAction";
 import { useIsValidPhone } from "@/app/(storeFront)/components/hooks/useIsValidPhone";
 import {
   MAX_POLL_ATTEMPTS,
@@ -18,7 +18,7 @@ import {
   AD_PATCH_URL,
 } from "./constants";
 import type { PaymentStatus } from "./constants";
-import { getItemPath } from "@/app/(storeFront)/components/hooks/getItemPath";
+import { getDetailRoute } from "@/app/utils/getDetailRoute";
 import type { UsePaymentProps } from "@/app/utils/types/payment.types";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
@@ -69,20 +69,22 @@ export function usePayment({
         });
         if (!res.ok) throw new Error();
         const origin = typeof window !== "undefined" ? window.location.origin : "";
-        const itemPath = getItemPath(item.mainCategory, item.id || "");
+        const itemPath = getDetailRoute({ mainCategory: item.mainCategory, id: item.id || "", category: item.category || "" } as any);
         const listingUrl = `${origin}${itemPath}`;
         setShareUrl(listingUrl);
         setPaymentStatus("success");
         toast.success(t("payment.success", "Payment successful! Your listing is now live."));
-        postToFacebook({
+        const socialPayload = {
           title: item.title || "",
           description: item.description || "",
           price: item.price || 0,
           imageUrl: Array.isArray(item.images) && item.images[0] ? item.images[0] : undefined,
           listingUrl,
           category: item.mainCategory || item.category || "",
-        });
-        setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 9000);
+        };
+        postToFacebook(socialPayload);
+        postToTikTok(socialPayload);
+        setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 25000);
       } catch {
         setProcessing(false);
         setPaymentStatus("failed");
@@ -176,7 +178,7 @@ export function usePayment({
             setProcessing(false);
             const origin =
               typeof window !== "undefined" ? window.location.origin : "";
-            const itemPath2 = getItemPath(item.mainCategory, item.id || "");
+            const itemPath2 = getDetailRoute({ mainCategory: item.mainCategory, id: item.id || "", category: item.category || "" } as any);
             const listingUrl2 = `${origin}${itemPath2}`;
             setShareUrl(listingUrl2);
             setPaymentStatus("success");
@@ -186,7 +188,7 @@ export function usePayment({
                 "Payment successful! Your listing is now live.",
               ),
             );
-            postToFacebook({
+            const socialPayload2 = {
               title: item.title || "",
               description: item.description || "",
               price: item.price || 0,
@@ -196,8 +198,10 @@ export function usePayment({
                   : undefined,
               listingUrl: listingUrl2,
               category: item.mainCategory || item.category || "",
-            });
-            setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 9000);
+            };
+            postToFacebook(socialPayload2);
+            postToTikTok(socialPayload2);
+            setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 25000);
           } else if (statusData.status === "failed") {
             stopPolling();
             setPaymentStatus("failed");

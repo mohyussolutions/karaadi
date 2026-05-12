@@ -1,22 +1,23 @@
 "use client";
 
 import React, { useState } from "react";
+import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 
 interface SaveFavoriteModelProps {
   onConfirm: () => Promise<void>;
   onCancel: () => void;
-  backgroundImage?: any;
 }
 
 function SaveFavoriteModel({ onConfirm, onCancel }: SaveFavoriteModelProps) {
   const [isPending, setIsPending] = useState(false);
+  const { language } = useLanguage();
+  const so = language === "so";
 
   const handleConfirm = async () => {
     setIsPending(true);
     try {
       await onConfirm();
-    } catch (error) {
-      console.error("Save failed:", error);
+    } catch {
     } finally {
       setIsPending(false);
     }
@@ -41,10 +42,12 @@ function SaveFavoriteModel({ onConfirm, onCancel }: SaveFavoriteModelProps) {
         </div>
 
         <h3 className="mb-2 text-xl font-bold text-gray-900">
-          Ma rabtaa inaad kaydiso?
+          {so ? "Ma rabtaa inaad kaydiso?" : "Save this item?"}
         </h3>
         <p className="mb-6 text-gray-500 text-sm">
-          Ku dar liiskaaga si aad dib dambe ugu hesho si degdeg ah.
+          {so
+            ? "Ku dar liiskaaga si aad dib dambe ugu hesho si degdeg ah."
+            : "Add to your list to find it quickly later."}
         </p>
 
         <div className="flex flex-col gap-3 w-full">
@@ -57,14 +60,16 @@ function SaveFavoriteModel({ onConfirm, onCancel }: SaveFavoriteModelProps) {
                 : "active:scale-95 hover:bg-blue-700"
             }`}
           >
-            {isPending ? "Waa la kaydinayaa..." : "Haa, Kaydi"}
+            {isPending
+              ? (so ? "Waa la kaydinayaa..." : "Saving...")
+              : (so ? "Haa, Kaydi" : "Yes, Save")}
           </button>
           <button
             onClick={onCancel}
             disabled={isPending}
             className="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-medium active:scale-95 transition-transform disabled:opacity-50"
           >
-            Iska dhaaf
+            {so ? "Iska dhaaf" : "Skip"}
           </button>
         </div>
       </div>

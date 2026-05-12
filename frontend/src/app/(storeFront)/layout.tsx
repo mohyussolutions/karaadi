@@ -20,7 +20,9 @@ export default async function StoreFrontLayout({
       <LanguageSync />
       <Navbar initialIsAuthenticated={initialIsAuthenticated} />
       <main className="flex-grow pt-14 bg-[#FEFDFD]">
-        <TrackVisitor />
+        <Suspense fallback={null}>
+          <TrackVisitor />
+        </Suspense>
         <AdFetcher>
           <Container>
             <Suspense>{children}</Suspense>

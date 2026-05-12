@@ -395,7 +395,6 @@ export default function VehicleDetails() {
         <SaveFavoriteModel
           onConfirm={handleModalConfirm}
           onCancel={() => setShowModal(false)}
-          backgroundImage={images[0]}
         />
       )}
     </div>

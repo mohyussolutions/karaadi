@@ -4,6 +4,8 @@ import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { markAllRead } from "@/store/slices/reducers/notificationsSlice";
+import { markAllNotificationsAsRead } from "@/actions/core/notificationsAction";
+import { useAuth } from "@/context/AuthContext";
 
 interface DropdownProps {
   onClose: () => void;
@@ -14,12 +16,11 @@ const Dropdown: React.FC<DropdownProps> = ({ onClose }) => {
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const items = useAppSelector((state) => state.notifications.items);
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose();
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -30,8 +31,14 @@ const Dropdown: React.FC<DropdownProps> = ({ onClose }) => {
     if (link) router.push(link);
   };
 
-  const handleMarkAll = () => {
+  const handleMarkAll = async () => {
     dispatch(markAllRead());
+    const userId = user?.id || user?._id;
+    if (userId) {
+      try {
+        await markAllNotificationsAsRead(userId);
+      } catch {}
+    }
   };
 
   const sorted = [...items].sort(
@@ -80,12 +87,18 @@ const Dropdown: React.FC<DropdownProps> = ({ onClose }) => {
         )}
       </div>
 
-      <div className="px-4 py-3 border-t border-gray-100">
+      <div className="px-4 py-3 border-t border-gray-100 flex gap-2">
         <button
           onClick={handleMarkAll}
-          className="w-full text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+          className="flex-1 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
         >
           Mark all as read
+        </button>
+        <button
+          onClick={() => { onClose(); router.push("/notifications"); }}
+          className="flex-1 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          See all
         </button>
       </div>
     </div>

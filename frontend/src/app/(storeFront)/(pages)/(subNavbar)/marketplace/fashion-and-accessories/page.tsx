@@ -15,7 +15,7 @@ import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { ITEM_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { getGlobalSearchResults } from "@/actions/search/globalSearch";
 import { FashionNestedSub } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 
 export default function FashionAndAccessories() {

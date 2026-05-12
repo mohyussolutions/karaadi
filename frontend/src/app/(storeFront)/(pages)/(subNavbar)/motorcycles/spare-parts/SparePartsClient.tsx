@@ -13,7 +13,7 @@ import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/c
 import Loading from "@/app/ui/loading/Loading";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { VEHICLES_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { getGlobalSearchResults } from "@/actions/search/globalSearch";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
 
 export default function SpareParts({ initialData = [] }: { initialData?: any[] }) {

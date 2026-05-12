@@ -47,11 +47,13 @@ export default function UniversalCard(props: Props) {
 
   const allUrls = (images ?? []).filter(Boolean);
   const [imgIndex, setImgIndex] = useState(0);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const currentUrl = allUrls[imgIndex]
     ? getValidImageUrl(allUrls[imgIndex])
     : null;
 
   const handleImgError = () => {
+    setImgLoaded(false);
     if (imgIndex + 1 < allUrls.length) {
       setImgIndex((i) => i + 1);
     } else {
@@ -66,25 +68,32 @@ export default function UniversalCard(props: Props) {
       <div className="relative flex flex-col h-full bg-white border border-[#E8E8E8] rounded-xl hover:shadow-md transition-shadow duration-200 overflow-hidden">
         <div className="relative aspect-[4/3] w-full overflow-hidden">
           {showImage ? (
-            currentUrl!.startsWith("data:") ? (
-              <img
-                src={currentUrl!}
-                alt={title}
-                className="w-full h-full object-cover"
-                onError={handleImgError}
-              />
-            ) : (
-              <Image
-                src={currentUrl!}
-                alt={title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                priority={priority}
-                loading={priority ? "eager" : "lazy"}
-                onError={handleImgError}
-              />
-            )
+            <>
+              {!imgLoaded && (
+                <div className="absolute inset-0 z-10 bg-gray-200 animate-pulse" />
+              )}
+              {currentUrl!.startsWith("data:") ? (
+                <img
+                  src={currentUrl!}
+                  alt={title}
+                  className="w-full h-full object-cover"
+                  onError={handleImgError}
+                  onLoad={() => setImgLoaded(true)}
+                />
+              ) : (
+                <Image
+                  src={currentUrl!}
+                  alt={title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  priority={priority}
+                  loading={priority ? "eager" : "lazy"}
+                  onError={handleImgError}
+                  onLoad={() => setImgLoaded(true)}
+                />
+              )}
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-3 text-center">

@@ -16,7 +16,7 @@ import { useError } from "@/app/(storeFront)/components/hooks/useError";
 import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/categories/CommonSubCategoryLinks";
 import { useListingFeed } from "@/app/(storeFront)/components/policy/randomFeedUtils";
 import { VEHICLES_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { getGlobalSearchResults } from "@/actions/search/globalSearch";
 import { SearchResult } from "@/app/utils/types/search-result.types";
 
 export default function BoatParts({ initialData = [] }: { initialData?: any[] }) {

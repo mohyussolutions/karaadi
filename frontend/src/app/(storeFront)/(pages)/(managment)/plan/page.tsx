@@ -72,24 +72,20 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
   };
 
   const handleContinue = () => {
-    if (selectedPlan) {
-      onNext();
-    }
+    if (selectedPlan) onNext();
   };
 
   const itemFeeAmount = savedItem.feeAmount || 0;
   const planPrice = selectedPlan?.price || 0;
   const totalCost = itemFeeAmount + planPrice;
-
-  const maxPrice =
-    plans.length > 0 ? Math.max(...plans.map((p) => p.price)) : 0;
+  const maxPrice = plans.length > 0 ? Math.max(...plans.map((p) => p.price)) : 0;
 
   return (
-    <div className="py-8">
+    <div className="py-6 sm:py-8 px-4 sm:px-0">
       <CheckoutSteps step1 step2 step3 />
 
-      <header className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-black uppercase">
+      <header className="text-center mb-8 sm:mb-10">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase">
           {t("plan.selectHeading", "Choose Your ")}{" "}
           <span className="text-blue-600">{t("plan.plan", "Plan")}</span>
         </h1>
@@ -98,7 +94,7 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="flex md:grid md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10 overflow-x-auto pb-4 md:pb-0 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
         {plans.map((p) => {
           const Icon = IconMap[p.iconName] || HiOutlineLightningBolt;
           const isSelected = selectedPlan?.id === p.id;
@@ -108,49 +104,35 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
             <div
               key={p.id}
               onClick={() => handleSelect(p)}
-              className={`relative cursor-pointer rounded-2xl border-2 p-6 bg-white transition-all ${
+              className={`relative cursor-pointer rounded-2xl border-2 p-5 sm:p-6 bg-white transition-all flex-shrink-0 snap-start w-[78vw] sm:w-[56vw] md:w-auto ${
                 isSelected
                   ? "border-blue-500 ring-2 ring-blue-100 shadow-lg"
                   : "border-gray-200 hover:border-blue-200 hover:shadow-md"
               }`}
             >
               {isBestValue && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow whitespace-nowrap">
                   Best Value
                 </span>
               )}
-
               {p.popular && !isBestValue && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-700 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-700 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow whitespace-nowrap">
                   Popular
                 </span>
               )}
 
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
-                  isSelected ? "bg-blue-100" : "bg-gray-100"
-                }`}
-              >
-                <Icon
-                  className={isSelected ? "text-blue-600" : "text-gray-500"}
-                  size={20}
-                />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${isSelected ? "bg-blue-100" : "bg-gray-100"}`}>
+                <Icon className={isSelected ? "text-blue-600" : "text-gray-500"} size={20} />
               </div>
 
               <h3 className="font-black text-lg text-gray-900">{p.label}</h3>
-              <p
-                className={`text-xs font-bold mt-1 ${isSelected ? "text-blue-600" : "text-gray-400"}`}
-              >
+              <p className={`text-xs font-bold mt-1 ${isSelected ? "text-blue-600" : "text-gray-400"}`}>
                 {p.days} {t("plan.days", "days")}
               </p>
 
-              <div
-                className={`text-3xl font-black mt-4 ${isSelected ? "text-blue-600" : "text-gray-900"}`}
-              >
+              <div className={`text-3xl font-black mt-4 ${isSelected ? "text-blue-600" : "text-gray-900"}`}>
                 ${p.price}{" "}
-                <span className="text-sm font-bold text-gray-400">
-                  {t("plan.currency", "USD")}
-                </span>
+                <span className="text-sm font-bold text-gray-400">{t("plan.currency", "USD")}</span>
               </div>
 
               <ul className="mt-5 space-y-2">
@@ -160,9 +142,7 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
                       className={`flex-shrink-0 mt-0.5 ${isSelected ? "text-blue-500" : "text-gray-300"}`}
                       size={16}
                     />
-                    <span className="text-sm text-gray-600 font-medium">
-                      {f}
-                    </span>
+                    <span className="text-sm text-gray-600 font-medium">{f}</span>
                   </li>
                 ))}
               </ul>
@@ -183,53 +163,47 @@ export function PlanSelect({ onNext, onBack }: PlanSelectProps) {
         })}
       </div>
 
+      <p className="text-center text-[11px] text-gray-400 -mt-2 mb-6 md:hidden">
+        ← {t("plan.swipeHint", "Swipe to see all plans")} →
+      </p>
+
       {selectedPlan && (
         <div className="border border-gray-200 rounded-2xl overflow-hidden mb-6">
-          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
             <h3 className="font-black text-gray-900 text-sm uppercase tracking-wide">
               {t("plan.costSummary", "Cost Summary")}
             </h3>
           </div>
-          <div className="px-6 py-4 space-y-3 bg-white">
+          <div className="px-5 py-4 space-y-3 bg-white">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500 font-medium">
-                {t("plan.itemFee", "Listing Fee")}
-              </span>
-              <span className="font-black text-gray-900">
-                ${itemFeeAmount} {t("plan.currency", "USD")}
-              </span>
+              <span className="text-sm text-gray-500 font-medium">{t("plan.itemFee", "Listing Fee")}</span>
+              <span className="font-black text-gray-900">${itemFeeAmount} {t("plan.currency", "USD")}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500 font-medium">
                 {t("plan.planPrice", "Plan Price")} ({selectedPlan.label})
               </span>
-              <span className="font-black text-gray-900">
-                ${planPrice} {t("plan.currency", "USD")}
-              </span>
+              <span className="font-black text-gray-900">${planPrice} {t("plan.currency", "USD")}</span>
             </div>
             <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-              <span className="font-black text-gray-900 text-base">
-                {t("plan.total", "Total")}
-              </span>
-              <span className="font-black text-2xl text-blue-600">
-                ${totalCost} {t("plan.currency", "USD")}
-              </span>
+              <span className="font-black text-gray-900 text-base">{t("plan.total", "Total")}</span>
+              <span className="font-black text-2xl text-blue-600">${totalCost} {t("plan.currency", "USD")}</span>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex gap-4">
+      <div className="flex gap-3 sm:gap-4">
         <button
           onClick={onBack}
-          className="flex-1 py-4 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition"
+          className="flex-1 py-3.5 sm:py-4 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition text-sm sm:text-base"
         >
           ← {t("common.back", "Back")}
         </button>
         <button
           onClick={handleContinue}
           disabled={!selectedPlan}
-          className="flex-1 py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-100"
+          className="flex-1 py-3.5 sm:py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-100 text-sm sm:text-base"
         >
           {t("common.continue", "Continue")} →
         </button>
@@ -243,17 +217,15 @@ const PlanPage = () => {
   const { user, loading: authLoading } = useAuth
     ? useAuth()
     : { user: null, loading: false };
+  const itemId = useAppSelector((state) => state.listingDraft.item?.id);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user, authLoading, router]);
+    if (!user) router.push("/login");
+    else if (!itemId) router.push("/");
+  }, [user, authLoading, itemId, router]);
 
-  if (authLoading || !user) {
-    return null;
-  }
+  if (authLoading || !user || !itemId) return null;
 
   return (
     <PlanSelect
@@ -264,5 +236,3 @@ const PlanPage = () => {
 };
 
 export default PlanPage;
-
-//

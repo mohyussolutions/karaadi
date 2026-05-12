@@ -143,14 +143,14 @@ export default function Recommendations({
     setLoading(true);
 
     (async () => {
-      const searchQuery = await fetchRecentSearchCategory(userId);
-      if (!cancelled) setLastSearch(searchQuery);
-
-      // Use last search term as category hint when no explicit category given
-      const effectiveCategory = category || searchQuery || undefined;
-      const data = await fetchRecommendations(userId, limit, excludeId, effectiveCategory).catch(() => []);
-      if (!cancelled) setItems(data);
-      if (!cancelled) setLoading(false);
+      const [searchQuery, data] = await Promise.all([
+        fetchRecentSearchCategory(userId),
+        fetchRecommendations(userId, limit, excludeId, category || undefined).catch(() => [] as RecommendationItem[]),
+      ]);
+      if (cancelled) return;
+      setLastSearch(searchQuery);
+      setItems(data);
+      setLoading(false);
     })();
 
     return () => { cancelled = true; };
@@ -160,8 +160,6 @@ export default function Recommendations({
     try {
       if (userId) await trackItemView(item.externalId, item.category, userId);
     } catch {}
-    // Prefer `source` (collection name like "cars", "marketplace") over
-    // `category` (subcategory like "sedan", "electronics") for routing.
     const routeKey = (item.source as string | undefined) || item.category;
     const route = getRoute(routeKey);
     router.push(`${route}/${item.externalId}`);

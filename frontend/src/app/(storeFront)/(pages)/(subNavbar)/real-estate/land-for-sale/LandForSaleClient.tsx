@@ -15,7 +15,7 @@ import { CommonSubCategoryLinks } from "@/app/(storeFront)/components/navbar/cat
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import { REAL_ESTATE_DETAILS } from "@/app/(storeFront)/components/hooks/useGetRoute";
 import { RealEstate } from "@/app/utils/types/realestate.types";
-import { getGlobalSearchResults } from "@/actions/categories/getGlobalSearchResults";
+import { getGlobalSearchResults } from "@/actions/search/globalSearch";
 
 export default function LandForSale({ initialData = [] }: { initialData?: any[] }) {
   const { t } = useTranslation();
