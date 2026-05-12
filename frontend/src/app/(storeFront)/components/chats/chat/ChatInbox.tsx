@@ -20,6 +20,81 @@ interface Props {
   itemModel?: string;
 }
 
+function UserStrip({
+  chatrooms,
+  activeChatId,
+  currentUserId,
+  loading,
+  onSelect,
+}: {
+  chatrooms: Chatroom[];
+  activeChatId: number | null;
+  currentUserId: string;
+  loading: boolean;
+  onSelect: (id: number) => void;
+}) {
+  if (loading) {
+    return (
+      <div className="flex gap-3 px-3 py-2 overflow-x-auto scrollbar-hide">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0 animate-pulse">
+            <div className="w-12 h-12 rounded-full bg-gray-200" />
+            <div className="h-2.5 w-10 bg-gray-200 rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (chatrooms.length === 0) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 text-gray-400">
+        <MessageSquare className="w-4 h-4" />
+        <span className="text-xs">No conversations yet</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-3 px-3 py-2 overflow-x-auto scrollbar-hide">
+      {chatrooms.map((room) => {
+        const isSender = room.senderId === currentUserId;
+        const name = isSender ? room.receiverName : room.senderName;
+        const avatar = isSender ? room.receiverAvatar : room.senderAvatar;
+        const unread = room.unreadCount || 0;
+        const isActive = activeChatId === room.chatId;
+
+        return (
+          <button
+            key={room.chatId}
+            type="button"
+            onClick={() => onSelect(room.chatId)}
+            className="flex flex-col items-center gap-1 flex-shrink-0 touch-manipulation"
+          >
+            <div className={`relative w-12 h-12 rounded-full ring-2 transition-all ${isActive ? "ring-[#0063fb]" : "ring-transparent"}`}>
+              {avatar ? (
+                <img src={avatar} alt={name} className="w-12 h-12 rounded-full object-cover" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                  {(name || "?").charAt(0).toUpperCase()}
+                </div>
+              )}
+              {unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </div>
+            <span className={`text-[10px] font-semibold max-w-[52px] truncate leading-none ${isActive ? "text-[#0063fb]" : "text-gray-700"}`}>
+              {(name || "?").split(" ")[0]}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }: Props) {
   const { user } = useAuth();
   const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
@@ -155,15 +230,16 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     });
 
   return (
-    <div style={{ display: "flex", flexDirection: "row", width: "100%", height: "100%", backgroundColor: "white" }}>
+    <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "white" }}>
 
+      {/* ── Desktop sidebar ── */}
       <div
         style={{ flexShrink: 0, height: "100%", flexDirection: "column", borderRight: "1px solid #e5e7eb", backgroundColor: "white" }}
-        className="flex w-[72px] sm:w-[260px] lg:w-[300px] xl:w-[340px]"
+        className="hidden lg:flex lg:w-[300px] xl:w-[340px]"
       >
-        <div className="flex flex-col px-2 sm:px-4 pt-3 pb-2 border-b border-gray-200 flex-shrink-0 gap-2 shadow-sm">
+        <div className="flex flex-col px-4 pt-4 pb-3 border-b border-gray-200 flex-shrink-0 gap-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <h1 className="hidden sm:block text-base font-bold text-gray-900 flex-1">Messages</h1>
+            <h1 className="text-base font-bold text-gray-900 flex-1">Messages</h1>
             {totalUnread > 0 && (
               <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
                 {totalUnread}
@@ -172,31 +248,30 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
           </div>
           <input
             type="search"
-            placeholder="Search…"
+            placeholder="Search conversations…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="hidden sm:block w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#0063fb] bg-gray-50 placeholder:text-gray-400 touch-manipulation text-sm font-medium text-gray-900"
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#0063fb] bg-gray-50 placeholder:text-gray-400 text-sm font-medium text-gray-900"
             style={{ fontSize: "16px" }}
           />
         </div>
-
-        <div
-          style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
-        >
+        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-2 px-2 sm:px-4 py-3 border-b border-gray-100 animate-pulse">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex-shrink-0" />
-                <div className="hidden sm:flex flex-1 flex-col gap-2">
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 animate-pulse">
+                <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
                   <div className="h-3.5 bg-gray-200 rounded w-28" />
-                  <div className="h-3 bg-gray-100 rounded w-36" />
+                  <div className="h-3 bg-gray-100 rounded w-44" />
                 </div>
               </div>
             ))
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-2 text-center gap-2">
-              <MessageSquare className="w-6 h-6 text-gray-300" />
-              <p className="hidden sm:block text-xs text-gray-400">No conversations</p>
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+                <MessageSquare className="w-7 h-7 text-gray-300" />
+              </div>
+              <p className="font-semibold text-gray-600 text-sm">No conversations</p>
             </div>
           ) : (
             filtered.map((room) => (
@@ -213,7 +288,55 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         </div>
       </div>
 
-      <div style={{ flex: 1, flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }} className="flex">
+      {/* ── Mobile + tablet: full-height column ── */}
+      <div className="flex lg:hidden flex-col flex-1 min-w-0 h-full overflow-hidden">
+
+        {/* Users strip at the top */}
+        <div className="flex-shrink-0 border-b border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 px-3 pt-2.5">
+            <h1 className="text-sm font-bold text-gray-900">Messages</h1>
+            {totalUnread > 0 && (
+              <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {totalUnread}
+              </span>
+            )}
+          </div>
+          <UserStrip
+            chatrooms={filtered}
+            activeChatId={activeChatId}
+            currentUserId={currentUserId}
+            loading={loading}
+            onSelect={handleSelect}
+          />
+        </div>
+
+        {/* Conversation thread fills rest */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {activeChatId && activeChatroom ? (
+            <MessageThread
+              chatId={activeChatId}
+              chatroom={activeChatroom}
+              currentUserId={currentUserId}
+              onNewMessage={handleNewMessage}
+            />
+          ) : (
+            <div className="h-full flex flex-col">
+              <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-6 gap-3">
+                <MessageSquare className="w-10 h-10 text-gray-300" />
+                <p className="text-sm font-semibold text-gray-500">Select a conversation above</p>
+              </div>
+              <div className="bg-white border-t border-gray-200 px-3 py-2.5 flex-shrink-0" style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom, 0px))" }}>
+                <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-2xl">
+                  <span className="text-sm text-gray-400">Write a message…</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Desktop thread panel ── */}
+      <div style={{ flex: 1, flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }} className="hidden lg:flex">
         {activeChatId && activeChatroom ? (
           <MessageThread
             chatId={activeChatId}
@@ -226,13 +349,11 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
             <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
               <MessageSquare className="w-7 h-7 text-gray-300" />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-600">No conversation selected</p>
-              <p className="text-xs text-gray-400 mt-0.5">Pick one from the list</p>
-            </div>
+            <p className="text-sm font-semibold text-gray-600">Select a conversation</p>
           </div>
         )}
       </div>
+
     </div>
   );
 }
