@@ -63,15 +63,11 @@ export async function createOrGetChat(data: {
   return mapChat(json.chat);
 }
 
-export async function getUserChatrooms(userId: string, _token?: string): Promise<Chatroom[]> {
-  try {
-    const res = await fetch(`/api/chats/user/${userId}`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data.map(mapChat) : [];
-  } catch {
-    return [];
-  }
+export async function getUserChatrooms(userId: string): Promise<Chatroom[]> {
+  const res = await fetch(CHATS.USER_CHATS(userId), { credentials: "include" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data.map(mapChat) : [];
 }
 
 export async function getChatroomMessages(

@@ -2,11 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import {
-  getUserChatrooms,
-  createOrGetChat,
-  deleteChatroom,
-} from "@/services/chatService";
+import { getUserChatrooms } from "@/services/chatProxyService";
+import { createOrGetChat, deleteChatroom } from "@/services/chatService";
 import { socketService } from "@/actions/sockets/socketServiceAction";
 import ConversationRow from "./ConversationRow";
 import MessageThread from "./MessageThread";
