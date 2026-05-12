@@ -20,6 +20,72 @@ interface Props {
   itemModel?: string;
 }
 
+interface SidebarProps {
+  filtered: Chatroom[];
+  loading: boolean;
+  search: string;
+  onSearch: (v: string) => void;
+  totalUnread: number;
+  activeChatId: number | null;
+  currentUserId: string;
+  onSelect: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+function Sidebar({ filtered, loading, search, onSearch, totalUnread, activeChatId, currentUserId, onSelect, onDelete }: SidebarProps) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
+      <div style={{ padding: "16px 16px 12px", borderBottom: "2px solid #e5e7eb", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <h1 style={{ fontSize: 15, fontWeight: 700, color: "#111827", flex: 1, margin: 0 }}>Messages</h1>
+          {totalUnread > 0 && (
+            <span style={{ backgroundColor: "#2563eb", color: "white", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+              {totalUnread}
+            </span>
+          )}
+        </div>
+        <input
+          type="search"
+          placeholder="Search conversations…"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          style={{ width: "100%", fontSize: 16, padding: "10px 14px", border: "2px solid #e5e7eb", borderRadius: 12, backgroundColor: "#f9fafb", color: "#111827", outline: "none", boxSizing: "border-box" }}
+        />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid #f3f4f6" }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "#e5e7eb", flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ height: 13, backgroundColor: "#e5e7eb", borderRadius: 4, width: 110, marginBottom: 8 }} />
+                <div style={{ height: 11, backgroundColor: "#f3f4f6", borderRadius: 4, width: 160 }} />
+              </div>
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px", gap: 12, textAlign: "center" }}>
+            <MessageSquare size={36} color="#d1d5db" />
+            <p style={{ fontWeight: 600, color: "#6b7280", fontSize: 14, margin: 0 }}>No conversations</p>
+            <p style={{ color: "#9ca3af", fontSize: 12, margin: 0 }}>{search ? "No results found" : "Start by contacting a seller"}</p>
+          </div>
+        ) : (
+          filtered.map((room) => (
+            <ConversationRow
+              key={room.chatId}
+              chatroom={room}
+              isActive={activeChatId === room.chatId}
+              currentUserId={currentUserId}
+              onClick={onSelect}
+              onDelete={onDelete}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }: Props) {
   const { user } = useAuth();
   const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
@@ -50,12 +116,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
 
     if (sellerId && itemId) {
       const roomsP = getUserChatrooms(currentUserId);
-      const chatP = createOrGetChat({
-        senderId: currentUserId,
-        receiverId: sellerId,
-        itemId,
-        itemModel: itemModel || "Marketplace",
-      });
+      const chatP = createOrGetChat({ senderId: currentUserId, receiverId: sellerId, itemId, itemModel: itemModel || "Marketplace" });
       Promise.all([roomsP, chatP])
         .then(([rooms, newRoom]) => {
           setChatrooms(() => {
@@ -79,7 +140,6 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   useEffect(() => {
     if (!currentUserId) return;
     socketService.connect(currentUserId);
-
     const off = socketService.on("newMessage", (data: unknown) => {
       const { chatId, message } = data as { chatId: string; message: any };
       const numId = Number(chatId);
@@ -104,7 +164,6 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         return [room, ...updated];
       });
     });
-
     return () => off();
   }, [currentUserId]);
 
@@ -125,10 +184,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     const ok = await deleteChatroom(chatId, currentUserId);
     if (!ok) return;
     setChatrooms((prev) => prev.filter((c) => c.chatId !== chatId));
-    if (activeChatId === chatId) {
-      setActiveChatId(null);
-      setShowThread(false);
-    }
+    if (activeChatId === chatId) { setActiveChatId(null); setShowThread(false); }
   }, [currentUserId, activeChatId]);
 
   const handleNewMessage = useCallback((chatId: number, lastMessage: string, lastMessageAt: string) => {
@@ -151,128 +207,39 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       const q = search.toLowerCase();
       const isSender = c.senderId === currentUserId;
       const name = isSender ? c.receiverName : c.senderName;
-      return (
-        name.toLowerCase().includes(q) ||
-        (c.lastMessage || "").toLowerCase().includes(q) ||
-        (c.itemTitle || "").toLowerCase().includes(q)
-      );
+      return name.toLowerCase().includes(q) || (c.lastMessage || "").toLowerCase().includes(q) || (c.itemTitle || "").toLowerCase().includes(q);
     })
-    .sort((a, b) => {
-      const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-      const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
-      return tb - ta;
-    });
+    .sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
 
-  const conversationList = (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        height: "100%",
-        backgroundColor: "white",
-        borderRight: "1px solid #e5e7eb",
-      }}
-    >
-      <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #e5e7eb", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <h1 style={{ fontSize: 15, fontWeight: 700, color: "#111827", flex: 1, margin: 0 }}>Messages</h1>
-          {totalUnread > 0 && (
-            <span style={{ backgroundColor: "#2563eb", color: "white", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 999 }}>
-              {totalUnread}
-            </span>
-          )}
-        </div>
-        <input
-          type="search"
-          placeholder="Search conversations…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: "100%", fontSize: 16, padding: "9px 14px", border: "2px solid #e5e7eb", borderRadius: 12, backgroundColor: "#f9fafb", color: "#111827", outline: "none", boxSizing: "border-box" }}
-        />
-      </div>
+  const sidebarProps: SidebarProps = { filtered, loading, search, onSearch: setSearch, totalUnread, activeChatId, currentUserId, onSelect: handleSelect, onDelete: handleDelete };
 
-      <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-        {loading ? (
-          Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid #f3f4f6" }}>
-              <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "#e5e7eb", flexShrink: 0 }} />
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ height: 13, backgroundColor: "#e5e7eb", borderRadius: 4, width: 110 }} />
-                <div style={{ height: 11, backgroundColor: "#f3f4f6", borderRadius: 4, width: 160 }} />
-              </div>
-            </div>
-          ))
-        ) : filtered.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px", gap: 12, textAlign: "center" }}>
-            <MessageSquare size={36} color="#d1d5db" />
-            <p style={{ fontWeight: 600, color: "#6b7280", fontSize: 14, margin: 0 }}>No conversations</p>
-            <p style={{ color: "#9ca3af", fontSize: 12, margin: 0 }}>{search ? "No results found" : "Start by contacting a seller"}</p>
-          </div>
-        ) : (
-          filtered.map((room) => (
-            <ConversationRow
-              key={room.chatId}
-              chatroom={room}
-              isActive={activeChatId === room.chatId}
-              currentUserId={currentUserId}
-              onClick={handleSelect}
-              onDelete={handleDelete}
-            />
-          ))
-        )}
-      </div>
+  const threadPanel = activeChatId && activeChatroom ? (
+    <MessageThread chatId={activeChatId} chatroom={activeChatroom} currentUserId={currentUserId} onBack={handleBack} onNewMessage={handleNewMessage} />
+  ) : (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", backgroundColor: "#f9fafb", gap: 12 }}>
+      <MessageSquare size={40} color="#d1d5db" />
+      <p style={{ fontSize: 14, fontWeight: 600, color: "#6b7280", margin: 0 }}>Select a conversation</p>
     </div>
   );
 
   return (
     <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "white", overflow: "hidden" }}>
 
-      {/* Mobile: show list OR thread, never both */}
-      <div style={{ display: "flex", width: "100%", height: "100%" }} className="lg:hidden">
-        {!showThread ? (
-          conversationList
-        ) : (
-          <div style={{ width: "100%", height: "100%" }}>
-            {activeChatId && activeChatroom ? (
-              <MessageThread
-                chatId={activeChatId}
-                chatroom={activeChatroom}
-                currentUserId={currentUserId}
-                onBack={handleBack}
-                onNewMessage={handleNewMessage}
-              />
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", flexDirection: "column", gap: 12, backgroundColor: "#f9fafb" }}>
-                <MessageSquare size={40} color="#d1d5db" />
-                <p style={{ color: "#6b7280", fontWeight: 600, fontSize: 14 }}>No conversation selected</p>
-              </div>
-            )}
-          </div>
-        )}
+      {/* Mobile: full-width, toggle list ↔ thread */}
+      <div className="flex lg:hidden" style={{ width: "100%", height: "100%" }}>
+        {!showThread
+          ? <Sidebar {...sidebarProps} />
+          : <div style={{ width: "100%", height: "100%" }}>{threadPanel}</div>
+        }
       </div>
 
       {/* Desktop: sidebar + thread side by side */}
-      <div style={{ display: "none", width: "100%", height: "100%" }} className="lg:flex">
-        <div style={{ width: 300, flexShrink: 0, height: "100%" }}>
-          {conversationList}
+      <div className="hidden lg:flex" style={{ width: "100%", height: "100%" }}>
+        <div style={{ width: 300, flexShrink: 0, height: "100%", borderRight: "1px solid #e5e7eb" }}>
+          <Sidebar {...sidebarProps} />
         </div>
         <div style={{ flex: 1, height: "100%", minWidth: 0, overflow: "hidden" }}>
-          {activeChatId && activeChatroom ? (
-            <MessageThread
-              chatId={activeChatId}
-              chatroom={activeChatroom}
-              currentUserId={currentUserId}
-              onNewMessage={handleNewMessage}
-            />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", backgroundColor: "#f9fafb", gap: 12 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: "white", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-                <MessageSquare size={28} color="#d1d5db" />
-              </div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>Select a conversation</p>
-            </div>
-          )}
+          {threadPanel}
         </div>
       </div>
 
