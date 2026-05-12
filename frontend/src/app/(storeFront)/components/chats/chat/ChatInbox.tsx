@@ -87,7 +87,7 @@ function Sidebar({ filtered, loading, search, onSearch, totalUnread, activeChatI
 }
 
 export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }: Props) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<number | null>(initialChatId ?? null);
@@ -95,6 +95,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const [search, setSearch] = useState("");
   const chatroomsRef = useRef<Chatroom[]>([]);
   const activeChatIdRef = useRef<number | null>(activeChatId);
+  const fetchedRef = useRef(false);
 
   const currentUserId = user?._id || user?.id || "";
 
@@ -102,15 +103,18 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
 
   useEffect(() => {
-    if (!currentUserId) { setLoading(true); return; }
+    if (authLoading) return;
+    if (!currentUserId) { setLoading(false); return; }
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
 
     if (initialChatId) {
       getUserChatrooms(currentUserId).then((rooms) => {
-        setChatrooms(rooms);
+        if (rooms.length > 0) setChatrooms(rooms);
         setActiveChatId(initialChatId);
         setShowThread(true);
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
       return;
     }
 
@@ -126,16 +130,16 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
           setActiveChatId(newRoom.chatId);
           setShowThread(true);
         })
-        .catch(() => roomsP.then((rooms) => setChatrooms(rooms)))
+        .catch(() => roomsP.then((rooms) => { if (rooms.length > 0) setChatrooms(rooms); }))
         .finally(() => setLoading(false));
       return;
     }
 
     getUserChatrooms(currentUserId).then((rooms) => {
-      setChatrooms(rooms);
+      if (rooms.length > 0) setChatrooms(rooms);
       setLoading(false);
-    });
-  }, [currentUserId, initialChatId, sellerId, itemId, itemModel]);
+    }).catch(() => setLoading(false));
+  }, [authLoading, currentUserId, initialChatId, sellerId, itemId, itemModel]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -211,7 +215,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     })
     .sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
 
-  const sidebarProps: SidebarProps = { filtered, loading, search, onSearch: setSearch, totalUnread, activeChatId, currentUserId, onSelect: handleSelect, onDelete: handleDelete };
+  const sidebarProps: SidebarProps = { filtered, loading: loading || authLoading, search, onSearch: setSearch, totalUnread, activeChatId, currentUserId, onSelect: handleSelect, onDelete: handleDelete };
 
   const threadPanel = activeChatId && activeChatroom ? (
     <MessageThread chatId={activeChatId} chatroom={activeChatroom} currentUserId={currentUserId} onBack={handleBack} onNewMessage={handleNewMessage} />
