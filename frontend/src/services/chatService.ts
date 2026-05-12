@@ -63,10 +63,17 @@ export async function createOrGetChat(data: {
   return mapChat(json.chat);
 }
 
+function readClientToken(): string {
+  if (typeof document === "undefined") return "";
+  const m = document.cookie.match(/(?:^|;\s*)accessToken=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
 export async function getUserChatrooms(userId: string, token?: string): Promise<Chatroom[]> {
   try {
+    const authToken = token || readClientToken();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
     const res = await fetch(CHATS.USER_CHATS(userId), {
       credentials: "include",
       headers,

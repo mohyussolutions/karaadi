@@ -241,7 +241,6 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   return (
     <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "white" }}>
 
-      {/* Mobile: full-width, toggle list ↔ thread */}
       <div className="flex lg:hidden" style={{ width: "100%", height: "100%" }}>
         {!showThread
           ? <Sidebar {...sidebarProps} />
@@ -249,7 +248,6 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         }
       </div>
 
-      {/* Desktop: sidebar + thread side by side */}
       <div className="hidden lg:flex" style={{ width: "100%", height: "100%" }}>
         <div style={{ width: 300, flexShrink: 0, height: "100%", borderRight: "1px solid #e5e7eb" }}>
           <Sidebar {...sidebarProps} />
