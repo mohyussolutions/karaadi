@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { Send, Loader2 } from "lucide-react"
+import { Send, Loader2, ChevronLeft } from "lucide-react"
 import MessageBubble from "./MessageBubble"
 import { getChatroomMessages, sendChatMessage } from "@/services/chatService"
 import { socketService } from "@/actions/sockets/socketServiceAction"
@@ -11,6 +11,7 @@ interface Props {
   chatId: number
   chatroom: Chatroom
   currentUserId: string
+  onBack?: () => void
   onNewMessage?: (chatId: number, lastMessage: string, lastMessageAt: string) => void
 }
 
@@ -32,7 +33,7 @@ function sameDay(a: string, b: string): boolean {
   return new Date(a).toDateString() === new Date(b).toDateString()
 }
 
-export default function MessageThread({ chatId, chatroom, currentUserId, onNewMessage }: Props) {
+export default function MessageThread({ chatId, chatroom, currentUserId, onBack, onNewMessage }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [input, setInput] = useState("")
@@ -208,6 +209,16 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onNewMe
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
       <div className="flex items-center gap-2.5 px-3 sm:px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="lg:hidden p-1.5 -ml-1 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation flex-shrink-0"
+            aria-label="Back"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          </button>
+        )}
         {otherAvatar ? (
           <img
             src={otherAvatar}
