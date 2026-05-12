@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { Send, Loader2, ChevronLeft } from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 import MessageBubble from "./MessageBubble"
 import { getChatroomMessages, sendChatMessage } from "@/services/chatService"
 import { socketService } from "@/actions/sockets/socketServiceAction"
@@ -11,7 +11,6 @@ interface Props {
   chatId: number
   chatroom: Chatroom
   currentUserId: string
-  onBack?: () => void
   onNewMessage?: (chatId: number, lastMessage: string, lastMessageAt: string) => void
 }
 
@@ -33,7 +32,7 @@ function sameDay(a: string, b: string): boolean {
   return new Date(a).toDateString() === new Date(b).toDateString()
 }
 
-export default function MessageThread({ chatId, chatroom, currentUserId, onBack, onNewMessage }: Props) {
+export default function MessageThread({ chatId, chatroom, currentUserId, onNewMessage }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [input, setInput] = useState("")
@@ -78,9 +77,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       socketService.markAsRead(chatId)
     }
 
-    if (socketService.isConnected()) {
-      joinAndMark()
-    }
+    if (socketService.isConnected()) joinAndMark()
 
     const offConnect = socketService.on("connect", joinAndMark)
 
@@ -125,9 +122,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
       addMessage({ ...message, chatId: incomingId }, true)
     }
 
-    const handleReceiveMessage = (data: unknown) => {
-      addMessage(data as any, true)
-    }
+    const handleReceiveMessage = (data: unknown) => addMessage(data as any, true)
 
     const handleTyping = (data: unknown) => {
       const { userId, isTyping } = data as { userId: string; isTyping: boolean }
@@ -155,9 +150,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   }, [messages.length, scrollToBottom])
 
   const resetTextarea = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "48px"
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "48px"
   }
 
   const handleSend = useCallback(async () => {
@@ -201,9 +194,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     }
     if (!typingEmitRef.current) {
       socketService.sendTyping(chatId, true)
-      typingEmitRef.current = setTimeout(() => {
-        typingEmitRef.current = null
-      }, 1000)
+      typingEmitRef.current = setTimeout(() => { typingEmitRef.current = null }, 1000)
     }
   }
 
@@ -217,29 +208,18 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", backgroundColor: "white" }}>
       <div className="flex items-center gap-2.5 px-3 sm:px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm">
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="lg:hidden p-1.5 -ml-1 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation flex-shrink-0"
-            aria-label="Back"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-        )}
         {otherAvatar ? (
           <img
             src={otherAvatar}
             alt={otherName}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
             onError={(e) => { e.currentTarget.style.display = "none" }}
           />
         ) : (
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {(otherName || "?").charAt(0).toUpperCase()}
           </div>
         )}
-
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-sm leading-tight truncate">{otherName}</p>
           {chatroom.itemTitle && (
@@ -253,13 +233,13 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
       <div
         ref={scrollAreaRef}
-        className="px-3 py-3 space-y-1 bg-gray-50"
+        className="px-2 sm:px-3 py-3 space-y-1 bg-gray-50"
         style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", minHeight: 0 } as React.CSSProperties}
       >
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"} animate-pulse`}>
-              <div className={`h-10 rounded-2xl ${i % 2 === 0 ? "w-48 bg-gray-200" : "w-40 bg-blue-200"}`} />
+              <div className={`h-10 rounded-2xl ${i % 2 === 0 ? "w-32 sm:w-48 bg-gray-200" : "w-28 sm:w-40 bg-blue-200"}`} />
             </div>
           ))
         ) : messages.length === 0 ? (
@@ -288,11 +268,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
               <div className="flex justify-start pl-2 pt-1">
                 <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1 shadow-sm">
                   {[0, 150, 300].map((delay) => (
-                    <span
-                      key={delay}
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: `${delay}ms` }}
-                    />
+                    <span key={delay} className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
                   ))}
                 </div>
               </div>
@@ -302,8 +278,8 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         <div aria-hidden="true" />
       </div>
 
-      <div className="bg-white border-t border-gray-200 px-3 py-2.5 flex-shrink-0" style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom, 0px))" }}>
-        <div className="flex items-end gap-2.5">
+      <div className="bg-white border-t border-gray-200 px-2 sm:px-3 py-2.5 flex-shrink-0" style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
             value={input}
@@ -312,21 +288,28 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             placeholder="Write a message…"
             disabled={sending}
             rows={1}
-            className="flex-1 resize-none rounded-2xl border-2 border-gray-200 bg-gray-50 px-4 py-2.5 focus:outline-none focus:border-[#0063fb] focus:bg-white placeholder:text-gray-400 transition-all touch-manipulation font-medium"
+            className="flex-1 resize-none rounded-2xl border-2 border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 focus:outline-none focus:border-[#0063fb] focus:bg-white placeholder:text-gray-400 transition-all touch-manipulation font-medium"
             style={{ fontSize: "16px", height: "48px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4", color: "#111827" }}
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center transition-all touch-manipulation select-none shadow-md ${
+            className={`h-11 px-3 sm:px-4 rounded-full flex-shrink-0 flex items-center justify-center gap-1.5 font-bold text-sm transition-all touch-manipulation select-none shadow-md ${
               !input.trim() || sending
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
-                : "bg-[#0063fb] text-white active:scale-90 active:shadow-sm"
+                : "bg-[#0063fb] text-white active:scale-95 active:shadow-sm"
             }`}
             aria-label="Send"
           >
-            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-[18px] h-[18px]" />}
+            {sending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                <span className="hidden sm:inline">Send</span>
+              </>
+            )}
           </button>
         </div>
       </div>

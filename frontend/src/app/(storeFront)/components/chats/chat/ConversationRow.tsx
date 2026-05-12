@@ -40,7 +40,7 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
     <div
       role="button"
       tabIndex={0}
-      className={`relative flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 cursor-pointer touch-manipulation select-none transition-colors ${
+      className={`relative flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3.5 border-b border-gray-100 cursor-pointer touch-manipulation select-none transition-colors ${
         isActive
           ? "bg-[#f0f7ff] border-l-[3px] border-l-[#0063fb]"
           : "active:bg-gray-100 hover:bg-gray-50 border-l-[3px] border-l-transparent"
@@ -53,12 +53,12 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
       onClick={() => { cancelLongPress(); onClick(chatroom.chatId) }}
       onKeyDown={(e) => e.key === "Enter" && onClick(chatroom.chatId)}
     >
-      <div className="flex-shrink-0 relative mt-0.5">
+      <div className="flex-shrink-0 relative">
         {otherAvatar ? (
           <img
             src={otherAvatar}
             alt={otherName}
-            className="w-12 h-12 rounded-full object-cover"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = "none";
               (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty("display", "flex")
@@ -66,19 +66,19 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
           />
         ) : null}
         <div
-          className="w-12 h-12 rounded-full bg-blue-500 items-center justify-center text-white font-bold text-lg flex-shrink-0"
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 items-center justify-center text-white font-bold text-base flex-shrink-0"
           style={{ display: otherAvatar ? "none" : "flex" }}
         >
           {(otherName || "?").charAt(0).toUpperCase()}
         </div>
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#0063fb] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-[#0063fb] text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="hidden sm:flex flex-1 min-w-0 flex-col">
         <div className="flex items-baseline justify-between gap-2 mb-0.5">
           <span className={`text-sm truncate ${unread > 0 ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
             {otherName}
@@ -100,14 +100,18 @@ export default function ConversationRow({ chatroom, isActive, currentUserId, onC
         </p>
       </div>
 
+      <p className="flex sm:hidden text-[10px] font-semibold text-gray-700 truncate max-w-[52px] text-center leading-tight mt-0.5">
+        {(otherName || "?").split(" ")[0]}
+      </p>
+
       {showDelete && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowDelete(false); onDelete(chatroom.chatId) }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors touch-manipulation"
+          className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors touch-manipulation"
           aria-label="Delete conversation"
         >
-          <FiTrash2 size={15} />
+          <FiTrash2 size={13} />
         </button>
       )}
     </div>
