@@ -112,10 +112,11 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
 
     if (initialChatId) {
       getUserChatrooms(currentUserId).then((rooms) => {
-        setChatrooms(rooms);
+        if (rooms.length > 0) setChatrooms(rooms);
         setActiveChatId(initialChatId);
         setShowThread(true);
-      }).finally(() => setLoading(false));
+        setLoading(false);
+      }).catch(() => setLoading(false));
       return;
     }
 
@@ -136,9 +137,19 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       return;
     }
 
-    getUserChatrooms(currentUserId)
-      .then((rooms) => setChatrooms(rooms))
-      .finally(() => setLoading(false));
+    getUserChatrooms(currentUserId).then((rooms) => {
+      if (rooms.length > 0) {
+        setChatrooms(rooms);
+        setLoading(false);
+      } else {
+        setTimeout(() => {
+          getUserChatrooms(currentUserId).then((retried) => {
+            setChatrooms(retried);
+            setLoading(false);
+          }).catch(() => setLoading(false));
+        }, 800);
+      }
+    }).catch(() => setLoading(false));
   }, [authLoading, currentUserId, initialChatId, sellerId, itemId, itemModel]);
 
   useEffect(() => {
