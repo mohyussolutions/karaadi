@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { Send, Loader2, ChevronLeft } from "lucide-react"
 import MessageBubble from "./MessageBubble"
-import { getChatroomMessages } from "@/services/chatProxyService"
-import { sendChatMessage } from "@/services/chatService"
+import { getChatroomMessages, sendChatMessage } from "@/services/chatProxyService"
 import { socketService } from "@/actions/sockets/socketServiceAction"
 import type { ChatMessage, Chatroom } from "@/app/utils/types/chat.types"
 
@@ -66,11 +65,13 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
 
   useEffect(() => {
     setLoading(true)
-    getChatroomMessages(chatId, currentUserId).then((msgs) => {
-      setMessages(msgs)
-      setLoading(false)
-      setTimeout(() => scrollToBottom(true), 50)
-    })
+    getChatroomMessages(chatId, currentUserId)
+      .then((msgs) => {
+        setMessages(msgs)
+        setTimeout(() => scrollToBottom(true), 50)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
 
     socketService.connect(currentUserId)
 

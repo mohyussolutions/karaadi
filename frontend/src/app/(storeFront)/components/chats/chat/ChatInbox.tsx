@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getUserChatrooms, createOrGetChatProxy, deleteChatroomProxy } from "@/services/chatProxyService";
 import { socketService } from "@/actions/sockets/socketServiceAction";
 import ConversationRow from "./ConversationRow";
 import MessageThread from "./MessageThread";
 import type { Chatroom } from "@/app/utils/types/chat.types";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Loader2 } from "lucide-react";
 
 interface Props {
   initialChatId?: number;
@@ -84,6 +85,7 @@ function Sidebar({ filtered, loading, search, onSearch, totalUnread, activeChatI
 
 export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }: Props) {
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<number | null>(initialChatId ?? null);
@@ -126,6 +128,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
           });
           setActiveChatId(newRoom.chatId);
           setShowThread(true);
+          router.replace(`/messages?chatId=${newRoom.chatId}`, { scroll: false });
         })
         .catch(() => roomsP.then((rooms) => setChatrooms(rooms)))
         .finally(() => setLoading(false));
@@ -183,19 +186,27 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     setActiveChatId(chatId);
     setShowThread(true);
     setChatrooms((prev) => prev.map((c) => (c.chatId === chatId ? { ...c, unreadCount: 0 } : c)));
+    router.replace(`/messages?chatId=${chatId}`, { scroll: false });
     if (unread > 0 && typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("karaadi:messages-read", { detail: { unread } }));
     }
-  }, []);
+  }, [router]);
 
-  const handleBack = useCallback(() => setShowThread(false), []);
+  const handleBack = useCallback(() => {
+    setShowThread(false);
+    router.replace("/messages", { scroll: false });
+  }, [router]);
 
   const handleDelete = useCallback(async (chatId: number) => {
     const ok = await deleteChatroomProxy(chatId, currentUserId);
     if (!ok) return;
     setChatrooms((prev) => prev.filter((c) => c.chatId !== chatId));
-    if (activeChatId === chatId) { setActiveChatId(null); setShowThread(false); }
-  }, [currentUserId, activeChatId]);
+    if (activeChatId === chatId) {
+      setActiveChatId(null);
+      setShowThread(false);
+      router.replace("/messages", { scroll: false });
+    }
+  }, [currentUserId, activeChatId, router]);
 
   const handleNewMessage = useCallback((chatId: number, lastMessage: string, lastMessageAt: string) => {
     setChatrooms((prev) => {
@@ -225,6 +236,10 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
 
   const threadPanel = activeChatId && activeChatroom ? (
     <MessageThread chatId={activeChatId} chatroom={activeChatroom} currentUserId={currentUserId} onBack={handleBack} onNewMessage={handleNewMessage} />
+  ) : activeChatId && loading ? (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", backgroundColor: "#f9fafb", gap: 12 }}>
+      <Loader2 size={28} color="#d1d5db" className="animate-spin" />
+    </div>
   ) : (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", backgroundColor: "#f9fafb", gap: 12 }}>
       <MessageSquare size={40} color="#d1d5db" />

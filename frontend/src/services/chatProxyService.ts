@@ -1,5 +1,16 @@
-import type { ChatMessage, Chatroom } from "@/app/utils/types/chat.types";
-import { PROXY_CHATS } from "@/actions/constant/sockets";
+import type { ChatMessage, Chatroom } from "@/app/utils/types/chat.types"
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders"
+
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || "https://karaadi.onrender.com"
+
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = await getAuthHeaders()
+  return fetch(`${BACKEND}${path}`, {
+    credentials: "include",
+    ...init,
+    headers: { ...(headers as Record<string, string>), ...(init.headers as Record<string, string> | undefined) },
+  })
+}
 
 function mapChat(chat: any): Chatroom {
   const item =
@@ -10,7 +21,7 @@ function mapChat(chat: any): Chatroom {
     chat.motorcycle ||
     chat.realEstate ||
     chat.farmequipment ||
-    null;
+    null
   return {
     chatId: chat.id,
     senderId: chat.senderId,
@@ -26,7 +37,7 @@ function mapChat(chat: any): Chatroom {
     itemTitle: item?.title || null,
     itemImage: item?.images?.[0] || null,
     itemPrice: item?.price || null,
-  };
+  }
 }
 
 function mapMessage(msg: any): ChatMessage {
@@ -43,52 +54,98 @@ function mapMessage(msg: any): ChatMessage {
     deleted: msg.deleted,
     isEdited: msg.isEdited,
     sender: msg.sender,
-  };
+  }
 }
 
 export async function getUserChatrooms(userId: string): Promise<Chatroom[]> {
   try {
-    const res = await fetch(PROXY_CHATS.USER_CHATS(userId), { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data.map(mapChat) : [];
+    const res = await apiFetch(`/api/chats/user/${userId}`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data) ? data.map(mapChat) : []
   } catch {
-    return [];
+    return []
   }
 }
 
 export async function getChatroomMessages(chatId: number, userId: string): Promise<ChatMessage[]> {
   try {
-    const res = await fetch(PROXY_CHATS.CHAT_MESSAGES(chatId, userId), { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data.map(mapMessage) : [];
+    const res = await apiFetch(`/api/chats/${chatId}/messages?userId=${userId}`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data) ? data.map(mapMessage) : []
   } catch {
-    return [];
+    return []
   }
 }
 
 export async function createOrGetChatProxy(data: {
-  senderId: string;
-  receiverId: string;
-  itemId: string;
-  itemModel: string;
+  senderId: string
+  receiverId: string
+  itemId: string
+  itemModel: string
 }): Promise<Chatroom> {
-  const res = await fetch(PROXY_CHATS.CREATE, {
+  const res = await apiFetch("/api/chats/create", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Failed to create chat");
-  const json = await res.json();
-  return mapChat(json);
+  })
+  if (!res.ok) throw new Error("Failed to create chat")
+  return mapChat(await res.json())
 }
 
 export async function deleteChatroomProxy(chatId: number, userId: string): Promise<boolean> {
   try {
-    const res = await fetch(PROXY_CHATS.DELETE(chatId, userId), { method: "DELETE" });
-    return res.ok;
+    const res = await apiFetch(`/api/chats/${chatId}?userId=${userId}`, { method: "DELETE" })
+    return res.ok
   } catch {
-    return false;
+    return false
+  }
+}
+
+export async function sendChatMessage(data: {
+  chatId: number
+  senderId: string
+  receiverId: string
+  content: string
+}): Promise<ChatMessage | null> {
+  try {
+    const res = await apiFetch("/api/messages/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chatId: String(data.chatId),
+        senderId: String(data.senderId),
+        receiverId: String(data.receiverId),
+        content: data.content,
+      }),
+    })
+    if (!res.ok) return null
+    return mapMessage(await res.json())
+  } catch {
+    return null
+  }
+}
+
+export async function deleteChatMessageProxy(messageId: number, userId: string): Promise<boolean> {
+  try {
+    const res = await apiFetch(`/api/messages/${messageId}?userId=${userId}`, { method: "DELETE" })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+export async function updateChatMessageProxy(messageId: number, content: string, userId: string): Promise<ChatMessage | null> {
+  try {
+    const res = await apiFetch(`/api/messages/${messageId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, userId }),
+    })
+    if (!res.ok) return null
+    return mapMessage(await res.json())
+  } catch {
+    return null
   }
 }

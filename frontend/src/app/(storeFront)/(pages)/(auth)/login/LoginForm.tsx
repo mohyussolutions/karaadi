@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { login } from "@/actions/core/authAction";
+import { setAuthCookies } from "@/actions/core/cookieActions";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { useAuth } from "@/context/AuthContext";
 
@@ -14,15 +14,8 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter();
   const { t } = useTranslation();
   const { setUser } = useAuth();
-
-  useEffect(() => {
-    router.prefetch("/dashboard");
-    router.prefetch("/managers");
-    router.prefetch("/support");
-  }, [router]);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,25 +36,16 @@ export default function LoginForm() {
           ? "support"
           : "user";
 
-        await fetch("/api/auth/set-cookie", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            idToken: loggedInUser.token,
-            accessToken: loggedInUser.accessToken,
-            role,
-          }),
-        });
+        await setAuthCookies(loggedInUser.token, loggedInUser.accessToken, role);
 
-        if (loggedInUser.isAdmin) {
-          router.push("/dashboard");
-        } else if (loggedInUser.isManager) {
-          router.push("/managers");
-        } else if (loggedInUser.isSupport) {
-          router.push("/support");
-        } else {
-          router.push("/");
-        }
+        const dest = loggedInUser.isAdmin
+          ? "/dashboard"
+          : loggedInUser.isManager
+          ? "/managers"
+          : loggedInUser.isSupport
+          ? "/support"
+          : "/";
+        window.location.href = dest;
       }
     } catch (err: any) {
       setError(err?.message || t("auth.login.failed"));

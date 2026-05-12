@@ -3,6 +3,7 @@
 import { normalizeUser } from "@/app/(storeFront)/components/hooks/useNormalizeUser";
 import { apiUrls } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+import { clearAuthCookies as clearCookiesServer } from "./cookieActions";
 import {
   NormalizedUser,
   LoginResponse,
@@ -30,7 +31,7 @@ export async function getAuthenticatedUser(): Promise<NormalizedUser | null> {
 }
 
 export function clearAuthCookies() {
-  fetch("/api/auth/clear-cookie", { method: "POST" }).catch(() => {});
+  clearCookiesServer().catch(() => {});
 }
 
 export async function login(email: string, password: string): Promise<User> {

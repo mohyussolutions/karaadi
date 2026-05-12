@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, Suspense } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import dynamic from "next/dynamic"
@@ -15,6 +15,7 @@ function MessagesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login?redirect=/messages")
@@ -31,6 +32,21 @@ function MessagesContent() {
     }
   }, [])
 
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const handleResize = () => {
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      setKeyboardOffset(offset)
+    }
+    vv.addEventListener("resize", handleResize)
+    vv.addEventListener("scroll", handleResize)
+    return () => {
+      vv.removeEventListener("resize", handleResize)
+      vv.removeEventListener("scroll", handleResize)
+    }
+  }, [])
+
   return (
     <div
       style={{
@@ -38,8 +54,7 @@ function MessagesContent() {
         left: 0,
         right: 0,
         top: "3rem",
-        bottom: 0,
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        bottom: keyboardOffset,
         backgroundColor: "#fefdfd",
         zIndex: 10,
         display: "flex",

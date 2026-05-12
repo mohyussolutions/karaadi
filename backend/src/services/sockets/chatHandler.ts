@@ -16,7 +16,6 @@ export const chatHandler = (io: Server, socket: Socket, userId: string) => {
         return socket.emit("chatError", { error: "Access denied" });
       }
 
-      // Join immediately — don't wait for message history
       socket.join(`chat_${numId}`);
     } catch {
       socket.emit("chatError", { error: "Failed to join chat" });

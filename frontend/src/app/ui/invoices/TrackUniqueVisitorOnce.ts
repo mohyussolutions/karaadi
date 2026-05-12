@@ -1,8 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+
 const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-import Cookies from "js-cookie";
+
+function getVisitorId(): string {
+  const key = "karaadi_vid";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
 
 export default function TrackVisitor() {
   const hasRun = useRef(false);
@@ -13,36 +23,21 @@ export default function TrackVisitor() {
 
     const track = () => {
       try {
-        const failedUntil = (window as any).__trackFailedUntil || 0;
-        if (Date.now() < failedUntil) return;
-
-        const lang = Cookies.get("app_lang") || "en";
-        const url = `${BASE_API_URL}/api/visitors/track-user`;
-        const data = JSON.stringify({ lang });
-
-        if (navigator.sendBeacon) {
-          const blob = new Blob([data], { type: "application/json" });
-          navigator.sendBeacon(url, blob);
-        } else {
-          fetch(url, {
-            method: "POST",
-            body: data,
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            keepalive: true,
-          }).catch(() => {
-            (window as any).__trackFailedUntil = Date.now() + 60000;
-          });
-        }
+        const visitorId = getVisitorId();
+        const lang = document.cookie.match(/app_lang=([^;]+)/)?.[1] ?? "en";
+        fetch(`${BASE_API_URL}/api/visitors/track-user`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visitorId, lang }),
+          keepalive: true,
+        }).catch(() => {});
       } catch {}
     };
 
-    if (typeof window !== "undefined") {
-      if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(track);
-      } else {
-        setTimeout(track, 2000);
-      }
+    if ("requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(track);
+    } else {
+      setTimeout(track, 2000);
     }
   }, []);
 
