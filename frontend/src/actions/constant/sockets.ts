@@ -47,6 +47,9 @@ const API_PATHS = {
 
 export const PROXY_CHATS = {
   USER_CHATS: (userId: string) => `/api/chats/user/${userId}`,
+  CHAT_MESSAGES: (chatId: number, userId: string) => `/api/chats/${chatId}/messages?userId=${userId}`,
+  CREATE: `/api/chats/create`,
+  DELETE: (chatId: number, userId: string) => `/api/chats/${chatId}?userId=${userId}`,
 } as const;
 
 export const CHATS = {

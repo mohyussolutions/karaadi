@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserChatrooms } from "@/services/chatProxyService";
-import { createOrGetChat, deleteChatroom } from "@/services/chatService";
+import { getUserChatrooms, createOrGetChatProxy, deleteChatroomProxy } from "@/services/chatProxyService";
 import { socketService } from "@/actions/sockets/socketServiceAction";
 import ConversationRow from "./ConversationRow";
 import MessageThread from "./MessageThread";
@@ -95,8 +94,6 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const lastFetchedUserId = useRef<string>("");
 
   const currentUserId = user?._id || user?.id || "";
-  const authToken = (user as any)?.token || (user as any)?.accessToken || (user as any)?.idToken || "";
-
   useEffect(() => { chatroomsRef.current = chatrooms; }, [chatrooms]);
   useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
 
@@ -109,7 +106,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     setLoading(true);
 
     if (initialChatId) {
-      getUserChatrooms(currentUserId, authToken).then((rooms) => {
+      getUserChatrooms(currentUserId).then((rooms) => {
         if (rooms.length > 0) setChatrooms(rooms);
         setActiveChatId(initialChatId);
         setShowThread(true);
@@ -119,8 +116,8 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
     }
 
     if (sellerId && itemId) {
-      const roomsP = getUserChatrooms(currentUserId, authToken);
-      const chatP = createOrGetChat({ senderId: currentUserId, receiverId: sellerId, itemId, itemModel: itemModel || "Marketplace" });
+      const roomsP = getUserChatrooms(currentUserId);
+      const chatP = createOrGetChatProxy({ senderId: currentUserId, receiverId: sellerId, itemId, itemModel: itemModel || "Marketplace" });
       Promise.all([roomsP, chatP])
         .then(([rooms, newRoom]) => {
           setChatrooms(() => {
@@ -135,20 +132,20 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       return;
     }
 
-    getUserChatrooms(currentUserId, authToken).then((rooms) => {
+    getUserChatrooms(currentUserId).then((rooms) => {
       if (rooms.length > 0) {
         setChatrooms(rooms);
         setLoading(false);
       } else {
         setTimeout(() => {
-          getUserChatrooms(currentUserId, authToken).then((retried) => {
+          getUserChatrooms(currentUserId).then((retried) => {
             setChatrooms(retried);
             setLoading(false);
           }).catch(() => setLoading(false));
         }, 800);
       }
     }).catch(() => setLoading(false));
-  }, [authLoading, currentUserId, authToken, initialChatId, sellerId, itemId, itemModel]);
+  }, [authLoading, currentUserId, initialChatId, sellerId, itemId, itemModel]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -160,7 +157,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
       setChatrooms((prev) => {
         const idx = prev.findIndex((c) => c.chatId === numId);
         if (idx === -1) {
-          getUserChatrooms(currentUserId, authToken).then((rooms) => {
+          getUserChatrooms(currentUserId).then((rooms) => {
             const fresh = rooms.find((r) => r.chatId === numId);
             if (fresh) setChatrooms((cur) => cur.some((c) => c.chatId === numId) ? cur : [fresh, ...cur]);
           });
@@ -194,7 +191,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const handleBack = useCallback(() => setShowThread(false), []);
 
   const handleDelete = useCallback(async (chatId: number) => {
-    const ok = await deleteChatroom(chatId, currentUserId);
+    const ok = await deleteChatroomProxy(chatId, currentUserId);
     if (!ok) return;
     setChatrooms((prev) => prev.filter((c) => c.chatId !== chatId));
     if (activeChatId === chatId) { setActiveChatId(null); setShowThread(false); }
