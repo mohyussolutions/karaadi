@@ -95,7 +95,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const [search, setSearch] = useState("");
   const chatroomsRef = useRef<Chatroom[]>([]);
   const activeChatIdRef = useRef<number | null>(activeChatId);
-  const fetchedRef = useRef(false);
+  const lastFetchedUserId = useRef<string>("");
 
   const currentUserId = user?._id || user?.id || "";
 
@@ -105,16 +105,17 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   useEffect(() => {
     if (authLoading) return;
     if (!currentUserId) { setLoading(false); return; }
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
+    if (lastFetchedUserId.current === currentUserId) return;
+    lastFetchedUserId.current = currentUserId;
+
+    setLoading(true);
 
     if (initialChatId) {
       getUserChatrooms(currentUserId).then((rooms) => {
-        if (rooms.length > 0) setChatrooms(rooms);
+        setChatrooms(rooms);
         setActiveChatId(initialChatId);
         setShowThread(true);
-        setLoading(false);
-      }).catch(() => setLoading(false));
+      }).finally(() => setLoading(false));
       return;
     }
 
@@ -130,15 +131,14 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
           setActiveChatId(newRoom.chatId);
           setShowThread(true);
         })
-        .catch(() => roomsP.then((rooms) => { if (rooms.length > 0) setChatrooms(rooms); }))
+        .catch(() => roomsP.then((rooms) => setChatrooms(rooms)))
         .finally(() => setLoading(false));
       return;
     }
 
-    getUserChatrooms(currentUserId).then((rooms) => {
-      if (rooms.length > 0) setChatrooms(rooms);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    getUserChatrooms(currentUserId)
+      .then((rooms) => setChatrooms(rooms))
+      .finally(() => setLoading(false));
   }, [authLoading, currentUserId, initialChatId, sellerId, itemId, itemModel]);
 
   useEffect(() => {
@@ -227,7 +227,7 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   );
 
   return (
-    <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "white", overflow: "hidden" }}>
+    <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "white" }}>
 
       {/* Mobile: full-width, toggle list ↔ thread */}
       <div className="flex lg:hidden" style={{ width: "100%", height: "100%" }}>
