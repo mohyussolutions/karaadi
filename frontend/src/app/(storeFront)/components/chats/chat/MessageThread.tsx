@@ -150,7 +150,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onNewMe
   }, [messages.length, scrollToBottom])
 
   const resetTextarea = () => {
-    if (textareaRef.current) textareaRef.current.style.height = "48px"
+    if (textareaRef.current) textareaRef.current.style.height = "56px"
   }
 
   const handleSend = useCallback(async () => {
@@ -278,8 +278,8 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onNewMe
         <div aria-hidden="true" />
       </div>
 
-      <div className="bg-white border-t border-gray-200 px-2 sm:px-3 py-2.5 flex-shrink-0" style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom, 0px))" }}>
-        <div className="flex items-end gap-2">
+      <div className="bg-white border-t-2 border-gray-200 px-3 py-3 flex-shrink-0" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex items-end gap-2.5">
           <textarea
             ref={textareaRef}
             value={input}
@@ -287,15 +287,15 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onNewMe
             onKeyDown={handleKeyDown}
             placeholder="Write a message…"
             disabled={sending}
-            rows={1}
-            className="flex-1 resize-none rounded-2xl border-2 border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 focus:outline-none focus:border-[#0063fb] focus:bg-white placeholder:text-gray-400 transition-all touch-manipulation font-medium"
-            style={{ fontSize: "16px", height: "48px", maxHeight: "120px", overflowY: "auto", lineHeight: "1.4", color: "#111827" }}
+            rows={2}
+            className="flex-1 resize-none rounded-2xl border-2 border-gray-300 bg-white px-4 py-3 focus:outline-none focus:border-[#0063fb] placeholder:text-gray-400 transition-all touch-manipulation font-medium shadow-sm"
+            style={{ fontSize: "16px", minHeight: "56px", maxHeight: "140px", overflowY: "auto", lineHeight: "1.5", color: "#111827" }}
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className={`h-11 px-3 sm:px-4 rounded-full flex-shrink-0 flex items-center justify-center gap-1.5 font-bold text-sm transition-all touch-manipulation select-none shadow-md ${
+            className={`h-12 px-4 sm:px-5 rounded-full flex-shrink-0 flex items-center justify-center gap-1.5 font-bold text-sm transition-all touch-manipulation select-none shadow-md ${
               !input.trim() || sending
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                 : "bg-[#0063fb] text-white active:scale-95 active:shadow-sm"
