@@ -50,10 +50,10 @@ function RegisterUser() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FEFDFD] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FEFDFD] flex items-start justify-center px-4 py-10">
       <form
         onSubmit={handleSubmit}
-        className="bg-white max-w-md w-full p-10 rounded-3xl shadow-xl flex flex-col"
+        className="bg-white max-w-md w-full p-8 sm:p-10 rounded-3xl shadow-xl flex flex-col"
       >
         <h1 className="text-4xl font-extrabold mb-4 text-center text-gray-900">
           Create Account
@@ -121,18 +121,18 @@ function RegisterUser() {
         />
 
         {showRules && (
-          <ul className="mt-3 mb-5 space-y-1.5 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
+          <ul className="mt-2 mb-4 grid grid-cols-2 gap-x-3 gap-y-1.5 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
             {ruleResults.map((rule) => (
               <li
                 key={rule.label}
-                className={`flex items-center gap-2 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors ${
                   rule.passes ? "text-green-600" : "text-red-500"
                 }`}
               >
                 {rule.passes ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
                 ) : (
-                  <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <XCircle className="w-3 h-3 flex-shrink-0" />
                 )}
                 {rule.label}
               </li>
