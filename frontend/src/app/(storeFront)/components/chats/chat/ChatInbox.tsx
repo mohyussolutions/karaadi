@@ -20,81 +20,6 @@ interface Props {
   itemModel?: string;
 }
 
-function UserStrip({
-  chatrooms,
-  activeChatId,
-  currentUserId,
-  loading,
-  onSelect,
-}: {
-  chatrooms: Chatroom[];
-  activeChatId: number | null;
-  currentUserId: string;
-  loading: boolean;
-  onSelect: (id: number) => void;
-}) {
-  if (loading) {
-    return (
-      <div className="flex gap-3 px-3 py-2 overflow-x-auto scrollbar-hide">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0 animate-pulse">
-            <div className="w-12 h-12 rounded-full bg-gray-200" />
-            <div className="h-2.5 w-10 bg-gray-200 rounded" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (chatrooms.length === 0) {
-    return (
-      <div className="flex items-center gap-2 px-4 py-3 text-gray-400">
-        <MessageSquare className="w-4 h-4" />
-        <span className="text-xs">No conversations yet</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex gap-3 px-3 py-2 overflow-x-auto scrollbar-hide">
-      {chatrooms.map((room) => {
-        const isSender = room.senderId === currentUserId;
-        const name = isSender ? room.receiverName : room.senderName;
-        const avatar = isSender ? room.receiverAvatar : room.senderAvatar;
-        const unread = room.unreadCount || 0;
-        const isActive = activeChatId === room.chatId;
-
-        return (
-          <button
-            key={room.chatId}
-            type="button"
-            onClick={() => onSelect(room.chatId)}
-            className="flex flex-col items-center gap-1 flex-shrink-0 touch-manipulation"
-          >
-            <div className={`relative w-12 h-12 rounded-full ring-2 transition-all ${isActive ? "ring-[#0063fb]" : "ring-transparent"}`}>
-              {avatar ? (
-                <img src={avatar} alt={name} className="w-12 h-12 rounded-full object-cover" />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
-                  {(name || "?").charAt(0).toUpperCase()}
-                </div>
-              )}
-              {unread > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                  {unread > 9 ? "9+" : unread}
-                </span>
-              )}
-            </div>
-            <span className={`text-[10px] font-semibold max-w-[52px] truncate leading-none ${isActive ? "text-[#0063fb]" : "text-gray-700"}`}>
-              {(name || "?").split(" ")[0]}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }: Props) {
   const { user } = useAuth();
   const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
@@ -211,28 +136,28 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   const activeChatroom = chatrooms.find((c) => c.chatId === activeChatId);
   const totalUnread = chatrooms.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
-  const filtered = chatrooms
-    .filter((c) => {
-      if (!search) return true;
-      const q = search.toLowerCase();
-      const isSender = c.senderId === currentUserId;
-      const name = isSender ? c.receiverName : c.senderName;
-      return (
-        name.toLowerCase().includes(q) ||
-        (c.lastMessage || "").toLowerCase().includes(q) ||
-        (c.itemTitle || "").toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-      const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
-      return tb - ta;
-    });
+  const sorted = [...chatrooms].sort((a, b) => {
+    const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+    const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+    return tb - ta;
+  });
+
+  const filtered = sorted.filter((c) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const isSender = c.senderId === currentUserId;
+    const name = isSender ? c.receiverName : c.senderName;
+    return (
+      name.toLowerCase().includes(q) ||
+      (c.lastMessage || "").toLowerCase().includes(q) ||
+      (c.itemTitle || "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "white" }}>
 
-      {/* ── Desktop sidebar ── */}
+      {/* Desktop sidebar */}
       <div
         style={{ flexShrink: 0, height: "100%", flexDirection: "column", borderRight: "1px solid #e5e7eb", backgroundColor: "white" }}
         className="hidden lg:flex lg:w-[300px] xl:w-[340px]"
@@ -288,30 +213,88 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         </div>
       </div>
 
-      {/* ── Mobile + tablet: full-height column ── */}
-      <div className="flex lg:hidden flex-col flex-1 min-w-0 h-full overflow-hidden">
+      {/* Mobile layout — full column */}
+      <div className="flex lg:hidden flex-col flex-1 min-w-0" style={{ height: "100%" }}>
 
-        {/* Users strip at the top */}
-        <div className="flex-shrink-0 border-b border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 px-3 pt-2.5">
+        {/* Users strip */}
+        <div className="flex-shrink-0 bg-white border-b-2 border-gray-200">
+          <div className="flex items-center justify-between px-4 pt-3 pb-1">
             <h1 className="text-sm font-bold text-gray-900">Messages</h1>
             {totalUnread > 0 && (
-              <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {totalUnread}
               </span>
             )}
           </div>
-          <UserStrip
-            chatrooms={filtered}
-            activeChatId={activeChatId}
-            currentUserId={currentUserId}
-            loading={loading}
-            onSelect={handleSelect}
-          />
+
+          {loading ? (
+            <div style={{ display: "flex", gap: "16px", padding: "12px 16px", overflowX: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "#e5e7eb" }} />
+                  <div style={{ width: 44, height: 10, borderRadius: 4, backgroundColor: "#e5e7eb" }} />
+                </div>
+              ))}
+            </div>
+          ) : sorted.length === 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", color: "#9ca3af" }}>
+              <MessageSquare size={16} />
+              <span style={{ fontSize: 13 }}>No conversations yet</span>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                gap: "20px",
+                padding: "12px 16px",
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+              } as React.CSSProperties}
+            >
+              {sorted.map((room) => {
+                const isSender = room.senderId === currentUserId;
+                const name = isSender ? room.receiverName : room.senderName;
+                const avatar = isSender ? room.receiverAvatar : room.senderAvatar;
+                const unread = room.unreadCount || 0;
+                const isActive = activeChatId === room.chatId;
+
+                return (
+                  <button
+                    key={room.chatId}
+                    type="button"
+                    onClick={() => handleSelect(room.chatId)}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                  >
+                    <div style={{ position: "relative", width: 56, height: 56, borderRadius: "50%", outline: isActive ? "3px solid #0063fb" : "3px solid transparent", outlineOffset: 2 }}>
+                      {avatar ? (
+                        <img
+                          src={avatar}
+                          alt={name}
+                          style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <div style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: 20 }}>
+                          {(name || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {unread > 0 && (
+                        <span style={{ position: "absolute", top: -2, right: -2, minWidth: 18, height: 18, backgroundColor: "#ef4444", color: "white", fontSize: 10, fontWeight: "bold", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                          {unread > 9 ? "9+" : unread}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: isActive ? "#0063fb" : "#374151", maxWidth: 56, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "center" }}>
+                      {(name || "?").split(" ")[0]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Conversation thread fills rest */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Thread area */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
           {activeChatId && activeChatroom ? (
             <MessageThread
               chatId={activeChatId}
@@ -320,14 +303,14 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
               onNewMessage={handleNewMessage}
             />
           ) : (
-            <div className="h-full flex flex-col">
-              <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-center px-6 gap-3">
-                <MessageSquare className="w-10 h-10 text-gray-300" />
-                <p className="text-sm font-semibold text-gray-500">Select a conversation above</p>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f9fafb", gap: 12, padding: "0 24px", textAlign: "center" }}>
+                <MessageSquare size={40} color="#d1d5db" />
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>Tap a user above to start chatting</p>
               </div>
-              <div className="bg-white border-t-2 border-gray-200 px-3 py-3 flex-shrink-0" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
-                <div className="flex items-end gap-2.5 px-4 py-3 min-h-[56px] bg-white border-2 border-gray-300 rounded-2xl shadow-sm">
-                  <span className="text-sm text-gray-400">Write a message…</span>
+              <div style={{ backgroundColor: "white", borderTop: "2px solid #e5e7eb", padding: "12px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))" }}>
+                <div style={{ display: "flex", alignItems: "center", minHeight: 56, backgroundColor: "white", border: "2px solid #d1d5db", borderRadius: 16, padding: "12px 16px" }}>
+                  <span style={{ fontSize: 15, color: "#9ca3af" }}>Write a message…</span>
                 </div>
               </div>
             </div>
@@ -335,8 +318,8 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
         </div>
       </div>
 
-      {/* ── Desktop thread panel ── */}
-      <div style={{ flex: 1, flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }} className="hidden lg:flex">
+      {/* Desktop thread panel */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }} className="hidden lg:flex">
         {activeChatId && activeChatroom ? (
           <MessageThread
             chatId={activeChatId}
