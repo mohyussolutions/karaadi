@@ -62,7 +62,6 @@ export default function LoginForm() {
         } else {
           router.push("/");
         }
-        router.refresh();
       }
     } catch (err: any) {
       setError(err?.message || t("auth.login.failed"));
