@@ -250,7 +250,7 @@ export async function waafiStatus(req: Request, res: Response) {
     if (cached) return res.json(cached);
 
     const payment = await prisma.payment.findFirst({
-      where: { transactionId: ref },
+      where: { transactionId: String(ref) },
       select: { status: true },
     }).catch(() => null);
 
@@ -368,7 +368,7 @@ export async function mobileStatus(req: Request, res: Response) {
     if (cached) return res.json(cached);
 
     const payment = await prisma.payment.findFirst({
-      where: { transactionId: ref },
+      where: { transactionId: String(ref) },
       select: { status: true },
     }).catch(() => null);
 
