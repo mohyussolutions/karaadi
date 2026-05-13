@@ -4,7 +4,7 @@ services:
     runtime: node
     region: frankfurt
     rootDir: backend
-    buildCommand: cd backend && npm ci && npx prisma generate --schema ./src/prisma && npm run import
+    buildCommand: cd backend && npm ci && npx prisma generate --schema ./src/prisma
     startCommand: cd backend && npm start
     healthCheckPath: /health
     envVars:
