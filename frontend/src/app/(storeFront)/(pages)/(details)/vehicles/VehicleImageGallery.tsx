@@ -81,7 +81,6 @@ export default function VehicleDetails() {
           setCategory("Motorcycle");
         }
       } catch (error) {
-        console.error("Error:", error);
       } finally {
         if (isMounted) setDataLoading(false);
       }

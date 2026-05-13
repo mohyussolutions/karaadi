@@ -29,7 +29,6 @@ const Jobs = () => {
         const data: ApiJob[] = await response.json();
         setJobs(data);
       } catch (error) {
-        console.error("Error loading jobs:", error);
       } finally {
         setIsLoading(false);
       }

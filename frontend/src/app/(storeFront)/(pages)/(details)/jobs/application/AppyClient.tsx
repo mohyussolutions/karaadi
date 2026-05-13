@@ -19,9 +19,6 @@ export default function Appy({ jobTitle, companyName, jobId }: AppyProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(
-      `Submitting application for: ${jobTitle} at ${companyName} (Job ID: ${jobId})`,
-    );
     setSubmissionStatus("submitted");
   };
 
