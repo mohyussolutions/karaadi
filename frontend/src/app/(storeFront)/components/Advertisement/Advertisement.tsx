@@ -22,13 +22,9 @@ function AdCard({ ad }: { ad: SingleAd }) {
 
   const href = ad.link.startsWith("http") ? ad.link : `https://${ad.link}`;
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>) => {
-      // Track without blocking navigation
-      trackAdClick(ad.id).catch(() => {});
-    },
-    [ad.id],
-  );
+  const handleClick = useCallback(() => {
+    trackAdClick(ad.id).catch(() => {});
+  }, [ad.id]);
 
   return (
     <a
@@ -39,7 +35,6 @@ function AdCard({ ad }: { ad: SingleAd }) {
       className="block bg-white rounded-lg overflow-hidden border border-gray-200 cursor-pointer transition-shadow hover:shadow-lg flex flex-col h-[600px] no-underline"
     >
       <div className="relative w-full h-[350px] bg-gray-100">
-        {/* Gray skeleton shown until image loads — no flash */}
         <div
           className={`absolute inset-0 bg-gray-200 animate-pulse transition-opacity duration-300 ${
             imgLoaded ? "opacity-0" : "opacity-100"

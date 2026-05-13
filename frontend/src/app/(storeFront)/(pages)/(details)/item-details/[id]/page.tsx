@@ -74,7 +74,7 @@ export default function ProductDetails() {
     [rawItem],
   );
 
-  const { count: savedCount } = useItemSavedCount(item?.id);
+  const { count: savedCount, ready: savedReady } = useItemSavedCount(item?.id);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -320,7 +320,7 @@ export default function ProductDetails() {
                     className="relative bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
                   >
                     <AiOutlineHeart className="w-5 h-5 text-red-500" />
-                    {savedCount > 0 && (
+                    {savedReady && savedCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none shadow-sm">
                         {savedCount > 99 ? "99+" : savedCount}
                       </span>

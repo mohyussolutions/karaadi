@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import useSWR from "swr";
 import { useTranslation } from "react-i18next";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import Image from "next/image";
@@ -18,7 +19,8 @@ import { addToFavorite } from "@/actions/categories/favoriteAction";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
 import SaveFavoriteModel from "@/app/(storeFront)/components/shared/modals/Modal";
 import { ImageControls } from "@/app/ui/invoices/ImageControls";
-import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
+import dynamic from "next/dynamic";
+const Recommendations = dynamic(() => import("@/app/(storeFront)/components/Recommendations/Recommendations"), { ssr: false });
 import { useAuth } from "@/context/AuthContext";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 
@@ -66,8 +68,12 @@ const JobDetailsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const [job, setJob] = useState<Job | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: jobData, isLoading: loading } = useSWR(
+    id ? `job-${id}` : null,
+    () => getJobById(id),
+    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 60_000 },
+  );
+  const job = (jobData as Job) ?? null;
   const [formattedSalary, setFormattedSalary] = useState<string>("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -82,28 +88,9 @@ const JobDetailsPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!id) return;
-    const fetchJob = async () => {
-      setLoading(true);
-      try {
-        const jobData = await getJobById(id);
-        if (jobData) {
-          setJob(jobData as Job);
-          if (jobData.salary) {
-            const formatted = await formatSalary(jobData.salary);
-            setFormattedSalary(formatted);
-          }
-        } else {
-          setJob(null);
-        }
-      } catch {
-        setJob(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchJob();
-  }, [id]);
+    if (!job?.salary) return;
+    formatSalary(job.salary).then(setFormattedSalary).catch(() => {});
+  }, [job?.salary]);
 
   const images = useMemo(() => {
     const rawImages: string[] = [];

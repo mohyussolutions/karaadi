@@ -1,3 +1,8 @@
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -5,8 +10,10 @@ const nextConfig = {
   compress: true,
   eslint: { ignoreDuringBuilds: true },
   httpAgentOptions: { keepAlive: true },
+  outputFileTracingRoot: path.join(__dirname, ".."),
   experimental: {
     serverActions: { bodySizeLimit: "20mb" },
+    turbopack: { root: __dirname },
     optimizePackageImports: [
       "react-icons",
       "lucide-react",

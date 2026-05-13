@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
 import { IoIosArrowForward, IoIosArrowBack } from "@/app/utils/icons";
 import Image from "next/image";
 import GoBackBtn from "@/app/(storeFront)/components/shared/buttons/goBackBtn";
@@ -12,7 +13,11 @@ import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 import { MessageSquare, Phone } from "lucide-react";
-import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
+import dynamic from "next/dynamic";
+const Recommendations = dynamic(
+  () => import("@/app/(storeFront)/components/Recommendations/Recommendations"),
+  { ssr: false },
+);
 import { trackItemView } from "@/actions/categories/RecommendationActions";
 import {
   FaBed,
@@ -105,8 +110,32 @@ function RealEstateDetails() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const { t } = useTranslation();
 
-  const [realEstate, setRealEstate] = useState<RealEstateItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: realEstateRaw, isLoading } = useSWR(
+    id ? `real-estate-${id}` : null,
+    () => getRealEstateById(id),
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60_000,
+    },
+  );
+  const realEstate = useMemo(() => {
+    if (!realEstateRaw) return null;
+    const resolvedId =
+      typeof (realEstateRaw as any)._id === "string"
+        ? (realEstateRaw as any)._id
+        : typeof (realEstateRaw as any).id === "string"
+          ? (realEstateRaw as any).id
+          : "";
+    return {
+      ...(realEstateRaw as any),
+      id: resolvedId,
+      title: (realEstateRaw as any).title ?? "",
+      description: (realEstateRaw as any).description ?? "",
+      price: (realEstateRaw as any).price ?? "",
+      images: (realEstateRaw as any).images ?? [],
+    };
+  }, [realEstateRaw]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -131,38 +160,17 @@ function RealEstateDetails() {
   }, [router]);
 
   useEffect(() => {
-    async function init() {
-      if (!id) return;
-      try {
-        const data = await getRealEstateById(id);
-        if (data) {
-          const resolvedId =
-            typeof data._id === "string"
-              ? data._id
-              : typeof data.id === "string"
-                ? data.id
-                : "";
-          setRealEstate({
-            ...data,
-            id: resolvedId,
-            title: data.title ?? "",
-            description: data.description ?? "",
-            price: data.price ?? "",
-            images: data.images ?? [],
-          });
-          if (resolvedId) {
-            const cat =
-              data.mainCategory ?? (data.category as any)?.[0] ?? "real-estate";
-            trackItemView(resolvedId, cat, currentUser?.id ?? null);
-          }
-        }
-      } catch {
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    init();
-  }, [id]);
+    if (!realEstate?.id) return;
+    const cat =
+      (realEstateRaw as any)?.mainCategory ??
+      (realEstateRaw?.category as any)?.[0] ??
+      "real-estate";
+    const t = setTimeout(
+      () => trackItemView(realEstate.id, cat, currentUser?.id ?? null),
+      2000,
+    );
+    return () => clearTimeout(t);
+  }, [realEstate?.id]);
 
   const itemUser = useMemo(() => {
     if (!realEstate) return null;
@@ -226,14 +234,14 @@ function RealEstateDetails() {
     }
   };
 
-  const images = useMemo(
+  const images: string[] = useMemo(
     () =>
-      (realEstate?.images || [])
-        .map((img) =>
+      ((realEstate?.images as any[]) || [])
+        .map((img: any) =>
           typeof img === "string" ? img : URL.createObjectURL(img),
         )
-        .map((url) => resolveImageUrl(url))
-        .filter((url): url is string => url !== null),
+        .map((url: string) => resolveImageUrl(url))
+        .filter((url: any): url is string => url !== null),
     [realEstate?.images],
   );
 
@@ -305,9 +313,18 @@ function RealEstateDetails() {
                     priority
                   />
                   <span className="absolute right-3 top-3 z-50 flex gap-2">
-                    <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); handleHeartClick(); }} aria-label="Save to favorites" className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer">
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleHeartClick();
+                      }}
+                      aria-label="Save to favorites"
+                      className="bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                    >
                       <AiOutlineHeart className="w-5 h-5 text-red-500" />
-                  </span>
+                    </span>
                     <span className="bg-white/90 p-2.5 rounded-full shadow-md text-gray-700">
                       <AiOutlineZoomIn className="w-5 h-5" />
                     </span>
@@ -425,8 +442,8 @@ function RealEstateDetails() {
                   : t("realEstateDetail.sendMessage")}
             </button>
 
-            {itemUser?.phone && (
-              showPhone ? (
+            {itemUser?.phone &&
+              (showPhone ? (
                 <a
                   href={`tel:${itemUser.phone}`}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-all active:scale-[0.99]"
@@ -442,8 +459,7 @@ function RealEstateDetails() {
                   <Phone size={15} />
                   {t("realEstateDetail.showPhone")}
                 </button>
-              )
-            )}
+              ))}
           </div>
 
           {realEstate.maGaday && (
@@ -646,7 +662,7 @@ function RealEstateDetails() {
                 {t("realEstateDetail.amenitiesLabel")}
               </h3>
               <div className="grid grid-cols-2 gap-2">
-                {amenities.map((a) => (
+                {amenities.map((a: any) => (
                   <span
                     key={a}
                     className="flex items-center gap-2 bg-white border border-gray-100 px-3 py-2 rounded-xl text-xs font-bold text-gray-700"
@@ -701,8 +717,8 @@ function RealEstateDetails() {
           </p>
           <p className="text-xs text-gray-500 truncate">{realEstate.title}</p>
         </div>
-        {itemUser?.phone && (
-          showPhone ? (
+        {itemUser?.phone &&
+          (showPhone ? (
             <a
               href={`tel:${itemUser.phone}`}
               className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-green-200 text-green-700 bg-green-50 font-bold text-sm hover:bg-green-100 transition-all active:scale-[0.97] flex-shrink-0"
@@ -718,8 +734,7 @@ function RealEstateDetails() {
               <Phone size={15} />
               <span className="text-xs">Phone</span>
             </button>
-          )
-        )}
+          ))}
         <button
           onClick={handleSendMessage}
           disabled={isOwnItem || realEstate.maGaday || messagingLoading}

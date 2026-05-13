@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from "next/navigation";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import useSWR from "swr";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   AiOutlineCamera,
@@ -21,12 +22,12 @@ import Loading from "@/app/ui/loading/Loading";
 import { useAuth } from "@/context/AuthContext";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { MessageSquare, Phone } from "lucide-react";
-import Recommendations from "@/app/(storeFront)/components/Recommendations/Recommendations";
+import dynamic from "next/dynamic";
+const Recommendations = dynamic(() => import("@/app/(storeFront)/components/Recommendations/Recommendations"), { ssr: false });
 import { trackItemView } from "@/actions/categories/RecommendationActions";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import { VEHICLE_CONFIG } from "./VEHICLE_CONFIG";
 import { useItemSavedCount } from "@/app/(storeFront)/components/hooks/usertotalsavedAfocrite";
-import dynamic from "next/dynamic";
 
 import type { VehicleType, VehicleItem } from "@/app/utils/types/vehicle";
 
@@ -61,9 +62,6 @@ export function VehicleDetailsContent({
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
-  const [vehicle, setVehicle] = useState<VehicleItem | null>(null);
-  const [vehicleType, setVehicleType] = useState<VehicleType>("car");
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -72,64 +70,41 @@ export function VehicleDetailsContent({
   const [avatarError, setAvatarError] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  useEffect(() => {
-    router.prefetch("/messages");
-  }, [router]);
+  const typeHint = forceType || (searchParams.get("type") as VehicleType) || null;
 
-  useEffect(() => {
-    if (!id) {
-      setIsLoading(false);
-      return;
-    }
-    let cancelled = false;
-
-    const typeHint =
-      forceType || (searchParams.get("type") as VehicleType) || null;
-
-    const tryFetch = async () => {
+  const { data: swrResult, isLoading } = useSWR(
+    id ? `vehicle-${typeHint ?? "any"}-${id}` : null,
+    async () => {
       if (typeHint) {
-        const order: VehicleType[] = [
-          typeHint,
-          ...ALL_TYPES.filter((t) => t !== typeHint),
-        ];
+        const order: VehicleType[] = [typeHint, ...ALL_TYPES.filter((t) => t !== typeHint)];
         for (const t of order) {
           try {
             const data = await VEHICLE_CONFIG[t].fetchFn(id);
-            if (data && !cancelled) {
-              setVehicle(normalise(data, t));
-              setVehicleType(t);
-              return;
-            }
-          } catch {
-            continue;
-          }
+            if (data) return { data: normalise(data, t), type: t };
+          } catch { continue; }
         }
-      } else {
-        try {
-          const { data, t } = await Promise.any(
-            ALL_TYPES.map(async (t) => {
-              const data = await VEHICLE_CONFIG[t].fetchFn(id);
-              if (!data) throw new Error("not found");
-              return { data, t };
-            }),
-          );
-          if (!cancelled) {
-            setVehicle(normalise(data, t));
-            setVehicleType(t);
-          }
-        } catch {
-          console.log("error");
-        }
+        return null;
       }
-    };
+      try {
+        const { data, t } = await Promise.any(
+          ALL_TYPES.map(async (t) => {
+            const data = await VEHICLE_CONFIG[t].fetchFn(id);
+            if (!data) throw new Error("not found");
+            return { data, t };
+          }),
+        );
+        return { data: normalise(data, t), type: t };
+      } catch { return null; }
+    },
+    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 60_000 },
+  );
 
-    tryFetch().finally(() => {
-      if (!cancelled) setIsLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [id, searchParams]);
+  const vehicle = swrResult?.data ?? null;
+  const vehicleType: VehicleType = swrResult?.type ?? (typeHint || "car") as VehicleType;
+
+  useEffect(() => {
+    router.prefetch("/messages");
+  }, [router]);
 
   useEffect(() => {
     if (vehicle && id) {
@@ -139,7 +114,7 @@ export function VehicleDetailsContent({
   }, [vehicle, id, vehicleType, user]);
 
   const config = VEHICLE_CONFIG[vehicleType];
-  const { count: savedCount } = useItemSavedCount(vehicle?.id);
+  const { count: savedCount, ready: savedReady } = useItemSavedCount(vehicle?.id);
   const images = useMemo(
     () =>
       (vehicle?.images ?? [])
@@ -287,7 +262,7 @@ export function VehicleDetailsContent({
                       className="relative bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
                     >
                       <AiOutlineHeart className="w-5 h-5 text-red-500" />
-                      {savedCount > 0 && (
+                      {savedReady && savedCount > 0 && (
                         <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none shadow-sm">
                           {savedCount > 99 ? "99+" : savedCount}
                         </span>
