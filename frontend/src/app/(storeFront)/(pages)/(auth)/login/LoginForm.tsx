@@ -75,7 +75,7 @@ export default function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t("auth.login.emailPlaceholder")}
           required
-          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
 
         <PasswordToggle
@@ -85,7 +85,7 @@ export default function LoginForm() {
             setPassword(e.target.value)
           }
           placeholder={t("auth.login.passwordPlaceholder")}
-          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
 
         <div className="flex justify-end mb-5">

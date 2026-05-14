@@ -40,7 +40,7 @@ function RegisterUser() {
           onChange={(e) => setUsername(e.target.value)}
           required
           placeholder="Choose a username"
-          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
 
         <input
@@ -52,7 +52,7 @@ function RegisterUser() {
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="you@example.com"
-          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
 
         <PasswordToggle
@@ -62,12 +62,12 @@ function RegisterUser() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="e.g. Password123@"
-          className={`w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border outline-none focus:ring-2 transition ${
+          className={`w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border outline-none focus:ring-2 transition text-gray-900 placeholder:text-gray-400 ${
             showRules && !isPasswordValid
               ? "border-red-400 focus:ring-red-300"
               : showRules && isPasswordValid
                 ? "border-green-400 focus:ring-green-300"
-                : "border-gray-300 focus:ring-blue-500"
+                : "border-gray-300 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
           }`}
         />
 
