@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import DashboardShell from "./DashboardShell";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="flex h-screen bg-gray-50 dark:bg-gray-950" />;
+  if (!mounted)
+    return <div className="flex h-screen bg-gray-50 dark:bg-gray-950" />;
   return <DashboardShell>{children}</DashboardShell>;
 }

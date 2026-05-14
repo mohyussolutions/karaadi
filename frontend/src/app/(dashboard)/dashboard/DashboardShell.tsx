@@ -6,7 +6,11 @@ import ThemeApplier from "@/app/ui/Providers/ThemeApplier";
 import Sidebar from "./components/sidebar/Sidebar";
 import Navbar from "./components/navbar/Navbar";
 
-export default function DashboardShell({ children }: { children: React.ReactNode }) {
+export default function DashboardShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
@@ -19,7 +23,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     >
       <ThemeApplier />
       <Sidebar isOpen={sidebarOpen} toggleSidebar={closeSidebar} />
-      <div suppressHydrationWarning className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div
+        suppressHydrationWarning
+        className="flex-1 flex flex-col min-w-0 overflow-hidden"
+      >
         <Navbar toggleSidebar={openSidebar} />
         <main
           suppressHydrationWarning

@@ -1,3 +1,4 @@
+const en =
 {
   "about": {
     "title": "About Karaadi",
@@ -1175,6 +1176,18 @@
       "inactive": "Inactive"
     }
   },
+  "supportModule": {
+    "loginRequired": "Please log in to submit a support ticket.",
+    "title": "Support",
+    "subtitle": "Submit a ticket to get help.",
+    "historyButton": "History",
+    "form": {
+      "subjectPlaceholder": "Subject",
+      "bodyPlaceholder": "How can we help you?",
+      "submit": "Submit Ticket",
+      "submitting": "Submitting..."
+    }
+  },
   "wantSell": {
     "title": "Sell Item"
   },
@@ -1513,4 +1526,5 @@
     "reportItem": "Report this item",
     "waaLaGatay": "SOLD OUT"
   }
-}
+} as const;
+export default en;

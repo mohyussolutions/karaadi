@@ -1,3 +1,4 @@
+const so =
 {
   "checkout": {
     "title": "Bixinta",
@@ -53,42 +54,6 @@
       "marketplace": "Suuqa: Elektaroonig, alaabta guriga, dhar iyo waxyaabo kale.",
       "jobs": "Shaqooyinka: Raadi fursado shaqo ama ku xayaysii shaqaale.",
       "services": "Adeegyada: Hel ama bixi adeegyo sida dhismaha, hagaajinta, iyo la-talinta."
-    },
-    "paymentPage": {
-      "pageTitle": "Lacag-bixin",
-      "heading": "Lacag-bixin",
-      "subheading": "Dhameystir Bixintaada",
-      "selectPaymentType": "Door Habka Lacag-bixinta",
-      "mobileMoney": "Mobile Money",
-      "cardPayment": "Card Payment",
-      "processing": "Processing...",
-      "confirmPayment": "Xaqiiji Lacag-bixinta",
-      "orderSummary": "Kooban Amarka",
-      "itemId": "ID Shay",
-      "plan": "Qorshaha",
-      "paymentMethod": "Habka Bixinta",
-      "total": "WADARTA"
-    },
-    "errors": {
-      "missingBoat": "Xogta markabka maqan tahay.",
-      "selectPaymentMethod": "Fadlan dooro habka lacag bixinta.",
-      "invalidAccountNumber": "Fadlan geli nambar akoon oo sax ah.",
-      "invalidCardNumber": "Fadlan geli lambarka kaarka saxda ah.",
-      "invalidCardName": "Fadlan geli magaca kaarka.",
-      "invalidExpiry": "Fadlan geli taariikhda dhacaysa oo sax ah.",
-      "invalidCvv": "Fadlan geli CVV.",
-      "missingPaymentId": "Lacag bixintu waa dhamaatay laakiin lama helin aqoonsiga lacag-bixinta.",
-      "paymentFailed": "Lacag bixintu waa fashilantay.",
-      "network": "Khalad ayaa ka dhacay xiriirka."
-    },
-    "success": {
-      "paymentProcessed": "Lacag bixintu waa guul!"
-    },
-    "warnings": {
-      "paymentRecordedPending": "Lacagta waa la diiwaangeliyey laakiin cusbooneysiinta ayaa harsan."
-    },
-    "paymentSummary": {
-      "additionalDetails": "Faahfaahin dheeraad ah"
     },
     "contactHeading": "Nala Soo Xiriir",
     "contactIntro": "Ma qabtaa su'aal, talo ama cabasho? Fadlan nala soo xiriir — waxaan diyaar u nahay inaan ku caawino.",
@@ -1629,4 +1594,5 @@
     "reportItem": "Warbixin ka samee shaygan",
     "waaLaGatay": "WAA LA GATAY"
   }
-}
+} as const;
+export default so;

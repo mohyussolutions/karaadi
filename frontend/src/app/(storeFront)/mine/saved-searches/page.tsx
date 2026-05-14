@@ -2,8 +2,8 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import en from "@/i18n/locales/en.json";
-import so from "@/i18n/locales/so.json";
+import en from "@/i18n/locales/en";
+import so from "@/i18n/locales/so";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
