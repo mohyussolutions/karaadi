@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DashboardShell from "./DashboardShell";
+import "@/app/utils/style/dashboard/dashboard.css";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
