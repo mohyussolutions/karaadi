@@ -1,1530 +1,1620 @@
-const en =
-{
-  "about": {
-    "title": "About Karaadi",
-    "heading": "About Karaadi",
-    "description": "Learn more about Karaadi, our mission and values.",
-    "metaTitle": "About Karaadi",
-    "metaDescription": "Information about Karaadi, mission, and team.",
-    "lead": "The best place to buy and sell across Somalia.",
-    "missionHeading": "Our Mission",
-    "mission": "Our mission is to make trading and communication between people and businesses in Somalia simple and trusted. We provide a marketplace where you can find everything from real estate and vehicles to jobs and services. We commit to transparency, ease, and safety in all transactions.",
-    "whatHeading": "What You Can Find",
-    "items": {
-      "realEstate": "Real Estate: Buy, sell or rent homes, land, and offices.",
-      "vehicles": "Vehicles: Cars, motorcycles, boats and other transport.",
-      "marketplace": "Marketplace: Electronics, home goods, clothing and more.",
-      "jobs": "Jobs: Find new opportunities or advertise openings.",
-      "services": "Services: Find or offer services like construction, repairs, and consulting."
-    },
-    "contactHeading": "Contact Us",
-    "contactIntro": "Have questions, feedback, or concerns? Please contact us — we're here to help.",
-    "contact": {
-      "emailLabel": "Email:",
-      "phoneLabel": "Phone:"
-    }
+export const about = {
+  "title": "About Karaadi",
+  "heading": "About Karaadi",
+  "description": "Learn more about Karaadi, our mission and values.",
+  "metaTitle": "About Karaadi",
+  "metaDescription": "Information about Karaadi, mission, and team.",
+  "lead": "The best place to buy and sell across Somalia.",
+  "missionHeading": "Our Mission",
+  "mission": "Our mission is to make trading and communication between people and businesses in Somalia simple and trusted. We provide a marketplace where you can find everything from real estate and vehicles to jobs and services. We commit to transparency, ease, and safety in all transactions.",
+  "whatHeading": "What You Can Find",
+  "items": {
+    "realEstate": "Real Estate: Buy, sell or rent homes, land, and offices.",
+    "vehicles": "Vehicles: Cars, motorcycles, boats and other transport.",
+    "marketplace": "Marketplace: Electronics, home goods, clothing and more.",
+    "jobs": "Jobs: Find new opportunities or advertise openings.",
+    "services": "Services: Find or offer services like construction, repairs, and consulting."
   },
-  "terms": {
-    "title": "Terms and Conditions",
-    "heading": "Terms & Conditions",
-    "description": "Read the terms and conditions for using Karaadi.",
-    "items": [
-      "Fraudulent behaviour is prohibited.",
-      "Products must be described accurately.",
-      "Keep your password secure.",
-      "Provide accurate information.",
-      "Fraud may result in account suspension.",
-      "Karaadi is a marketplace only; transactions are between users."
-    ],
-    "metaTitle": "Terms and Conditions",
-    "metaDescription": "Legal terms and conditions for Karaadi users."
-  },
+  "contactHeading": "Contact Us",
+  "contactIntro": "Have questions, feedback, or concerns? Please contact us — we're here to help.",
   "contact": {
-    "title": "Contact Us",
-    "heading": "Contact Karaadi",
-    "description": "Get in touch with the Karaadi team for support or inquiries.",
-    "metaTitle": "Contact Karaadi",
-    "metaDescription": "Support and contact information for Karaadi."
+    "emailLabel": "Email:",
+    "phoneLabel": "Phone:"
+  }
+} as const;
+
+export const terms = {
+  "title": "Terms and Conditions",
+  "heading": "Terms & Conditions",
+  "description": "Read the terms and conditions for using Karaadi.",
+  "items": [
+    "Fraudulent behaviour is prohibited.",
+    "Products must be described accurately.",
+    "Keep your password secure.",
+    "Provide accurate information.",
+    "Fraud may result in account suspension.",
+    "Karaadi is a marketplace only; transactions are between users."
+  ],
+  "metaTitle": "Terms and Conditions",
+  "metaDescription": "Legal terms and conditions for Karaadi users."
+} as const;
+
+export const contact = {
+  "title": "Contact Us",
+  "heading": "Contact Karaadi",
+  "description": "Get in touch with the Karaadi team for support or inquiries.",
+  "metaTitle": "Contact Karaadi",
+  "metaDescription": "Support and contact information for Karaadi."
+} as const;
+
+export const nav = {
+  "home": "Home",
+  "about": "About Us",
+  "contact": "Contact",
+  "login": "Login",
+  "notifications": "Notifications",
+  "newAd": "New Ad",
+  "messages": "Messages",
+  "mine": "Mine",
+  "profile": "Profile",
+  "business": "Business",
+  "companies": "Companies",
+  "createBusiness": "Create Business"
+} as const;
+
+export const welcome = "Welcome to Karaadi" as const;
+
+export const search = "Search Hamar, house, car, 45 000..." as const;
+
+export const filters = {
+  "location": {
+    "title": "Regions",
+    "mobileFilter": "Location Filter",
+    "clearAll": "Clear All"
+  }
+} as const;
+
+export const auth = {
+  "login": {
+    "title": "Welcome Back!",
+    "subtitle": "Login to your account",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "forgotPassword": "Forgot password?",
+    "loginButton": "Login",
+    "tooManyAttempts": "Too many attempts. Please wait 15 minutes.",
+    "accountLocked": "Account locked. Reset password or contact support.",
+    "failed": "Login failed. Check your credentials.",
+    "noAccount": "Don't have an account?",
+    "register": "Register"
+  }
+} as const;
+
+export const lang = {
+  "en": "English",
+  "so": "Somali"
+} as const;
+
+export const notifications = {
+  "title": "Notifications",
+  "tabs": {
+    "unread": "Unread",
+    "all": "All"
   },
-  "nav": {
+  "empty": {
+    "unread": "No unread notifications",
+    "all": "No notifications yet"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesSuffix": "m ago",
+    "hoursSuffix": "h ago",
+    "daysSuffix": "d ago"
+  },
+  "card": {
+    "match": "Match",
+    "viewDetail": "View Detail",
+    "markRead": "Mark Read",
+    "delete": "Delete"
+  }
+} as const;
+
+export const footer = {
+  "company": "Company",
+  "support": "Support",
+  "categories": "Categories",
+  "legal": "Legal",
+  "about": "About Us",
+  "contact": "Contact",
+  "helpCenter": "Help Center",
+  "terms": "Terms",
+  "marketplace": "Marketplace",
+  "realEstate": "Real Estate",
+  "cars": "Cars",
+  "privacy": "Privacy Policy",
+  "cookies": "Cookie Policy",
+  "followUs": "Follow Us",
+  "rights": "© {{yearStart}}–{{yearEnd}} {{brand}}. All rights reserved.",
+  "rights_short": "Please respect copyright. Do not redistribute without permission from {{brand}}.",
+  "developedBy": "Developed by"
+} as const;
+
+export const support = {
+  "links": {
     "home": "Home",
-    "about": "About Us",
-    "contact": "Contact",
-    "login": "Login",
-    "notifications": "Notifications",
-    "newAd": "New Ad",
-    "messages": "Messages",
-    "mine": "Mine",
-    "profile": "Profile",
-    "business": "Business",
-    "companies": "Companies",
-    "createBusiness": "Create Business"
+    "users": "Users",
+    "reports": "Reports",
+    "ads": "Ads",
+    "banners": "Banners",
+    "announcements": "Announcements",
+    "messaging": "Messaging",
+    "contentReview": "Content Review",
+    "system": "System"
+  }
+} as const;
+
+export const categories = {
+  "Marketplace": "Marketplace",
+  "RealEstate": "Real Estate",
+  "Cars": "Cars",
+  "Boats": "Boats",
+  "farmequipment": "Farm Equipment",
+  "Motorcycles": "Motorcycles",
+  "Jobs": "Jobs",
+  "Smartsuuq": "Smartsuuq"
+} as const;
+
+export const mohyusLogoAlt = "Mohyus Logo" as const;
+
+export const createAd = {
+  "categories": "Categories",
+  "public": "Public",
+  "private": "Private",
+  "title": "Create Marketplace Ad",
+  "selectCategory": "Select category",
+  "selectSubcategory": "Select subcategory",
+  "selectRegion": "Select region",
+  "selectCity": "Select city",
+  "newCityPlaceholder": "Enter new city name",
+  "titlePlaceholder": "Ad title",
+  "pricePlaceholder": "Price",
+  "descriptionPlaceholder": "Description",
+  "images": "Images",
+  "submit": "Submit Ad",
+  "submitting": "Submitting..."
+} as const;
+
+export const createMarketplace = {
+  "heading": "Create Marketplace Listing",
+  "mainCategoryLabel": "Main Category",
+  "categoryLabel": "Category Tag",
+  "selectCategory": "Select Category",
+  "subCategoryLabel": "Subcategory",
+  "selectSubcategory": "Select Subcategory",
+  "titleLabel": "Title",
+  "titlePlaceholder": "e.g. Samsung Galaxy S23 – Excellent Condition",
+  "conditionLabel": "Condition",
+  "selectCondition": "Select Condition",
+  "conditions": {
+    "new": "New",
+    "usedLikeNew": "Used – Like New",
+    "usedGood": "Used – Good",
+    "usedFair": "Used – Fair"
   },
-  "welcome": "Welcome to Karaadi",
-  "search": "Search Hamar, house, car, 45 000...",
-  "filters": {
-    "location": {
-      "title": "Regions",
-      "mobileFilter": "Location Filter",
-      "clearAll": "Clear All"
-    }
+  "descriptionLabel": "Description",
+  "descriptionPlaceholder": "Describe your item in detail...",
+  "regionLabel": "Region",
+  "selectRegion": "Select Region",
+  "priceLabel": "Price ($)",
+  "websiteLabel": "Website",
+  "optional": "Optional",
+  "websitePlaceholder": "https://yourwebsite.com",
+  "upload": "Upload Images",
+  "fillRequired": "Please fill all required fields",
+  "registering": "Registering...",
+  "successMessage": "Listing submitted successfully!",
+  "errorMessage": "An error occurred",
+  "submit": "Submit Listing"
+} as const;
+
+export const createRealEstate = {
+  "title": "Real Estate",
+  "mainCategory": "Main Category",
+  "category": "Category",
+  "type": "Type",
+  "selectCategory": "Select category",
+  "selectType": "Select type",
+  "titlePlaceholder": "Title",
+  "pricePlaceholder": "Price ($)",
+  "addressPlaceholder": "Address",
+  "selectRegion": "Select region",
+  "selectCity": "Select city",
+  "addCity": "+ Add city",
+  "newCityPlaceholder": "Enter new city name",
+  "upload": "Upload",
+  "descriptionPlaceholder": "More details...",
+  "titleLabel": "Title",
+  "priceLabel": "Price ($)",
+  "addressLabel": "Address",
+  "regionLabel": "Region",
+  "cityLabel": "City",
+  "newCityLabel": "New city",
+  "descriptionLabel": "Description",
+  "fillRequired": "Please fill the required fields",
+  "uploadAtLeastOneImage": "Please upload at least one image",
+  "cityAddFailed": "Failed to add city",
+  "submittedSuccess": "Listing submitted!",
+  "submitError": "An error occurred",
+  "networkError": "Network error occurred",
+  "loadingRegions": "Loading regions...",
+  "noCities": "No cities available",
+  "submit": "Submit Listing",
+  "submitting": "Submitting...",
+  "pageTitle": "Create Real Estate Listing",
+  "subcategoryLabel": "Subcategory",
+  "selectSubcategory": "Select Subcategory",
+  "titleInputPlaceholder": "e.g. Spacious 3BR Apartment in Mogadishu",
+  "propertyTypeLabel": "Property Type",
+  "selectPropertyType": "Select Property Type",
+  "sizeSqmLabel": "Size (sqm)",
+  "sizeSqmPlaceholder": "e.g. 120",
+  "bedroomsLabel": "Bedrooms",
+  "bedroomsPlaceholder": "e.g. 3",
+  "bathroomsLabel": "Bathrooms",
+  "bathroomsPlaceholder": "e.g. 2",
+  "floorLabel": "Floor",
+  "floorPlaceholder": "e.g. 3",
+  "totalFloorsLabel": "Total Floors",
+  "totalFloorsPlaceholder": "e.g. 10",
+  "furnishedLabel": "Furnished",
+  "parkingLabel": "Parking",
+  "garageLabel": "Garage",
+  "gardenLabel": "Garden",
+  "amenitiesLabel": "Amenities",
+  "optional": "Optional",
+  "swimmingPoolLabel": "Swimming Pool",
+  "gymLabel": "Gym",
+  "securityLabel": "Security",
+  "elevatorLabel": "Elevator",
+  "generatorLabel": "Generator",
+  "waterSupplyLabel": "Water Supply",
+  "airConditioningLabel": "Air Conditioning",
+  "balconyLabel": "Balcony",
+  "addNewCity": "+ ADD NEW CITY",
+  "categories": {
+    "forRent": "For Rent",
+    "forSale": "For Sale",
+    "landForSale": "Land For Sale",
+    "farmForSale": "Farm For Sale",
+    "commercial": "Commercial"
   },
-  "auth": {
-    "login": {
-      "title": "Welcome Back!",
-      "subtitle": "Login to your account",
-      "emailPlaceholder": "Email",
-      "passwordPlaceholder": "Password",
-      "forgotPassword": "Forgot password?",
-      "loginButton": "Login",
-      "tooManyAttempts": "Too many attempts. Please wait 15 minutes.",
-      "accountLocked": "Account locked. Reset password or contact support.",
-      "failed": "Login failed. Check your credentials.",
-      "noAccount": "Don't have an account?",
-      "register": "Register"
-    }
+  "propertyTypes": {
+    "apartment": "Apartment",
+    "houseVilla": "House / Villa",
+    "commercialSpace": "Commercial Space",
+    "land": "Land",
+    "warehouse": "Warehouse",
+    "farm": "Farm",
+    "other": "Other"
+  }
+} as const;
+
+export const createCars = {
+  "pageTitle": "Create Car Listing",
+  "mainCategoryLabel": "Main Category",
+  "categoryLabel": "Category",
+  "selectCategory": "Select Category",
+  "subcategoryLabel": "Subcategory",
+  "selectSubcategory": "Select Subcategory",
+  "titleLabel": "Title",
+  "titlePlaceholder": "e.g. Toyota Camry 2022 – Low Mileage",
+  "yearLabel": "Year",
+  "yearPlaceholder": "e.g. 2022",
+  "makeLabel": "Make",
+  "makePlaceholder": "e.g. Toyota",
+  "modelLabel": "Model",
+  "modelPlaceholder": "e.g. Camry",
+  "trimLabel": "Trim",
+  "trimPlaceholder": "e.g. LE",
+  "mileageLabel": "Mileage (km)",
+  "mileagePlaceholder": "e.g. 45000",
+  "fuelTypeLabel": "Fuel Type",
+  "gearboxLabel": "Gearbox",
+  "engineSizeLabel": "Engine Size",
+  "engineSizePlaceholder": "e.g. 2.5L",
+  "conditionLabel": "Condition",
+  "colorLabel": "Color",
+  "colorPlaceholder": "e.g. White",
+  "doorsLabel": "Doors",
+  "doorsPlaceholder": "e.g. 4",
+  "descriptionLabel": "Description",
+  "descriptionPlaceholder": "Describe your car...",
+  "regionLabel": "Region",
+  "selectRegion": "Select Region",
+  "cityLabel": "City",
+  "selectCity": "Select City",
+  "addingCity": "Adding city...",
+  "addNewCity": "+ ADD NEW CITY",
+  "newCityPlaceholder": "Enter new city name",
+  "priceLabel": "Price ($)",
+  "tiktokLabel": "TikTok Link",
+  "tiktokPlaceholder": "https://www.tiktok.com/@karaadi_",
+  "upload": "Upload Photos",
+  "selectOption": "Select",
+  "fillRequired": "Please fill all required fields and upload at least one image",
+  "registering": "Submitting...",
+  "successMessage": "Your car listing has been posted!",
+  "errorMessage": "An error occurred. Please try again.",
+  "submit": "Submit Listing",
+  "categories": {
+    "CarsForSaleNestedSub": "Cars For Sale",
+    "LeaseCarsNestedSub": "Lease Cars",
+    "BusSubLinks": "Buses",
+    "TrailerNestedSub": "Trailers",
+    "CarPartsNestedSub": "Car Parts",
+    "TruckNestedSub": "Trucks",
+    "ElectricCarsNestedSub": "Electric Cars"
   },
-  "lang": {
-    "en": "English",
-    "so": "Somali"
+  "fuelTypes": {
+    "Petrol": "Petrol",
+    "Diesel": "Diesel",
+    "Hybrid": "Hybrid",
+    "Electric": "Electric",
+    "Other": "Other"
   },
-  "notifications": {
-    "title": "Notifications",
-    "tabs": {
-      "unread": "Unread",
-      "all": "All"
-    },
-    "empty": {
-      "unread": "No unread notifications",
-      "all": "No notifications yet"
-    },
-    "time": {
-      "justNow": "Just now",
-      "minutesSuffix": "m ago",
-      "hoursSuffix": "h ago",
-      "daysSuffix": "d ago"
-    },
-    "card": {
-      "match": "Match",
-      "viewDetail": "View Detail",
-      "markRead": "Mark Read",
-      "delete": "Delete"
-    }
+  "gearboxOptions": {
+    "Manual": "Manual",
+    "Automatic": "Automatic"
   },
-  "footer": {
-    "company": "Company",
-    "support": "Support",
-    "categories": "Categories",
-    "legal": "Legal",
-    "about": "About Us",
-    "contact": "Contact",
-    "helpCenter": "Help Center",
-    "terms": "Terms",
-    "marketplace": "Marketplace",
-    "realEstate": "Real Estate",
-    "cars": "Cars",
-    "privacy": "Privacy Policy",
-    "cookies": "Cookie Policy",
-    "followUs": "Follow Us",
-    "rights": "© {{yearStart}}–{{yearEnd}} {{brand}}. All rights reserved.",
-    "rights_short": "Please respect copyright. Do not redistribute without permission from {{brand}}.",
-    "developedBy": "Developed by"
+  "conditionOptions": {
+    "New": "New",
+    "Used": "Used",
+    "CertifiedPreOwned": "Certified Pre-Owned"
+  }
+} as const;
+
+export const createMotorcycle = {
+  "heading": "Create Motorcycle Ad",
+  "mainCategoryLabel": "Main Category",
+  "categoryLabel": "Category",
+  "selectCategory": "Select category",
+  "subCategoryLabel": "Subcategory",
+  "selectSubcategory": "Select subcategory",
+  "titlePlaceholder": "Motorcycle title",
+  "titleLabel": "Title",
+  "makePlaceholder": "Make",
+  "modelPlaceholder": "Model",
+  "yearPlaceholder": "Year",
+  "mileagePlaceholder": "Mileage",
+  "pricePlaceholder": "Price ($)",
+  "selectRegion": "Select region",
+  "selectCity": "Select city",
+  "addCity": "+ Add city",
+  "newCityPlaceholder": "Enter new city name",
+  "newCityLabel": "New City",
+  "descriptionPlaceholder": "More details...",
+  "descriptionLabel": "Description",
+  "regionLabel": "Region",
+  "cityLabel": "City",
+  "upload": "Upload",
+  "fillRequired": "Please fill the required fields",
+  "imagePreviewAlt": "Image preview",
+  "uploadAtLeastOneImage": "Please upload at least one image",
+  "cityAddFailed": "Failed to add city",
+  "submittedSuccess": "Listing submitted!",
+  "submitError": "An error occurred",
+  "networkError": "Network error occurred",
+  "registering": "Registering...",
+  "successMessage": "Success! Your listing has been posted.",
+  "errorMessage": "An error occurred",
+  "submit": "Submit Listing",
+  "submitting": "Submitting...",
+  "pageTitle": "Create Motorcycle Listing",
+  "yearLabel": "Year",
+  "makeLabel": "Make",
+  "modelLabel": "Model",
+  "engineCcLabel": "Engine (cc)",
+  "engineCcPlaceholder": "e.g. 500",
+  "mileageLabel": "Mileage (km)",
+  "fuelTypeLabel": "Fuel Type",
+  "selectFuelType": "Select",
+  "gearboxLabel": "Gearbox",
+  "selectGearbox": "Select",
+  "conditionLabel": "Condition",
+  "selectCondition": "Select",
+  "colorLabel": "Color",
+  "colorPlaceholder": "e.g. Red",
+  "priceLabel": "Price ($)",
+  "addingCity": "Adding city…",
+  "addNewCity": "+ ADD NEW CITY",
+  "newCityNote": "This city will be saved and available for all users.",
+  "imageNote": "Max 10 images · 15 MB each · JPEG, PNG, WEBP",
+  "fuelTypes": {
+    "petrol": "Petrol",
+    "electric": "Electric",
+    "other": "Other"
   },
-  "support": {
-    "links": {
-      "home": "Home",
-      "users": "Users",
-      "reports": "Reports",
-      "ads": "Ads",
-      "banners": "Banners",
-      "announcements": "Announcements",
-      "messaging": "Messaging",
-      "contentReview": "Content Review",
-      "system": "System"
-    }
+  "gearboxOptions": {
+    "manual": "Manual",
+    "automatic": "Automatic",
+    "semiAutomatic": "Semi-Automatic"
+  },
+  "conditions": {
+    "new": "New",
+    "used": "Used"
   },
   "categories": {
-    "Marketplace": "Marketplace",
-    "RealEstate": "Real Estate",
-    "Cars": "Cars",
-    "Boats": "Boats",
-    "farmequipment": "Farm Equipment",
-    "Motorcycles": "Motorcycles",
-    "Jobs": "Jobs",
-    "Smartsuuq": "Smartsuuq"
+    "forSale": "For Sale",
+    "forRent": "For Rent",
+    "parts": "Parts",
+    "other": "Other"
+  }
+} as const;
+
+export const createFarmequipment = {
+  "pageTitle": "Create Farm Equipment Listing",
+  "mainCategoryLabel": "Main Category",
+  "categoryLabel": "Category",
+  "selectCategory": "Select Category",
+  "subcategoryLabel": "Subcategory",
+  "selectSubcategory": "Select Subcategory",
+  "titleLabel": "Title",
+  "titlePlaceholder": "e.g. John Deere 5075E Tractor 2020",
+  "yearLabel": "Year",
+  "yearPlaceholder": "e.g. 2020",
+  "equipmentTypeLabel": "Equipment Type",
+  "equipmentTypePlaceholder": "e.g. Tractor",
+  "brandLabel": "Brand",
+  "brandPlaceholder": "e.g. John Deere",
+  "hoursUsedLabel": "Hours Used",
+  "hoursUsedPlaceholder": "e.g. 1200",
+  "conditionLabel": "Condition",
+  "selectCondition": "Select",
+  "attachmentsLabel": "Attachments Included",
+  "attachmentsPlaceholder": "e.g. Plow, Loader",
+  "descriptionLabel": "Description",
+  "descriptionPlaceholder": "Describe the equipment condition, usage history...",
+  "regionLabel": "Region",
+  "selectRegion": "Select Region",
+  "cityLabel": "City",
+  "selectCity": "Select City",
+  "addingCity": "Adding city...",
+  "addNewCity": "+ ADD NEW CITY",
+  "newCityPlaceholder": "Enter new city name",
+  "priceLabel": "Price ($)",
+  "upload": "Upload Images",
+  "selectOption": "Select",
+  "fillRequired": "Please fill all required fields and add at least one image.",
+  "registering": "Submitting...",
+  "successMessage": "Your farm equipment listing has been submitted!",
+  "errorMessage": "An error occurred. Please try again.",
+  "submit": "Submit Listing",
+  "conditions": {
+    "new": "New",
+    "used": "Used",
+    "refurbished": "Refurbished"
   },
-  "mohyusLogoAlt": "Mohyus Logo",
-  "createAd": {
-    "categories": "Categories",
-    "public": "Public",
-    "private": "Private",
-    "title": "Create Marketplace Ad",
-    "selectCategory": "Select category",
-    "selectSubcategory": "Select subcategory",
-    "selectRegion": "Select region",
-    "selectCity": "Select city",
-    "newCityPlaceholder": "Enter new city name",
-    "titlePlaceholder": "Ad title",
-    "pricePlaceholder": "Price",
-    "descriptionPlaceholder": "Description",
-    "images": "Images",
-    "submit": "Submit Ad",
-    "submitting": "Submitting..."
+  "categories": {
+    "tractorForSale": "Tractor For Sale",
+    "farmTools": "Farm Tools",
+    "fertilizerSpreader": "Fertilizer Spreader",
+    "grainHarvester": "Grain Harvester",
+    "plow": "Plow",
+    "irrigationSystem": "Irrigation System"
+  }
+} as const;
+
+export const createBoats = {
+  "title": "Boats Listing",
+  "pageTitle": "Boats",
+  "mainCategory": "Main Category",
+  "category": "Category",
+  "city": "City",
+  "addingCity": "Adding city...",
+  "addAnotherCity": "+ Add city",
+  "typePlaceholder": "Type (required)",
+  "modelPlaceholder": "Model",
+  "gearboxPlaceholder": "Gearbox",
+  "colorPlaceholder": "Color",
+  "feeLabel": "Service Fee",
+  "subcategory": "Subcategory",
+  "selectCategory": "Select category",
+  "selectSubcategory": "Select subcategory",
+  "selectRegion": "Select region",
+  "selectCity": "Select city",
+  "addCity": "+ Add city",
+  "newCityPlaceholder": "Enter new city name",
+  "titlePlaceholder": "Title",
+  "pricePlaceholder": "Price ($)",
+  "descriptionPlaceholder": "More details...",
+  "upload": "Upload",
+  "fillRequired": "Please fill the required fields",
+  "cityAddFailed": "Failed to add city",
+  "submittedSuccess": "Listing submitted!",
+  "submitError": "An error occurred",
+  "networkError": "Network error occurred",
+  "loadingRegions": "Loading regions...",
+  "noCities": "No cities available",
+  "submit": "Submit Listing",
+  "submitting": "Submitting..."
+} as const;
+
+export const sidebar = {
+  "Home": "Home",
+  "Marketplace": "Marketplace",
+  "Cars": "Cars",
+  "Boats": "Boats",
+  "Motorcycles": "Motorcycles",
+  "Real Estate": "Real Estate",
+  "Farmequipment": "Farm Equipment",
+  "Advertisement": "Advertisement",
+  "subscription": "Subscription",
+  "FeeManagement": "Fee Management",
+  "Jobs": "Jobs",
+  "Agencies": "Agencies",
+  "Reports": "Reports",
+  "Most Search": "Most Search",
+  "Users": "Users",
+  "Massages": "Messages",
+  "Chats": "Chats",
+  "Visitor List": "Visitor List",
+  "Payments": "Payments",
+  "Settings": "Settings"
+} as const;
+
+export const settings = {
+  "Visitor Management": "Visitor Management",
+  "User Roles": "User Roles",
+  "Payments": "Payments",
+  "Security": "Security",
+  "Regional Management": "Regional Management",
+  "City & District Management": "City & District Management",
+  "Open Visitor Manager": "Open Visitor Manager",
+  "Go to User Roles": "Go to User Roles",
+  "Open Payment Settings": "Open Payment Settings",
+  "Security Settings": "Security Settings",
+  "Manage Regions": "Manage Regions",
+  "Manage Cities": "Manage Cities"
+} as const;
+
+export const subcategories = {
+  "marketplace": {
+    "antiques": "Antiques & Art",
+    "electronics": "Electronics",
+    "animalAndSupplies": "Animal & Supplies",
+    "sportsAndOutdoors": "Sports & Outdoors",
+    "furniture": "Furniture",
+    "fashion": "Fashion"
   },
-  "createMarketplace": {
-    "heading": "Create Marketplace Listing",
-    "mainCategoryLabel": "Main Category",
-    "categoryLabel": "Category Tag",
-    "selectCategory": "Select Category",
-    "subCategoryLabel": "Subcategory",
-    "selectSubcategory": "Select Subcategory",
-    "titleLabel": "Title",
-    "titlePlaceholder": "e.g. Samsung Galaxy S23 – Excellent Condition",
-    "conditionLabel": "Condition",
-    "selectCondition": "Select Condition",
-    "conditions": {
-      "new": "New",
-      "usedLikeNew": "Used – Like New",
-      "usedGood": "Used – Good",
-      "usedFair": "Used – Fair"
+  "farmEquipment": {
+    "tractor": "Tractor",
+    "tractorForSale": "Tractor For Sale",
+    "tools": "Farm Tools",
+    "fertilizerSpreader": "Fertilizer Spreader",
+    "harvester": "Grain Harvester",
+    "plow": "Plow",
+    "irrigation": "Irrigation System"
+  },
+  "realEstate": {
+    "forRent": "For Rent",
+    "forSale": "For Sale",
+    "landForSale": "Land for Sale",
+    "farmForSale": "Farm for Sale",
+    "commercial": "Commercial",
+    "resultsFound": "Results found:",
+    "resultsCount": "{{count}} properties",
+    "noPropertiesFound": "No matching properties found."
+  },
+  "cars": {
+    "carsForSale": "Cars for Sale",
+    "leaseCars": "Lease Cars",
+    "trailers": "Trailers",
+    "carParts": "Car Parts",
+    "truck": "Truck",
+    "electricCars": "Electric Cars",
+    "buses": "Buses"
+  },
+  "motorcycles": {
+    "forSale": "For Sale",
+    "forRent": "For Rent",
+    "spareParts": "Spare Parts",
+    "other": "Other"
+  },
+  "boats": {
+    "boatsForSale": "Boats for Sale",
+    "boatsForRent": "Boats for Rent",
+    "boatEnginesForSale": "Boat Engines for Sale",
+    "boatParts": "Boat Parts"
+  },
+  "boatsNested": {
+    "boatsForSale": {
+      "fishingBoat": "Fishing Boat",
+      "leisureYacht": "Leisure Yacht",
+      "sailboat": "Sailboat",
+      "speedboat": "Speedboat"
     },
-    "descriptionLabel": "Description",
-    "descriptionPlaceholder": "Describe your item in detail...",
-    "regionLabel": "Region",
-    "selectRegion": "Select Region",
-    "priceLabel": "Price ($)",
-    "websiteLabel": "Website",
-    "optional": "Optional",
-    "websitePlaceholder": "https://yourwebsite.com",
-    "upload": "Upload Images",
-    "fillRequired": "Please fill all required fields",
-    "registering": "Registering...",
-    "successMessage": "Listing submitted successfully!",
-    "errorMessage": "An error occurred",
-    "submit": "Submit Listing"
-  },
-  "createRealEstate": {
-    "title": "Real Estate",
-    "mainCategory": "Main Category",
-    "category": "Category",
-    "type": "Type",
-    "selectCategory": "Select category",
-    "selectType": "Select type",
-    "titlePlaceholder": "Title",
-    "pricePlaceholder": "Price ($)",
-    "addressPlaceholder": "Address",
-    "selectRegion": "Select region",
-    "selectCity": "Select city",
-    "addCity": "+ Add city",
-    "newCityPlaceholder": "Enter new city name",
-    "upload": "Upload",
-    "descriptionPlaceholder": "More details...",
-    "titleLabel": "Title",
-    "priceLabel": "Price ($)",
-    "addressLabel": "Address",
-    "regionLabel": "Region",
-    "cityLabel": "City",
-    "newCityLabel": "New city",
-    "descriptionLabel": "Description",
-    "fillRequired": "Please fill the required fields",
-    "uploadAtLeastOneImage": "Please upload at least one image",
-    "cityAddFailed": "Failed to add city",
-    "submittedSuccess": "Listing submitted!",
-    "submitError": "An error occurred",
-    "networkError": "Network error occurred",
-    "loadingRegions": "Loading regions...",
-    "noCities": "No cities available",
-    "submit": "Submit Listing",
-    "submitting": "Submitting...",
-    "pageTitle": "Create Real Estate Listing",
-    "subcategoryLabel": "Subcategory",
-    "selectSubcategory": "Select Subcategory",
-    "titleInputPlaceholder": "e.g. Spacious 3BR Apartment in Mogadishu",
-    "propertyTypeLabel": "Property Type",
-    "selectPropertyType": "Select Property Type",
-    "sizeSqmLabel": "Size (sqm)",
-    "sizeSqmPlaceholder": "e.g. 120",
-    "bedroomsLabel": "Bedrooms",
-    "bedroomsPlaceholder": "e.g. 3",
-    "bathroomsLabel": "Bathrooms",
-    "bathroomsPlaceholder": "e.g. 2",
-    "floorLabel": "Floor",
-    "floorPlaceholder": "e.g. 3",
-    "totalFloorsLabel": "Total Floors",
-    "totalFloorsPlaceholder": "e.g. 10",
-    "furnishedLabel": "Furnished",
-    "parkingLabel": "Parking",
-    "garageLabel": "Garage",
-    "gardenLabel": "Garden",
-    "amenitiesLabel": "Amenities",
-    "optional": "Optional",
-    "swimmingPoolLabel": "Swimming Pool",
-    "gymLabel": "Gym",
-    "securityLabel": "Security",
-    "elevatorLabel": "Elevator",
-    "generatorLabel": "Generator",
-    "waterSupplyLabel": "Water Supply",
-    "airConditioningLabel": "Air Conditioning",
-    "balconyLabel": "Balcony",
-    "addNewCity": "+ ADD NEW CITY",
-    "categories": {
-      "forRent": "For Rent",
-      "forSale": "For Sale",
-      "landForSale": "Land For Sale",
-      "farmForSale": "Farm For Sale",
-      "commercial": "Commercial"
+    "boatsForRent": {
+      "fishingBoatRental": "Fishing Boat Rental",
+      "yachtCharter": "Yacht Charter"
     },
-    "propertyTypes": {
-      "apartment": "Apartment",
-      "houseVilla": "House / Villa",
-      "commercialSpace": "Commercial Space",
-      "land": "Land",
-      "warehouse": "Warehouse",
-      "farm": "Farm",
-      "other": "Other"
+    "engines": {
+      "outboardEngine": "Outboard Engine",
+      "inboardEngine": "Inboard Engine",
+      "usedEngine": "Used Engine"
+    },
+    "parts": {
+      "engineParts": "Engine Parts",
+      "navigationEquipment": "Navigation Equipment",
+      "safetyGear": "Safety Gear"
     }
   },
-  "createCars": {
-    "pageTitle": "Create Car Listing",
-    "mainCategoryLabel": "Main Category",
-    "categoryLabel": "Category",
-    "selectCategory": "Select Category",
-    "subcategoryLabel": "Subcategory",
-    "selectSubcategory": "Select Subcategory",
-    "titleLabel": "Title",
-    "titlePlaceholder": "e.g. Toyota Camry 2022 – Low Mileage",
-    "yearLabel": "Year",
-    "yearPlaceholder": "e.g. 2022",
-    "makeLabel": "Make",
-    "makePlaceholder": "e.g. Toyota",
-    "modelLabel": "Model",
-    "modelPlaceholder": "e.g. Camry",
-    "trimLabel": "Trim",
-    "trimPlaceholder": "e.g. LE",
-    "mileageLabel": "Mileage (km)",
-    "mileagePlaceholder": "e.g. 45000",
-    "fuelTypeLabel": "Fuel Type",
-    "gearboxLabel": "Gearbox",
-    "engineSizeLabel": "Engine Size",
-    "engineSizePlaceholder": "e.g. 2.5L",
-    "conditionLabel": "Condition",
-    "colorLabel": "Color",
-    "colorPlaceholder": "e.g. White",
-    "doorsLabel": "Doors",
-    "doorsPlaceholder": "e.g. 4",
-    "descriptionLabel": "Description",
-    "descriptionPlaceholder": "Describe your car...",
-    "regionLabel": "Region",
-    "selectRegion": "Select Region",
-    "cityLabel": "City",
-    "selectCity": "Select City",
-    "addingCity": "Adding city...",
-    "addNewCity": "+ ADD NEW CITY",
-    "newCityPlaceholder": "Enter new city name",
-    "priceLabel": "Price ($)",
-    "tiktokLabel": "TikTok Link",
-    "tiktokPlaceholder": "https://www.tiktok.com/@karaadi_",
-    "upload": "Upload Photos",
-    "selectOption": "Select",
-    "fillRequired": "Please fill all required fields and upload at least one image",
-    "registering": "Submitting...",
-    "successMessage": "Your car listing has been posted!",
-    "errorMessage": "An error occurred. Please try again.",
-    "submit": "Submit Listing",
-    "categories": {
-      "CarsForSaleNestedSub": "Cars For Sale",
-      "LeaseCarsNestedSub": "Lease Cars",
-      "BusSubLinks": "Buses",
-      "TrailerNestedSub": "Trailers",
-      "CarPartsNestedSub": "Car Parts",
-      "TruckNestedSub": "Trucks",
-      "ElectricCarsNestedSub": "Electric Cars"
+  "traktor": {
+    "tractorForSale": "Tractor for Sale",
+    "farmTools": "Farm Tools",
+    "fertilizerSpreader": "Fertilizer Spreader",
+    "grainHarvester": "Grain Harvester",
+    "plow": "Plow",
+    "irrigationSystem": "Irrigation System"
+  },
+  "carsNested": {
+    "carsForSale": {
+      "sedan": "Sedan",
+      "suv": "SUV/4x4",
+      "hatchback": "Hatchback",
+      "convertible": "Convertible",
+      "minivan": "Minivan"
     },
-    "fuelTypes": {
-      "Petrol": "Petrol",
-      "Diesel": "Diesel",
-      "Hybrid": "Hybrid",
-      "Electric": "Electric",
-      "Other": "Other"
+    "lease": {
+      "sedanLease": "Sedan Lease",
+      "suvLease": "SUV/4x4 Lease",
+      "vanMinibusLease": "Van/Minibus Lease",
+      "truckPickupLease": "Truck/Pickup Lease",
+      "otherLeaseVehicles": "Other Lease Vehicles"
     },
-    "gearboxOptions": {
-      "Manual": "Manual",
-      "Automatic": "Automatic"
+    "parts": {
+      "engines": "Engines",
+      "tiresRims": "Tires & Rims",
+      "bodyParts": "Body Parts"
     },
-    "conditionOptions": {
-      "New": "New",
-      "Used": "Used",
-      "CertifiedPreOwned": "Certified Pre-Owned"
+    "trucks": {
+      "pickupTruck": "Pickup Truck",
+      "heavyTruck": "Heavy Truck",
+      "truckSpareParts": "Truck Spare Parts",
+      "flatbedTankTruck": "Flatbed/Tank Truck",
+      "otherTrucks": "Other Trucks"
+    },
+    "electric": {
+      "electricSedan": "Electric Sedan",
+      "electricSUV": "Electric SUV",
+      "otherElectricCar": "Other Electric Car"
+    },
+    "trailers": {
+      "boatTrailer": "Boat Trailer",
+      "trailerSpareParts": "Trailer Spare Parts",
+      "heavyDutyTrailer": "Heavy Duty Trailer",
+      "otherTrailers": "Other Trailers"
+    },
+    "buses": {
+      "coachBuses": "Coach Buses",
+      "minibuses": "Minibuses",
+      "schoolBuses": "School Buses",
+      "cityBuses": "City Buses"
     }
   },
-  "createMotorcycle": {
-    "heading": "Create Motorcycle Ad",
-    "mainCategoryLabel": "Main Category",
-    "categoryLabel": "Category",
-    "selectCategory": "Select category",
-    "subCategoryLabel": "Subcategory",
-    "selectSubcategory": "Select subcategory",
-    "titlePlaceholder": "Motorcycle title",
-    "titleLabel": "Title",
-    "makePlaceholder": "Make",
-    "modelPlaceholder": "Model",
-    "yearPlaceholder": "Year",
-    "mileagePlaceholder": "Mileage",
-    "pricePlaceholder": "Price ($)",
-    "selectRegion": "Select region",
-    "selectCity": "Select city",
-    "addCity": "+ Add city",
-    "newCityPlaceholder": "Enter new city name",
-    "newCityLabel": "New City",
-    "descriptionPlaceholder": "More details...",
-    "descriptionLabel": "Description",
-    "regionLabel": "Region",
-    "cityLabel": "City",
-    "upload": "Upload",
-    "fillRequired": "Please fill the required fields",
-    "imagePreviewAlt": "Image preview",
-    "uploadAtLeastOneImage": "Please upload at least one image",
-    "cityAddFailed": "Failed to add city",
-    "submittedSuccess": "Listing submitted!",
-    "submitError": "An error occurred",
-    "networkError": "Network error occurred",
-    "registering": "Registering...",
-    "successMessage": "Success! Your listing has been posted.",
-    "errorMessage": "An error occurred",
-    "submit": "Submit Listing",
-    "submitting": "Submitting...",
-    "pageTitle": "Create Motorcycle Listing",
-    "yearLabel": "Year",
-    "makeLabel": "Make",
-    "modelLabel": "Model",
-    "engineCcLabel": "Engine (cc)",
-    "engineCcPlaceholder": "e.g. 500",
-    "mileageLabel": "Mileage (km)",
-    "fuelTypeLabel": "Fuel Type",
-    "selectFuelType": "Select",
-    "gearboxLabel": "Gearbox",
-    "selectGearbox": "Select",
-    "conditionLabel": "Condition",
-    "selectCondition": "Select",
-    "colorLabel": "Color",
-    "colorPlaceholder": "e.g. Red",
-    "priceLabel": "Price ($)",
-    "addingCity": "Adding city…",
-    "addNewCity": "+ ADD NEW CITY",
-    "newCityNote": "This city will be saved and available for all users.",
-    "imageNote": "Max 10 images · 15 MB each · JPEG, PNG, WEBP",
-    "fuelTypes": {
-      "petrol": "Petrol",
-      "electric": "Electric",
-      "other": "Other"
-    },
-    "gearboxOptions": {
-      "manual": "Manual",
-      "automatic": "Automatic",
-      "semiAutomatic": "Semi-Automatic"
-    },
-    "conditions": {
-      "new": "New",
-      "used": "Used"
-    },
-    "categories": {
-      "forSale": "For Sale",
-      "forRent": "For Rent",
-      "parts": "Parts",
-      "other": "Other"
-    }
-  },
-  "createFarmequipment": {
-    "pageTitle": "Create Farm Equipment Listing",
-    "mainCategoryLabel": "Main Category",
-    "categoryLabel": "Category",
-    "selectCategory": "Select Category",
-    "subcategoryLabel": "Subcategory",
-    "selectSubcategory": "Select Subcategory",
-    "titleLabel": "Title",
-    "titlePlaceholder": "e.g. John Deere 5075E Tractor 2020",
-    "yearLabel": "Year",
-    "yearPlaceholder": "e.g. 2020",
-    "equipmentTypeLabel": "Equipment Type",
-    "equipmentTypePlaceholder": "e.g. Tractor",
-    "brandLabel": "Brand",
-    "brandPlaceholder": "e.g. John Deere",
-    "hoursUsedLabel": "Hours Used",
-    "hoursUsedPlaceholder": "e.g. 1200",
-    "conditionLabel": "Condition",
-    "selectCondition": "Select",
-    "attachmentsLabel": "Attachments Included",
-    "attachmentsPlaceholder": "e.g. Plow, Loader",
-    "descriptionLabel": "Description",
-    "descriptionPlaceholder": "Describe the equipment condition, usage history...",
-    "regionLabel": "Region",
-    "selectRegion": "Select Region",
-    "cityLabel": "City",
-    "selectCity": "Select City",
-    "addingCity": "Adding city...",
-    "addNewCity": "+ ADD NEW CITY",
-    "newCityPlaceholder": "Enter new city name",
-    "priceLabel": "Price ($)",
-    "upload": "Upload Images",
-    "selectOption": "Select",
-    "fillRequired": "Please fill all required fields and add at least one image.",
-    "registering": "Submitting...",
-    "successMessage": "Your farm equipment listing has been submitted!",
-    "errorMessage": "An error occurred. Please try again.",
-    "submit": "Submit Listing",
-    "conditions": {
-      "new": "New",
-      "used": "Used",
-      "refurbished": "Refurbished"
-    },
-    "categories": {
-      "tractorForSale": "Tractor For Sale",
-      "farmTools": "Farm Tools",
-      "fertilizerSpreader": "Fertilizer Spreader",
-      "grainHarvester": "Grain Harvester",
-      "plow": "Plow",
-      "irrigationSystem": "Irrigation System"
-    }
-  },
-  "createBoats": {
-    "title": "Boats Listing",
-    "pageTitle": "Boats",
-    "mainCategory": "Main Category",
-    "category": "Category",
-    "city": "City",
-    "addingCity": "Adding city...",
-    "addAnotherCity": "+ Add city",
-    "typePlaceholder": "Type (required)",
-    "modelPlaceholder": "Model",
-    "gearboxPlaceholder": "Gearbox",
-    "colorPlaceholder": "Color",
-    "feeLabel": "Service Fee",
-    "subcategory": "Subcategory",
-    "selectCategory": "Select category",
-    "selectSubcategory": "Select subcategory",
-    "selectRegion": "Select region",
-    "selectCity": "Select city",
-    "addCity": "+ Add city",
-    "newCityPlaceholder": "Enter new city name",
-    "titlePlaceholder": "Title",
-    "pricePlaceholder": "Price ($)",
-    "descriptionPlaceholder": "More details...",
-    "upload": "Upload",
-    "fillRequired": "Please fill the required fields",
-    "cityAddFailed": "Failed to add city",
-    "submittedSuccess": "Listing submitted!",
-    "submitError": "An error occurred",
-    "networkError": "Network error occurred",
-    "loadingRegions": "Loading regions...",
-    "noCities": "No cities available",
-    "submit": "Submit Listing",
-    "submitting": "Submitting..."
-  },
-  "sidebar": {
-    "Home": "Home",
-    "Marketplace": "Marketplace",
-    "Cars": "Cars",
-    "Boats": "Boats",
-    "Motorcycles": "Motorcycles",
-    "Real Estate": "Real Estate",
-    "Farmequipment": "Farm Equipment",
-    "Advertisement": "Advertisement",
-    "subscription": "Subscription",
-    "FeeManagement": "Fee Management",
-    "Jobs": "Jobs",
-    "Agencies": "Agencies",
-    "Reports": "Reports",
-    "Most Search": "Most Search",
-    "Users": "Users",
-    "Massages": "Messages",
-    "Chats": "Chats",
-    "Visitor List": "Visitor List",
-    "Payments": "Payments",
-    "Settings": "Settings"
-  },
-  "settings": {
-    "Visitor Management": "Visitor Management",
-    "User Roles": "User Roles",
-    "Payments": "Payments",
-    "Security": "Security",
-    "Regional Management": "Regional Management",
-    "City & District Management": "City & District Management",
-    "Open Visitor Manager": "Open Visitor Manager",
-    "Go to User Roles": "Go to User Roles",
-    "Open Payment Settings": "Open Payment Settings",
-    "Security Settings": "Security Settings",
-    "Manage Regions": "Manage Regions",
-    "Manage Cities": "Manage Cities"
-  },
-  "subcategories": {
-    "marketplace": {
-      "antiques": "Antiques & Art",
-      "electronics": "Electronics",
-      "animalAndSupplies": "Animal & Supplies",
-      "sportsAndOutdoors": "Sports & Outdoors",
-      "furniture": "Furniture",
-      "fashion": "Fashion"
-    },
-    "farmEquipment": {
-      "tractor": "Tractor",
-      "tractorForSale": "Tractor For Sale",
-      "tools": "Farm Tools",
-      "fertilizerSpreader": "Fertilizer Spreader",
-      "harvester": "Grain Harvester",
-      "plow": "Plow",
-      "irrigation": "Irrigation System"
-    },
-    "realEstate": {
-      "forRent": "For Rent",
-      "forSale": "For Sale",
-      "landForSale": "Land for Sale",
-      "farmForSale": "Farm for Sale",
-      "commercial": "Commercial",
-      "resultsFound": "Results found:",
-      "resultsCount": "{{count}} properties",
-      "noPropertiesFound": "No matching properties found."
-    },
-    "cars": {
-      "carsForSale": "Cars for Sale",
-      "leaseCars": "Lease Cars",
-      "trailers": "Trailers",
-      "carParts": "Car Parts",
-      "truck": "Truck",
-      "electricCars": "Electric Cars",
-      "buses": "Buses"
-    },
-    "motorcycles": {
-      "forSale": "For Sale",
-      "forRent": "For Rent",
-      "spareParts": "Spare Parts",
-      "other": "Other"
-    },
-    "boats": {
-      "boatsForSale": "Boats for Sale",
-      "boatsForRent": "Boats for Rent",
-      "boatEnginesForSale": "Boat Engines for Sale",
-      "boatParts": "Boat Parts"
-    },
-    "boatsNested": {
-      "boatsForSale": {
-        "fishingBoat": "Fishing Boat",
-        "leisureYacht": "Leisure Yacht",
-        "sailboat": "Sailboat",
-        "speedboat": "Speedboat"
-      },
-      "boatsForRent": {
-        "fishingBoatRental": "Fishing Boat Rental",
-        "yachtCharter": "Yacht Charter"
-      },
-      "engines": {
-        "outboardEngine": "Outboard Engine",
-        "inboardEngine": "Inboard Engine",
-        "usedEngine": "Used Engine"
-      },
-      "parts": {
-        "engineParts": "Engine Parts",
-        "navigationEquipment": "Navigation Equipment",
-        "safetyGear": "Safety Gear"
-      }
-    },
-    "traktor": {
+  "traktorNested": {
+    "top": {
       "tractorForSale": "Tractor for Sale",
       "farmTools": "Farm Tools",
       "fertilizerSpreader": "Fertilizer Spreader",
       "grainHarvester": "Grain Harvester",
       "plow": "Plow",
-      "irrigationSystem": "Irrigation System"
+      "irrigation": "Irrigation System"
     },
-    "carsNested": {
-      "carsForSale": {
-        "sedan": "Sedan",
-        "suv": "SUV/4x4",
-        "hatchback": "Hatchback",
-        "convertible": "Convertible",
-        "minivan": "Minivan"
-      },
-      "lease": {
-        "sedanLease": "Sedan Lease",
-        "suvLease": "SUV/4x4 Lease",
-        "vanMinibusLease": "Van/Minibus Lease",
-        "truckPickupLease": "Truck/Pickup Lease",
-        "otherLeaseVehicles": "Other Lease Vehicles"
-      },
-      "parts": {
-        "engines": "Engines",
-        "tiresRims": "Tires & Rims",
-        "bodyParts": "Body Parts"
-      },
-      "trucks": {
-        "pickupTruck": "Pickup Truck",
-        "heavyTruck": "Heavy Truck",
-        "truckSpareParts": "Truck Spare Parts",
-        "flatbedTankTruck": "Flatbed/Tank Truck",
-        "otherTrucks": "Other Trucks"
-      },
-      "electric": {
-        "electricSedan": "Electric Sedan",
-        "electricSUV": "Electric SUV",
-        "otherElectricCar": "Other Electric Car"
-      },
-      "trailers": {
-        "boatTrailer": "Boat Trailer",
-        "trailerSpareParts": "Trailer Spare Parts",
-        "heavyDutyTrailer": "Heavy Duty Trailer",
-        "otherTrailers": "Other Trailers"
-      },
-      "buses": {
-        "coachBuses": "Coach Buses",
-        "minibuses": "Minibuses",
-        "schoolBuses": "School Buses",
-        "cityBuses": "City Buses"
-      }
+    "tractorForSale": {
+      "newTractor": "New Tractor",
+      "usedTractor": "Used Tractor"
     },
-    "traktorNested": {
-      "top": {
-        "tractorForSale": "Tractor for Sale",
-        "farmTools": "Farm Tools",
-        "fertilizerSpreader": "Fertilizer Spreader",
-        "grainHarvester": "Grain Harvester",
-        "plow": "Plow",
-        "irrigation": "Irrigation System"
-      },
-      "tractorForSale": {
-        "newTractor": "New Tractor",
-        "usedTractor": "Used Tractor"
-      },
-      "farmTools": {
-        "plowTillageEquipment": "Plow/Tillage Equipment",
-        "seedingEquipment": "Seeding Equipment",
-        "harvestingEquipment": "Harvesting Equipment"
-      },
-      "fertilizerSpreader": {
-        "mountedSpreader": "Mounted Spreader",
-        "towedSpreader": "Towed Spreader"
-      },
-      "grainHarvester": {
-        "selfPropelledHarvester": "Self-Propelled Harvester",
-        "pullTypeHarvester": "Pull-Type Harvester"
-      },
-      "plow": {
-        "moldboardPlow": "Moldboard Plow",
-        "discPlow": "Disc Plow",
-        "subsoilPlow": "Subsoil Plow"
-      },
-      "irrigation": {
-        "dripIrrigation": "Drip Irrigation",
-        "sprinklerIrrigation": "Sprinkler Irrigation",
-        "floodIrrigation": "Flood Irrigation",
-        "waterPumps": "Water Pumps"
-      }
+    "farmTools": {
+      "plowTillageEquipment": "Plow/Tillage Equipment",
+      "seedingEquipment": "Seeding Equipment",
+      "harvestingEquipment": "Harvesting Equipment"
     },
-    "jobs": {
-      "FullTime": "Full-Time",
-      "PartTime": "Part-Time",
-      "Physical": "Physical/Manual Labor",
-      "Internship": "Internship",
-      "Remote": "Remote",
-      "Tech": "IT & Tech",
-      "Finance": "Finance & Accounting",
-      "Education": "Education",
-      "Healthcare": "Healthcare",
-      "Hospitality": "Hospitality",
-      "links": {
-        "it": "IT Jobs",
-        "airport": "Airport Jobs",
-        "cleaning": "Cleaning & Maintenance Jobs"
-      }
+    "fertilizerSpreader": {
+      "mountedSpreader": "Mounted Spreader",
+      "towedSpreader": "Towed Spreader"
     },
-    "realEstateNested": {
-      "forRent": {
-        "apartmentFlat": "Apartment/Flat",
-        "houseVilla": "House/Villa",
-        "commercialOffice": "Commercial Office",
-        "warehouseStorage": "Warehouse/Storage",
-        "singleRoom": "Single Room"
-      },
-      "forSale": {
-        "newHouseVilla": "New House/Villa",
-        "usedHouseVilla": "Used House/Villa",
-        "apartmentFlatForSale": "Apartment/Flat for Sale",
-        "completedBuilding": "Completed Building"
-      },
-      "landForSale": {
-        "residentialLand": "Residential Land",
-        "commercialLand": "Commercial Land",
-        "industrialLand": "Industrial Land"
-      },
-      "farmForSale": {
-        "agriculturalLand": "Agricultural Land",
-        "livestockFarm": "Livestock Farm",
-        "treeForestFarms": "Tree/Forest Farms"
-      },
-      "commercial": {
-        "retailSpaceShop": "Retail Space/Shop",
-        "hotelGuesthouse": "Hotel/Guesthouse",
-        "commercialBuilding": "Commercial Building",
-        "largeWarehouse": "Large Warehouse"
-      }
+    "grainHarvester": {
+      "selfPropelledHarvester": "Self-Propelled Harvester",
+      "pullTypeHarvester": "Pull-Type Harvester"
     },
-    "motorcyclesNested": {
-      "forSale": {
-        "newMotorcycle": "New Motorcycle",
-        "usedMotorcycle": "Used Motorcycle",
-        "newVespa": "New Vespa",
-        "usedVespa": "Used Vespa",
-        "newBajaj": "New Bajaj",
-        "usedBajaj": "Used Bajaj",
-        "sportBikes": "Sport Bikes",
-        "cargoBikes": "Cargo Bikes",
-        "cargoBajaj": "Cargo Bajaj (Tuk Tuk)"
-      },
-      "forRent": {
-        "motorcycleRental": "Motorcycle Rental",
-        "vespaRental": "Vespa Rental",
-        "cargoMotorcycleRental": "Cargo Motorcycle Rental",
-        "bajajForRent": "Bajaj for Rent",
-        "cargoBajajRental": "Cargo Bajaj Rental",
-        "dailyBajajRental": "Daily Bajaj Rental"
-      },
-      "parts": {
-        "motorcycleEngines": "Motorcycle Engines",
-        "tiresRims": "Tires/Rims",
-        "protectiveGear": "Protective Gear",
-        "bajajEngines": "Bajaj Engines",
-        "bajajBodyParts": "Bajaj Body Parts"
-      },
-      "other": {
-        "miscellaneousEquipment": "Miscellaneous Equipment"
-      }
+    "plow": {
+      "moldboardPlow": "Moldboard Plow",
+      "discPlow": "Disc Plow",
+      "subsoilPlow": "Subsoil Plow"
     },
-    "marketplaceNested": {
-      "antiques": {
-        "bowls": "Bowls",
-        "parts": "Parts / Pieces",
-        "coffeeService": "Coffee Service",
-        "porcelain": "Porcelain",
-        "vintage": "Vintage",
-        "other": "Other"
-      },
-      "electronics": {
-        "mobilePhones": "Mobile Phones",
-        "laptopsComputers": "Laptops & Computers",
-        "tvsAccessories": "TVs & Accessories",
-        "camerasPhotography": "Cameras & Photography",
-        "homeAppliances": "Home Appliances",
-        "other": "Other"
-      },
-      "animalAndSupplies": {
-        "livestock": "Livestock (Goats, Cattle)",
-        "pets": "Pets (Dogs, Cats)",
-        "feed": "Animal Feed & Hay",
-        "accessories": "Pet Accessories",
-        "other": "Other"
-      },
-      "sportsAndOutdoors": {
-        "gymEquipment": "Gym Equipment",
-        "bicycles": "Bicycles",
-        "sportingGoods": "Sporting Goods",
-        "campingGear": "Camping & Hiking Gear",
-        "toys": "Toys",
-        "other": "Other"
-      },
-      "furniture": {
-        "sofasCouches": "Sofas & Couches",
-        "bedsMattresses": "Beds & Mattresses",
-        "tablesDesks": "Tables & Desks",
-        "kitchenFurnishings": "Kitchen Furnishings",
-        "other": "Other"
-      },
-      "fashion": {
-        "mensClothing": "Men's Clothing",
-        "womensClothing": "Women's Clothing",
-        "shoesFootwear": "Shoes & Footwear",
-        "bagsWallets": "Bags & Wallets",
-        "other": "Other"
-      }
-    },
-    "jobsNested": {
-      "fullTime": {
-        "administrationOffice": "Administration & Office",
-        "itTechnology": "IT & Technology",
-        "healthcare": "Healthcare",
-        "salesMarketing": "Sales & Marketing",
-        "engineeringConstruction": "Engineering & Construction"
-      },
-      "partTime": {
-        "officeAssistant": "Office Assistant",
-        "studentEmployment": "Student Employment",
-        "foodDeliveryRunner": "Food Delivery/Runner"
-      },
-      "freelance": {
-        "graphicDesigner": "Graphic Designer",
-        "webDeveloper": "Web Developer",
-        "freelanceWriter": "Freelance Writer"
-      },
-      "experienceLevels": {
-        "entry": "Entry Level",
-        "mid": "Mid Level",
-        "senior": "Senior Level"
-      },
-      "educationLevels": {
-        "highschool": "High School",
-        "diploma": "Diploma",
-        "bachelor": "Bachelor's",
-        "master": "Master's/PhD"
-      },
-      "applicationMethods": {
-        "email": "Apply by Email",
-        "url": "Apply by Website/URL",
-        "phone": "Call/Contact by Phone"
-      }
+    "irrigation": {
+      "dripIrrigation": "Drip Irrigation",
+      "sprinklerIrrigation": "Sprinkler Irrigation",
+      "floodIrrigation": "Flood Irrigation",
+      "waterPumps": "Water Pumps"
     }
   },
-  "marketplace": {
-    "displaying": "Displaying {{count}} {{category}}."
-  },
-  "common": {
-    "loading": "Loading...",
-    "noResults": "No results found in this area.",
-    "back": "Back",
-    "continue": "Continue"
-  },
-  "mine": {
-    "nav": {
-      "myAds": "My Ads",
-      "favorites": "Favorites",
-      "saved": "Saved",
-      "tickets": "Tickets",
-      "settings": "Settings",
-      "badge": "Badge"
-    },
-    "noData": "No data",
-    "noDataDesc": "No records available",
-    "settings": {
-      "privacy": "Privacy",
-      "security": "Security",
-      "payment": "Payment",
-      "subscription": "Subscription",
-      "verifyEmail": "Verify Email"
-    },
-    "account": {
-      "myAds": "My Ads",
-      "myAccount": "My Account",
-      "settings": "Settings",
-      "favorites": "Favorites",
-      "savedSearches": "Saved Searches",
-      "badge": "Badge",
-      "pendingPayments": "Pending Payments",
-      "badgeDescription": "This page shows your badge and related statistics.",
-      "badgeVisits": "Visits",
-      "badgeContacts": "Contacts",
-      "badgeResponses": "Responses",
-      "forBusinesses": "For Businesses",
-      "contactHistory": "Contact History",
-      "mySubscriptions": "My Subscriptions"
-    },
-    "profile": {
-      "noUser": "No user data found.",
-      "defaultDisplayName": "User",
-      "verified": "Verified",
-      "edit": "Edit",
-      "logout": "Logout"
-    },
-    "currentProfile": "Current Profile",
-    "guest": "Guest",
-    "emailAddress": "Email Address",
-    "notAvailable": "N/A",
-    "searchHistory": {
-      "recent": "Recent Search History",
-      "noRecords": "No search records found",
-      "trending": "Trending Searches",
-      "hits": "hits"
-    },
-    "tickets": {
-      "title": "My Tickets",
-      "noTickets": "No tickets found.",
-      "status": {
-        "done": "Done",
-        "inProgress": "In Progress"
-      },
-      "id": "ID:",
-      "close": "Close",
-      "viewConversation": "View Conversation",
-      "yourOriginalRequest": "Your Original Request",
-      "you": "You",
-      "supportTeam": "Support Team",
-      "caseResolved": "Case Resolved"
-    },
-    "subscriptions": {
-      "errorLoading": "Error loading subscriptions",
-      "deleteFailed": "Failed to delete subscription",
-      "title": "My Subscriptions",
-      "status": {
-        "active": "ACTIVE",
-        "inactive": "INACTIVE"
-      },
-      "paid": "✓ Paid",
-      "unpaid": "⚠ Unpaid",
-      "category": "Category",
-      "region": "Region",
-      "cities": "Cities",
-      "priceRange": "Price Range",
-      "created": "Created:",
-      "expired": "Expired:",
-      "expires": "Expires:",
-      "processing": "Processing...",
-      "payNow": "Pay Now",
-      "delete": "Delete"
-    },
-    "businesses": {
-      "noAccountInfo": "No account information found.",
-      "checkLogin": "Please ensure you are logged in correctly.",
-      "noBusinessConnected": "No business is connected to this account",
-      "contactAdmin": "Your account is not connected to a business yet. Contact your account administrator to gain access to the Business Center.",
-      "userInfo": "User Information:",
-      "id": "ID:",
-      "ifBusinessCustomer": "If you are a business customer",
-      "contactAdminDesc": "Contact your colleague who has admin rights for your business to add this account.",
-      "becomeBusinessCustomer": "Become a business customer",
-      "createProfileDesc": "Create your business profile to start advertising.",
-      "startNow": "Start now",
-      "title": "Business Center",
-      "newBusiness": "New Business",
-      "registerBusiness": "Register your business",
-      "registerDesc": "Register your company to start posting as a business customer. Your listings will be reviewed and verified by our team.",
-      "benefits": "Business benefits",
-      "benefit1": "Invoice payment",
-      "benefit2": "Dedicated contact person",
-      "benefit3": "Company profiling on all listings",
-      "benefit4": "Link to your company website in ads",
-      "advertiseIn": "Advertise in:",
-      "submitVerification": "Submit for verification",
-      "submitting": "Submitting...",
-      "pendingVerification": "Your registration is pending admin verification before you can post listings.",
-      "canPostDesc": "Your business is verified. You can post listings on behalf of this company.",
-      "postIn": "Post in",
-      "registerTitle": "Register Business",
-      "companyName": "Company name",
-      "orgNumber": "Org. number",
-      "businessEmail": "Business email",
-      "phone": "Phone",
-      "contactPerson": "Contact person",
-      "website": "Website",
-      "address": "Address",
-      "description": "Description",
-      "selectCategories": "Where do you want to advertise?",
-      "selectAtLeastOne": "Select at least one category",
-      "delete": "Delete",
-      "cancel": "Cancel",
-      "verified": "Verified",
-      "pending": "Pending",
-      "active": "Active",
-      "inactive": "Inactive",
-      "suspended": "Suspended",
-      "categories": {
-        "realestate": "Real Estate",
-        "realestateDesc": "Sale and rental of real estate",
-        "schools": "Schools",
-        "schoolsDesc": "Educational institutions and training centers",
-        "motor": "Motor",
-        "motorDesc": "Vehicles, boats and machinery",
-        "marketplace": "Marketplace",
-        "marketplaceDesc": "Sale of items"
-      },
-      "choosePlan": "Choose a plan to start posting listings",
-      "stepApply": "Apply",
-      "stepApproval": "Approval",
-      "stepPlan": "Plan",
-      "stepPost": "Post"
-    },
-    "myAds": {
-      "deleteFailed": "Delete ad failed.",
-      "relistConfirm": "Pay $5 to relist this item?",
-      "paymentSuccess": "Payment successful! Your ad is now active.",
-      "paymentFailed": "Payment failed. Please try again.",
-      "title": "My Ads",
-      "empty": "You haven't created any ads yet.",
-      "createFirst": "Create Your First Ad",
-      "itemPlaceholder": "item",
-      "sold": "✓ Sold",
-      "payToRelist": "💳 Pay to Relist",
-      "payNow": "Pay Now $5",
-      "edit": "Edit",
-      "delete": "Delete"
+  "jobs": {
+    "FullTime": "Full-Time",
+    "PartTime": "Part-Time",
+    "Physical": "Physical/Manual Labor",
+    "Internship": "Internship",
+    "Remote": "Remote",
+    "Tech": "IT & Tech",
+    "Finance": "Finance & Accounting",
+    "Education": "Education",
+    "Healthcare": "Healthcare",
+    "Hospitality": "Hospitality",
+    "links": {
+      "it": "IT Jobs",
+      "airport": "Airport Jobs",
+      "cleaning": "Cleaning & Maintenance Jobs"
     }
   },
-  "descriptions": {
-    "myAdsDesc": "See all your ads and track statistics",
-    "myAccountDesc": "View your details on KARAADI and Smartsuuq",
-    "settingsDesc": "Manage your account settings on KARAADI",
-    "favoritesDesc": "View all ads you like and have saved on KARAADI",
-    "savedSearchesDesc": "Manage and customize your saved searches",
-    "forBusinessesDesc": "View companies you have access to",
-    "contactHistoryDesc": "Track your support requests and messages",
-    "mySubscriptionsDesc": "Manage your subscriptions and payment plans"
-  },
-  "messages": {
-    "title": "Messages"
-  },
-  "chats": {
-    "yourChats": "Your Chats",
-    "conversations": "conversation",
-    "noMessagesYet": "No messages yet",
-    "startConversation": "Start a conversation by sending a message!",
-    "aboutPrefix": "About:",
-    "deleted": {
-      "you": "You deleted this message",
-      "other": "This message was deleted"
+  "realEstateNested": {
+    "forRent": {
+      "apartmentFlat": "Apartment/Flat",
+      "houseVilla": "House/Villa",
+      "commercialOffice": "Commercial Office",
+      "warehouseStorage": "Warehouse/Storage",
+      "singleRoom": "Single Room"
     },
-    "edited": "edited",
-    "failed": "Failed",
-    "online": "Online",
-    "offline": "Offline",
-    "seller": "Seller",
-    "chatFallback": "Chat",
-    "selectConversationMobile": "Select a conversation",
-    "welcome": "Welcome to Messages",
-    "tapToStart": "Tap on a chat to start messaging",
-    "selectToStart": "Select a conversation to start chatting",
-    "confirmDelete": "Are you sure you want to delete this chat?",
-    "deletedSuccess": "Chat deleted",
-    "deletedFailed": "Failed to delete chat",
-    "delete": "Delete"
+    "forSale": {
+      "newHouseVilla": "New House/Villa",
+      "usedHouseVilla": "Used House/Villa",
+      "apartmentFlatForSale": "Apartment/Flat for Sale",
+      "completedBuilding": "Completed Building"
+    },
+    "landForSale": {
+      "residentialLand": "Residential Land",
+      "commercialLand": "Commercial Land",
+      "industrialLand": "Industrial Land"
+    },
+    "farmForSale": {
+      "agriculturalLand": "Agricultural Land",
+      "livestockFarm": "Livestock Farm",
+      "treeForestFarms": "Tree/Forest Farms"
+    },
+    "commercial": {
+      "retailSpaceShop": "Retail Space/Shop",
+      "hotelGuesthouse": "Hotel/Guesthouse",
+      "commercialBuilding": "Commercial Building",
+      "largeWarehouse": "Large Warehouse"
+    }
   },
-  "checkout": {
-    "title": "Checkout",
-    "description": "Complete your checkout process",
-    "signIn": "Sign In",
-    "newAd": "New Ad",
-    "payment": "Payment"
+  "motorcyclesNested": {
+    "forSale": {
+      "newMotorcycle": "New Motorcycle",
+      "usedMotorcycle": "Used Motorcycle",
+      "newVespa": "New Vespa",
+      "usedVespa": "Used Vespa",
+      "newBajaj": "New Bajaj",
+      "usedBajaj": "Used Bajaj",
+      "sportBikes": "Sport Bikes",
+      "cargoBikes": "Cargo Bikes",
+      "cargoBajaj": "Cargo Bajaj (Tuk Tuk)"
+    },
+    "forRent": {
+      "motorcycleRental": "Motorcycle Rental",
+      "vespaRental": "Vespa Rental",
+      "cargoMotorcycleRental": "Cargo Motorcycle Rental",
+      "bajajForRent": "Bajaj for Rent",
+      "cargoBajajRental": "Cargo Bajaj Rental",
+      "dailyBajajRental": "Daily Bajaj Rental"
+    },
+    "parts": {
+      "motorcycleEngines": "Motorcycle Engines",
+      "tiresRims": "Tires/Rims",
+      "protectiveGear": "Protective Gear",
+      "bajajEngines": "Bajaj Engines",
+      "bajajBodyParts": "Bajaj Body Parts"
+    },
+    "other": {
+      "miscellaneousEquipment": "Miscellaneous Equipment"
+    }
   },
-  "plan": {
-    "selectHeading": "Choose Your",
-    "plan": "Plan",
-    "itemFee": "Item Fee:",
-    "planPrice": "Plan Price:",
-    "total": "Total:",
-    "selected": "✓ Selected",
-    "clickToSelect": "Click to select",
-    "days": "days",
-    "currency": "USD"
+  "marketplaceNested": {
+    "antiques": {
+      "bowls": "Bowls",
+      "parts": "Parts / Pieces",
+      "coffeeService": "Coffee Service",
+      "porcelain": "Porcelain",
+      "vintage": "Vintage",
+      "other": "Other"
+    },
+    "electronics": {
+      "mobilePhones": "Mobile Phones",
+      "laptopsComputers": "Laptops & Computers",
+      "tvsAccessories": "TVs & Accessories",
+      "camerasPhotography": "Cameras & Photography",
+      "homeAppliances": "Home Appliances",
+      "other": "Other"
+    },
+    "animalAndSupplies": {
+      "livestock": "Livestock (Goats, Cattle)",
+      "pets": "Pets (Dogs, Cats)",
+      "feed": "Animal Feed & Hay",
+      "accessories": "Pet Accessories",
+      "other": "Other"
+    },
+    "sportsAndOutdoors": {
+      "gymEquipment": "Gym Equipment",
+      "bicycles": "Bicycles",
+      "sportingGoods": "Sporting Goods",
+      "campingGear": "Camping & Hiking Gear",
+      "toys": "Toys",
+      "other": "Other"
+    },
+    "furniture": {
+      "sofasCouches": "Sofas & Couches",
+      "bedsMattresses": "Beds & Mattresses",
+      "tablesDesks": "Tables & Desks",
+      "kitchenFurnishings": "Kitchen Furnishings",
+      "other": "Other"
+    },
+    "fashion": {
+      "mensClothing": "Men's Clothing",
+      "womensClothing": "Women's Clothing",
+      "shoesFootwear": "Shoes & Footwear",
+      "bagsWallets": "Bags & Wallets",
+      "other": "Other"
+    }
   },
-  "summary": {
-    "review": "Review",
-    "verifyDetails": "Verify your listing and complete payment",
-    "listingSummary": "Listing Summary"
+  "jobsNested": {
+    "fullTime": {
+      "administrationOffice": "Administration & Office",
+      "itTechnology": "IT & Technology",
+      "healthcare": "Healthcare",
+      "salesMarketing": "Sales & Marketing",
+      "engineeringConstruction": "Engineering & Construction"
+    },
+    "partTime": {
+      "officeAssistant": "Office Assistant",
+      "studentEmployment": "Student Employment",
+      "foodDeliveryRunner": "Food Delivery/Runner"
+    },
+    "freelance": {
+      "graphicDesigner": "Graphic Designer",
+      "webDeveloper": "Web Developer",
+      "freelanceWriter": "Freelance Writer"
+    },
+    "experienceLevels": {
+      "entry": "Entry Level",
+      "mid": "Mid Level",
+      "senior": "Senior Level"
+    },
+    "educationLevels": {
+      "highschool": "High School",
+      "diploma": "Diploma",
+      "bachelor": "Bachelor's",
+      "master": "Master's/PhD"
+    },
+    "applicationMethods": {
+      "email": "Apply by Email",
+      "url": "Apply by Website/URL",
+      "phone": "Call/Contact by Phone"
+    }
+  }
+} as const;
+
+export const marketplace = {
+  "displaying": "Displaying {{count}} {{category}}."
+} as const;
+
+export const common = {
+  "loading": "Loading...",
+  "noResults": "No results found in this area.",
+  "back": "Back",
+  "continue": "Continue"
+} as const;
+
+export const mine = {
+  "nav": {
+    "myAds": "My Ads",
+    "favorites": "Favorites",
+    "saved": "Saved",
+    "tickets": "Tickets",
+    "settings": "Settings",
+    "badge": "Badge"
   },
-  "payment": {
-    "payment": "Payment"
+  "noData": "No data",
+  "noDataDesc": "No records available",
+  "settings": {
+    "privacy": "Privacy",
+    "security": "Security",
+    "payment": "Payment",
+    "subscription": "Subscription",
+    "verifyEmail": "Verify Email"
   },
-  "paymentPage": {
-    "pageTitle": "Payment",
-    "heading": "Payment",
-    "subheading": "Complete Your Payment",
-    "selectPaymentType": "Select Payment Type",
-    "mobileMoney": "Mobile Money",
-    "cardPayment": "Card Payment",
-    "processing": "Processing...",
-    "confirmPayment": "Confirm Payment",
-    "orderSummary": "Order Summary",
-    "itemId": "Item ID",
-    "plan": "Plan",
-    "paymentMethod": "Payment Method",
-    "total": "TOTAL"
+  "account": {
+    "myAds": "My Ads",
+    "myAccount": "My Account",
+    "settings": "Settings",
+    "favorites": "Favorites",
+    "savedSearches": "Saved Searches",
+    "badge": "Badge",
+    "pendingPayments": "Pending Payments",
+    "badgeDescription": "This page shows your badge and related statistics.",
+    "badgeVisits": "Visits",
+    "badgeContacts": "Contacts",
+    "badgeResponses": "Responses",
+    "forBusinesses": "For Businesses",
+    "contactHistory": "Contact History",
+    "mySubscriptions": "My Subscriptions"
   },
-  "subscription": {
-    "title": "Subscription Settings",
-    "liveScanner": "Live Scanner Active",
-    "createNewAlert": "Create New Alert",
-    "createNewAlertSub": "Get notified when a matching item is posted",
-    "alertTitle": "Alert Title",
-    "subcategoryLabel": "Subcategory",
-    "description": "Notes",
-    "descriptionPlaceholder": "Optional: describe what you're looking for...",
-    "myAlerts": "My Alerts",
-    "noAlerts": "No alerts yet",
-    "match": "match",
-    "matches": "matches",
-    "refresh": "Refresh",
-    "deleteAlert": "Delete alert",
-    "notifyHint": "You will be notified in /notifications whenever someone posts an item that matches your alert criteria.",
-    "add": "Add Subscription",
-    "edit": "Edit Subscription",
-    "delete": "Delete Subscription",
+  "profile": {
+    "noUser": "No user data found.",
+    "defaultDisplayName": "User",
+    "verified": "Verified",
+    "edit": "Edit",
+    "logout": "Logout"
+  },
+  "currentProfile": "Current Profile",
+  "guest": "Guest",
+  "emailAddress": "Email Address",
+  "notAvailable": "N/A",
+  "searchHistory": {
+    "recent": "Recent Search History",
+    "noRecords": "No search records found",
+    "trending": "Trending Searches",
+    "hits": "hits"
+  },
+  "tickets": {
+    "title": "My Tickets",
+    "noTickets": "No tickets found.",
+    "status": {
+      "done": "Done",
+      "inProgress": "In Progress"
+    },
+    "id": "ID:",
+    "close": "Close",
+    "viewConversation": "View Conversation",
+    "yourOriginalRequest": "Your Original Request",
+    "you": "You",
+    "supportTeam": "Support Team",
+    "caseResolved": "Case Resolved"
+  },
+  "subscriptions": {
+    "errorLoading": "Error loading subscriptions",
+    "deleteFailed": "Failed to delete subscription",
+    "title": "My Subscriptions",
+    "status": {
+      "active": "ACTIVE",
+      "inactive": "INACTIVE"
+    },
+    "paid": "✓ Paid",
+    "unpaid": "⚠ Unpaid",
     "category": "Category",
     "region": "Region",
-    "cities": "City",
+    "cities": "Cities",
     "priceRange": "Price Range",
-    "minPrice": "Min Price",
-    "maxPrice": "Max Price",
-    "submit": "Create Alert",
-    "submitting": "Saving...",
-    "success": "Alert created successfully!",
-    "error": "An error occurred. Please try again.",
-    "required": "Please fill all required fields.",
-    "selectCategory": "Select category",
-    "selectRegion": "Select region",
-    "selectCities": "Select cities",
-    "addCity": "+ Add city",
-    "newCityPlaceholder": "Enter new city name",
-    "actions": {
-      "edit": "Edit",
-      "delete": "Delete"
-    },
-    "status": {
-      "active": "Active",
-      "inactive": "Inactive"
-    }
+    "created": "Created:",
+    "expired": "Expired:",
+    "expires": "Expires:",
+    "processing": "Processing...",
+    "payNow": "Pay Now",
+    "delete": "Delete"
   },
-  "supportModule": {
-    "loginRequired": "Please log in to submit a support ticket.",
-    "title": "Support",
-    "subtitle": "Submit a ticket to get help.",
-    "historyButton": "History",
-    "form": {
-      "subjectPlaceholder": "Subject",
-      "bodyPlaceholder": "How can we help you?",
-      "submit": "Submit Ticket",
-      "submitting": "Submitting..."
-    }
-  },
-  "wantSell": {
-    "title": "Sell Item"
-  },
-  "jobsPage": {
-    "title": "Jobs",
-    "heading": "Job Listings",
-    "foundCount": "Found {{count}} opportunities",
-    "latestUpdates": "Latest Updates",
-    "backToAll": "Back to All Jobs",
-    "searchPlaceholder": "Search by job title or company...",
-    "loading": "Loading jobs...",
-    "noResults": "No matches found for \"{{query}}\"",
-    "itTitle": "IT & Software Jobs",
-    "airportsTitle": "Airport & Aviation Jobs",
-    "cleaningTitle": "Public & Cleaning Jobs",
-    "itLink": "IT",
-    "airportsLink": "Airport",
-    "publicLink": "Public",
-    "seaportLink": "Seaport",
-    "notFound": "Job not found",
-    "jobDescription": "Job Description",
-    "applicationSuccess": "Application Submitted Successfully!",
-    "backLabel": "Back to Job Listings",
-    "application": {
-      "applyFor": "Apply for: {{title}}",
-      "personalInformation": "Personal Information",
-      "thankYou": "Thank you for your application: {{title}} at {{company}}. We'll be in touch shortly.",
-      "fullNameLabel": "Full Name *",
-      "fullNamePlaceholder": "Enter your full name",
-      "emailLabel": "Email Address *",
-      "emailPlaceholder": "example@email.com",
-      "phoneLabel": "Phone Number *",
-      "phonePlaceholder": "+252 (optional format)",
-      "linkedinLabel": "LinkedIn/Portfolio URL",
-      "linkedinPlaceholder": "https://linkedin.com/in/...",
-      "documents": "Documents",
-      "uploadResume": "Upload Resume/CV (PDF/DOCX) *",
-      "noFileChosen": "No file chosen",
-      "coverLetterLabel": "Cover Letter",
-      "coverLetterPlaceholder": "Write your cover letter here (Why are you a good fit for this job?)",
-      "voluntary": "Voluntary Self-Identification",
-      "genderLabel": "Gender",
-      "genderPlaceholder": "Choose",
-      "submit": "Submit Application"
-    }
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "nav": {
-      "profile": "Profile",
-      "settings": "Settings",
-      "logout": "Logout"
-    },
-    "profile": {
-      "title": "My Profile",
-      "username": "Username",
-      "email": "Email",
-      "phone": "Phone",
-      "role": "Role",
-      "memberSince": "Member Since",
-      "updateImage": "Update Profile Photo",
-      "usernameUpdated": "Username updated",
-      "phoneUpdated": "Phone updated",
-      "imageUpdated": "Profile image updated",
-      "updateFailed": "Update failed",
-      "deleteAccount": "Delete My Account",
-      "deleteConfirm": "Are you sure you want to delete your account? This cannot be undone.",
-      "noUser": "No user found. Please log in.",
-      "admin": "Admin",
-      "manager": "Manager",
-      "support": "Support",
-      "user": "User"
-    }
-  },
-  "cookiesPage": {
-    "heading": "Cookies Policy",
-    "paragraphs": [
-      "This website uses cookies to ensure you get the best experience on our website.",
-      "Cookies are small text files that are placed on your device to help the site provide a better user experience.",
-      "You can disable cookies in your browser settings, but some features of the site may not function properly.",
-      "By continuing to use this site, you consent to our use of cookies as described in this policy."
-    ]
-  },
-  "adminTable": {
-    "image": "Image",
-    "title": "Title",
-    "category": "Category",
-    "subcategory": "Subcategory",
-    "mainCategory": "Main Category",
-    "price": "Price",
-    "city": "City",
-    "seller": "Seller",
-    "paid": "Paid",
-    "unpaid": "Unpaid",
-    "actions": "Actions",
+  "businesses": {
+    "noAccountInfo": "No account information found.",
+    "checkLogin": "Please ensure you are logged in correctly.",
+    "noBusinessConnected": "No business is connected to this account",
+    "contactAdmin": "Your account is not connected to a business yet. Contact your account administrator to gain access to the Business Center.",
+    "userInfo": "User Information:",
+    "id": "ID:",
+    "ifBusinessCustomer": "If you are a business customer",
+    "contactAdminDesc": "Contact your colleague who has admin rights for your business to add this account.",
+    "becomeBusinessCustomer": "Become a business customer",
+    "createProfileDesc": "Create your business profile to start advertising.",
+    "startNow": "Start now",
+    "title": "Business Center",
+    "newBusiness": "New Business",
+    "registerBusiness": "Register your business",
+    "registerDesc": "Register your company to start posting as a business customer. Your listings will be reviewed and verified by our team.",
+    "benefits": "Business benefits",
+    "benefit1": "Invoice payment",
+    "benefit2": "Dedicated contact person",
+    "benefit3": "Company profiling on all listings",
+    "benefit4": "Link to your company website in ads",
+    "advertiseIn": "Advertise in:",
+    "submitVerification": "Submit for verification",
+    "submitting": "Submitting...",
+    "pendingVerification": "Your registration is pending admin verification before you can post listings.",
+    "canPostDesc": "Your business is verified. You can post listings on behalf of this company.",
+    "postIn": "Post in",
+    "registerTitle": "Register Business",
+    "companyName": "Company name",
+    "orgNumber": "Org. number",
+    "businessEmail": "Business email",
+    "phone": "Phone",
+    "contactPerson": "Contact person",
+    "website": "Website",
+    "address": "Address",
+    "description": "Description",
+    "selectCategories": "Where do you want to advertise?",
+    "selectAtLeastOne": "Select at least one category",
     "delete": "Delete",
+    "cancel": "Cancel",
+    "verified": "Verified",
+    "pending": "Pending",
+    "active": "Active",
+    "inactive": "Inactive",
+    "suspended": "Suspended",
+    "categories": {
+      "realestate": "Real Estate",
+      "realestateDesc": "Sale and rental of real estate",
+      "schools": "Schools",
+      "schoolsDesc": "Educational institutions and training centers",
+      "motor": "Motor",
+      "motorDesc": "Vehicles, boats and machinery",
+      "marketplace": "Marketplace",
+      "marketplaceDesc": "Sale of items"
+    },
+    "choosePlan": "Choose a plan to start posting listings",
+    "stepApply": "Apply",
+    "stepApproval": "Approval",
+    "stepPlan": "Plan",
+    "stepPost": "Post"
+  },
+  "myAds": {
+    "deleteFailed": "Delete ad failed.",
+    "relistConfirm": "Pay $5 to relist this item?",
+    "paymentSuccess": "Payment successful! Your ad is now active.",
+    "paymentFailed": "Payment failed. Please try again.",
+    "title": "My Ads",
+    "empty": "You haven't created any ads yet.",
+    "createFirst": "Create Your First Ad",
+    "itemPlaceholder": "item",
+    "sold": "✓ Sold",
+    "payToRelist": "💳 Pay to Relist",
+    "payNow": "Pay Now $5",
     "edit": "Edit",
-    "markPaid": "Mark Paid",
-    "markUnpaid": "Mark Unpaid",
-    "noItems": "No items found",
-    "status": "Status",
-    "error": "Error",
-    "tryAgain": "Try Again",
-    "seeMore": "See More",
-    "loading": "Loading...",
-    "total": "Total",
-    "showing": "Showing",
-    "search": "Search",
-    "refresh": "Refresh",
-    "name": "Name",
+    "delete": "Delete"
+  }
+} as const;
+
+export const descriptions = {
+  "myAdsDesc": "See all your ads and track statistics",
+  "myAccountDesc": "View your details on KARAADI and Smartsuuq",
+  "settingsDesc": "Manage your account settings on KARAADI",
+  "favoritesDesc": "View all ads you like and have saved on KARAADI",
+  "savedSearchesDesc": "Manage and customize your saved searches",
+  "forBusinessesDesc": "View companies you have access to",
+  "contactHistoryDesc": "Track your support requests and messages",
+  "mySubscriptionsDesc": "Manage your subscriptions and payment plans"
+} as const;
+
+export const messages = {
+  "title": "Messages"
+} as const;
+
+export const chats = {
+  "yourChats": "Your Chats",
+  "conversations": "conversation",
+  "noMessagesYet": "No messages yet",
+  "startConversation": "Start a conversation by sending a message!",
+  "aboutPrefix": "About:",
+  "deleted": {
+    "you": "You deleted this message",
+    "other": "This message was deleted"
+  },
+  "edited": "edited",
+  "failed": "Failed",
+  "online": "Online",
+  "offline": "Offline",
+  "seller": "Seller",
+  "chatFallback": "Chat",
+  "selectConversationMobile": "Select a conversation",
+  "welcome": "Welcome to Messages",
+  "tapToStart": "Tap on a chat to start messaging",
+  "selectToStart": "Select a conversation to start chatting",
+  "confirmDelete": "Are you sure you want to delete this chat?",
+  "deletedSuccess": "Chat deleted",
+  "deletedFailed": "Failed to delete chat",
+  "delete": "Delete"
+} as const;
+
+export const checkout = {
+  "title": "Checkout",
+  "description": "Complete your checkout process",
+  "signIn": "Sign In",
+  "newAd": "New Ad",
+  "payment": "Payment"
+} as const;
+
+export const plan = {
+  "selectHeading": "Choose Your",
+  "plan": "Plan",
+  "itemFee": "Item Fee:",
+  "planPrice": "Plan Price:",
+  "total": "Total:",
+  "selected": "✓ Selected",
+  "clickToSelect": "Click to select",
+  "days": "days",
+  "currency": "USD"
+} as const;
+
+export const summary = {
+  "review": "Review",
+  "verifyDetails": "Verify your listing and complete payment",
+  "listingSummary": "Listing Summary"
+} as const;
+
+export const payment = {
+  "payment": "Payment"
+} as const;
+
+export const paymentPage = {
+  "pageTitle": "Payment",
+  "heading": "Payment",
+  "subheading": "Complete Your Payment",
+  "selectPaymentType": "Select Payment Type",
+  "mobileMoney": "Mobile Money",
+  "cardPayment": "Card Payment",
+  "processing": "Processing...",
+  "confirmPayment": "Confirm Payment",
+  "orderSummary": "Order Summary",
+  "itemId": "Item ID",
+  "plan": "Plan",
+  "paymentMethod": "Payment Method",
+  "total": "TOTAL"
+} as const;
+
+export const subscription = {
+  "title": "Subscription Settings",
+  "liveScanner": "Live Scanner Active",
+  "createNewAlert": "Create New Alert",
+  "createNewAlertSub": "Get notified when a matching item is posted",
+  "alertTitle": "Alert Title",
+  "subcategoryLabel": "Subcategory",
+  "description": "Notes",
+  "descriptionPlaceholder": "Optional: describe what you're looking for...",
+  "myAlerts": "My Alerts",
+  "noAlerts": "No alerts yet",
+  "match": "match",
+  "matches": "matches",
+  "refresh": "Refresh",
+  "deleteAlert": "Delete alert",
+  "notifyHint": "You will be notified in /notifications whenever someone posts an item that matches your alert criteria.",
+  "add": "Add Subscription",
+  "edit": "Edit Subscription",
+  "delete": "Delete Subscription",
+  "category": "Category",
+  "region": "Region",
+  "cities": "City",
+  "priceRange": "Price Range",
+  "minPrice": "Min Price",
+  "maxPrice": "Max Price",
+  "submit": "Create Alert",
+  "submitting": "Saving...",
+  "success": "Alert created successfully!",
+  "error": "An error occurred. Please try again.",
+  "required": "Please fill all required fields.",
+  "selectCategory": "Select category",
+  "selectRegion": "Select region",
+  "selectCities": "Select cities",
+  "addCity": "+ Add city",
+  "newCityPlaceholder": "Enter new city name",
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  }
+} as const;
+
+export const supportModule = {
+  "loginRequired": "Please log in to submit a support ticket.",
+  "title": "Support",
+  "subtitle": "Submit a ticket to get help.",
+  "historyButton": "History",
+  "form": {
+    "subjectPlaceholder": "Subject",
+    "bodyPlaceholder": "How can we help you?",
+    "submit": "Submit Ticket",
+    "submitting": "Submitting..."
+  }
+} as const;
+
+export const wantSell = {
+  "title": "Sell Item"
+} as const;
+
+export const jobsPage = {
+  "title": "Jobs",
+  "heading": "Job Listings",
+  "foundCount": "Found {{count}} opportunities",
+  "latestUpdates": "Latest Updates",
+  "backToAll": "Back to All Jobs",
+  "searchPlaceholder": "Search by job title or company...",
+  "loading": "Loading jobs...",
+  "noResults": "No matches found for \"{{query}}\"",
+  "itTitle": "IT & Software Jobs",
+  "airportsTitle": "Airport & Aviation Jobs",
+  "cleaningTitle": "Public & Cleaning Jobs",
+  "itLink": "IT",
+  "airportsLink": "Airport",
+  "publicLink": "Public",
+  "seaportLink": "Seaport",
+  "notFound": "Job not found",
+  "jobDescription": "Job Description",
+  "applicationSuccess": "Application Submitted Successfully!",
+  "backLabel": "Back to Job Listings",
+  "application": {
+    "applyFor": "Apply for: {{title}}",
+    "personalInformation": "Personal Information",
+    "thankYou": "Thank you for your application: {{title}} at {{company}}. We'll be in touch shortly.",
+    "fullNameLabel": "Full Name *",
+    "fullNamePlaceholder": "Enter your full name",
+    "emailLabel": "Email Address *",
+    "emailPlaceholder": "example@email.com",
+    "phoneLabel": "Phone Number *",
+    "phonePlaceholder": "+252 (optional format)",
+    "linkedinLabel": "LinkedIn/Portfolio URL",
+    "linkedinPlaceholder": "https://linkedin.com/in/...",
+    "documents": "Documents",
+    "uploadResume": "Upload Resume/CV (PDF/DOCX) *",
+    "noFileChosen": "No file chosen",
+    "coverLetterLabel": "Cover Letter",
+    "coverLetterPlaceholder": "Write your cover letter here (Why are you a good fit for this job?)",
+    "voluntary": "Voluntary Self-Identification",
+    "genderLabel": "Gender",
+    "genderPlaceholder": "Choose",
+    "submit": "Submit Application"
+  }
+} as const;
+
+export const dashboard = {
+  "title": "Dashboard",
+  "nav": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "profile": {
+    "title": "My Profile",
+    "username": "Username",
     "email": "Email",
     "phone": "Phone",
-    "username": "Username",
-    "profile": "Profile",
-    "created": "Created",
-    "visitors": "Visitors",
-    "visitor": "Visitor",
-    "ip": "IP Address",
-    "page": "Page",
-    "date": "Date",
-    "location": "Location",
-    "type": "Type",
-    "specialty": "Specialty",
-    "agencies": "Agencies",
-    "users": "User Management",
-    "manageUsers": "Manage all registered users",
-    "editAgency": "Edit Agency",
-    "newAgency": "New Agency",
-    "updateAgency": "Update Agency",
-    "saveAgency": "Save Agency",
-    "createAgency": "Create Agency",
-    "verifyStatus": "Verified",
-    "pendingStatus": "Pending",
-    "retry": "Retry",
-    "noVisitorsFound": "No visitors found",
-    "inbox": "Inbox",
-    "noTickets": "No tickets found",
-    "resolve": "Resolve",
-    "replyPlaceholder": "Reply to client...",
-    "selectConversation": "Select a conversation",
-    "chatMonitor": "Chat Monitor",
-    "liveTracking": "Live conversation tracking",
-    "searchChats": "Search chats...",
-    "allChats": "All Chats",
-    "recent": "Recent",
-    "noChatsFound": "No chats found",
-    "trySearchFilter": "Try changing your search or filter",
-    "totalChats": "Total Chats",
-    "activeNow": "Active Now",
-    "totalMessages": "Total Messages",
-    "chatMonitorActive": "Chat Monitor Active",
-    "selectChatSidebar": "Select a chat from the sidebar to view live conversations",
-    "openChatList": "Open Chat List",
-    "noMessages": "No messages in this chat yet",
-    "settingsTitle": "Settings",
-    "settingsSubtitle": "Manage essential marketplace and geographical settings.",
-    "citiesManagement": "Cities Management",
-    "citiesSubtitle": "Manage cities and their availability across regions",
-    "backToSettings": "Back to Settings",
-    "active": "Active",
-    "disabled": "Disabled",
-    "save": "Save",
-    "cancel": "Cancel",
-    "disable": "Disable",
-    "enable": "Enable",
-    "citiesLinked": "Cities Linked",
-    "viewCities": "View Cities",
-    "noCitiesFound": "No cities found in this region",
-    "noRegions": "No regions found",
-    "refreshing": "Refreshing...",
-    "regionsTitle": "Regions",
-    "regionsSubtitle": "Manage geographical areas and their linked city counts.",
-    "subscriptions": "Subscriptions",
-    "manageSubscriptions": "Manage automated user alerts and preferences",
-    "clear": "Clear",
-    "filters": "Filters",
-    "thisWeek": "This Week",
-    "inactive": "Inactive",
-    "hide": "Hide",
-    "reportsManagement": "Reports Management",
-    "totalReportsLabel": "Total Reports",
-    "reporter": "Reporter",
-    "reason": "Reason",
-    "itemType": "Item Type",
-    "viewDetails": "View Details",
-    "deleteReport": "Delete Report",
-    "reportsByDay": "Reports by Day",
-    "topReasons": "Top Report Reasons",
-    "reportsByType": "Reports by Type",
-    "yesterday": "Yesterday",
-    "today": "Today",
-    "applyFilters": "Apply Filters",
-    "allStatus": "All Status",
-    "allTypes": "All Types",
-    "previous": "Previous",
-    "next": "Next",
-    "reports": "reports",
-    "inProgress": "In Progress",
-    "done": "Done",
-    "resolved": "Resolved",
-    "closed": "Closed",
-    "new": "New",
-    "searchAnalytics": "Search Analytics",
-    "topPerformer": "Top Performer",
-    "totalVolume": "Total Volume",
-    "uniqueTerms": "Unique Terms",
-    "noSearchData": "No search data available",
-    "refreshStats": "Refresh Statistics",
-    "totalHits": "Total Hits",
-    "businesses": "Businesses",
-    "verifyManage": "Verify and manage registered businesses",
-    "approve": "Approve",
-    "suspend": "Suspend",
-    "reactivate": "Reactivate",
-    "verify": "Verify",
-    "noBusinesses": "No businesses found",
-    "hideListings": "Hide listings",
-    "viewListings": "View listings",
-    "noListings": "No listings created yet.",
-    "allStatuses": "All statuses",
-    "securitySettings": "Security Settings",
-    "enabled": "Enabled",
-    "revenue": "Revenue",
-    "completed": "Completed",
-    "pending": "Pending",
-    "failed": "Failed",
-    "noPayments": "No payments found.",
-    "paidFrom": "Paid From",
-    "listing": "Listing",
-    "amount": "Amount",
-    "method": "Method",
-    "user": "User",
-    "feeDashboard": "Fee Dashboard",
-    "updateAllPrices": "Update All Prices",
-    "advertisementManager": "Advertisement Manager",
-    "advertisementSubtitle": "Create and manage two types of ads: Sidebar (small card) and Background (full-width banner)",
-    "sidebarAds": "Sidebar Ads",
-    "backgroundAds": "Background Ads",
-    "noSidebarAds": "No sidebar ads yet",
-    "noBackgroundAds": "No background ads yet",
-    "sidebarAd": "Sidebar Ad",
-    "backgroundAd": "Background Ad",
-    "sidebarHint": "Small card shown beside listings",
-    "backgroundHint": "Full-width banner shown across the website",
-    "pause": "Pause",
-    "activate": "Activate",
-    "saving": "Saving...",
-    "livePreview": "Live preview",
-    "update": "Update",
-    "create": "Create",
-    "businessPlansTitle": "Business Plans",
-    "businessPlansSubtitle": "Manage plans — changes apply immediately to new business activity.",
-    "addPlan": "Add Plan",
-    "planName": "Plan Name",
-    "durationDays": "Duration (days)",
-    "maxListings": "Max Listings",
-    "noPlans": "No plans yet. Create the first one above.",
-    "updatePlan": "Update Plan",
-    "createPlan": "Create Plan",
-    "verificationQueue": "Verification Queue",
-    "verificationQueueSubtitle": "Businesses awaiting admin approval.",
-    "noPendingBusinesses": "No pending businesses.",
-    "company": "Company",
-    "owner": "Owner",
-    "orgNumber": "Org #",
-    "registered": "Registered",
-    "approving": "Approving...",
-    "totalUsers": "Total Users",
-    "totalVisited": "Total Visited",
-    "messages": "Messages",
-    "advertisements": "Advertisements",
-    "refreshList": "Refresh List",
-    "lastVisited": "Last Visited",
-    "visitorId": "Visitor ID",
-    "visitorManager": "Visitor Manager",
-    "marketplace": "Marketplace",
-    "totalProperties": "Total Properties",
-    "motorcycles": "Motorcycles",
-    "boats": "Boats",
-    "farmEquipment": "Farm Equipment",
-    "totalListings": "Total Listings"
-  },
-  "citySelect": {
-    "search": "Search city...",
-    "noResults": "No cities found",
-    "addNew": "ADD NEW CITY",
-    "newPlaceholder": "New city name...",
-    "save": "Save"
-  },
-  "recommendations": {
-    "title": "Recommended for You",
-    "subtitleLoggedIn": "Recommended based on your interests",
-    "subtitleGuest": "Log in for personalized recommendations",
-    "noDescription": "No description available",
-    "viewDetails": "View Details →",
-    "error": "Something went wrong while loading recommendations",
-    "retry": "Try Again"
-  },
-  "realEstateDetail": {
-    "propertyDetails": "Property Details",
-    "bedroomsLabel": "Bedrooms",
-    "bathroomsLabel": "Bathrooms",
-    "sizeSqmLabel": "Size",
-    "floorLabel": "Floor",
-    "totalFloorsLabel": "Total Floors",
-    "propertyTypeLabel": "Property Type",
-    "categoryLabel": "Category",
-    "subcategoryLabel": "Subcategory",
-    "addressLabel": "Address",
-    "regionLabel": "Region / City",
-    "featuresLabel": "Features",
-    "amenitiesLabel": "Amenities",
-    "descriptionLabel": "Description",
-    "furnished": "Furnished",
-    "parking": "Parking",
-    "garage": "Garage",
-    "garden": "Garden",
-    "swimmingPool": "Swimming Pool",
-    "gym": "Gym",
-    "security": "Security",
-    "elevator": "Elevator",
-    "generator": "Generator",
-    "waterSupply": "Water Supply",
-    "airConditioning": "Air Conditioning",
-    "balcony": "Balcony",
-    "sqm": "sqm",
-    "readMore": "Read More",
-    "showLess": "Show Less",
-    "listingNotFound": "Listing not found",
-    "sold": "Sold",
-    "itemSold": "Item sold",
-    "activeSeller": "Active seller",
-    "sendMessage": "Send Message",
-    "opening": "Opening...",
-    "showPhone": "Show phone number",
-    "reportItem": "Report this item",
-    "waaLaGatay": "SOLD OUT"
+    "role": "Role",
+    "memberSince": "Member Since",
+    "updateImage": "Update Profile Photo",
+    "usernameUpdated": "Username updated",
+    "phoneUpdated": "Phone updated",
+    "imageUpdated": "Profile image updated",
+    "updateFailed": "Update failed",
+    "deleteAccount": "Delete My Account",
+    "deleteConfirm": "Are you sure you want to delete your account? This cannot be undone.",
+    "noUser": "No user found. Please log in.",
+    "admin": "Admin",
+    "manager": "Manager",
+    "support": "Support",
+    "user": "User"
   }
+} as const;
+
+export const cookiesPage = {
+  "heading": "Cookies Policy",
+  "paragraphs": [
+    "This website uses cookies to ensure you get the best experience on our website.",
+    "Cookies are small text files that are placed on your device to help the site provide a better user experience.",
+    "You can disable cookies in your browser settings, but some features of the site may not function properly.",
+    "By continuing to use this site, you consent to our use of cookies as described in this policy."
+  ]
+} as const;
+
+export const adminTable = {
+  "image": "Image",
+  "title": "Title",
+  "category": "Category",
+  "subcategory": "Subcategory",
+  "mainCategory": "Main Category",
+  "price": "Price",
+  "city": "City",
+  "seller": "Seller",
+  "paid": "Paid",
+  "unpaid": "Unpaid",
+  "actions": "Actions",
+  "delete": "Delete",
+  "edit": "Edit",
+  "markPaid": "Mark Paid",
+  "markUnpaid": "Mark Unpaid",
+  "noItems": "No items found",
+  "status": "Status",
+  "error": "Error",
+  "tryAgain": "Try Again",
+  "seeMore": "See More",
+  "loading": "Loading...",
+  "total": "Total",
+  "showing": "Showing",
+  "search": "Search",
+  "refresh": "Refresh",
+  "name": "Name",
+  "email": "Email",
+  "phone": "Phone",
+  "username": "Username",
+  "profile": "Profile",
+  "created": "Created",
+  "visitors": "Visitors",
+  "visitor": "Visitor",
+  "ip": "IP Address",
+  "page": "Page",
+  "date": "Date",
+  "location": "Location",
+  "type": "Type",
+  "specialty": "Specialty",
+  "agencies": "Agencies",
+  "users": "User Management",
+  "manageUsers": "Manage all registered users",
+  "editAgency": "Edit Agency",
+  "newAgency": "New Agency",
+  "updateAgency": "Update Agency",
+  "saveAgency": "Save Agency",
+  "createAgency": "Create Agency",
+  "verifyStatus": "Verified",
+  "pendingStatus": "Pending",
+  "retry": "Retry",
+  "noVisitorsFound": "No visitors found",
+  "inbox": "Inbox",
+  "noTickets": "No tickets found",
+  "resolve": "Resolve",
+  "replyPlaceholder": "Reply to client...",
+  "selectConversation": "Select a conversation",
+  "chatMonitor": "Chat Monitor",
+  "liveTracking": "Live conversation tracking",
+  "searchChats": "Search chats...",
+  "allChats": "All Chats",
+  "recent": "Recent",
+  "noChatsFound": "No chats found",
+  "trySearchFilter": "Try changing your search or filter",
+  "totalChats": "Total Chats",
+  "activeNow": "Active Now",
+  "totalMessages": "Total Messages",
+  "chatMonitorActive": "Chat Monitor Active",
+  "selectChatSidebar": "Select a chat from the sidebar to view live conversations",
+  "openChatList": "Open Chat List",
+  "noMessages": "No messages in this chat yet",
+  "settingsTitle": "Settings",
+  "settingsSubtitle": "Manage essential marketplace and geographical settings.",
+  "citiesManagement": "Cities Management",
+  "citiesSubtitle": "Manage cities and their availability across regions",
+  "backToSettings": "Back to Settings",
+  "active": "Active",
+  "disabled": "Disabled",
+  "save": "Save",
+  "cancel": "Cancel",
+  "disable": "Disable",
+  "enable": "Enable",
+  "citiesLinked": "Cities Linked",
+  "viewCities": "View Cities",
+  "noCitiesFound": "No cities found in this region",
+  "noRegions": "No regions found",
+  "refreshing": "Refreshing...",
+  "regionsTitle": "Regions",
+  "regionsSubtitle": "Manage geographical areas and their linked city counts.",
+  "subscriptions": "Subscriptions",
+  "manageSubscriptions": "Manage automated user alerts and preferences",
+  "clear": "Clear",
+  "filters": "Filters",
+  "thisWeek": "This Week",
+  "inactive": "Inactive",
+  "hide": "Hide",
+  "reportsManagement": "Reports Management",
+  "totalReportsLabel": "Total Reports",
+  "reporter": "Reporter",
+  "reason": "Reason",
+  "itemType": "Item Type",
+  "viewDetails": "View Details",
+  "deleteReport": "Delete Report",
+  "reportsByDay": "Reports by Day",
+  "topReasons": "Top Report Reasons",
+  "reportsByType": "Reports by Type",
+  "yesterday": "Yesterday",
+  "today": "Today",
+  "applyFilters": "Apply Filters",
+  "allStatus": "All Status",
+  "allTypes": "All Types",
+  "previous": "Previous",
+  "next": "Next",
+  "reports": "reports",
+  "inProgress": "In Progress",
+  "done": "Done",
+  "resolved": "Resolved",
+  "closed": "Closed",
+  "new": "New",
+  "searchAnalytics": "Search Analytics",
+  "topPerformer": "Top Performer",
+  "totalVolume": "Total Volume",
+  "uniqueTerms": "Unique Terms",
+  "noSearchData": "No search data available",
+  "refreshStats": "Refresh Statistics",
+  "totalHits": "Total Hits",
+  "businesses": "Businesses",
+  "verifyManage": "Verify and manage registered businesses",
+  "approve": "Approve",
+  "suspend": "Suspend",
+  "reactivate": "Reactivate",
+  "verify": "Verify",
+  "noBusinesses": "No businesses found",
+  "hideListings": "Hide listings",
+  "viewListings": "View listings",
+  "noListings": "No listings created yet.",
+  "allStatuses": "All statuses",
+  "securitySettings": "Security Settings",
+  "enabled": "Enabled",
+  "revenue": "Revenue",
+  "completed": "Completed",
+  "pending": "Pending",
+  "failed": "Failed",
+  "noPayments": "No payments found.",
+  "paidFrom": "Paid From",
+  "listing": "Listing",
+  "amount": "Amount",
+  "method": "Method",
+  "user": "User",
+  "feeDashboard": "Fee Dashboard",
+  "updateAllPrices": "Update All Prices",
+  "advertisementManager": "Advertisement Manager",
+  "advertisementSubtitle": "Create and manage two types of ads: Sidebar (small card) and Background (full-width banner)",
+  "sidebarAds": "Sidebar Ads",
+  "backgroundAds": "Background Ads",
+  "noSidebarAds": "No sidebar ads yet",
+  "noBackgroundAds": "No background ads yet",
+  "sidebarAd": "Sidebar Ad",
+  "backgroundAd": "Background Ad",
+  "sidebarHint": "Small card shown beside listings",
+  "backgroundHint": "Full-width banner shown across the website",
+  "pause": "Pause",
+  "activate": "Activate",
+  "saving": "Saving...",
+  "livePreview": "Live preview",
+  "update": "Update",
+  "create": "Create",
+  "businessPlansTitle": "Business Plans",
+  "businessPlansSubtitle": "Manage plans — changes apply immediately to new business activity.",
+  "addPlan": "Add Plan",
+  "planName": "Plan Name",
+  "durationDays": "Duration (days)",
+  "maxListings": "Max Listings",
+  "noPlans": "No plans yet. Create the first one above.",
+  "updatePlan": "Update Plan",
+  "createPlan": "Create Plan",
+  "verificationQueue": "Verification Queue",
+  "verificationQueueSubtitle": "Businesses awaiting admin approval.",
+  "noPendingBusinesses": "No pending businesses.",
+  "company": "Company",
+  "owner": "Owner",
+  "orgNumber": "Org #",
+  "registered": "Registered",
+  "approving": "Approving...",
+  "totalUsers": "Total Users",
+  "totalVisited": "Total Visited",
+  "messages": "Messages",
+  "advertisements": "Advertisements",
+  "refreshList": "Refresh List",
+  "lastVisited": "Last Visited",
+  "visitorId": "Visitor ID",
+  "visitorManager": "Visitor Manager",
+  "marketplace": "Marketplace",
+  "totalProperties": "Total Properties",
+  "motorcycles": "Motorcycles",
+  "boats": "Boats",
+  "farmEquipment": "Farm Equipment",
+  "totalListings": "Total Listings"
+} as const;
+
+export const citySelect = {
+  "search": "Search city...",
+  "noResults": "No cities found",
+  "addNew": "ADD NEW CITY",
+  "newPlaceholder": "New city name...",
+  "save": "Save"
+} as const;
+
+export const recommendations = {
+  "title": "Recommended for You",
+  "subtitleLoggedIn": "Recommended based on your interests",
+  "subtitleGuest": "Log in for personalized recommendations",
+  "noDescription": "No description available",
+  "viewDetails": "View Details →",
+  "error": "Something went wrong while loading recommendations",
+  "retry": "Try Again"
+} as const;
+
+export const realEstateDetail = {
+  "propertyDetails": "Property Details",
+  "bedroomsLabel": "Bedrooms",
+  "bathroomsLabel": "Bathrooms",
+  "sizeSqmLabel": "Size",
+  "floorLabel": "Floor",
+  "totalFloorsLabel": "Total Floors",
+  "propertyTypeLabel": "Property Type",
+  "categoryLabel": "Category",
+  "subcategoryLabel": "Subcategory",
+  "addressLabel": "Address",
+  "regionLabel": "Region / City",
+  "featuresLabel": "Features",
+  "amenitiesLabel": "Amenities",
+  "descriptionLabel": "Description",
+  "furnished": "Furnished",
+  "parking": "Parking",
+  "garage": "Garage",
+  "garden": "Garden",
+  "swimmingPool": "Swimming Pool",
+  "gym": "Gym",
+  "security": "Security",
+  "elevator": "Elevator",
+  "generator": "Generator",
+  "waterSupply": "Water Supply",
+  "airConditioning": "Air Conditioning",
+  "balcony": "Balcony",
+  "sqm": "sqm",
+  "readMore": "Read More",
+  "showLess": "Show Less",
+  "listingNotFound": "Listing not found",
+  "sold": "Sold",
+  "itemSold": "Item sold",
+  "activeSeller": "Active seller",
+  "sendMessage": "Send Message",
+  "opening": "Opening...",
+  "showPhone": "Show phone number",
+  "reportItem": "Report this item",
+  "waaLaGatay": "SOLD OUT"
+} as const;
+
+
+const en = {
+  about, 
+  terms, 
+  contact, 
+  nav, 
+  welcome, 
+  search, 
+  filters, 
+  auth, 
+  lang, 
+  notifications, 
+  footer, 
+  support, 
+  categories, 
+  mohyusLogoAlt, 
+  createAd, 
+  createMarketplace, 
+  createRealEstate, 
+  createCars, 
+  createMotorcycle, 
+  createFarmequipment, 
+  createBoats, 
+  sidebar, 
+  settings, 
+  subcategories, 
+  marketplace, 
+  common, 
+  mine, 
+  descriptions, 
+  messages, 
+  chats, 
+  checkout, 
+  plan, 
+  summary, 
+  payment, 
+  paymentPage, 
+  subscription, 
+  supportModule, 
+  wantSell, 
+  jobsPage, 
+  dashboard, 
+  cookiesPage, 
+  adminTable, 
+  citySelect, 
+  recommendations, 
+  realEstateDetail
 } as const;
 export default en;
