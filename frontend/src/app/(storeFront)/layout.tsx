@@ -26,7 +26,7 @@ export default async function StoreFrontLayout({
         </Suspense>
         <AdFetcher>
           <Container>
-            <Suspense>{children}</Suspense>
+            {children}
           </Container>
         </AdFetcher>
       </main>
