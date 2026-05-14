@@ -23,9 +23,9 @@ import {
 } from "../../types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 
-const COGNITO_REGION = process.env.AWS_REGION ?? "eu-west-1";
-const COGNITO_POOL_ID = process.env.KARAADI_AWS_COGNITO_USER_POOL_ID ?? "eu-west-1_W3gH3awFm";
-const COGNITO_CLIENT_ID = process.env.KARAADI_AWS_COGNITO_CLIENT_ID ?? "1oe14kj0nek85esk0o0vi1griv";
+const COGNITO_REGION = process.env.AWS_REGION;
+const COGNITO_POOL_ID = process.env.KARAADI_AWS_COGNITO_USER_POOL_ID;
+const COGNITO_CLIENT_ID = process.env.KARAADI_AWS_COGNITO_CLIENT_ID;
 
 const jwksUri = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`;
 
@@ -103,7 +103,10 @@ export const deleteMyAccount = async (
       try {
         await deleteFromCognito(targetCognitoId);
       } catch (err: any) {
-        console.error(`Failed to delete user from Cognito: ${targetCognitoId}`, err);
+        console.error(
+          `Failed to delete user from Cognito: ${targetCognitoId}`,
+          err,
+        );
         return res.status(500).json({
           error: "Failed to delete user from Cognito. Please contact support.",
         });
@@ -134,10 +137,12 @@ export const signUp = async (
       { Name: "custom:isManager", Value: "false" },
       { Name: "custom:isSupport", Value: "false" },
     ];
-    if (phoneNumber) {
-      const e164 = phoneNumber.startsWith("+") ? phoneNumber : `+252${phoneNumber}`;
-      userAttributes.push({ Name: "phone_number", Value: e164 });
-    }
+    const phone = phoneNumber
+      ? phoneNumber.startsWith("+")
+        ? phoneNumber
+        : `+252${phoneNumber}`
+      : "+10000000000";
+    userAttributes.push({ Name: "phone_number", Value: phone });
 
     const response = await cognitoClient.send(
       new SignUpCommand({
@@ -188,7 +193,13 @@ export const signIn = async (
     const preferredUsername =
       decodedToken.preferred_username || email.split("@")[0];
 
-    const select = { id: true, username: true, phone: true, profileImage: true, cognitoId: true } as const;
+    const select = {
+      id: true,
+      username: true,
+      phone: true,
+      profileImage: true,
+      cognitoId: true,
+    } as const;
 
     let userRecord = await prisma.user.findUnique({
       where: { cognitoId: decodedToken.sub },
@@ -198,15 +209,29 @@ export const signIn = async (
     if (userRecord) {
       userRecord = await prisma.user.update({
         where: { cognitoId: decodedToken.sub },
-        data: { email: decodedToken.email, username: preferredUsername, isAdmin, isManager, isSupport },
+        data: {
+          email: decodedToken.email,
+          username: preferredUsername,
+          isAdmin,
+          isManager,
+          isSupport,
+        },
         select,
       });
     } else {
-      const byEmail = await prisma.user.findUnique({ where: { email: decodedToken.email } });
+      const byEmail = await prisma.user.findUnique({
+        where: { email: decodedToken.email },
+      });
       if (byEmail) {
         userRecord = await prisma.user.update({
           where: { email: decodedToken.email },
-          data: { cognitoId: decodedToken.sub, username: preferredUsername, isAdmin, isManager, isSupport },
+          data: {
+            cognitoId: decodedToken.sub,
+            username: preferredUsername,
+            isAdmin,
+            isManager,
+            isSupport,
+          },
           select,
         });
       } else {
@@ -216,7 +241,8 @@ export const signIn = async (
             email: decodedToken.email,
             username: preferredUsername,
             phone: cognitoPhone !== "false" ? cognitoPhone : "",
-            profileImage: cognitoProfileImage !== "false" ? cognitoProfileImage : null,
+            profileImage:
+              cognitoProfileImage !== "false" ? cognitoProfileImage : null,
             password: "",
             isAdmin,
             isManager,

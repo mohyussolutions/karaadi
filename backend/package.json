@@ -13,9 +13,9 @@
     "db:studio": "prisma studio --schema ./src/prisma",
     "db:seed": "tsx --env-file=../.env.local src/prisma/seed.ts",
     "db:reset": "tsx --env-file=../.env.local src/prisma/seed.ts -d",
-    "import": "prisma db push --schema ./src/prisma --accept-data-loss && tsx src/prisma/seed.ts",
-    "remove": "tsx src/prisma/seed.ts -d",
-    "reset": "prisma db push --schema ./src/prisma --force-reset && tsx src/prisma/seed.ts",
+    "import": "tsx --env-file=../.env.local src/prisma/seed.ts",
+    "remove": "tsx --env-file=../.env.local src/prisma/seed.ts -d",
+    "reset": "prisma db push --schema ./src/prisma --force-reset && tsx --env-file=../.env.local src/prisma/seed.ts",
     "test": "NODE_OPTIONS='--experimental-vm-modules' npx jest --config jest.config.cjs"
   },
   "keywords": [],

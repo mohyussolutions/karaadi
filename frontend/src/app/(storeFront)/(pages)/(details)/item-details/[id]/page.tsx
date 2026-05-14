@@ -22,7 +22,7 @@ import { trackItemView } from "@/actions/categories/RecommendationActions";
 import ZoomedImageModal from "../../zoomed/ZoomedImageModal";
 import { SEGMENT_LABEL_KEYS } from "../../historyPath/pathSegmentsDisplay";
 import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
-import { useItemSavedCount } from "@/app/(storeFront)/components/hooks/usertotalsavedAfocrite";
+import FavoriteBadge from "@/app/(storeFront)/components/hooks/FavoriteBadge";
 
 interface ItemData {
   _id?: string;
@@ -66,15 +66,22 @@ export default function ProductDetails() {
 
   const { data: rawItem, isLoading: loading } = useSWR<ItemData>(
     id ? `${API}/api/items/${id}` : null,
-    (url: string) => fetch(url).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
-    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 60_000 },
+    (url: string) =>
+      fetch(url).then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      }),
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60_000,
+    },
   );
   const item = useMemo(
-    () => (rawItem ? { ...rawItem, id: (rawItem as any)._id || rawItem.id } : null),
+    () =>
+      rawItem ? { ...rawItem, id: (rawItem as any)._id || rawItem.id } : null,
     [rawItem],
   );
-
-  const { count: savedCount, ready: savedReady } = useItemSavedCount(item?.id);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -91,8 +98,13 @@ export default function ProductDetails() {
 
   useEffect(() => {
     if (!item?.id) return;
-    const cat = Array.isArray(item.category) ? item.category[0] : (item.category ?? "marketplace");
-    const t = setTimeout(() => trackItemView(item.id!, cat, user?.id ?? null), 2000);
+    const cat = Array.isArray(item.category)
+      ? item.category[0]
+      : (item.category ?? "marketplace");
+    const t = setTimeout(
+      () => trackItemView(item.id!, cat, user?.id ?? null),
+      2000,
+    );
     return () => clearTimeout(t);
   }, [item?.id]);
 
@@ -243,13 +255,22 @@ export default function ProductDetails() {
 
   return (
     <div className="my-12 px-4 md:px-6 min-h-screen max-w-7xl mx-auto pb-24 md:pb-0">
-      <nav aria-label="Breadcrumb" className="mb-6 overflow-x-auto scrollbar-hide">
+      <nav
+        aria-label="Breadcrumb"
+        className="mb-6 overflow-x-auto scrollbar-hide"
+      >
         <ol className="flex flex-nowrap items-center gap-1 text-sm whitespace-nowrap">
           {(() => {
-            const rawCat = Array.isArray(item?.category) ? item.category[0] : (item?.category ?? "");
+            const rawCat = Array.isArray(item?.category)
+              ? item.category[0]
+              : (item?.category ?? "");
             const seg = CATEGORY_SEGMENT[rawCat] ?? rawCat.toLowerCase();
             const entry = SEGMENT_LABEL_KEYS[seg];
-            const catLabel = entry ? (language === "so" ? entry.so : entry.en) : rawCat;
+            const catLabel = entry
+              ? language === "so"
+                ? entry.so
+                : entry.en
+              : rawCat;
             const catHref = CATEGORY_HREF[rawCat] ?? "/marketplace";
             return (
               <>
@@ -263,7 +284,9 @@ export default function ProductDetails() {
                     <span>{language === "so" ? "Hoyga" : "Home"}</span>
                   </button>
                 </li>
-                <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-gray-400" /></li>
+                <li aria-hidden="true">
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                </li>
                 <li>
                   <button
                     type="button"
@@ -275,7 +298,9 @@ export default function ProductDetails() {
                 </li>
                 {item?.title && (
                   <>
-                    <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-gray-400" /></li>
+                    <li aria-hidden="true">
+                      <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                    </li>
                     <li>
                       <span className="text-gray-500 font-medium px-1 truncate max-w-[160px] sm:max-w-xs inline-block align-middle">
                         {item.title}
@@ -320,11 +345,7 @@ export default function ProductDetails() {
                     className="relative bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
                   >
                     <AiOutlineHeart className="w-5 h-5 text-red-500" />
-                    {savedReady && savedCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none shadow-sm">
-                        {savedCount > 99 ? "99+" : savedCount}
-                      </span>
-                    )}
+                    <FavoriteBadge itemId={item?.id} />
                   </span>
                   <span className="bg-white/90 p-2.5 rounded-full shadow-md text-gray-700">
                     <AiOutlineZoomIn className="w-5 h-5" />
@@ -434,8 +455,8 @@ export default function ProductDetails() {
                     : "Send Message"}
               </button>
 
-              {itemUser?.phone && (
-                showPhone ? (
+              {itemUser?.phone &&
+                (showPhone ? (
                   <a
                     href={`tel:${itemUser.phone}`}
                     className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-all active:scale-[0.99]"
@@ -451,8 +472,7 @@ export default function ProductDetails() {
                     <Phone size={15} />
                     Show phone number
                   </button>
-                )
-              )}
+                ))}
             </div>
           )}
 
@@ -505,8 +525,8 @@ export default function ProductDetails() {
             </p>
             <p className="text-xs text-gray-500 truncate">{item.title}</p>
           </div>
-          {itemUser?.phone && (
-            showPhone ? (
+          {itemUser?.phone &&
+            (showPhone ? (
               <a
                 href={`tel:${itemUser.phone}`}
                 className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-green-200 text-green-700 bg-green-50 font-bold text-sm hover:bg-green-100 transition-all active:scale-[0.97] flex-shrink-0"
@@ -522,8 +542,7 @@ export default function ProductDetails() {
                 <Phone size={15} />
                 <span className="text-xs">Phone</span>
               </button>
-            )
-          )}
+            ))}
           <button
             onClick={handleSendMessage}
             disabled={item.maGaday || messagingLoading}

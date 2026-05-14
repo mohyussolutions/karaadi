@@ -23,11 +23,14 @@ import { useAuth } from "@/context/AuthContext";
 import { addToFavorite } from "@/actions/categories/favoriteAction";
 import { MessageSquare, Phone } from "lucide-react";
 import dynamic from "next/dynamic";
-const Recommendations = dynamic(() => import("@/app/(storeFront)/components/Recommendations/Recommendations"), { ssr: false });
+const Recommendations = dynamic(
+  () => import("@/app/(storeFront)/components/Recommendations/Recommendations"),
+  { ssr: false },
+);
 import { trackItemView } from "@/actions/categories/RecommendationActions";
 import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import { VEHICLE_CONFIG } from "./VEHICLE_CONFIG";
-import { useItemSavedCount } from "@/app/(storeFront)/components/hooks/usertotalsavedAfocrite";
+import FavoriteBadge from "@/app/(storeFront)/components/hooks/FavoriteBadge";
 
 import type { VehicleType, VehicleItem } from "@/app/utils/types/vehicle";
 
@@ -70,18 +73,24 @@ export function VehicleDetailsContent({
   const [avatarError, setAvatarError] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const typeHint = forceType || (searchParams.get("type") as VehicleType) || null;
+  const typeHint =
+    forceType || (searchParams.get("type") as VehicleType) || null;
 
   const { data: swrResult, isLoading } = useSWR(
     id ? `vehicle-${typeHint ?? "any"}-${id}` : null,
     async () => {
       if (typeHint) {
-        const order: VehicleType[] = [typeHint, ...ALL_TYPES.filter((t) => t !== typeHint)];
+        const order: VehicleType[] = [
+          typeHint,
+          ...ALL_TYPES.filter((t) => t !== typeHint),
+        ];
         for (const t of order) {
           try {
             const data = await VEHICLE_CONFIG[t].fetchFn(id);
             if (data) return { data: normalise(data, t), type: t };
-          } catch { continue; }
+          } catch {
+            continue;
+          }
         }
         return null;
       }
@@ -94,13 +103,20 @@ export function VehicleDetailsContent({
           }),
         );
         return { data: normalise(data, t), type: t };
-      } catch { return null; }
+      } catch {
+        return null;
+      }
     },
-    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 60_000 },
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60_000,
+    },
   );
 
   const vehicle = swrResult?.data ?? null;
-  const vehicleType: VehicleType = swrResult?.type ?? (typeHint || "car") as VehicleType;
+  const vehicleType: VehicleType =
+    swrResult?.type ?? ((typeHint || "car") as VehicleType);
 
   useEffect(() => {
     router.prefetch("/messages");
@@ -114,7 +130,6 @@ export function VehicleDetailsContent({
   }, [vehicle, id, vehicleType, user]);
 
   const config = VEHICLE_CONFIG[vehicleType];
-  const { count: savedCount, ready: savedReady } = useItemSavedCount(vehicle?.id);
   const images = useMemo(
     () =>
       (vehicle?.images ?? [])
@@ -262,11 +277,7 @@ export function VehicleDetailsContent({
                       className="relative bg-white/90 p-2.5 rounded-full shadow-md hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
                     >
                       <AiOutlineHeart className="w-5 h-5 text-red-500" />
-                      {savedReady && savedCount > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none shadow-sm">
-                          {savedCount > 99 ? "99+" : savedCount}
-                        </span>
-                      )}
+                      <FavoriteBadge itemId={vehicle?.id} />
                     </span>
                     <span className="bg-white/90 p-2.5 rounded-full shadow-md text-gray-700">
                       <AiOutlineZoomIn className="w-5 h-5" />
@@ -388,8 +399,8 @@ export function VehicleDetailsContent({
                   : "Send Message"}
             </button>
 
-            {itemUser?.phone && (
-              showPhone ? (
+            {itemUser?.phone &&
+              (showPhone ? (
                 <a
                   href={`tel:${itemUser.phone}`}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm border border-green-200 text-green-700 bg-green-50 hover:bg-green-100 transition-all active:scale-[0.99]"
@@ -405,8 +416,7 @@ export function VehicleDetailsContent({
                   <Phone size={15} />
                   Show phone number
                 </button>
-              )
-            )}
+              ))}
           </div>
 
           {vehicle.maGaday && (
@@ -480,8 +490,8 @@ export function VehicleDetailsContent({
           </p>
           <p className="text-xs text-gray-500 truncate">{vehicle.title}</p>
         </div>
-        {itemUser?.phone && (
-          showPhone ? (
+        {itemUser?.phone &&
+          (showPhone ? (
             <a
               href={`tel:${itemUser.phone}`}
               className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-green-200 text-green-700 bg-green-50 font-bold text-sm hover:bg-green-100 transition-all active:scale-[0.97] flex-shrink-0"
@@ -497,8 +507,7 @@ export function VehicleDetailsContent({
               <Phone size={15} />
               <span className="text-xs">Phone</span>
             </button>
-          )
-        )}
+          ))}
         <button
           onClick={handleSendMessage}
           disabled={isOwnItem || !!vehicle.maGaday || messagingLoading}

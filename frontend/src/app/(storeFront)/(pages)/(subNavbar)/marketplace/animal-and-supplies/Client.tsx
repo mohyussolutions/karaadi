@@ -72,15 +72,24 @@ export default function AnimalAndSupplies() {
     const cats = Array.isArray(item.category) ? item.category : [item.category];
     return cats.some((c: any) => {
       const s = String(c || "").toLowerCase();
-      return s === "animalandsupplies" || s === "animal" || s.includes("animal");
+      return (
+        s === "animalandsupplies" || s === "animal" || s.includes("animal")
+      );
     });
   };
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
-      if (!query.trim()) { setSearchResults([]); return; }
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
       const results = await getGlobalSearchResults(query);
-      setSearchResults(results.filter(matchAnimal).map((item: any) => ({ id: item.id ?? item._id ?? "", ...item })));
+      setSearchResults(
+        results
+          .filter(matchAnimal)
+          .map((item: any) => ({ id: item.id ?? item._id ?? "", ...item })),
+      );
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [query]);
@@ -107,10 +116,17 @@ export default function AnimalAndSupplies() {
     if (selectedSubcategory) {
       const selectedKey = selectedSubcategory.split(".").pop() ?? "";
       list = list.filter((item) => {
-        const subs = Array.isArray(item.subcategory) ? item.subcategory : [item.subcategory];
+        const subs = Array.isArray(item.subcategory)
+          ? item.subcategory
+          : [item.subcategory];
         return subs.some((s) => {
           const stored = String(s || "");
-          return stored === selectedSubcategory || stored.endsWith(`.${selectedKey}`) || stored === selectedKey || stored.toLowerCase().includes(t(selectedSubcategory).toLowerCase());
+          return (
+            stored === selectedSubcategory ||
+            stored.endsWith(`.${selectedKey}`) ||
+            stored === selectedKey ||
+            stored.toLowerCase().includes(t(selectedSubcategory).toLowerCase())
+          );
         });
       });
     }

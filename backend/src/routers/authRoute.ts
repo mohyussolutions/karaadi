@@ -59,23 +59,39 @@ authRouters.post(
   async (req: Request, res: Response) => {
     const { email, password } = req.body;
     try {
-      const { token, refreshToken, userData } = await signIn(email, password, req, res);
-      await setAuthCookies(res, { idToken: token, refreshToken, accessToken: userData.accessToken }, undefined, userData.id);
+      const { token, refreshToken, userData } = await signIn(
+        email,
+        password,
+        req,
+        res,
+      );
+      await setAuthCookies(
+        res,
+        { idToken: token, refreshToken, accessToken: userData.accessToken },
+        undefined,
+        userData.id,
+      );
       res.json({ token, user: userData });
     } catch (err: any) {
       console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);
       const name = err?.name ?? "";
       if (name === "UserNotConfirmedException") {
-        return res.status(401).json({ error: "Please confirm your email before logging in." });
+        return res
+          .status(401)
+          .json({ error: "Please confirm your email before logging in." });
       }
       if (name === "NotAuthorizedException") {
         return res.status(401).json({ error: "Incorrect email or password." });
       }
       if (name === "UserNotFoundException") {
-        return res.status(401).json({ error: "No account found with this email." });
+        return res
+          .status(401)
+          .json({ error: "No account found with this email." });
       }
       if (name === "TooManyRequestsException") {
-        return res.status(429).json({ error: "Too many attempts. Please wait and try again." });
+        return res
+          .status(429)
+          .json({ error: "Too many attempts. Please wait and try again." });
       }
       return res.status(500).json({ error: "Login failed. Please try again." });
     }
@@ -112,8 +128,24 @@ authRouters.post(
       );
       res.json({ message: "User registered successfully", cognitoResult });
     } catch (error: any) {
-      console.error("[REGISTER]", error?.message ?? error);
-      res.status(400).json({ error: error?.message ?? "Registration failed" });
+      console.error("[REGISTER]", error?.name, error?.message);
+      const name = error?.name ?? "";
+      if (name === "UsernameExistsException") {
+        return res.status(400).json({ error: "This email is already in use." });
+      }
+      if (name === "InvalidPasswordException") {
+        return res
+          .status(400)
+          .json({ error: "Password does not meet requirements." });
+      }
+      if (name === "InvalidParameterException") {
+        return res.status(400).json({ error: "Invalid registration details." });
+      }
+      const msg = error?.message ?? "";
+      if (/already in use/i.test(msg)) {
+        return res.status(400).json({ error: "This email is already in use." });
+      }
+      res.status(400).json({ error: "Registration failed. Please try again." });
     }
   },
 );

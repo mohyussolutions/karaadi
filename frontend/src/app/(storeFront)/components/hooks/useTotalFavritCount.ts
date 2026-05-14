@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { FAVORITE_ENDPOINTS } from "@/actions/constant/constant";
+import type { UseTotalFavritCountResult } from "./useTotalFavritCount.types";
 
-export function useItemSavedCount(itemId: string | undefined) {
+export function useTotalFavritCount(
+  itemId: string | undefined,
+): UseTotalFavritCountResult {
   const [count, setCount] = useState<number>(0);
   const [ready, setReady] = useState(false);
 
@@ -19,8 +22,12 @@ export function useItemSavedCount(itemId: string | undefined) {
           setReady(true);
         }
       })
-      .catch(() => { if (!cancelled) setReady(true); });
-    return () => { cancelled = true; };
+      .catch(() => {
+        if (!cancelled) setReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [itemId]);
 
   return { count, ready };

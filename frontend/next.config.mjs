@@ -11,9 +11,9 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   httpAgentOptions: { keepAlive: true },
   outputFileTracingRoot: path.join(__dirname, ".."),
+  turbopack: { root: path.join(__dirname, "..") },
   experimental: {
     serverActions: { bodySizeLimit: "20mb" },
-    turbopack: { root: __dirname },
     optimizePackageImports: [
       "react-icons",
       "lucide-react",
@@ -52,9 +52,13 @@ const nextConfig = {
         headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
       },
       {
-        source: "/(marketplace|cars|boats|real-estate|motorcycles|farmequipment)(.*)",
+        source:
+          "/(marketplace|cars|boats|real-estate|motorcycles|farmequipment)(.*)",
         headers: [
-          { key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=600" },
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=60, stale-while-revalidate=600",
+          },
         ],
       },
       {
