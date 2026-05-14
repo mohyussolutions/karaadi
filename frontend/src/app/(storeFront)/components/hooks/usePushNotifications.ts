@@ -33,12 +33,14 @@ export function usePushNotifications() {
   }, []);
 
   const subscribe = useCallback(async () => {
-    if (!user?._id || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    const userId = user?._id || user?.id;
+    if (!userId || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    setEnabled(true);
     setLoading(true);
     try {
       const perm = await Notification.requestPermission();
       setPermission(perm);
-      if (perm !== "granted") return;
+      if (perm !== "granted") { setEnabled(false); return; }
 
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
@@ -53,12 +55,13 @@ export function usePushNotifications() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ userId: user._id, subscription: sub.toJSON() }),
+        body: JSON.stringify({ userId, subscription: sub.toJSON() }),
       });
 
       localStorage.setItem(SW_KEY, "true");
-      setEnabled(true);
     } catch {
+      setEnabled(false);
+      localStorage.setItem(SW_KEY, "false");
     } finally {
       setLoading(false);
     }
@@ -66,6 +69,7 @@ export function usePushNotifications() {
 
   const unsubscribe = useCallback(async () => {
     if (!("serviceWorker" in navigator)) return;
+    setEnabled(false);
     setLoading(true);
     try {
       const reg = await navigator.serviceWorker.getRegistration("/sw.js");
@@ -80,8 +84,8 @@ export function usePushNotifications() {
         await sub.unsubscribe();
       }
       localStorage.setItem(SW_KEY, "false");
-      setEnabled(false);
     } catch {
+      setEnabled(true);
     } finally {
       setLoading(false);
     }
