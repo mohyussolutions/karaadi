@@ -9,7 +9,9 @@ export default function Home() {
   return (
     <div className={main.page} style={mainStyle.pagePadding}>
       <ContainerLinks>
-        <SearchInput />
+        <div className="pt-4 sm:pt-6">
+          <SearchInput />
+        </div>
       </ContainerLinks>
       <ContainerLinks>
         <div className={main.catWrap}>
