@@ -28,7 +28,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${dmSans.variable}`}>
+    <html lang="en" className={`${dmSans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var m=localStorage.getItem('dashboard-theme');if(m==='dark')document.documentElement.classList.add('dark');}catch(e){}})();` }} />
+      </head>
       <body
         className="antialiased min-h-screen flex flex-col text-[#1A1A1A]"
         suppressHydrationWarning

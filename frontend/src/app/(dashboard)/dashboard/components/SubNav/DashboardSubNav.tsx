@@ -43,7 +43,7 @@ export default function DashboardSubNav({
 
   return (
     <div className="mb-4">
-      <h1 className="text-xl font-bold text-gray-800 dark:text-white mb-3">{title}</h1>
+      <h1 suppressHydrationWarning className="text-xl font-bold text-gray-800 dark:text-white mb-3">{title}</h1>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
         <button onClick={() => onChange("")} className={chip(activeKey === "")}>

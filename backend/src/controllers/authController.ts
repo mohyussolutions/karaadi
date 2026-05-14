@@ -7,6 +7,7 @@ import cacheManager from "src/services/redis/cacheManager.ts";
 import prisma from "src/core/utils/db.ts";
 import {
   signUp,
+  signIn,
   confirmSignUp,
   resendVerificationCode,
   signOut as cognitoSignOut,
@@ -15,6 +16,7 @@ import {
   refreshTokenLogic,
   deleteFromCognito,
 } from "src/core/utils/cognitoauth.ts";
+import { setAuthCookies } from "src/core/utils/cookiesDB.ts";
 
 export const userSignupsByMonth = async (req: Request, res: Response) => {
   try {
@@ -89,6 +91,7 @@ export const deleteUserByAdmin = async (
   res: Response,
 ): Promise<Response> => {
   const { id } = req.params;
+  const requesterId = (req as any).user?.id || (req as any).user?.sub;
 
   const userId = Array.isArray(id) ? (id[0] as string) : (id as string);
 
@@ -96,11 +99,19 @@ export const deleteUserByAdmin = async (
     return res.status(400).json({ error: "User ID is required" });
   }
 
+  if (userId === requesterId) {
+    return res.status(403).json({ error: "You cannot delete your own admin account." });
+  }
+
   try {
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { cognitoId: true },
+      select: { cognitoId: true, isAdmin: true },
     });
+
+    if (dbUser?.isAdmin) {
+      return res.status(403).json({ error: "Admin accounts cannot be deleted." });
+    }
 
     if (!dbUser) {
       return res.status(404).json({ error: "User not found" });
@@ -134,20 +145,20 @@ export const registerUser = async (
   username: string,
   phone?: string,
 ) => {
-  const emailExists = await prisma.user.findUnique({
+  const existingUser = await prisma.user.findUnique({
     where: { email },
-    select: { id: true },
+    select: { id: true, cognitoId: true },
   });
-  if (emailExists)
+  if (existingUser?.cognitoId)
     throw new Error("This email is already in use. Please try another one.");
+
   let cognitoResult: any;
   try {
     cognitoResult = await signUp(email, password, username, phone);
   } catch (err: any) {
     const msg = err?.message || "Failed to sign up user in Cognito";
-    if (/UsernameExistsException|already exists/i.test(msg)) {
+    if (/UsernameExistsException|already exists/i.test(msg))
       throw new Error("This email is already in use. Please try another one.");
-    }
     throw new Error(msg);
   }
 
@@ -155,18 +166,20 @@ export const registerUser = async (
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
-    await prisma.user.create({
-      data: {
-        cognitoId: cognitoSub,
-        username,
-        email,
-        password: hashedPassword,
-        phone: phone || "",
-        isAdmin: false,
-        isManager: false,
-        isSupport: false,
-      },
-    });
+    if (existingUser) {
+      await prisma.user.update({
+        where: { email },
+        data: { cognitoId: cognitoSub, username, password: hashedPassword, phone: phone || "" },
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          cognitoId: cognitoSub, email, username,
+          password: hashedPassword, phone: phone || "",
+          isAdmin: false, isManager: false, isSupport: false,
+        },
+      });
+    }
   } catch (dbErr: any) {
     throw new Error(dbErr?.message || "Failed to create user in database");
   }
@@ -412,6 +425,47 @@ export const getUsersCount = async (_req: Request, res: Response) => {
     res.status(200).json({ totalUsers });
   } catch (error: any) {
     serverError(res, error);
+  }
+};
+
+export const loginUser = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  try {
+    const { token, refreshToken, userData } = await signIn(email, password, req, res);
+    await setAuthCookies(res, { idToken: token, refreshToken, accessToken: userData.accessToken }, undefined, userData.id);
+    res.json({ token, user: userData });
+  } catch (err: any) {
+    console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);
+    const name = err?.name ?? "";
+    if (name === "UserNotConfirmedException")
+      return res.status(401).json({ error: "Please confirm your email before logging in." });
+    if (name === "NotAuthorizedException")
+      return res.status(401).json({ error: "Incorrect email or password." });
+    if (name === "UserNotFoundException")
+      return res.status(401).json({ error: "No account found with this email." });
+    if (name === "TooManyRequestsException")
+      return res.status(429).json({ error: "Too many attempts. Please wait and try again." });
+    return res.status(500).json({ error: "Login failed. Please try again." });
+  }
+};
+
+export const registerUserHandler = async (req: Request, res: Response) => {
+  try {
+    const { email, password, username, phone } = req.body;
+    const cognitoResult = await registerUser(email, password, username, phone);
+    res.json({ message: "User registered successfully", cognitoResult });
+  } catch (error: any) {
+    console.error("[REGISTER]", error?.name, error?.message);
+    const name = error?.name ?? "";
+    if (name === "UsernameExistsException")
+      return res.status(400).json({ error: "This email is already in use." });
+    if (name === "InvalidPasswordException")
+      return res.status(400).json({ error: "Password does not meet requirements." });
+    if (name === "InvalidParameterException")
+      return res.status(400).json({ error: "Invalid registration details." });
+    if (/already in use/i.test(error?.message ?? ""))
+      return res.status(400).json({ error: "This email is already in use." });
+    res.status(400).json({ error: "Registration failed. Please try again." });
   }
 };
 

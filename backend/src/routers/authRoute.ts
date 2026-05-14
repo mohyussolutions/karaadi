@@ -1,7 +1,8 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { validateRequest } from "src/core/middelware/validateRequest.ts";
 import {
-  registerUser,
+  loginUser,
+  registerUserHandler,
   confirmUserSignUp,
   resetCodeUser,
   forgotPasswordIncontroller,
@@ -18,8 +19,6 @@ import {
   userSignupsByMonth,
 } from "src/controllers/authController.ts";
 
-import { Request, Response } from "express";
-
 import {
   registerUserSchema,
   loginUserSchema,
@@ -32,12 +31,11 @@ import {
 } from "src/validation/auth.validation.ts";
 import { createMulterUpload } from "src/hooks/createMulterUpload.ts";
 import { loginLimiter } from "src/core/middelware/securityMiddleware.ts";
-import { setAuthCookies } from "src/core/utils/cookiesDB.ts";
 import {
   adminAndManager,
   ProtectRoute,
 } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
-import { signIn, verifySession } from "src/core/utils/cognitoauth.ts";
+import { verifySession } from "src/core/utils/cognitoauth.ts";
 
 const authRouters = express.Router();
 const upload = createMulterUpload();
@@ -52,51 +50,7 @@ authRouters.post("/auth/echo", (req: Request, res: Response) => {
   res.json({ body: req.body, contentType: req.headers["content-type"] });
 });
 
-authRouters.post(
-  "/auth",
-  loginLimiter,
-  validateRequest(loginUserSchema),
-  async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    try {
-      const { token, refreshToken, userData } = await signIn(
-        email,
-        password,
-        req,
-        res,
-      );
-      await setAuthCookies(
-        res,
-        { idToken: token, refreshToken, accessToken: userData.accessToken },
-        undefined,
-        userData.id,
-      );
-      res.json({ token, user: userData });
-    } catch (err: any) {
-      console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);
-      const name = err?.name ?? "";
-      if (name === "UserNotConfirmedException") {
-        return res
-          .status(401)
-          .json({ error: "Please confirm your email before logging in." });
-      }
-      if (name === "NotAuthorizedException") {
-        return res.status(401).json({ error: "Incorrect email or password." });
-      }
-      if (name === "UserNotFoundException") {
-        return res
-          .status(401)
-          .json({ error: "No account found with this email." });
-      }
-      if (name === "TooManyRequestsException") {
-        return res
-          .status(429)
-          .json({ error: "Too many attempts. Please wait and try again." });
-      }
-      return res.status(500).json({ error: "Login failed. Please try again." });
-    }
-  },
-);
+authRouters.post("/auth", loginLimiter, validateRequest(loginUserSchema), loginUser);
 
 authRouters.put(
   "/profile/phone",
@@ -114,41 +68,7 @@ authRouters.put(
 
 authRouters.get("/all-users", ProtectRoute, adminAndManager, getAllUsers);
 
-authRouters.post(
-  "/register",
-  validateRequest(registerUserSchema),
-  async (req: Request, res: Response) => {
-    try {
-      const { email, password, username, phone } = req.body;
-      const cognitoResult = await registerUser(
-        email,
-        password,
-        username,
-        phone,
-      );
-      res.json({ message: "User registered successfully", cognitoResult });
-    } catch (error: any) {
-      console.error("[REGISTER]", error?.name, error?.message);
-      const name = error?.name ?? "";
-      if (name === "UsernameExistsException") {
-        return res.status(400).json({ error: "This email is already in use." });
-      }
-      if (name === "InvalidPasswordException") {
-        return res
-          .status(400)
-          .json({ error: "Password does not meet requirements." });
-      }
-      if (name === "InvalidParameterException") {
-        return res.status(400).json({ error: "Invalid registration details." });
-      }
-      const msg = error?.message ?? "";
-      if (/already in use/i.test(msg)) {
-        return res.status(400).json({ error: "This email is already in use." });
-      }
-      res.status(400).json({ error: "Registration failed. Please try again." });
-    }
-  },
-);
+authRouters.post("/register", validateRequest(registerUserSchema), registerUserHandler);
 
 authRouters.post(
   "/confirm",

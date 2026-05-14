@@ -1,19 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import dynamic from "next/dynamic";
 import { useAppSelector } from "@/store/slices/hooks/hooks";
 import ThemeApplier from "@/app/ui/Providers/ThemeApplier";
-
-const Sidebar = dynamic(() => import("./components/sidebar/Sidebar"), {
-  ssr: false,
-  loading: () => <div className="w-72 flex-shrink-0 hidden md:block" />,
-});
-
-const Navbar = dynamic(() => import("./components/navbar/Navbar"), {
-  ssr: false,
-  loading: () => <div className="fixed top-0 right-0 left-0 z-40 h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 md:ml-72" />,
-});
+import Sidebar from "./components/sidebar/Sidebar";
+import Navbar from "./components/navbar/Navbar";
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -28,7 +19,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     >
       <ThemeApplier />
       <Sidebar isOpen={sidebarOpen} toggleSidebar={closeSidebar} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div suppressHydrationWarning className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar toggleSidebar={openSidebar} />
         <main
           suppressHydrationWarning
