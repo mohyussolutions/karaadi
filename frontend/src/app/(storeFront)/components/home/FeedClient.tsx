@@ -6,9 +6,7 @@ import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
 import { loadFeedPage } from "@/actions/categories/feedActions";
 import { SEARCH_EVENT } from "@/app/ui/search/SearchInput";
 import { getDetailRoute } from "@/app/utils/getDetailRoute";
-const INITIAL_DISPLAY = 100;
-const DISPLAY_INCREMENT = 20;
-const SERVER_PAGE_SIZE = 100;
+const FEED = { INITIAL: 100, INCREMENT: 20, PAGE_SIZE: 100 };
 
 function dedupById(items: UniversalCardProps[]): UniversalCardProps[] {
   const seen = new Set<string>();
@@ -77,10 +75,10 @@ export default function FeedClient({
 }) {
   const [pool, setPool] = useState(() => dedupById(initialItems));
   const [displayed, setDisplayed] = useState(
-    Math.min(INITIAL_DISPLAY, initialItems.length),
+    Math.min(FEED.INITIAL, initialItems.length),
   );
   const [serverPage, setServerPage] = useState(2);
-  const [exhausted, setExhausted] = useState(initialItems.length < SERVER_PAGE_SIZE);
+  const [exhausted, setExhausted] = useState(initialItems.length < FEED.PAGE_SIZE);
   const [pending, startTransition] = useTransition();
   const [searchResults, setSearchResults] = useState<
     UniversalCardProps[] | null
@@ -116,7 +114,7 @@ export default function FeedClient({
   }, []);
 
   const showMore = () => {
-    const next = displayed + DISPLAY_INCREMENT;
+    const next = displayed + FEED.INCREMENT;
     if (next <= pool.length) {
       setDisplayed(next);
       return;
@@ -141,7 +139,7 @@ export default function FeedClient({
       });
       const merged = [...pool, ...deduped];
       setPool(merged);
-      setDisplayed(Math.min(displayed + DISPLAY_INCREMENT, merged.length));
+      setDisplayed(Math.min(displayed + FEED.INCREMENT, merged.length));
       setServerPage((p) => p + 1);
     });
   };
