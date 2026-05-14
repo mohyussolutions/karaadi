@@ -2,8 +2,10 @@
 
 import { logSearch } from "@/actions/categories/searchActions";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 export const SearchComponent = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const saveSearchToDb = async (query: string) => {
     if (!query.trim()) return;
@@ -23,7 +25,7 @@ export const SearchComponent = () => {
   return (
     <input
       type="text"
-      placeholder="Search..."
+      placeholder={t("search", "Search...")}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           handleSearch(e.currentTarget.value);
