@@ -24,7 +24,7 @@ function MessagesContent() {
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = "hidden"
-    const footer = document.querySelector("footer") as HTMLElement | null
+    const footer = document.getElementById("site-footer")
     if (footer) footer.style.display = "none"
     return () => {
       document.body.style.overflow = prev
@@ -56,18 +56,13 @@ function MessagesContent() {
         top: "3rem",
         bottom: keyboardOffset,
         backgroundColor: "#fefdfd",
-        zIndex: 10,
+        zIndex: 50,
         display: "flex",
         flexDirection: "column",
       }}
     >
       <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-        }}
+        style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
         className="sm:p-4 lg:p-6"
       >
         <div
