@@ -46,7 +46,7 @@ function Sidebar({ filtered, loading, search, onSearch, totalUnread, activeChatI
           placeholder="Search conversations…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          style={{ width: "100%", fontSize: 16, padding: "10px 14px", border: "2px solid #e5e7eb", borderRadius: 12, backgroundColor: "#f9fafb", color: "#111827", outline: "none", boxSizing: "border-box" }}
+          style={{ width: "100%", fontSize: 16, padding: "10px 14px", border: "2px solid #e5e7eb", borderRadius: 12, backgroundColor: "#f9fafb", color: "#111827", outline: "none", boxSizing: "border-box", WebkitTextFillColor: "#111827" } as React.CSSProperties}
         />
       </div>
       <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
@@ -250,14 +250,14 @@ export default function ChatInbox({ initialChatId, sellerId, itemId, itemModel }
   return (
     <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "white" }}>
 
-      <div className="flex lg:hidden" style={{ width: "100%", height: "100%" }}>
+      <div className="flex sm:hidden" style={{ width: "100%", height: "100%" }}>
         {!showThread
           ? <Sidebar {...sidebarProps} />
           : <div style={{ width: "100%", height: "100%" }}>{threadPanel}</div>
         }
       </div>
 
-      <div className="hidden lg:flex" style={{ width: "100%", height: "100%" }}>
+      <div className="hidden sm:flex" style={{ width: "100%", height: "100%" }}>
         <div style={{ width: 300, flexShrink: 0, height: "100%", borderRight: "1px solid #e5e7eb" }}>
           <Sidebar {...sidebarProps} />
         </div>

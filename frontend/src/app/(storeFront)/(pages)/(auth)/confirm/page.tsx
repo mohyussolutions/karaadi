@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { apiUrls } from "@/actions/constant/constant";
+import { inputCls } from "@/app/utils/style/main.style";
 
 const ConfirmEmail = () => {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const router = useRouter();
-
   const [isConfirmLoading, setIsConfirmLoading] = useState(false);
   const [isResendLoading, setIsResendLoading] = useState(false);
 
@@ -26,25 +26,20 @@ const ConfirmEmail = () => {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        throw new Error(
-          err?.error || err?.message || "Failed to confirm email.",
-        );
+        throw new Error(err?.error || err?.message || "Failed to confirm email.");
       }
       const data = await res.json();
       toast.success(data.message || "Email confirmed successfully!");
       router.push("/login");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to confirm email.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to confirm email.");
     } finally {
       setIsConfirmLoading(false);
     }
   };
 
   const handleResendCode = async () => {
-    if (!email) {
-      toast.error("Please enter your email first.");
-      return;
-    }
+    if (!email) { toast.error("Please enter your email first."); return; }
     setIsResendLoading(true);
     try {
       const res = await fetch(apiUrls.RESEND_CODE, {
@@ -59,32 +54,22 @@ const ConfirmEmail = () => {
       }
       const data = await res.json();
       toast.success(data.message || "New code sent!");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to resend code.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to resend code.");
     } finally {
       setIsResendLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 from-gray-50 via-white to-blue-200">
-      <form
-        onSubmit={handleConfirm}
-        className="bg-white max-w-md w-full p-10 rounded-3xl shadow-xl flex flex-col"
-      >
-        <h1 className="text-4xl font-extrabold mb-2 text-center text-gray-900">
-          Confirm Your Email
-        </h1>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-white">
+      <form onSubmit={handleConfirm} className="bg-white max-w-md w-full p-10 rounded-3xl shadow-xl flex flex-col">
+        <h1 className="text-4xl font-extrabold mb-2 text-center text-gray-900">Confirm Your Email</h1>
         <p className="text-center text-lg mb-8 text-gray-600 font-semibold">
           Enter your email and confirmation code below
         </p>
 
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium mb-1 text-gray-700"
-        >
-          Email
-        </label>
+        <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-700">Email</label>
         <input
           id="email"
           type="email"
@@ -92,15 +77,10 @@ const ConfirmEmail = () => {
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="you@example.com"
-          className="mb-6 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-4 focus:ring-blue-400 transition"
+          className={inputCls}
         />
 
-        <label
-          htmlFor="code"
-          className="block text-sm font-medium mb-1 text-gray-700"
-        >
-          Confirmation Code
-        </label>
+        <label htmlFor="code" className="block text-sm font-medium mb-1 text-gray-700">Confirmation Code</label>
         <input
           id="code"
           type="text"
@@ -108,15 +88,13 @@ const ConfirmEmail = () => {
           onChange={(e) => setCode(e.target.value)}
           required
           placeholder="Enter confirmation code"
-          className="mb-6 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-4 focus:ring-blue-400 transition"
+          className={inputCls}
         />
 
         <button
           type="submit"
           disabled={isConfirmLoading}
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-3xl shadow-md transition ${
-            isConfirmLoading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-3xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isConfirmLoading ? "Confirming..." : "Confirm Email"}
         </button>
@@ -128,7 +106,7 @@ const ConfirmEmail = () => {
               type="button"
               onClick={handleResendCode}
               disabled={isResendLoading}
-              className="text-blue-600 hover:underline font-semibold focus:outline-none"
+              className="text-blue-600 hover:underline font-semibold focus:outline-none disabled:opacity-50"
             >
               {isResendLoading ? "Sending..." : "Resend code"}
             </button>

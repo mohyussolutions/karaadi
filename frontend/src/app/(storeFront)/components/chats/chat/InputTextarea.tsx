@@ -62,7 +62,7 @@ export default function ChatInputArea({
           placeholder={`Message ${
             selectedChat?.otherUser?.username || "Seller"
           }...`}
-          className="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 sm:px-5 sm:py-4 text-slate-700 text-sm md:text-base resize-none leading-relaxed placeholder:text-slate-400 rounded-[1.8rem]"
+          className="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 sm:px-5 sm:py-4 text-gray-900 text-sm md:text-base resize-none leading-relaxed placeholder:text-gray-400 rounded-[1.8rem] [color:theme(colors.gray.900)] [-webkit-text-fill-color:theme(colors.gray.900)]"
           rows={1}
           style={{
             minHeight: isMobile ? 40 : 60,

@@ -6,14 +6,16 @@ import Link from "next/link";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useRegister } from "./useRegister";
-
-const inputCls = "w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400";
+import { inputCls } from "@/app/utils/style/main.style";
 
 function RegisterUser() {
   const {
-    username, setUsername,
-    email, setEmail,
-    password, setPassword,
+    username,
+    setUsername,
+    email,
+    setEmail,
+    password,
+    setPassword,
     isLoading,
     errorMessage,
     ruleResults,
@@ -80,9 +82,11 @@ function RegisterUser() {
                 key={rule.label}
                 className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors ${rule.passes ? "text-green-600" : "text-red-500"}`}
               >
-                {rule.passes
-                  ? <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
-                  : <XCircle className="w-3 h-3 flex-shrink-0" />}
+                {rule.passes ? (
+                  <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                ) : (
+                  <XCircle className="w-3 h-3 flex-shrink-0" />
+                )}
                 {rule.label}
               </li>
             ))}
@@ -94,9 +98,11 @@ function RegisterUser() {
           disabled={isLoading || (showRules && !isPasswordValid)}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-3xl flex items-center justify-center transition-all active:scale-[0.98] disabled:opacity-70"
         >
-          {isLoading
-            ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            : "Register"}
+          {isLoading ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
+            "Register"
+          )}
         </button>
 
         {errorMessage && (
@@ -107,7 +113,10 @@ function RegisterUser() {
 
         <p className="mt-5 text-center text-gray-600">
           Already have an account?{" "}
-          <Link href="/login" className="text-blue-600 font-bold hover:underline">
+          <Link
+            href="/login"
+            className="text-blue-600 font-bold hover:underline"
+          >
             Login
           </Link>
         </p>

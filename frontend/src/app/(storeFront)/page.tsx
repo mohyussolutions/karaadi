@@ -3,15 +3,11 @@ import ContainerLinks from "./components/Cards/containerCards/conainerLinks";
 import SearchInput from "../ui/search/SearchInput";
 import CategoryLinks from "./components/navbar/categories/CategoryLinksClient";
 import DataFeed from "./components/home/DataFeed";
-import { main, mainStyle } from "@/app/utils/main.style";
-import "@/app/utils/main.style.css";
+import { main, mainStyle } from "../utils/style/main.style";
 
 export default function Home() {
   return (
-    <div
-      className={main.page}
-      style={mainStyle.pagePadding}
-    >
+    <div className={main.page} style={mainStyle.pagePadding}>
       <ContainerLinks>
         <SearchInput />
       </ContainerLinks>

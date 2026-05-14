@@ -7,8 +7,7 @@ import { login } from "@/actions/core/authAction";
 import { setAuthCookies } from "@/actions/core/cookieActions";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { useAuth } from "@/context/AuthContext";
-
-const inputCls = "w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400";
+import { inputCls } from "@/app/utils/style/main.style";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
