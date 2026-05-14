@@ -17,6 +17,7 @@ import {
   updatePhoneInDb,
   deleteUserByAdmin,
   userSignupsByMonth,
+  getLoginHistory,
 } from "src/controllers/authController.ts";
 
 import {
@@ -116,5 +117,6 @@ authRouters.delete(
 authRouters.get("/total-users", ProtectRoute, adminAndManager, getUsersCount);
 
 authRouters.get("/me", ProtectRoute, getUserProfile);
+authRouters.get("/login-history", ProtectRoute, getLoginHistory);
 
 export default authRouters;

@@ -3,14 +3,15 @@ export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { logout, clearAuthCookies } from "@/actions/core/authAction";
-
+import { logout } from "@/actions/core/authAction";
 import { useAuth } from "@/context/AuthContext";
 import {
   getActiveSessions,
   logoutAllSessions,
   logoutSession,
+  getLoginHistory,
 } from "@/actions/categories/session";
+import { Monitor, Smartphone, Tablet, Globe, Clock } from "lucide-react";
 
 interface Device {
   id: string;
@@ -20,22 +21,57 @@ interface Device {
   lastActive?: string;
 }
 
+interface LoginEntry {
+  id: number;
+  ipAddress: string | null;
+  browser: string | null;
+  device: string | null;
+  loggedAt: string;
+}
+
+function DeviceIcon({ device }: { device?: string | null }) {
+  if (!device) return <Monitor size={18} className="text-gray-400" />;
+  if (/iPhone|Android/.test(device)) return <Smartphone size={18} className="text-blue-500" />;
+  if (/iPad/.test(device)) return <Tablet size={18} className="text-blue-500" />;
+  return <Monitor size={18} className="text-gray-500" />;
+}
+
+function formatDate(dateString: string) {
+  try {
+    return new Date(dateString).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 const Security: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const [activeDevices, setActiveDevices] = useState<Device[]>([]);
+  const [loginHistory, setLoginHistory] = useState<LoginEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
-  const fetchActiveDevices = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
+    setLoading(true);
     try {
-      setLoading(true);
       const token = user.accessToken || user.token;
-      const sessions = await getActiveSessions(token);
+      const [sessions, history] = await Promise.all([
+        getActiveSessions(token),
+        getLoginHistory(token),
+      ]);
       setActiveDevices(sessions || []);
+      setLoginHistory(history || []);
     } catch {
       setActiveDevices([]);
+      setLoginHistory([]);
     } finally {
       setLoading(false);
     }
@@ -43,39 +79,26 @@ const Security: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading) {
-      if (!user) {
-        router.replace("/");
-      } else {
-        fetchActiveDevices();
-      }
+      if (!user) router.replace("/");
+      else fetchData();
     }
-  }, [user, authLoading, router, fetchActiveDevices]);
+  }, [user, authLoading, router, fetchData]);
 
   const handleLogout = () => {
     logout();
-    setActiveDevices([]);
     window.location.href = "/";
   };
 
   const handleLogoutAllDevices = async () => {
-    if (!confirm("Ma hubtaa inaad rabto inaad ka baxdo dhammaan qalabka?"))
-      return;
-
+    if (!confirm("Are you sure you want to sign out of all devices?")) return;
     setIsLoggingOut(true);
     try {
       const token = user?.accessToken || user?.token;
-      const logoutAllSuccess = await logoutAllSessions(token);
+      await logoutAllSessions(token);
       logout();
-
-      if (logoutAllSuccess) {
-        alert("Waxaad ka baxday dhammaan qalabka");
-        setActiveDevices([]);
-        window.location.reload();
-      } else {
-        alert("Cilad ayaa dhacay marka lagu jarinayay dhammaan qalabka");
-      }
+      setActiveDevices([]);
+      window.location.reload();
     } catch {
-      alert("Cilad ayaa dhacay marka lagu jarinayay dhammaan qalabka");
     } finally {
       setIsLoggingOut(false);
     }
@@ -84,31 +107,9 @@ const Security: React.FC = () => {
   const handleLogoutDevice = async (sessionId: string) => {
     try {
       const token = user?.accessToken || user?.token;
-      const success = await logoutSession(sessionId, token);
-
-      if (success) {
-        setActiveDevices((prev) =>
-          prev.filter((device) => device.id !== sessionId),
-        );
-      } else {
-        alert("Failed to logout device");
-      }
-    } catch {
-      alert("Cilad ayaa dhacay marka lagu jarinayay qalabka");
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("so-SO", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    } catch {
-      return "";
-    }
+      const ok = await logoutSession(sessionId, token);
+      if (ok) setActiveDevices((prev) => prev.filter((d) => d.id !== sessionId));
+    } catch {}
   };
 
   const currentYear = new Date().getFullYear();
@@ -117,78 +118,107 @@ const Security: React.FC = () => {
   if (authLoading || loading) return null;
 
   return (
-    <div className="max-w-5xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">Amniga</h1>
-      <p className="mb-6">
-        Ma ogtahay inaad ka sii adkeyn karto akoonkaaga? Boggan waxaad ka heli
-        doontaa tallaabooyinka amniga ee kaa caawinaya inaad ku raaxaysato
-        Karaadi si aamin ah.
-      </p>
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Security</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Manage your active sessions and see recent sign-in activity.
+        </p>
+      </div>
 
-      <section className="mb-8 border rounded-lg p-6 shadow-sm bg-white">
-        <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
-          <h2 className="text-xl font-semibold">Qalabka aad ku gashay</h2>
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-2 flex-wrap">
+          <p className="font-bold text-gray-900 text-sm">Active sessions</p>
           <div className="flex gap-2">
             <button
               onClick={handleLogout}
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+              className="px-3 py-1.5 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
             >
-              Ka bax
+              Sign out
             </button>
             <button
               onClick={handleLogoutAllDevices}
               disabled={isLoggingOut || activeDevices.length === 0}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition disabled:opacity-40"
             >
-              {isLoggingOut ? "Ka baxaya..." : "Ka bax dhammaan qalabka"}
+              {isLoggingOut ? "Signing out…" : "Sign out all"}
             </button>
           </div>
         </div>
 
-        {activeDevices.length > 0 ? (
-          <ul className="space-y-4">
-            {activeDevices.map((device) => (
-              <li
-                key={device.id}
-                className="flex justify-between items-center border-b pb-3"
-              >
-                <div>
-                  <strong>{device.device || "Unknown Device"}</strong> -{" "}
-                  {device.browser || "Unknown Browser"}
-                  {device.active && (
-                    <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                      Hadda firfircoon
-                    </span>
-                  )}
-                  {device.lastActive && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      Ugu danbayn: {formatDate(device.lastActive)}
-                    </div>
-                  )}
+        <div className="divide-y divide-gray-50">
+          {activeDevices.length > 0 ? (
+            activeDevices.map((device) => (
+              <div key={device.id} className="flex items-center justify-between gap-3 px-5 py-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <DeviceIcon device={device.device} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {device.device || "Unknown device"} · {device.browser || "Unknown browser"}
+                    </p>
+                    {device.active && (
+                      <span className="inline-block text-xs text-green-600 font-medium">Active now</span>
+                    )}
+                    {device.lastActive && !device.active && (
+                      <p className="text-xs text-gray-400">{formatDate(device.lastActive)}</p>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => handleLogoutDevice(device.id)}
-                  className="text-red-600 underline hover:text-red-800 transition"
+                  className="text-xs text-red-500 hover:text-red-700 font-medium flex-shrink-0"
                 >
-                  Ka bax
+                  Remove
                 </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-center py-6 text-gray-500">
-            Ma jiro qalab ku gashan
-          </div>
-        )}
-      </section>
+              </div>
+            ))
+          ) : (
+            <div className="px-5 py-8 text-center text-sm text-gray-400">No active sessions found</div>
+          )}
+        </div>
+      </div>
 
-      <section className="text-sm text-gray-500">
-        <p>Suuqa Fursadaha, Ganacsi, Noqo Macaamiil...</p>
-        <p>
-          © {yearRange} Karaadi AS. Karaadi waa qayb ka mid ah Vend. Vend ayaa
-          mas&rsquo;uul ka ah xogtaada boggan. Akhri wax badan.
-        </p>
-      </section>
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
+          <p className="font-bold text-gray-900 text-sm">Recent sign-in activity</p>
+          <p className="text-xs text-gray-400 mt-0.5">Last 20 logins to your account</p>
+        </div>
+
+        <div className="divide-y divide-gray-50">
+          {loginHistory.length > 0 ? (
+            loginHistory.map((entry) => (
+              <div key={entry.id} className="flex items-center gap-3 px-5 py-3">
+                <DeviceIcon device={entry.device} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">
+                    {entry.device || "Unknown"} · {entry.browser || "Unknown browser"}
+                  </p>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    {entry.ipAddress && (
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <Globe size={11} />
+                        {entry.ipAddress}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <Clock size={11} />
+                      {formatDate(entry.loggedAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="px-5 py-8 text-center text-sm text-gray-400">
+              No sign-in history yet. History is recorded from your next login.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-400 text-center">
+        © {yearRange} Karaadi AS. All rights reserved.
+      </p>
     </div>
   );
 };

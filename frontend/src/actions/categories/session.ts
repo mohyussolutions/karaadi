@@ -1,18 +1,16 @@
 "use server";
 
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
-
-const SESSIONS = "/auth/sessions";
+import { AUTH_ENDPOINTS } from "@/actions/constant/constant";
 
 export async function getActiveSessions(accessToken?: string) {
   try {
     const headers = await getAuthHeaders(accessToken);
-    const res = await fetch(SESSIONS, {
+    const res = await fetch(AUTH_ENDPOINTS.SESSIONS, {
       method: "POST",
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
     return res.ok ? await res.json() : [];
   } catch {
     return [];
@@ -22,12 +20,11 @@ export async function getActiveSessions(accessToken?: string) {
 export async function logoutSession(sessionId: string, accessToken?: string) {
   try {
     const headers = await getAuthHeaders(accessToken);
-    const res = await fetch(`${SESSIONS}/${sessionId}/logout`, {
+    const res = await fetch(`${AUTH_ENDPOINTS.SESSIONS}/${sessionId}/logout`, {
       method: "POST",
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
     return res.ok;
   } catch {
     return false;
@@ -37,14 +34,34 @@ export async function logoutSession(sessionId: string, accessToken?: string) {
 export async function logoutAllSessions(accessToken?: string) {
   try {
     const headers = await getAuthHeaders(accessToken);
-    const res = await fetch(`${SESSIONS}/logout-all`, {
+    const res = await fetch(`${AUTH_ENDPOINTS.SESSIONS}/logout-all`, {
       method: "POST",
       headers: headers as HeadersInit,
       cache: "no-store",
     });
-
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+export async function getLoginHistory(accessToken?: string) {
+  try {
+    const headers = await getAuthHeaders(accessToken);
+    const res = await fetch(AUTH_ENDPOINTS.LOGIN_HISTORY, {
+      headers: headers as HeadersInit,
+      cache: "no-store",
+    });
+    return res.ok
+      ? (await res.json()) as Array<{
+          id: number;
+          ipAddress: string | null;
+          browser: string | null;
+          device: string | null;
+          loggedAt: string;
+        }>
+      : [];
+  } catch {
+    return [];
   }
 }

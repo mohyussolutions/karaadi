@@ -1,4 +1,5 @@
 import Navbar from "./components/navbar/main/navbar";
+import PushPermissionBanner from "./components/notifications/PushPermissionBanner";
 import SiteFooter from "./components/footer/SiteFooter/SiteFooter";
 import AdFetcher from "./components/Advertisement/AdFetcher";
 import Container from "./components/Cards/containerCards/ContainerCard";
@@ -29,6 +30,7 @@ export default async function StoreFrontLayout({
           </Container>
         </AdFetcher>
       </main>
+      <PushPermissionBanner />
       <SiteFooter />
     </>
   );

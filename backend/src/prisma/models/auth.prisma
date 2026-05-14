@@ -38,7 +38,8 @@ model User {
   feeChangeLogs     FeeChangeLog[]
   views             UserView[]
   reports           Report[]        @relation("UserReports")
-  
+  pushSubscriptions PushSubscription[] @relation("UserPushSubscriptions")
+  loginHistories    LoginHistory[]     @relation("UserLoginHistories")
 
   @@index([email])
   @@index([username])
@@ -84,4 +85,18 @@ model Cookie {
   @@index([token])
   @@index([accessToken])
   @@index([expiresAt])
+}
+
+model LoginHistory {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  device    String?
+  browser   String?
+  loggedAt  DateTime @default(now())
+  user      User     @relation("UserLoginHistories", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([loggedAt])
 }

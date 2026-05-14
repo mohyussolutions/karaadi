@@ -5,6 +5,7 @@ import { settingsOptions } from "@/app/(links)/storeFrontLinks/mineLinks";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import PushToggle from "@/app/(storeFront)/components/notifications/PushToggle";
 
 const Settings: React.FC = () => {
   const { t } = useTranslation();
@@ -17,7 +18,15 @@ const Settings: React.FC = () => {
   if (!mounted) return null;
 
   return (
-    <div className="w-full flex justify-center items-center min-h-[60vh] px-2 sm:px-4 md:px-8 py-8">
+    <div className="w-full flex flex-col items-center min-h-[60vh] px-2 sm:px-4 md:px-8 py-8 gap-8">
+      <div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
+          <p className="font-bold text-gray-900 text-sm">Notifications</p>
+        </div>
+        <div className="px-5">
+          <PushToggle />
+        </div>
+      </div>
       <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
         {settingsOptions.map((item, idx) => {
           const Icon = item.icon;

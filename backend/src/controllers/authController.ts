@@ -428,11 +428,39 @@ export const getUsersCount = async (_req: Request, res: Response) => {
   }
 };
 
+function parseUserAgent(ua: string) {
+  const browser =
+    /Edg\//.test(ua) ? "Edge" :
+    /OPR\/|Opera/.test(ua) ? "Opera" :
+    /Chrome\//.test(ua) ? "Chrome" :
+    /Firefox\//.test(ua) ? "Firefox" :
+    /Safari\//.test(ua) && /Version\//.test(ua) ? "Safari" :
+    /MSIE|Trident/.test(ua) ? "IE" : "Other";
+
+  const device =
+    /iPhone/.test(ua) ? "iPhone" :
+    /iPad/.test(ua) ? "iPad" :
+    /Android/.test(ua) ? "Android" :
+    /Windows/.test(ua) ? "Windows" :
+    /Macintosh|Mac OS/.test(ua) ? "Mac" :
+    /Linux/.test(ua) ? "Linux" : "Other";
+
+  return { browser, device };
+}
+
 export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   try {
     const { token, refreshToken, userData } = await signIn(email, password, req, res);
     await setAuthCookies(res, { idToken: token, refreshToken, accessToken: userData.accessToken }, undefined, userData.id);
+
+    const ua = req.headers["user-agent"] || "";
+    const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() || req.socket.remoteAddress || null;
+    const { browser, device } = parseUserAgent(ua);
+    prisma.loginHistory.create({
+      data: { userId: userData.id, ipAddress: ip, userAgent: ua.slice(0, 300), browser, device },
+    }).catch(() => {});
+
     res.json({ token, user: userData });
   } catch (err: any) {
     console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);
@@ -476,6 +504,22 @@ export const refreshTokenController = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Refresh token required" });
     const newTokens = await refreshTokenLogic(refreshToken);
     res.status(200).json({ tokens: newTokens });
+  } catch (error: any) {
+    serverError(res, error);
+  }
+};
+
+export const getLoginHistory = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const history = await prisma.loginHistory.findMany({
+      where: { userId },
+      orderBy: { loggedAt: "desc" },
+      take: 20,
+      select: { id: true, ipAddress: true, browser: true, device: true, loggedAt: true },
+    });
+    res.json(history);
   } catch (error: any) {
     serverError(res, error);
   }

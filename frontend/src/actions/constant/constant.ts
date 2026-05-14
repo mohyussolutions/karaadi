@@ -90,6 +90,8 @@ export const AUTH_ENDPOINTS = {
   REFRESH_TOKEN: createEndpoint(`${API_PATHS.USERS}/refreshtoken`),
   FORGOT_PASSWORD: createEndpoint(`${API_PATHS.USERS}/forgot-password`),
   RESET_PASSWORD: createEndpoint(`${API_PATHS.USERS}/reset-password`),
+  LOGIN_HISTORY: createEndpoint(`${API_PATHS.USERS}/login-history`),
+  SESSIONS: createEndpoint(`${API_PATHS.USERS}/sessions`),
 };
 
 export const USER_ENDPOINTS = {

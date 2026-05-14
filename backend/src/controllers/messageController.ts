@@ -3,6 +3,7 @@ import prisma from "src/core/utils/db.ts";
 import { EncryptionController } from "./encryptionController.ts";
 import { getIO } from "src/services/sockets/socketServer.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
+import { sendPushToUser } from "src/services/pushNotificationService.ts";
 
 const chatCacheKey = (userId: string) => `chats:user:${userId}`;
 
@@ -140,6 +141,13 @@ export const sendMessage = async (req: Request, res: Response) => {
       chatId,
       message: decryptedMessage,
     });
+
+    sendPushToUser(receiverId, {
+      title: message.sender?.username || "New message",
+      body: decryptedMessage.content.slice(0, 80),
+      icon: "/icons/icon-192x192.png",
+      url: `/messages?chatId=${chatId}`,
+    }).catch(() => {});
 
     res.status(201).json(decryptedMessage);
   } catch (error: any) {

@@ -1,3 +1,16 @@
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model Chat {
   id            Int          @id @default(autoincrement())
   boatId        String?
