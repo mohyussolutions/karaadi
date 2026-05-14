@@ -49,7 +49,7 @@ export default function SearchInput({
   };
 
   return (
-    <div className="relative w-full group mt-16">
+    <div className="relative w-full group">
       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 group-focus-within:text-blue-600 transition-colors">
         <FiSearch size={22} />
       </div>
