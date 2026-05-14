@@ -45,7 +45,7 @@ export default function NewAdPage() {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen bg-white"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4rem)" }}
     >
       <header className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3.5 flex items-center gap-3 shadow-sm">
