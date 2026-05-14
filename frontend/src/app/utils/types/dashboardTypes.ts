@@ -1,3 +1,5 @@
+export type { ManagementSection, ProtectedRoute } from "./managementTypes";
+
 export interface SinglePlanConfig {
   name: string;
   duration: string;
@@ -11,21 +13,4 @@ export interface B2BPlanConfig {
   premium90: SinglePlanConfig;
   standard180: SinglePlanConfig;
   annual365: SinglePlanConfig;
-}
-import { IconType } from "react-icons";
-
-export interface ManagementSection {
-  title?: string;
-  name?: string;
-  id?: string;
-  description?: string;
-  icon?: IconType;
-  path: string;
-  category?: string;
-  featured?: boolean;
-}
-
-export interface ProtectedRoute {
-  path: string;
-  roles: string[];
 }
