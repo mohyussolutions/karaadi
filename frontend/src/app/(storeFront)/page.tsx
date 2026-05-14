@@ -3,18 +3,20 @@ import ContainerLinks from "./components/Cards/containerCards/conainerLinks";
 import SearchInput from "../ui/search/SearchInput";
 import CategoryLinks from "./components/navbar/categories/CategoryLinksClient";
 import DataFeed from "./components/home/DataFeed";
+import { main } from "@/app/utils/main.style";
+import "@/app/utils/main.style.css";
 
 export default function Home() {
   return (
     <div
-      className="space-y-6 sm:space-y-8 min-h-screen"
+      className={main.page}
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
     >
       <ContainerLinks>
         <SearchInput />
       </ContainerLinks>
       <ContainerLinks>
-        <div className="min-h-[192px] sm:min-h-[204px]">
+        <div className={main.catWrap}>
           <CategoryLinks />
         </div>
       </ContainerLinks>
