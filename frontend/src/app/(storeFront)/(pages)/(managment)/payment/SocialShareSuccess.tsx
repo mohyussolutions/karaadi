@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { FaCheckCircle } from "react-icons/fa";
+import { useAppDispatch } from "@/store/slices/hooks/hooks";
+import { resetFlow } from "@/store/slices/reducers/listingDraftSlice";
 
 interface Props {
   isFree: boolean;
@@ -12,6 +14,7 @@ interface Props {
 
 export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
   const { t } = useTranslation();
+  const dispatch = useAppDispatch();
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(10);
 
@@ -21,8 +24,11 @@ export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
   }, []);
 
   useEffect(() => {
-    if (countdown === 0) window.location.href = "/";
-  }, [countdown]);
+    if (countdown === 0) {
+      dispatch(resetFlow());
+      window.location.href = "/";
+    }
+  }, [countdown, dispatch]);
 
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
 
@@ -114,6 +120,7 @@ export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
 
       <a
         href="/"
+        onClick={() => dispatch(resetFlow())}
         className="w-full text-center py-2.5 text-sm font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition touch-manipulation"
       >
         {countdown > 0

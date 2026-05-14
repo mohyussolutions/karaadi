@@ -1,12 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { useAppDispatch } from "@/store/slices/hooks/hooks";
-import { resetFlow } from "@/store/slices/reducers/listingDraftSlice";
-import { postToFacebook, postToTikTok } from "@/actions/categories/socialPostAction";
 import { useIsValidPhone } from "@/app/(storeFront)/components/hooks/useIsValidPhone";
 import {
   MAX_POLL_ATTEMPTS,
@@ -29,8 +25,6 @@ export function usePayment({
   phoneNumber,
   setPhoneError,
 }: UsePaymentProps) {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
   const [processing, setProcessing] = useState(false);
@@ -74,17 +68,6 @@ export function usePayment({
         setShareUrl(listingUrl);
         setPaymentStatus("success");
         toast.success(t("payment.success", "Payment successful! Your listing is now live."));
-        const socialPayload = {
-          title: item.title || "",
-          description: item.description || "",
-          price: item.price || 0,
-          imageUrl: Array.isArray(item.images) && item.images[0] ? item.images[0] : undefined,
-          listingUrl,
-          category: item.mainCategory || item.category || "",
-        };
-        postToFacebook(socialPayload);
-        postToTikTok(socialPayload);
-        setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 25000);
       } catch {
         setProcessing(false);
         setPaymentStatus("failed");
@@ -182,26 +165,7 @@ export function usePayment({
             const listingUrl2 = `${origin}${itemPath2}`;
             setShareUrl(listingUrl2);
             setPaymentStatus("success");
-            toast.success(
-              t(
-                "payment.success",
-                "Payment successful! Your listing is now live.",
-              ),
-            );
-            const socialPayload2 = {
-              title: item.title || "",
-              description: item.description || "",
-              price: item.price || 0,
-              imageUrl:
-                Array.isArray(item.images) && item.images[0]
-                  ? item.images[0]
-                  : undefined,
-              listingUrl: listingUrl2,
-              category: item.mainCategory || item.category || "",
-            };
-            postToFacebook(socialPayload2);
-            postToTikTok(socialPayload2);
-            setTimeout(() => { dispatch(resetFlow()); router.push("/"); }, 25000);
+            toast.success(t("payment.success", "Payment successful! Your listing is now live."));
           } else if (statusData.status === "failed") {
             stopPolling();
             setPaymentStatus("failed");
