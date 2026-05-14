@@ -44,35 +44,6 @@ import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
 import { getRealEstateById } from "@/actions/categories/realEstateActions";
 import ZoomedImageModal from "../../zoomed/ZoomedImageModal";
 
-interface RealEstateItem {
-  id: string;
-  _id?: string;
-  title: string;
-  description: string;
-  price: number | string;
-  images: (string | File)[];
-  mainCategory?: string;
-  category?: string[];
-  subcategory?: string[];
-  propertyType?: string;
-  region?: string;
-  city?: string;
-  address?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  floor?: number;
-  totalFloors?: number;
-  squareFeet?: number;
-  sizeSqm?: number;
-  furnished?: boolean;
-  parking?: boolean;
-  hasGarage?: boolean;
-  hasGarden?: boolean;
-  amenities?: string[];
-  user?: any;
-  maGaday?: boolean;
-  userId?: string;
-}
 
 const AMENITY_ICONS: Record<string, React.ReactNode> = {
   "Swimming Pool": <FaSwimmingPool size={14} />,
@@ -100,14 +71,12 @@ const resolveImageUrl = (url: any): string | null => {
     return url;
   return `${API_BASE}/${url}`;
 };
-const isValidImageUrl = (url: any): url is string =>
-  resolveImageUrl(url) !== null;
 
 function RealEstateDetails() {
   const router = useRouter();
   const pathname = usePathname();
   const { id } = useParams<{ id: string }>();
-  const { user: currentUser, loading: authLoading } = useAuth();
+  const { user: currentUser } = useAuth();
   const { t } = useTranslation();
 
   const { data: realEstateRaw, isLoading } = useSWR(
@@ -116,7 +85,7 @@ function RealEstateDetails() {
     {
       revalidateOnFocus: false,
       revalidateIfStale: false,
-      dedupingInterval: 60_000,
+      dedupingInterval: 300_000,
     },
   );
   const realEstate = useMemo(() => {
@@ -245,7 +214,7 @@ function RealEstateDetails() {
     [realEstate?.images],
   );
 
-  if (isLoading || authLoading)
+  if (isLoading)
     return (
       <div className="min-h-screen flex justify-center items-center">
         <Loading />

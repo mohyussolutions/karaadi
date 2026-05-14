@@ -21,10 +21,8 @@ export async function getTotalRealEstateCount(): Promise<number> {
 export async function getRealEstateById(
   id: string,
 ): Promise<RealEstate | null> {
-  const headers = await getAuthHeaders();
   const res = await fetch(REAL_ESTATE_ENDPOINTS.BY_ID(id), {
-    headers: headers as HeadersInit,
-    next: { revalidate: 60 },
+    next: { revalidate: 300 },
   });
   if (!res.ok) return null;
   const result = await res.json();
