@@ -1,0 +1,48 @@
+export const authPage = {
+  root:       "min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12",
+  card:       "w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-sm p-8",
+  logo:       "flex items-center justify-center mb-6",
+  title:      "text-2xl font-black text-gray-900 text-center mb-1",
+  subtitle:   "text-sm text-gray-400 text-center mb-7",
+  form:       "space-y-4",
+  field:      "flex flex-col gap-1.5",
+  label:      "text-[10px] font-black text-gray-400 uppercase tracking-widest",
+  input:      "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-medium outline-none transition-all bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400",
+  inputError: "w-full px-3 py-2.5 border border-red-400 rounded-lg text-sm font-medium outline-none transition-all bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 placeholder:text-gray-400",
+  errorMsg:   "text-red-500 text-xs font-medium",
+  pwWrap:     "relative",
+  pwToggle:   "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors",
+  submitBtn:  "w-full py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-xl transition-colors text-sm touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed",
+  divider:    "flex items-center gap-3 my-4",
+  dividerLine:"flex-1 border-t border-gray-200",
+  dividerText:"text-xs text-gray-400 font-semibold",
+  footer:     "text-sm text-gray-500 text-center mt-6",
+  footerLink: "text-blue-600 hover:text-blue-700 font-semibold transition-colors",
+  terms:      "text-[11px] text-gray-400 text-center mt-4 leading-relaxed",
+  globalErr:  "flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-medium",
+  globalSucc: "flex items-center gap-2 px-4 py-3 rounded-xl bg-green-50 border border-green-100 text-green-700 text-sm font-medium",
+} as const;
+
+export const userProfile = {
+  root:       "max-w-2xl mx-auto px-4 py-8 space-y-5",
+  card:       "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden",
+  avatar:     "w-20 h-20 rounded-2xl bg-blue-100 text-blue-700 font-black text-2xl flex items-center justify-center",
+  name:       "text-xl font-black text-gray-900",
+  email:      "text-sm text-gray-400",
+  sectionHead:"px-5 py-3.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between",
+  sectionTitle:"font-bold text-gray-900 text-sm",
+  row:        "flex items-center justify-between gap-4 px-5 py-4 border-b border-gray-50 last:border-0",
+  rowLabel:   "text-[10px] font-black text-gray-400 uppercase tracking-widest",
+  rowValue:   "text-sm font-semibold text-gray-900",
+  danger:     "px-5 py-4 bg-red-50 border-t border-red-100",
+  dangerText: "text-sm font-semibold text-red-700 mb-3",
+} as const;
+
+export const savedItems = {
+  root:    "max-w-4xl mx-auto px-4 py-6",
+  grid:    "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3",
+  empty:   "flex flex-col items-center justify-center py-20 text-center",
+  emptyIcon:"w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl text-gray-300 mb-4",
+  emptyText:"font-bold text-gray-600 text-base mb-1",
+  emptySub: "text-sm text-gray-400",
+} as const;
