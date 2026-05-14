@@ -291,3 +291,34 @@ export const syncAllLocations = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Sync failed" });
   }
 };
+
+export const bulkSeedLocations = async (req: Request, res: Response) => {
+  const { regions, cities } = req.body;
+  if (!Array.isArray(regions) || !Array.isArray(cities))
+    return res.status(400).json({ error: "Invalid payload" });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await Promise.all(
+        regions.map((r: { id: string; name: string }) =>
+          tx.region.upsert({
+            where: { id: r.id },
+            update: { name: r.name },
+            create: { id: r.id, name: r.name },
+          })
+        )
+      );
+      await Promise.all(
+        cities.map((c: { id: string; name: string; regionId: string }) =>
+          tx.city.upsert({
+            where: { id: c.id },
+            update: { name: c.name, regionId: c.regionId },
+            create: { id: c.id, name: c.name, regionId: c.regionId },
+          })
+        )
+      );
+    }, { timeout: 30000 });
+    res.json({ success: true, regions: regions.length, cities: cities.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Bulk seed failed" });
+  }
+};

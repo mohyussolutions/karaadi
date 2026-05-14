@@ -1,6 +1,6 @@
 "use server";
 
-import { FILTERING_ENDPOINTS, geoEndpoints } from "../constant/constant";
+import { FILTERING_ENDPOINTS, GEO_ENDPOINTS, geoEndpoints } from "../constant/constant";
 import { Region } from "@/app/utils/types/geoTypes";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
@@ -150,4 +150,19 @@ export const filterByPriceAndRooms = async (filters: {
     },
   );
   return res.ok ? await res.json() : [];
+};
+
+
+export const bulkSeedLocations = async (
+  regions: { id: string; name: string }[],
+  cities: { id: string; name: string; regionId: string }[],
+) => {
+  const headers = await getAuthHeaders();
+  const res = await fetch(GEO_ENDPOINTS.BULK_SEED, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    body: JSON.stringify({ regions, cities }),
+    cache: "no-store",
+  });
+  return { success: res.ok, data: await res.json() };
 };

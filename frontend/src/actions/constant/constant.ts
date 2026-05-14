@@ -237,6 +237,7 @@ export const GEO_ENDPOINTS = {
   GET_ALL_CITIES: createEndpoint(`${API_PATHS.LOCATIONS}/cities`),
   GET_GEO_STATS: createEndpoint(`${API_PATHS.LOCATIONS}/stats`),
   SYNC_DATA: createEndpoint(`${API_PATHS.LOCATIONS}/sync`),
+  BULK_SEED: createEndpoint(`${API_PATHS.LOCATIONS}/bulk-seed`),
   GET_REGION_BY_ID: (id: string) =>
     createIdEndpoint(`${API_PATHS.LOCATIONS}/regions`, id),
   ADD_REGION: createEndpoint(`${API_PATHS.LOCATIONS}/regions`),

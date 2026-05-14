@@ -13,6 +13,7 @@ import {
   updateCity,
   regionsWithMostItemListings,
   citiesWithMostItemListings,
+  bulkSeedLocations,
 } from "../controllers/IocController.ts";
 import { ProtectRoute } from "src/core/middelware/authMiddlewareBothDbAndCognito.ts";
 import { validateRequest } from "src/core/middelware/validateRequest.ts";
@@ -34,6 +35,7 @@ locRoutes.get(
 
 locRoutes.get("/stats", getLocationStats);
 locRoutes.post("/sync", ProtectRoute, syncAllLocations);
+locRoutes.post("/bulk-seed", ProtectRoute, bulkSeedLocations);
 
 locRoutes.get("/regions", getAllRegions);
 locRoutes.get("/regions/:id", getRegionById);
