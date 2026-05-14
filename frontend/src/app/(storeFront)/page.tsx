@@ -11,9 +11,7 @@ export default function Home() {
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
     >
       <ContainerLinks>
-        <Suspense fallback={null}>
-          <SearchInput />
-        </Suspense>
+        <SearchInput />
       </ContainerLinks>
       <ContainerLinks>
         <div className="min-h-[192px] sm:min-h-[204px]">
@@ -21,7 +19,9 @@ export default function Home() {
         </div>
       </ContainerLinks>
       <ContainerLinks>
-        <DataFeed />
+        <Suspense fallback={null}>
+          <DataFeed />
+        </Suspense>
       </ContainerLinks>
     </div>
   );
