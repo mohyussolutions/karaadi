@@ -5,18 +5,27 @@ import { useTranslation } from "react-i18next";
 import { FaCheckCircle } from "react-icons/fa";
 import { useAppDispatch } from "@/store/slices/hooks/hooks";
 import { resetFlow } from "@/store/slices/reducers/listingDraftSlice";
+import { postToFacebook, postToTikTok } from "@/actions/categories/socialPostAction";
 
 interface Props {
   isFree: boolean;
   total: number;
   shareUrl: string;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl?: string;
+  category?: string;
 }
 
-export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
+type PlatformState = "idle" | "loading" | "done" | "error";
+
+export default function SocialShareSuccess({ isFree, total, shareUrl, title, description, price, imageUrl, category }: Props) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const [copied, setCopied] = useState(false);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(30);
+  const [fbState, setFbState] = useState<PlatformState>("idle");
+  const [ttState, setTtState] = useState<PlatformState>("idle");
 
   useEffect(() => {
     const id = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
@@ -30,25 +39,28 @@ export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
     }
   }, [countdown, dispatch]);
 
-  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+  const payload = { title, description, price, imageUrl, listingUrl: shareUrl, category };
 
-  const handleCopyForTikTok = () => {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
+  const handleFacebook = async () => {
+    setFbState("loading");
+    const result = await postToFacebook(payload);
+    setFbState(result.success ? "done" : "error");
+  };
+
+  const handleTikTok = async () => {
+    setTtState("loading");
+    const result = await postToTikTok(payload);
+    setTtState(result.success ? "done" : "error");
   };
 
   return (
-    <div className="absolute inset-0 bg-white flex flex-col items-center justify-center rounded-2xl z-50 px-5 py-6">
+    <div className="absolute inset-0 bg-white flex flex-col items-center justify-center rounded-2xl z-50 px-5 py-6 overflow-y-auto">
       <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-3">
         <FaCheckCircle className="text-green-500" size={36} />
       </div>
 
       <p className="font-bold text-green-600 text-lg text-center mb-1">
-        {isFree
-          ? t("payment.confirmedTitle", "Listing Confirmed!")
-          : t("payment.successTitle", "Payment Successful!")}
+        {isFree ? t("payment.confirmedTitle", "Listing Confirmed!") : t("payment.successTitle", "Payment Successful!")}
       </p>
 
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 mb-4 text-center w-full">
@@ -56,7 +68,7 @@ export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
           {t("payment.sharePrompt", "Reach more buyers — share your listing!")}
         </p>
         <p className="text-[10px] text-indigo-400">
-          {t("payment.shareSubPrompt", "People who click will land on your listing page")}
+          {t("payment.shareSubPrompt", "Post to Karaadi's official social media pages")}
         </p>
       </div>
 
@@ -70,11 +82,11 @@ export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
       </div>
 
       <div className="w-full space-y-3 mb-4">
-        <a
-          href={fbShareUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-blue-50 hover:border-blue-300 active:scale-[0.99] transition-all touch-manipulation select-none"
+        <button
+          type="button"
+          onClick={handleFacebook}
+          disabled={fbState === "loading" || fbState === "done"}
+          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-blue-50 hover:border-blue-300 active:scale-[0.99] transition-all touch-manipulation select-none disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#1877F2]">
             <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
@@ -82,18 +94,20 @@ export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm">Share on Facebook</p>
-            <p className="text-xs text-gray-400">{t("payment.fbNote", "Opens Facebook share dialog")}</p>
+            <p className="font-bold text-gray-900 text-sm">Post to Facebook</p>
+            <p className="text-xs text-gray-400">
+              {fbState === "loading" ? "Posting..." : fbState === "done" ? "✓ Posted to Karaadi Facebook page!" : fbState === "error" ? "❌ Failed — try again" : "Post on Karaadi's Facebook page"}
+            </p>
           </div>
-          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
+          {fbState === "loading" && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />}
+          {fbState === "done" && <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />}
+        </button>
 
         <button
           type="button"
-          onClick={handleCopyForTikTok}
-          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-gray-50 active:scale-[0.99] transition-all touch-manipulation select-none text-left"
+          onClick={handleTikTok}
+          disabled={ttState === "loading" || ttState === "done"}
+          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-gray-50 active:scale-[0.99] transition-all touch-manipulation select-none text-left disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-black">
             <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
@@ -101,20 +115,13 @@ export default function SocialShareSuccess({ isFree, total, shareUrl }: Props) {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm">Share on TikTok</p>
+            <p className="font-bold text-gray-900 text-sm">Post to TikTok</p>
             <p className="text-xs text-gray-400">
-              {copied
-                ? t("payment.linkCopied", "Link copied! Open TikTok and paste it ✓")
-                : t("payment.ttNote", "Copies link — open TikTok and paste")}
+              {ttState === "loading" ? "Posting..." : ttState === "done" ? "✓ Posted to Karaadi TikTok page!" : ttState === "error" ? "❌ Failed — try again" : "Post on Karaadi's TikTok page"}
             </p>
           </div>
-          {copied ? (
-            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg flex-shrink-0">COPIED</span>
-          ) : (
-            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          )}
+          {ttState === "loading" && <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />}
+          {ttState === "done" && <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />}
         </button>
       </div>
 

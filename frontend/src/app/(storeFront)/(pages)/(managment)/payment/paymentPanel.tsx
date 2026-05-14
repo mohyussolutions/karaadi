@@ -14,6 +14,11 @@ interface Props {
   pollAttempt: number;
   total: number;
   shareUrl: string;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl?: string;
+  category?: string;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
   phoneNumber: string;
@@ -31,6 +36,11 @@ export default function PaymentPanel({
   pollAttempt,
   total,
   shareUrl,
+  title,
+  description,
+  price,
+  imageUrl,
+  category,
   paymentMethod,
   setPaymentMethod,
   phoneNumber,
@@ -55,6 +65,11 @@ export default function PaymentPanel({
         isFree={isFree}
         shareUrl={shareUrl}
         total={total}
+        title={title}
+        description={description}
+        price={price}
+        imageUrl={imageUrl}
+        category={category}
       />
       <PanelHeader isFree={isFree} />
       <div className="p-5 space-y-5">
@@ -124,18 +139,20 @@ function PollingOverlay({
 }
 
 function SuccessOverlay({
-  paymentStatus,
-  isFree,
-  shareUrl,
-  total,
+  paymentStatus, isFree, shareUrl, total, title, description, price, imageUrl, category,
 }: {
   paymentStatus: PaymentStatus;
   isFree: boolean;
   shareUrl: string;
   total: number;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl?: string;
+  category?: string;
 }) {
   if (paymentStatus !== "success") return null;
-  return <SocialShareSuccess isFree={isFree} total={total} shareUrl={shareUrl} />;
+  return <SocialShareSuccess isFree={isFree} total={total} shareUrl={shareUrl} title={title} description={description} price={price} imageUrl={imageUrl} category={category} />;
 }
 
 function PanelHeader({ isFree }: { isFree: boolean }) {
