@@ -7,6 +7,8 @@ import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useRegister } from "./useRegister";
 
+const inputCls = "w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400";
+
 function RegisterUser() {
   const {
     username, setUsername,
@@ -24,7 +26,7 @@ function RegisterUser() {
     <div className="min-h-screen flex items-center justify-center px-4 py-6">
       <form
         onSubmit={handleSubmit}
-        className="bg-[#FEFDFD] max-w-md w-full px-10 py-8 rounded-3xl border border-gray-100 flex flex-col"
+        className="bg-white max-w-md w-full px-10 py-8 rounded-3xl border border-gray-100 flex flex-col"
       >
         <h1 className="text-3xl font-extrabold mb-1 text-center text-gray-900">
           Create Account
@@ -40,7 +42,7 @@ function RegisterUser() {
           onChange={(e) => setUsername(e.target.value)}
           required
           placeholder="Choose a username"
-          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+          className={inputCls}
         />
 
         <input
@@ -52,7 +54,7 @@ function RegisterUser() {
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="you@example.com"
-          className="w-full mb-3 px-5 py-3 rounded-2xl bg-gray-100 border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+          className={inputCls}
         />
 
         <PasswordToggle
@@ -67,7 +69,7 @@ function RegisterUser() {
               ? "border-red-400 focus:ring-red-300"
               : showRules && isPasswordValid
                 ? "border-green-400 focus:ring-green-300"
-                : "border-gray-300 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+                : "border-gray-300 focus:ring-blue-500"
           }`}
         />
 
