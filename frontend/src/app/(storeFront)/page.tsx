@@ -6,7 +6,10 @@ import DataFeed from "./components/home/DataFeed";
 
 export default function Home() {
   return (
-    <div className="space-y-6 sm:space-y-8 min-h-screen" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}>
+    <div
+      className="space-y-6 sm:space-y-8 min-h-screen"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
+    >
       <ContainerLinks>
         <Suspense fallback={null}>
           <SearchInput />

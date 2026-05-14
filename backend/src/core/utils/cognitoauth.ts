@@ -23,7 +23,7 @@ import {
 } from "../../types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 
-const COGNITO_REGION = process.env.AWS_REGION;
+const COGNITO_REGION = process.env.KARAADI_AWS_REGION ?? process.env.AWS_REGION;
 const COGNITO_POOL_ID = process.env.KARAADI_AWS_COGNITO_USER_POOL_ID;
 const COGNITO_CLIENT_ID = process.env.KARAADI_AWS_COGNITO_CLIENT_ID;
 
