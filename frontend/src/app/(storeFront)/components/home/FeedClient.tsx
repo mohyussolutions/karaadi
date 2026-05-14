@@ -6,8 +6,9 @@ import { UniversalCardProps } from "@/app/utils/types/universalCard.types";
 import { loadFeedPage } from "@/actions/categories/feedActions";
 import { SEARCH_EVENT } from "@/app/ui/search/SearchInput";
 import { getDetailRoute } from "@/app/utils/getDetailRoute";
-const INITIAL_DISPLAY = 50;
+const INITIAL_DISPLAY = 100;
 const DISPLAY_INCREMENT = 20;
+const SERVER_PAGE_SIZE = 100;
 
 function dedupById(items: UniversalCardProps[]): UniversalCardProps[] {
   const seen = new Set<string>();
@@ -79,7 +80,7 @@ export default function FeedClient({
     Math.min(INITIAL_DISPLAY, initialItems.length),
   );
   const [serverPage, setServerPage] = useState(2);
-  const [exhausted, setExhausted] = useState(initialItems.length === 0);
+  const [exhausted, setExhausted] = useState(initialItems.length < SERVER_PAGE_SIZE);
   const [pending, startTransition] = useTransition();
   const [searchResults, setSearchResults] = useState<
     UniversalCardProps[] | null

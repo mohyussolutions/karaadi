@@ -284,7 +284,7 @@ function RealEstateDetails() {
     realEstate.parking ||
     realEstate.hasGarage ||
     realEstate.hasGarden;
-  const amenities = realEstate.amenities ?? [];
+  const amenities = (realEstate.amenities ?? []).filter((a: any) => a && a !== "false" && a !== false);
 
   return (
     <div className="my-12 px-4 md:px-6 min-h-screen pb-24 md:pb-0">

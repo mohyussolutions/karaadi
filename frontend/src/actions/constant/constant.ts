@@ -202,7 +202,7 @@ export const PAYMENT_ENDPOINTS = {
 };
 
 export const FEED_ENDPOINTS = {
-  PAGE: (page: number, pageSize = 70) =>
+  PAGE: (page: number, pageSize = 100) =>
     createEndpoint(`${API_PATHS.FEED}?page=${page}&pageSize=${pageSize}`),
 };
 
