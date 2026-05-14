@@ -10,33 +10,7 @@ import { SettingLink } from "@/app/utils/types/categoriestype";
 import { useAuth } from "@/context/AuthContext";
 import { bulkSeedLocations } from "@/actions/categories/geoAction";
 import { regions as somaliaRegions, cities as somaliaCities } from "@/app/(storeFront)/components/shared/SomLocs/SomaliaRegionsSeeder";
-import {
-  FaMountain, FaCity, FaAnchor, FaSeedling, FaLeaf,
-  FaSun, FaWater, FaTree, FaCampground,
-  FaMapMarkerAlt, FaMapPin, FaDatabase,
-} from "react-icons/fa";
-import { GiDesert, GiHills } from "react-icons/gi";
-
-const regionIcons: Record<string, React.ReactNode> = {
-  "awdal":             <FaMountain className="text-indigo-500" />,
-  "hamar":             <FaCity className="text-indigo-500" />,
-  "bari":              <FaAnchor className="text-indigo-500" />,
-  "bakool":            <FaSeedling className="text-indigo-500" />,
-  "bay":               <FaLeaf className="text-indigo-500" />,
-  "galguduud":         <GiDesert className="text-indigo-500" />,
-  "gedo":              <GiHills className="text-indigo-500" />,
-  "hiiraan":           <FaWater className="text-indigo-500" />,
-  "jubada-dhexe":      <FaTree className="text-indigo-500" />,
-  "jubada-hoose":      <FaTree className="text-indigo-500" />,
-  "mudug":             <FaCampground className="text-indigo-500" />,
-  "nugaal":            <FaMountain className="text-indigo-500" />,
-  "sanaag":            <FaMapPin className="text-indigo-500" />,
-  "shabeellaha-dhexe": <FaWater className="text-indigo-500" />,
-  "shabeellaha-hoose": <FaWater className="text-indigo-500" />,
-  "sool":              <FaMapMarkerAlt className="text-indigo-500" />,
-  "togdheer":          <FaSun className="text-indigo-500" />,
-  "wqdl":              <FaSun className="text-indigo-500" />,
-};
+import { FaDatabase } from "react-icons/fa";
 
 interface SettingCardProps {
   title: string;
@@ -136,16 +110,7 @@ export default function Settings() {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          {somaliaRegions.map((r) => (
-            <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
-              {regionIcons[r.id]}
-              <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">{r.name}</span>
-            </div>
-          ))}
-        </div>
-
-        {seedResult && <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{seedResult}</p>}
+{seedResult && <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{seedResult}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
