@@ -1,0 +1,18 @@
+export const laptops = {
+  root:       "min-h-screen bg-gray-50",
+  grid:       "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-3 sm:px-4 py-4",
+  card:       "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden active:scale-[0.98] transition-transform touch-manipulation",
+  cardImg:    "relative w-full aspect-video bg-gray-100 flex items-center justify-center",
+  cardBody:   "p-4",
+  cardBrand:  "text-[10px] font-black text-blue-600 uppercase tracking-widest",
+  cardModel:  "font-bold text-gray-900 text-sm leading-snug mt-0.5",
+  cardPrice:  "text-blue-600 font-black text-base mt-2",
+  specRow:    "flex items-center gap-3 mt-2 flex-wrap",
+  specItem:   "flex items-center gap-1 text-[11px] text-gray-500",
+  condNew:    "absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black",
+  condUsed:   "absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-700 text-[10px] font-black",
+  specGrid:   "grid grid-cols-2 gap-2 mt-3",
+  specCard:   "bg-gray-50 rounded-lg p-2.5",
+  specLabel:  "text-[9px] font-black text-gray-400 uppercase tracking-widest",
+  specValue:  "text-xs font-bold text-gray-900 mt-0.5",
+} as const;
