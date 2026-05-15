@@ -1,14 +1,3 @@
-export const mainCategories = {
-  Marketplace: "Marketplace",
-  RealEstate: "Real Estate",
-  Cars: "Cars",
-  Boats: "Boats",
-  farmequipment: "Farm Equipment",
-  Motorcycles: "Motorcycles",
-  Jobs: "Jobs",
-  Smartsuuq: "Smartsuuq",
-} as const;
-
 export const marketplaceCategories = {
   categories: {
     antiques: "Antiques & Art",
@@ -1951,13 +1940,6 @@ export const realEstateDetail = {
 
 const en = {
   marketplaceCategories,
-  mainCategories,
-  realEstateCategories,
-  carsCategories,
-  motorcyclesCategories,
-  boatsCategories,
-  farmEquipmentCategories,
-  jobsCategories,
   about,
   terms,
   contact,

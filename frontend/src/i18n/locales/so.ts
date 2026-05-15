@@ -1,13 +1,3 @@
-export const mainCategories = {
-  Marketplace: "Suuq",
-  RealEstate: "Hantida Maguurtada",
-  Cars: "Gawaarida",
-  Boats: "Doomaha",
-  farmequipment: "Qalabka Beeraha",
-  Motorcycles: "Mootooyin",
-  Jobs: "Shaqo",
-  Smartsuuq: "Smartsuuq",
-} as const;
 export const marketplaceCategories = {
   categories: {
     antiques: "Qadiimi & Farshaxan",
@@ -37,7 +27,7 @@ export const marketplaceCategories = {
     animalAndSupplies: {
       camels: "Geel",
       goats: "Ari",
-      cattle: "Lo' / Dibi",
+      cattle: "Lo",
       sheep: "Ido",
       horses: "Faras",
       donkeys: "Dameer",
@@ -2037,13 +2027,6 @@ export const realEstateDetail = {
 
 const so = {
   marketplaceCategories,
-  mainCategories,
-  realEstateCategories,
-  carsCategories,
-  motorcyclesCategories,
-  boatsCategories,
-  farmEquipmentCategories,
-  jobsCategories,
   checkout,
   plan,
   common,
