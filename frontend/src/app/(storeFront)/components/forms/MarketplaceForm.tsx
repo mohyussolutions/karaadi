@@ -40,7 +40,7 @@ const SCHOOL_CATEGORIES = [
   { key: "tuition", labelKey: "school.tuition" },
   { key: "other", labelKey: "school.other" },
 ];
-const MARKETPLACE_FEE_MAPPING: Record<string, string> = { antiques: "art", electronics: "electronics", animalAndSupplies: "animal", sportsAndOutdoors: "sports", furniture: "furniture", fashion: "fashion" };
+const MARKETPLACE_FEE_MAPPING: Record<string, string> = { antiques: "art", electronics: "electronics", animalAndSupplies: "animal", sportsAndOutdoors: "sports", furniture: "furniture", fashion: "fashion", other: "other" };
 
 const CONDITION_KEYS = [
   { value: "New", key: "createMarketplace.conditions.new" },

@@ -40,6 +40,11 @@ export const FEE_CATEGORIES = [
         label: "Dharka, boorsooyinka & waxyaabo kale",
         type: LISTING_TYPE.FREE,
       },
+      {
+        key: "other",
+        label: "Wax kale (Other)",
+        type: LISTING_TYPE.FREE,
+      },
     ],
   },
   {

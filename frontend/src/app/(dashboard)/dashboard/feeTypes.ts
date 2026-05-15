@@ -30,6 +30,7 @@ export const fieldMappings: FieldMappings = {
     "sports",
     "furniture",
     "fashion",
+    "other",
   ],
   realEstate: ["rent", "sale", "land", "farm", "business"],
   cars: ["carSale", "carRent", "trailer", "carParts", "truck", "electricCar"],

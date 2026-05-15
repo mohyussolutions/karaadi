@@ -85,6 +85,7 @@ model MarketplaceFee {
   sports      Float    @default(0.0)
   furniture   Float    @default(0.0)
   fashion     Float    @default(0.0)
+  other       Float    @default(0.0)
   isActive    Boolean  @default(true)
   updatedAt   DateTime @updatedAt
   

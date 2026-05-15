@@ -12,6 +12,7 @@ const MARKETPLACE_FEE_KEYS = [
   "sports",
   "furniture",
   "fashion",
+  "other",
   "isActive",
 ];
 
@@ -104,6 +105,7 @@ export const getAllMarketplaceFees = async (req: Request, res: Response) => {
         sports: true,
         furniture: true,
         fashion: true,
+        other: true,
         isActive: true,
         updatedAt: true,
       },
