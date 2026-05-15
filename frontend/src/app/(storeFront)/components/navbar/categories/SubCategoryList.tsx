@@ -69,7 +69,7 @@ const SubCategoryList = memo(function SubCategoryList({
             className="group no-underline"
           >
             <div className={`flex flex-col items-center justify-center gap-2 rounded-2xl bg-white ${size.card} w-full active:scale-[0.97]`}>
-              <div className={`${size.icon} flex items-center justify-center bg-gray-100 text-gray-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-200`}>
+              <div className={`${size.icon} flex items-center justify-center text-gray-500 group-hover:text-blue-600 transition-all duration-200`}>
                 {item.icon}
               </div>
               <p className={`${size.label} text-center leading-tight m-0 text-gray-900 group-hover:text-blue-600 transition-colors duration-200`}>

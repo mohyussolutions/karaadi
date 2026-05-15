@@ -56,6 +56,270 @@ export const marketplaceCategories = {
   }
 } as const;
 
+export const mainCategories = {
+  "Marketplace": "Marketplace",
+  "RealEstate": "Real Estate",
+  "Cars": "Cars",
+  "Boats": "Boats",
+  "farmequipment": "Farm Equipment",
+  "Motorcycles": "Motorcycles",
+  "Jobs": "Jobs",
+  "Smartsuuq": "Smartsuuq"
+} as const;
+
+export const realEstateCategories = {
+  "categories": {
+    "forRent": "For Rent",
+    "forSale": "For Sale",
+    "landForSale": "Land For Sale",
+    "farmForSale": "Farm For Sale",
+    "commercial": "Commercial"
+  },
+  "subcategories": {
+    "forRent": {
+      "apartmentFlat": "Apartment/Flat",
+      "houseVilla": "House/Villa",
+      "commercialOffice": "Commercial Office",
+      "warehouseStorage": "Warehouse/Storage",
+      "singleRoom": "Single Room"
+    },
+    "forSale": {
+      "newHouseVilla": "New House/Villa",
+      "usedHouseVilla": "Used House/Villa",
+      "apartmentFlatForSale": "Apartment/Flat For Sale",
+      "completedBuilding": "Completed Building"
+    },
+    "landForSale": {
+      "residentialLand": "Residential Land",
+      "commercialLand": "Commercial Land",
+      "industrialLand": "Industrial Land"
+    },
+    "farmForSale": {
+      "agriculturalLand": "Agricultural Land",
+      "livestockFarm": "Livestock Farm",
+      "treeForestFarms": "Tree/Forest Farms"
+    },
+    "commercial": {
+      "retailSpaceShop": "Retail Space/Shop",
+      "hotelGuesthouse": "Hotel/Guesthouse",
+      "commercialBuilding": "Commercial Building",
+      "largeWarehouse": "Large Warehouse"
+    }
+  }
+} as const;
+
+export const carsCategories = {
+  "categories": {
+    "carsForSale": "Cars For Sale",
+    "leaseCars": "Lease Cars",
+    "trailers": "Trailers",
+    "carParts": "Car Parts",
+    "truck": "Truck",
+    "electricCars": "Electric Cars",
+    "buses": "Buses"
+  },
+  "subcategories": {
+    "carsForSale": {
+      "sedan": "Sedan",
+      "suv": "SUV/4x4",
+      "hatchback": "Hatchback",
+      "convertible": "Convertible",
+      "minivan": "Minivan"
+    },
+    "leaseCars": {
+      "sedanLease": "Sedan Lease",
+      "suvLease": "SUV/4x4 Lease",
+      "vanMinibusLease": "Van/Minibus Lease",
+      "truckPickupLease": "Truck/Pickup Lease",
+      "otherLeaseVehicles": "Other Lease Vehicles"
+    },
+    "carParts": {
+      "engines": "Engines",
+      "tiresRims": "Tires & Rims",
+      "bodyParts": "Body Parts"
+    },
+    "truck": {
+      "pickupTruck": "Pickup Truck",
+      "heavyTruck": "Heavy Truck",
+      "truckSpareParts": "Truck Spare Parts",
+      "flatbedTankTruck": "Flatbed/Tank Truck",
+      "otherTrucks": "Other Trucks"
+    },
+    "electricCars": {
+      "electricSedan": "Electric Sedan",
+      "electricSUV": "Electric SUV",
+      "otherElectricCar": "Other Electric Car"
+    },
+    "trailers": {
+      "boatTrailer": "Boat Trailer",
+      "trailerSpareParts": "Trailer Spare Parts",
+      "heavyDutyTrailer": "Heavy Duty Trailer",
+      "otherTrailers": "Other Trailers"
+    },
+    "buses": {
+      "coachBuses": "Coach Buses",
+      "minibuses": "Minibuses",
+      "schoolBuses": "School Buses",
+      "cityBuses": "City Buses"
+    }
+  }
+} as const;
+
+export const motorcyclesCategories = {
+  "categories": {
+    "forSale": "For Sale",
+    "forRent": "For Rent",
+    "spareParts": "Spare Parts",
+    "other": "Other"
+  },
+  "subcategories": {
+    "forSale": {
+      "newMotorcycle": "New Motorcycle",
+      "usedMotorcycle": "Used Motorcycle",
+      "newVespa": "New Vespa",
+      "usedVespa": "Used Vespa",
+      "newBajaj": "New Bajaj",
+      "usedBajaj": "Used Bajaj",
+      "sportBikes": "Sport Bikes",
+      "cargoBikes": "Cargo Bikes",
+      "cargoBajaj": "Cargo Bajaj"
+    },
+    "forRent": {
+      "motorcycleRental": "Motorcycle Rental",
+      "vespaRental": "Vespa Rental",
+      "cargoMotorcycleRental": "Cargo Motorcycle Rental",
+      "bajajForRent": "Bajaj For Rent",
+      "cargoBajajRental": "Cargo Bajaj Rental",
+      "dailyBajajRental": "Daily Bajaj Rental"
+    },
+    "spareParts": {
+      "motorcycleEngines": "Motorcycle Engines",
+      "tiresRims": "Tires & Rims",
+      "protectiveGear": "Protective Gear",
+      "bajajEngines": "Bajaj Engines",
+      "bajajBodyParts": "Bajaj Body Parts"
+    },
+    "other": {
+      "miscellaneousEquipment": "Miscellaneous Equipment"
+    }
+  }
+} as const;
+
+export const boatsCategories = {
+  "categories": {
+    "boatsForSale": "Boats For Sale",
+    "boatsForRent": "Boats For Rent",
+    "boatEnginesForSale": "Boat Engines For Sale",
+    "boatParts": "Boat Parts"
+  },
+  "subcategories": {
+    "boatsForSale": {
+      "fishingBoat": "Fishing Boat",
+      "leisureYacht": "Leisure Yacht",
+      "sailboat": "Sailboat",
+      "speedboat": "Speedboat"
+    },
+    "boatsForRent": {
+      "fishingBoatRental": "Fishing Boat Rental",
+      "yachtCharter": "Yacht Charter"
+    },
+    "boatEnginesForSale": {
+      "outboardEngine": "Outboard Engine",
+      "inboardEngine": "Inboard Engine",
+      "usedEngine": "Used Engine"
+    },
+    "boatParts": {
+      "engineParts": "Engine Parts",
+      "navigationEquipment": "Navigation Equipment",
+      "safetyGear": "Safety Gear"
+    }
+  }
+} as const;
+
+export const farmEquipmentCategories = {
+  "categories": {
+    "tractor": "Tractor",
+    "tools": "Farm Tools",
+    "fertilizerSpreader": "Fertilizer Spreader",
+    "harvester": "Grain Harvester",
+    "plow": "Plow",
+    "irrigation": "Irrigation System"
+  },
+  "subcategories": {
+    "tractor": {
+      "newTractor": "New Tractor",
+      "usedTractor": "Used Tractor"
+    },
+    "tools": {
+      "plowTillageEquipment": "Plow/Tillage Equipment",
+      "seedingEquipment": "Seeding Equipment",
+      "harvestingEquipment": "Harvesting Equipment"
+    },
+    "fertilizerSpreader": {
+      "mountedSpreader": "Mounted Spreader",
+      "towedSpreader": "Towed Spreader"
+    },
+    "harvester": {
+      "selfPropelledHarvester": "Self-Propelled Harvester",
+      "pullTypeHarvester": "Pull-Type Harvester"
+    },
+    "plow": {
+      "moldboardPlow": "Moldboard Plow",
+      "discPlow": "Disc Plow",
+      "subsoilPlow": "Subsoil Plow"
+    },
+    "irrigation": {
+      "dripIrrigation": "Drip Irrigation",
+      "sprinklerIrrigation": "Sprinkler Irrigation",
+      "floodIrrigation": "Flood Irrigation",
+      "waterPumps": "Water Pumps"
+    }
+  }
+} as const;
+
+export const jobsCategories = {
+  "categories": {
+    "fullTime": "Full Time",
+    "partTime": "Part Time",
+    "physical": "Physical Labor",
+    "internship": "Internship",
+    "remote": "Remote",
+    "tech": "Technology",
+    "finance": "Finance",
+    "education": "Education",
+    "healthcare": "Healthcare",
+    "hospitality": "Hospitality"
+  },
+  "subcategories": {
+    "fullTime": {
+      "administrationOffice": "Administration/Office",
+      "itTechnology": "IT/Technology",
+      "healthcare": "Healthcare",
+      "salesMarketing": "Sales/Marketing",
+      "engineeringConstruction": "Engineering/Construction"
+    },
+    "partTime": {
+      "officeAssistant": "Office Assistant",
+      "studentEmployment": "Student Employment",
+      "foodDeliveryRunner": "Food Delivery Runner"
+    },
+    "freelance": {
+      "graphicDesigner": "Graphic Designer",
+      "webDeveloper": "Web Developer",
+      "freelanceWriter": "Freelance Writer"
+    }
+  },
+  "quickLinks": {
+    "it": "IT Jobs",
+    "airport": "Airport Jobs",
+    "public": "Public Sector",
+    "seaport": "Seaport Jobs",
+    "construction": "Construction",
+    "agriculture": "Agriculture",
+    "transportation": "Transportation"
+  }
+} as const;
+
 export const about = {
   "title": "About Karaadi",
   "heading": "About Karaadi",
@@ -1658,6 +1922,13 @@ export const realEstateDetail = {
 
 const en = {
   marketplaceCategories,
+  mainCategories,
+  realEstateCategories,
+  carsCategories,
+  motorcyclesCategories,
+  boatsCategories,
+  farmEquipmentCategories,
+  jobsCategories,
   about,
   terms, 
   contact, 

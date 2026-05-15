@@ -56,6 +56,270 @@ export const marketplaceCategories = {
   }
 } as const;
 
+export const mainCategories = {
+  "Marketplace": "Suuq",
+  "RealEstate": "Hantida Maguurtada",
+  "Cars": "Gawaarida",
+  "Boats": "Doomaha",
+  "farmequipment": "Qalabka Beeraha",
+  "Motorcycles": "Mootooyin",
+  "Jobs": "Shaqo",
+  "Smartsuuq": "Smartsuuq"
+} as const;
+
+export const realEstateCategories = {
+  "categories": {
+    "forRent": "Kirada",
+    "forSale": "Iibka",
+    "landForSale": "Dhulka",
+    "farmForSale": "Beeraha",
+    "commercial": "Ganacsiga"
+  },
+  "subcategories": {
+    "forRent": {
+      "apartmentFlat": "Guri Dabaq",
+      "houseVilla": "Guri Gooni",
+      "commercialOffice": "Xafiis",
+      "warehouseStorage": "Bakhaar/Keyd",
+      "singleRoom": "Qol Keli"
+    },
+    "forSale": {
+      "newHouseVilla": "Guri Cusub",
+      "usedHouseVilla": "Guri La Isticmaalay",
+      "apartmentFlatForSale": "Guri Dabaq Iibka",
+      "completedBuilding": "Dhisme Dhameystiran"
+    },
+    "landForSale": {
+      "residentialLand": "Dhul Degganaan",
+      "commercialLand": "Dhul Ganacsi",
+      "industrialLand": "Dhul Warshad"
+    },
+    "farmForSale": {
+      "agriculturalLand": "Dhul Beereed",
+      "livestockFarm": "Beerta Xoolaha",
+      "treeForestFarms": "Beeraha Geedaha"
+    },
+    "commercial": {
+      "retailSpaceShop": "Goob Tafaariiq",
+      "hotelGuesthouse": "Huteel",
+      "commercialBuilding": "Dhisme Ganacsi",
+      "largeWarehouse": "Bakhaar Weyn"
+    }
+  }
+} as const;
+
+export const carsCategories = {
+  "categories": {
+    "carsForSale": "Gawaari Iibka",
+    "leaseCars": "Gawaari Kirada",
+    "trailers": "Rimoor",
+    "carParts": "Qaybaha",
+    "truck": "Xamuulka",
+    "electricCars": "Korontada",
+    "buses": "Basaska"
+  },
+  "subcategories": {
+    "carsForSale": {
+      "sedan": "Sedan",
+      "suv": "SUV/4x4",
+      "hatchback": "Hatchback",
+      "convertible": "Convertible",
+      "minivan": "Minivan"
+    },
+    "leaseCars": {
+      "sedanLease": "Sedan Kiro",
+      "suvLease": "SUV Kiro",
+      "vanMinibusLease": "Van Kiro",
+      "truckPickupLease": "Xamuul Kiro",
+      "otherLeaseVehicles": "Gawaari Kale"
+    },
+    "carParts": {
+      "engines": "Matoorrada",
+      "tiresRims": "Taayirada",
+      "bodyParts": "Qaybaha Jidhka"
+    },
+    "truck": {
+      "pickupTruck": "Pickup",
+      "heavyTruck": "Xamuul Culus",
+      "truckSpareParts": "Qaybaha Xamuulka",
+      "flatbedTankTruck": "Flatbed/Tank",
+      "otherTrucks": "Xamuul Kale"
+    },
+    "electricCars": {
+      "electricSedan": "Sedan Koronto",
+      "electricSUV": "SUV Koronto",
+      "otherElectricCar": "Gawaari Koronto Kale"
+    },
+    "trailers": {
+      "boatTrailer": "Rimoor Doon",
+      "trailerSpareParts": "Qaybaha Rimoor",
+      "heavyDutyTrailer": "Rimoor Culus",
+      "otherTrailers": "Rimoor Kale"
+    },
+    "buses": {
+      "coachBuses": "Basas Waaweyn",
+      "minibuses": "Basas Yar-yar",
+      "schoolBuses": "Basas Dugsi",
+      "cityBuses": "Basas Magaalada"
+    }
+  }
+} as const;
+
+export const motorcyclesCategories = {
+  "categories": {
+    "forSale": "Iibka",
+    "forRent": "Kirada",
+    "spareParts": "Qaybaha",
+    "other": "Kale"
+  },
+  "subcategories": {
+    "forSale": {
+      "newMotorcycle": "Mooto Cusub",
+      "usedMotorcycle": "Mooto La Isticmaalay",
+      "newVespa": "Vespa Cusub",
+      "usedVespa": "Vespa La Isticmaalay",
+      "newBajaj": "Bajaaj Cusub",
+      "usedBajaj": "Bajaaj La Isticmaalay",
+      "sportBikes": "Mootooyin Ciyaar",
+      "cargoBikes": "Mootooyin Xamuul",
+      "cargoBajaj": "Bajaaj Xamuul"
+    },
+    "forRent": {
+      "motorcycleRental": "Mootooyin Kiro",
+      "vespaRental": "Vespa Kiro",
+      "cargoMotorcycleRental": "Mooto Xamuul Kiro",
+      "bajajForRent": "Bajaaj Kiro",
+      "cargoBajajRental": "Bajaaj Xamuul Kiro",
+      "dailyBajajRental": "Bajaaj Kiro Maalinle"
+    },
+    "spareParts": {
+      "motorcycleEngines": "Matoorrada Mootooyinka",
+      "tiresRims": "Taayirada",
+      "protectiveGear": "Qalabka Ilaalinta",
+      "bajajEngines": "Matoorrada Bajaaj",
+      "bajajBodyParts": "Qaybaha Jidhka Bajaaj"
+    },
+    "other": {
+      "miscellaneousEquipment": "Qalabka Kale"
+    }
+  }
+} as const;
+
+export const boatsCategories = {
+  "categories": {
+    "boatsForSale": "Doomaha Iibka",
+    "boatsForRent": "Doomaha Kirada",
+    "boatEnginesForSale": "Matoorada Doomaha",
+    "boatParts": "Qaybaha Doomaha"
+  },
+  "subcategories": {
+    "boatsForSale": {
+      "fishingBoat": "Doon Kalluumaysi",
+      "leisureYacht": "Doon Raaxo",
+      "sailboat": "Doon Shiraac",
+      "speedboat": "Doon Xawaare"
+    },
+    "boatsForRent": {
+      "fishingBoatRental": "Kiro Doon Kalluumaysi",
+      "yachtCharter": "Kiro Doon Raaxo"
+    },
+    "boatEnginesForSale": {
+      "outboardEngine": "Matoor Dibadda",
+      "inboardEngine": "Matoor Gudaha",
+      "usedEngine": "Matoor La Isticmaalay"
+    },
+    "boatParts": {
+      "engineParts": "Qaybaha Matoorrada",
+      "navigationEquipment": "Qalabka Navigashanka",
+      "safetyGear": "Qalabka Badbaadada"
+    }
+  }
+} as const;
+
+export const farmEquipmentCategories = {
+  "categories": {
+    "tractor": "Cagaf",
+    "tools": "Qalabka Beeraha",
+    "fertilizerSpreader": "Faafiyaha Bacriminta",
+    "harvester": "Makiinada Goosashada",
+    "plow": "Qalabka Qodista",
+    "irrigation": "Nidaamka Waraabka"
+  },
+  "subcategories": {
+    "tractor": {
+      "newTractor": "Cagaf Cusub",
+      "usedTractor": "Cagaf La Isticmaalay"
+    },
+    "tools": {
+      "plowTillageEquipment": "Qalabka Wax Laguu Qoto",
+      "seedingEquipment": "Qalabka Abuuritaanka",
+      "harvestingEquipment": "Qalabka Goosashada"
+    },
+    "fertilizerSpreader": {
+      "mountedSpreader": "Faafiyaha Mounted",
+      "towedSpreader": "Faafiyaha Towed"
+    },
+    "harvester": {
+      "selfPropelledHarvester": "Harvester Isu Wada",
+      "pullTypeHarvester": "Harvester Jiidan"
+    },
+    "plow": {
+      "moldboardPlow": "Qalabka Moldboard",
+      "discPlow": "Qalabka Disc",
+      "subsoilPlow": "Qalabka Subsoil"
+    },
+    "irrigation": {
+      "dripIrrigation": "Waraabinta Dhibicda",
+      "sprinklerIrrigation": "Waraabinta Sprinkler",
+      "floodIrrigation": "Waraabinta Roobka",
+      "waterPumps": "Bambooyin Biyo"
+    }
+  }
+} as const;
+
+export const jobsCategories = {
+  "categories": {
+    "fullTime": "Waqti Buuxa",
+    "partTime": "Waqti Kooban",
+    "physical": "Shaqo Jidheed",
+    "internship": "Tababar",
+    "remote": "Shaqo Fog",
+    "tech": "Tiknooloji",
+    "finance": "Maaliyadda",
+    "education": "Waxbarashada",
+    "healthcare": "Caafimaadka",
+    "hospitality": "Marti-qaadashada"
+  },
+  "subcategories": {
+    "fullTime": {
+      "administrationOffice": "Maamulka",
+      "itTechnology": "IT",
+      "healthcare": "Caafimaadka",
+      "salesMarketing": "Iibka",
+      "engineeringConstruction": "Injineernimo"
+    },
+    "partTime": {
+      "officeAssistant": "Kaaliye",
+      "studentEmployment": "Shaqo Ardayeed",
+      "foodDeliveryRunner": "Bixinta Cuntada"
+    },
+    "freelance": {
+      "graphicDesigner": "Naqshadeeye",
+      "webDeveloper": "Web Developer",
+      "freelanceWriter": "Qoraa"
+    }
+  },
+  "quickLinks": {
+    "it": "Shaqooyinka IT",
+    "airport": "Shaqooyinka Garoomada",
+    "public": "Shaqooyinka Dadweynaha",
+    "seaport": "Shaqooyinka Dekedda",
+    "construction": "Dhismaha",
+    "agriculture": "Beeraha",
+    "transportation": "Gaadiidka"
+  }
+} as const;
+
 export const checkout = {
   "title": "Bixinta",
   "description": "Dhameystir habka bixintaada",
@@ -1728,6 +1992,13 @@ export const realEstateDetail = {
 
 const so = {
   marketplaceCategories,
+  mainCategories,
+  realEstateCategories,
+  carsCategories,
+  motorcyclesCategories,
+  boatsCategories,
+  farmEquipmentCategories,
+  jobsCategories,
   checkout,
   plan, 
   common, 

@@ -37,7 +37,7 @@ const CategoryLinks = memo(function CategoryLinks() {
           >
             <div className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white py-3 px-2 min-h-[84px] w-full active:scale-[0.97]">
               {!category.hideIcon && (
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-[20px] text-gray-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-200">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[20px] text-gray-500 group-hover:text-blue-600 transition-all duration-200">
                   {category.icon}
                 </div>
               )}
