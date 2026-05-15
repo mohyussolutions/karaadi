@@ -28,18 +28,20 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    setPermission(Notification.permission);
+    const perm = Notification.permission;
+    setPermission(perm);
 
     const stored = localStorage.getItem(SW_KEY);
-    if (stored !== "true" || Notification.permission !== "granted") return;
+    if (stored !== "true" || perm !== "granted") return;
+
+    setEnabled(true);
 
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
     navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
       reg?.pushManager.getSubscription().then((sub) => {
-        if (sub) {
-          setEnabled(true);
-        } else {
+        if (!sub) {
+          setEnabled(false);
           localStorage.setItem(SW_KEY, "false");
         }
       });
