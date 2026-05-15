@@ -27,20 +27,31 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    setPermission(Notification.permission);
-    const stored = localStorage.getItem(SW_KEY);
-    if (stored === "true" && Notification.permission === "granted") setEnabled(true);
+    const perm = Notification.permission;
+    setPermission(perm);
+
+    if (perm !== "granted") {
+      localStorage.setItem(SW_KEY, "false");
+      return;
+    }
+
+    navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
+      reg?.pushManager.getSubscription().then((sub) => {
+        const isActive = !!sub;
+        setEnabled(isActive);
+        localStorage.setItem(SW_KEY, isActive ? "true" : "false");
+      });
+    });
   }, []);
 
   const subscribe = useCallback(async () => {
     const userId = user?._id || user?.id;
     if (!userId || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    setEnabled(true);
     setLoading(true);
     try {
       const perm = await Notification.requestPermission();
       setPermission(perm);
-      if (perm !== "granted") { setEnabled(false); return; }
+      if (perm !== "granted") return;
 
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
@@ -59,6 +70,7 @@ export function usePushNotifications() {
       });
 
       localStorage.setItem(SW_KEY, "true");
+      setEnabled(true);
     } catch {
       setEnabled(false);
       localStorage.setItem(SW_KEY, "false");
@@ -69,7 +81,6 @@ export function usePushNotifications() {
 
   const unsubscribe = useCallback(async () => {
     if (!("serviceWorker" in navigator)) return;
-    setEnabled(false);
     setLoading(true);
     try {
       const reg = await navigator.serviceWorker.getRegistration("/sw.js");
@@ -84,6 +95,7 @@ export function usePushNotifications() {
         await sub.unsubscribe();
       }
       localStorage.setItem(SW_KEY, "false");
+      setEnabled(false);
     } catch {
       setEnabled(true);
     } finally {
