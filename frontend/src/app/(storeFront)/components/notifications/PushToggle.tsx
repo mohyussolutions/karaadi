@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useState, useEffect } from "react";
 import { Bell, Loader2, X, Share } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { usePushNotifications } from "../hooks/usePushNotifications";
+import { usePushNotifications } from "./usePushNotifications";
 
 function isIOSWithoutPWA() {
   if (typeof window === "undefined") return false;
