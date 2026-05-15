@@ -1,9 +1,18 @@
 "use client";
 
+import { useRef } from "react";
 import { useState, useEffect } from "react";
 import { Bell, Loader2, X, Share } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { usePushNotifications } from "../hooks/usePushNotifications";
+
+function isIOSWithoutPWA() {
+  if (typeof window === "undefined") return false;
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (!ios) return false;
+  const pwa = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+  return !pwa;
+}
 
 function ConfirmModal({ title, body, onConfirm, onCancel }: { title: string; body: string; onConfirm: () => void; onCancel: () => void }) {
   const { t } = useTranslation();
@@ -57,14 +66,11 @@ type Modal = "confirm-on" | "confirm-off" | "ios" | null;
 export default function PushToggle() {
   const { t } = useTranslation();
   const { enabled, subscribed, permission, loading, subscribe, unsubscribe } = usePushNotifications();
-  const [supported, setSupported] = useState<boolean | null>(null);
   const [modal, setModal] = useState<Modal>(null);
+  const iosRef = useRef<boolean | null>(null);
 
   useEffect(() => {
-    const hasAPIs = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isPWA = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
-    setSupported(hasAPIs && (!isIOS || isPWA));
+    iosRef.current = isIOSWithoutPWA();
   }, []);
 
   const isBlocked = permission === "denied";
@@ -72,13 +78,12 @@ export default function PushToggle() {
 
   const handleClick = () => {
     if (isDisabled) return;
-    if (supported === false) { setModal("ios"); return; }
+    if (iosRef.current) { setModal("ios"); return; }
     setModal(subscribed ? "confirm-off" : "confirm-on");
   };
 
   const subtitle =
     isBlocked ? t("notifications.push.blocked") :
-    supported === false ? t("notifications.push.iphoneHint") :
     loading ? t(subscribed ? "notifications.push.turningOff" : "notifications.push.turningOn") :
     subscribed ? t("notifications.push.enabled") :
     t("notifications.push.disabled");

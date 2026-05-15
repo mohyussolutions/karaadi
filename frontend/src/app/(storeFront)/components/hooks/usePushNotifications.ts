@@ -7,7 +7,6 @@ import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { setEnabled, setSubscribed, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const SW_KEY = "karaadi:push:enabled";
 
 async function getVapidKey(): Promise<string> {
   const res = await fetch(`${API}/api/push/vapid-public-key`);
@@ -28,21 +27,11 @@ export function usePushNotifications() {
   const { enabled, subscribed, permission, loading } = useAppSelector((s) => s.pushNotification);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-    const perm = Notification.permission;
-    dispatch(setPermission(perm));
-
-    if (localStorage.getItem(SW_KEY) === "false") {
-      dispatch(setEnabled(false));
-      dispatch(setSubscribed(false));
-      return;
-    }
-
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    dispatch(setPermission(Notification.permission));
     navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
       reg?.pushManager.getSubscription().then((sub) => {
-        const active = !!sub && perm === "granted";
+        const active = !!sub && Notification.permission === "granted";
         dispatch(setSubscribed(active));
         if (active) dispatch(setEnabled(true));
       });
@@ -57,20 +46,16 @@ export function usePushNotifications() {
       const perm = await Notification.requestPermission();
       dispatch(setPermission(perm));
       if (perm !== "granted") {
-        localStorage.setItem(SW_KEY, "false");
         dispatch(setEnabled(false));
+        dispatch(setSubscribed(false));
         return;
       }
-
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
-
-      const vapidKey = await getVapidKey();
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array(vapidKey),
+        applicationServerKey: urlB64ToUint8Array(await getVapidKey()),
       });
-
       const headers = await getAuthHeaders();
       await fetch(`${API}/api/push/subscribe`, {
         method: "POST",
@@ -78,8 +63,6 @@ export function usePushNotifications() {
         credentials: "include",
         body: JSON.stringify({ userId, subscription: sub.toJSON() }),
       });
-
-      localStorage.setItem(SW_KEY, "true");
       dispatch(setEnabled(true));
       dispatch(setSubscribed(true));
     } catch {
@@ -106,7 +89,6 @@ export function usePushNotifications() {
           await sub.unsubscribe();
         }
       }
-      localStorage.setItem(SW_KEY, "false");
       dispatch(setEnabled(false));
       dispatch(setSubscribed(false));
     } catch {
