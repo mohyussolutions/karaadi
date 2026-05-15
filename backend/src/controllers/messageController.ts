@@ -144,9 +144,10 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     sendPushToUser(receiverId, {
       title: message.sender?.username || "New message",
-      body: decryptedMessage.content.slice(0, 80),
+      body: decryptedMessage.content.slice(0, 100),
       icon: "/logo.jpg",
-      url: `/messages?chatId=${chatId}`,
+      url: `/messages/${chatId}`,
+      tag: `chat-${chatId}`,
     }).catch(() => {});
 
     res.status(201).json(decryptedMessage);

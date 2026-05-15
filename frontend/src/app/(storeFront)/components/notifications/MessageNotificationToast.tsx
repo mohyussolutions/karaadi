@@ -85,7 +85,8 @@ export default function MessageNotificationToast() {
       if (event.data?.type !== "push") return;
       if (onMessagesPage) return;
       const { title, body, url } = event.data.data as { title?: string; body?: string; url?: string };
-      const chatId = url ? Number(new URLSearchParams(url.split("?")[1] ?? "").get("chatId")) : 0;
+      const pathMatch = url?.match(/\/messages\/(\d+)/);
+      const chatId = pathMatch ? Number(pathMatch[1]) : 0;
       if (chatId && recentChats.current.has(chatId)) return;
       push({
         key: `sw-${Date.now()}-${Math.random()}`,

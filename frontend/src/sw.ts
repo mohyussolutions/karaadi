@@ -5,6 +5,7 @@ type PushData = {
   body?: string;
   icon?: string;
   url?: string;
+  tag?: string;
 };
 
 const sw = self as ServiceWorkerGlobalScope;
@@ -26,10 +27,13 @@ sw.addEventListener("push", (event) => {
       return sw.registration.showNotification(data.title || "Karaadi", {
         body: data.body || "",
         icon: data.icon || "/logo.jpg",
+        badge: "/logo.jpg",
         data: { url: data.url || "/messages" },
+        tag: data.tag || "karaadi",
+        renotify: true,
         vibrate: [200, 100, 200],
         requireInteraction: false,
-      } as NotificationOptions & { vibrate: number[] });
+      } as NotificationOptions & { vibrate: number[]; badge: string; renotify: boolean });
     }),
   );
 });
@@ -42,8 +46,19 @@ sw.addEventListener("notificationclick", (event) => {
     sw.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((list) => {
-        const existing = list.find((c) => c.url.includes(url));
-        if (existing) return existing.focus();
+        const existing = list.find((c) => {
+          try {
+            const clientUrl = new URL(c.url);
+            return clientUrl.pathname.startsWith(url.split("?")[0]);
+          } catch {
+            return c.url.includes(url);
+          }
+        });
+        if (existing) {
+          existing.focus();
+          existing.navigate?.(url);
+          return;
+        }
         return sw.clients.openWindow(url);
       }),
   );

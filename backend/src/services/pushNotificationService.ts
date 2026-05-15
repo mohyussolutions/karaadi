@@ -3,20 +3,23 @@ import prisma from "src/core/utils/db.ts";
 
 let vapidReady = false;
 
-function ensureVapid() {
+function ensureVapid(): boolean {
   if (vapidReady) return true;
   const email = process.env.VAPID_EMAIL;
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  if (!email || !pub || !priv) return false;
-  webpush.setVapidDetails(email, pub, priv);
+  if (!email || !pub || !priv) {
+    console.warn("[push] VAPID env vars not set — push notifications disabled");
+    return false;
+  }
+  webpush.setVapidDetails(`mailto:${email.replace(/^mailto:/, "")}`, pub, priv);
   vapidReady = true;
   return true;
 }
 
 export async function sendPushToUser(
   userId: string,
-  payload: { title: string; body: string; icon?: string; url?: string },
+  payload: { title: string; body: string; icon?: string; url?: string; tag?: string },
 ) {
   if (!ensureVapid()) return;
 
@@ -24,16 +27,28 @@ export async function sendPushToUser(
     where: { userId, enabled: true },
   });
 
+  if (!subs.length) return;
+
+  const data = JSON.stringify({
+    title: payload.title,
+    body: payload.body,
+    icon: payload.icon ?? "/logo.jpg",
+    url: payload.url ?? "/messages",
+    tag: payload.tag ?? "karaadi",
+  });
+
   await Promise.allSettled(
     subs.map((sub) =>
       webpush
         .sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify(payload),
+          data,
         )
         .catch(async (err: webpush.WebPushError) => {
           if (err.statusCode === 410 || err.statusCode === 404) {
             await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+          } else {
+            console.error("[push] send error:", err.statusCode, err.message);
           }
         }),
     ),
