@@ -33,7 +33,6 @@ export function usePushNotifications() {
       reg?.pushManager.getSubscription().then((sub) => {
         const active = !!sub && Notification.permission === "granted";
         dispatch(setSubscribed(active));
-        if (active) dispatch(setEnabled(true));
       });
     });
   }, [dispatch]);
@@ -45,11 +44,7 @@ export function usePushNotifications() {
     try {
       const perm = await Notification.requestPermission();
       dispatch(setPermission(perm));
-      if (perm !== "granted") {
-        dispatch(setEnabled(false));
-        dispatch(setSubscribed(false));
-        return;
-      }
+      if (perm !== "granted") return;
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
