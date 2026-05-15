@@ -94,6 +94,15 @@ export default function CarManagement() {
     e.currentTarget.style.display = "none";
   };
 
+  const getPlan = (item: any) =>
+    item.isPremium90 ? "Premium 90" : item.isStandard60 ? "Standard 60" : item.isBasic30 ? "Basic 30" : "—";
+
+  const getExpiry = (item: any) => {
+    if (!item.expiryDate) return { label: "—", expired: false };
+    const d = new Date(item.expiryDate);
+    return { label: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), expired: d < new Date() };
+  };
+
   if (error && items.length === 0) {
     return (
       <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
@@ -172,6 +181,14 @@ export default function CarManagement() {
                               {car.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                             </p>
                           </div>
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-gray-500">Plan</span>
+                            <p className="font-medium truncate text-blue-700">{getPlan(car)}</p>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-gray-500">Expires</span>
+                            <p className={`font-medium truncate ${getExpiry(car).expired ? "text-red-600" : "text-gray-700"}`}>{getExpiry(car).label}</p>
+                          </div>
                         </div>
                         <div className="mt-4 flex gap-2">
                           <button
@@ -221,6 +238,8 @@ export default function CarManagement() {
                         <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.city")}</th>
                         <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.seller")}</th>
                         <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.paid")}</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[9%]">Plan</th>
+                        <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">Expires</th>
                         <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.actions")}</th>
                       </tr>
                     </thead>
@@ -296,6 +315,18 @@ export default function CarManagement() {
                               )}
                             </td>
                             <td className="border-b p-3">
+                              <span className="text-xs font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                {getPlan(car)}
+                              </span>
+                            </td>
+                            <td className="border-b p-3">
+                              {(() => { const e = getExpiry(car); return (
+                                <span className={`text-xs font-medium whitespace-nowrap ${e.expired ? "text-red-600" : "text-gray-700"}`}>
+                                  {e.label}
+                                </span>
+                              ); })()}
+                            </td>
+                            <td className="border-b p-3">
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleTogglePaid(car)}
@@ -319,7 +350,7 @@ export default function CarManagement() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={8} className="text-center py-10 text-gray-500">
+                          <td colSpan={10} className="text-center py-10 text-gray-500">
                             {t("adminTable.noItems")}
                           </td>
                         </tr>

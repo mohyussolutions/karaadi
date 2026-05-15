@@ -39,6 +39,7 @@ model User {
   views             UserView[]
   reports           Report[]        @relation("UserReports")
   loginHistories    LoginHistory[]     @relation("UserLoginHistories")
+  sessions          Session[]          @relation("UserSessions")
 
   @@index([email])
   @@index([username])
@@ -98,4 +99,21 @@ model LoginHistory {
 
   @@index([userId])
   @@index([loggedAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  device    String?
+  browser   String?
+  ipAddress String?
+  userAgent String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation("UserSessions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
 }

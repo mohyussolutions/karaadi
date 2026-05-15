@@ -9,7 +9,7 @@ export const marketplaceCategories = {
   },
   subcategories: {
     antiques: {
-      bowls: "Baaquli",
+      bowls: "Maacuunta",
       parts: "Qaybo",
       coffeeService: "Adeegga Bunka",
       porcelain: "Fooraan",

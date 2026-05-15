@@ -92,6 +92,15 @@ export default function MarketplacePage() {
     e.currentTarget.style.display = "none";
   }, []);
 
+  const getPlan = (item: any) =>
+    item.isPremium90 ? "Premium 90" : item.isStandard60 ? "Standard 60" : item.isBasic30 ? "Basic 30" : "—";
+
+  const getExpiry = (item: any) => {
+    if (!item.expiryDate) return { label: "—", expired: false };
+    const d = new Date(item.expiryDate);
+    return { label: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), expired: d < new Date() };
+  };
+
   const filtered = useMemo(() => {
     if (!activeSubKey) return items;
     const match = marketplaceSubCategories.find((s) => s.key === activeSubKey);
@@ -213,6 +222,16 @@ export default function MarketplacePage() {
                           {item.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                         </p>
                       </div>
+                      <div className="bg-gray-50 p-2 rounded">
+                        <span className="text-gray-400 dark:text-gray-500">Plan</span>
+                        <p className="font-medium text-blue-700">{getPlan(item)}</p>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded col-span-2">
+                        <span className="text-gray-400 dark:text-gray-500">Expires</span>
+                        {(() => { const e = getExpiry(item); return (
+                          <p className={`font-medium ${e.expired ? "text-red-600" : "text-gray-700"}`}>{e.label}</p>
+                        ); })()}
+                      </div>
                     </div>
                     <div className="mt-2 bg-gray-50 p-2 rounded-lg text-xs">
                       <p className="text-gray-400 dark:text-gray-500 mb-0.5">{t("adminTable.seller")}</p>
@@ -250,21 +269,23 @@ export default function MarketplacePage() {
           <table className="w-full table-fixed min-w-[700px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.image")}</th>
-                <th className="border-b p-3 text-xs font-semibold text-left w-[16%]">{t("adminTable.title")}</th>
-                <th className="border-b p-3 text-xs font-semibold text-left w-[18%]">{t("adminTable.category")}</th>
-                <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.price")}</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[7%]">{t("adminTable.image")}</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[14%]">{t("adminTable.title")}</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[14%]">{t("adminTable.category")}</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[7%]">{t("adminTable.price")}</th>
                 <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.city")}</th>
-                <th className="border-b p-3 text-xs font-semibold text-left w-[18%]">{t("adminTable.seller")}</th>
-                <th className="border-b p-3 text-xs font-semibold text-left w-[8%]">{t("adminTable.paid")}</th>
-                <th className="border-b p-3 text-xs font-semibold text-left w-[12%]">{t("adminTable.actions")}</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[14%]">{t("adminTable.seller")}</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[7%]">{t("adminTable.paid")}</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">Plan</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">Expires</th>
+                <th className="border-b p-3 text-xs font-semibold text-left w-[9%]">{t("adminTable.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {loading
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 8 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <td key={j} className="border-b p-3">
                           <div className="h-4 bg-gray-100 rounded animate-pulse" />
                         </td>
@@ -331,6 +352,18 @@ export default function MarketplacePage() {
                               <FaTimesCircle size={10} /> {t("adminTable.unpaid")}
                             </span>
                           )}
+                        </td>
+                        <td className="border-b p-3">
+                          <span className="text-xs font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            {getPlan(item)}
+                          </span>
+                        </td>
+                        <td className="border-b p-3">
+                          {(() => { const e = getExpiry(item); return (
+                            <span className={`text-xs font-medium whitespace-nowrap ${e.expired ? "text-red-600" : "text-gray-700"}`}>
+                              {e.label}
+                            </span>
+                          ); })()}
                         </td>
                         <td className="border-b p-3">
                           <div className="flex items-center gap-1">

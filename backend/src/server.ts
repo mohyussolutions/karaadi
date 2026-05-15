@@ -9,6 +9,7 @@ import { socketServer } from "./services/sockets/socketServer.js";
 import setupGracefulShutdown from "./core/utils/gracefulShutdown.js";
 import redisServer from "./services/redis/redisServer.ts";
 import { runBackup } from "./services/backup/dbBackup.js";
+import { expireListings } from "./services/expireListings.js";
 
 const server = http.createServer(app);
 
@@ -47,6 +48,8 @@ const startServer = async () => {
     setupGracefulShutdown({ server, prisma, redisServer });
 
     cron.schedule("0 2 */3 * *", runBackup, { timezone: "UTC" });
+    cron.schedule("0 * * * *", expireListings, { timezone: "UTC" });
+    expireListings().catch(() => {});
 
     setInterval(async () => {
       try {
