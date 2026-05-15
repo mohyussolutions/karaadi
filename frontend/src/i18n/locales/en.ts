@@ -125,6 +125,16 @@ export const notifications = {
     "turningOff": "Turning off…",
     "enabled": "You'll be notified of new messages",
     "disabled": "Tap to get notified when offline",
+    "yes": "Yes",
+    "cancel": "Cancel",
+    "confirmOn": {
+      "title": "Enable notifications?",
+      "body": "You'll get notified when someone sends you a message, even when the app is closed."
+    },
+    "confirmOff": {
+      "title": "Turn off notifications?",
+      "body": "You won't receive message notifications until you turn them back on."
+    },
     "iosModal": {
       "title": "Enable notifications",
       "body": "iPhone notifications require adding Karaadi to your Home Screen first.",

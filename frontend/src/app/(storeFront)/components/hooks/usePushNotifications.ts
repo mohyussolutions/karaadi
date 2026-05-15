@@ -4,7 +4,7 @@ import { useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
-import { setEnabled, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
+import { setEnabled, setSubscribed, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const SW_KEY = "karaadi:push:enabled";
@@ -25,29 +25,26 @@ function urlB64ToUint8Array(base64String: string) {
 export function usePushNotifications() {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
-  const { enabled, permission, loading } = useAppSelector((s) => s.pushNotification);
+  const { enabled, subscribed, permission, loading } = useAppSelector((s) => s.pushNotification);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     const perm = Notification.permission;
     dispatch(setPermission(perm));
 
-    const stored = localStorage.getItem(SW_KEY);
-    if (stored !== "true" || perm !== "granted") {
+    if (localStorage.getItem(SW_KEY) === "false") {
       dispatch(setEnabled(false));
+      dispatch(setSubscribed(false));
       return;
     }
-
-    dispatch(setEnabled(true));
 
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
     navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
       reg?.pushManager.getSubscription().then((sub) => {
-        if (!sub) {
-          dispatch(setEnabled(false));
-          localStorage.setItem(SW_KEY, "false");
-        }
+        const active = !!sub && perm === "granted";
+        dispatch(setSubscribed(active));
+        if (active) dispatch(setEnabled(true));
       });
     });
   }, [dispatch]);
@@ -80,8 +77,9 @@ export function usePushNotifications() {
 
       localStorage.setItem(SW_KEY, "true");
       dispatch(setEnabled(true));
+      dispatch(setSubscribed(true));
     } catch {
-      dispatch(setEnabled(false));
+      dispatch(setSubscribed(false));
       localStorage.setItem(SW_KEY, "false");
     } finally {
       dispatch(setLoading(false));
@@ -107,6 +105,7 @@ export function usePushNotifications() {
       }
       localStorage.setItem(SW_KEY, "false");
       dispatch(setEnabled(false));
+      dispatch(setSubscribed(false));
     } catch {
       dispatch(setEnabled(true));
     } finally {
@@ -114,10 +113,5 @@ export function usePushNotifications() {
     }
   }, [dispatch]);
 
-  const toggle = useCallback(() => {
-    if (enabled) unsubscribe();
-    else subscribe();
-  }, [enabled, subscribe, unsubscribe]);
-
-  return { enabled, permission, loading, toggle, subscribe, unsubscribe };
+  return { enabled, subscribed, permission, loading, subscribe, unsubscribe };
 }

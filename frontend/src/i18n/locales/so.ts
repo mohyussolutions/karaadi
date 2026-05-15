@@ -168,6 +168,16 @@ export const notifications = {
     "turningOff": "Waa la daminayaa…",
     "enabled": "Waxa lagugu ogeysiinayaa farriimaha cusub",
     "disabled": "Taabo si aad ogeysiis u hesho marka aadan online ahayn",
+    "yes": "Haa",
+    "cancel": "Jooji",
+    "confirmOn": {
+      "title": "Ogeysiisyada shid?",
+      "body": "Waxa lagugu ogeysiinayaa marka qof fariin ku soo diro, xitaa haddii abka la xidho."
+    },
+    "confirmOff": {
+      "title": "Ogeysiisyada dami?",
+      "body": "Ma heli doontid ogeysiisyada fariimaha ilaa aad mar kale shiddo."
+    },
     "iosModal": {
       "title": "Ogeysiisyada shid",
       "body": "Ogeysiisyada iPhone waxay u baahan yihiin inaad Karaadi ku darto shaashadda guriga.",
