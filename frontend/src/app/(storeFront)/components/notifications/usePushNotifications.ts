@@ -6,8 +6,7 @@ import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheade
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { setEnabled, setSubscribed, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
 import { toast } from "react-toastify";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { BASE_API_URL as API } from "@/actions/constant/BASE_API_URL";
 
 export function browserSupportsPush() {
   return (
@@ -32,8 +31,9 @@ export function isIOSSafariWithoutPWA() {
 
 async function getVapidKey(): Promise<string> {
   const res = await fetch(`${API}/api/push/vapid-public-key`);
+  if (!res.ok) throw new Error(`VAPID fetch failed: ${res.status}`);
   const data = await res.json();
-  if (!data.publicKey) throw new Error("No VAPID key");
+  if (!data.publicKey) throw new Error("Server returned no VAPID key");
   return data.publicKey;
 }
 
@@ -67,9 +67,6 @@ export function usePushNotifications() {
     if (!browserSupportsPush()) { toast.error("Push notifications are not supported in this browser."); return; }
     dispatch(setLoading(true));
     try {
-      await navigator.serviceWorker.register("/sw.js");
-      const reg = await navigator.serviceWorker.ready;
-
       const perm = await Notification.requestPermission();
       dispatch(setPermission(perm));
       if (perm !== "granted") {
@@ -77,11 +74,18 @@ export function usePushNotifications() {
         return;
       }
 
+      await navigator.serviceWorker.register("/sw.js");
+      const reg = await navigator.serviceWorker.ready;
+
+      const existingSub = await reg.pushManager.getSubscription();
+      if (existingSub) await existingSub.unsubscribe();
+
       const vapidKey = await getVapidKey();
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlB64ToUint8Array(vapidKey),
       });
+
       const headers = await getAuthHeaders();
       const res = await fetch(`${API}/api/push/subscribe`, {
         method: "POST",
@@ -89,14 +93,24 @@ export function usePushNotifications() {
         credentials: "include",
         body: JSON.stringify({ userId, subscription: sub.toJSON() }),
       });
-      if (!res.ok) throw new Error("Server rejected subscription");
+      if (!res.ok) throw new Error(`Subscribe API failed: ${res.status}`);
       dispatch(setEnabled(true));
       dispatch(setSubscribed(true));
       toast.success("Notifications enabled!");
-    } catch {
+    } catch (err) {
+      console.error("[push] subscribe failed:", err);
       dispatch(setSubscribed(false));
       dispatch(setEnabled(false));
-      toast.error("Could not enable notifications. Please try again.");
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("permission") || msg.includes("denied")) {
+        toast.error("Notification permission was blocked. Please allow it in your browser settings.");
+      } else if (msg.includes("VAPID") || msg.includes("vapid") || msg.includes("key")) {
+        toast.error("Push service configuration error. Please contact support.");
+      } else if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed")) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(`Could not enable notifications: ${msg}`);
+      }
     } finally {
       dispatch(setLoading(false));
     }
@@ -122,7 +136,8 @@ export function usePushNotifications() {
       dispatch(setEnabled(false));
       dispatch(setSubscribed(false));
       toast.success("Notifications turned off.");
-    } catch {
+    } catch (err) {
+      console.error("[push] unsubscribe failed:", err);
       dispatch(setEnabled(true));
       toast.error("Could not turn off notifications. Please try again.");
     } finally {
