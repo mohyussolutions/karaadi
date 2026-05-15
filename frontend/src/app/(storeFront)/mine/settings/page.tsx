@@ -3,22 +3,15 @@ export const dynamic = "force-dynamic";
 
 import { settingsOptions } from "@/app/(links)/storeFrontLinks/mineLinks";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import PushToggle from "@/app/(storeFront)/components/notifications/PushToggle";
 
 const Settings: React.FC = () => {
   const { t } = useTranslation();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   return (
-    <div className="w-full flex flex-col items-center min-h-[60vh] px-2 sm:px-4 md:px-8 py-8 gap-8">
+    <div className="w-full flex flex-col items-center min-h-[60vh] px-2 sm:px-4 md:px-8 py-6 gap-6">
       <div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
           <p className="font-bold text-gray-900 text-sm">Notifications</p>
@@ -27,6 +20,7 @@ const Settings: React.FC = () => {
           <PushToggle />
         </div>
       </div>
+
       <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
         {settingsOptions.map((item, idx) => {
           const Icon = item.icon;
@@ -37,15 +31,11 @@ const Settings: React.FC = () => {
                   <Icon size={48} />
                 </div>
                 <h3 className="text-xl font-bold text-center">
-                  {item.labelKey
-                    ? t(item.labelKey, { defaultValue: item.title })
-                    : item.title}
+                  {item.labelKey ? t(item.labelKey, { defaultValue: item.title }) : item.title}
                 </h3>
                 <p className="text-sm text-gray-600 text-center line-clamp-3">
                   {item.labelKey
-                    ? t(`${item.labelKey}.description`, {
-                        defaultValue: item.description,
-                      })
+                    ? t(`${item.labelKey}.description`, { defaultValue: item.description })
                     : item.description}
                 </p>
               </div>

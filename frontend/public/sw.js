@@ -1,3 +1,6 @@
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
   const data = event.data.json();
@@ -6,15 +9,16 @@ self.addEventListener("push", (event) => {
       body: data.body || "",
       icon: data.icon || "/icons/icon-192x192.png",
       badge: "/icons/icon-96x96.png",
-      data: { url: data.url || "/" },
+      data: { url: data.url || "/messages" },
       vibrate: [200, 100, 200],
+      requireInteraction: false,
     })
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
+  const url = event.notification.data?.url || "/messages";
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       const existing = list.find((c) => c.url.includes(url));
