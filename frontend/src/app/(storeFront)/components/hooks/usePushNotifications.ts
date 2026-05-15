@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const SW_KEY = "karaadi:push:enabled";
@@ -62,9 +63,10 @@ export function usePushNotifications() {
         applicationServerKey: urlB64ToUint8Array(vapidKey),
       });
 
+      const headers = await getAuthHeaders();
       await fetch(`${API}/api/push/subscribe`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ userId, subscription: sub.toJSON() }),
       });
@@ -86,9 +88,10 @@ export function usePushNotifications() {
       const reg = await navigator.serviceWorker.getRegistration("/sw.js");
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
+        const headers = await getAuthHeaders();
         await fetch(`${API}/api/push/unsubscribe`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...headers, "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ endpoint: sub.endpoint }),
         });
