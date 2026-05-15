@@ -16,7 +16,10 @@ export default async function StoreFrontLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const initialIsAuthenticated = cookieStore.has("idToken");
+  const initialIsAuthenticated =
+    cookieStore.has("idToken") ||
+    cookieStore.has("accessToken") ||
+    cookieStore.has("token");
 
   return (
     <>
