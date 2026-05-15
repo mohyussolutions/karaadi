@@ -17,12 +17,11 @@ export default function PushToggle() {
   }, []);
 
   const isBlocked = permission === "denied";
-  const isUnsupported = supported === false;
-  const isDisabled = loading || isBlocked || isUnsupported;
+  const isDisabled = loading || isBlocked;
 
   const subtitle =
     isBlocked ? "Blocked — allow in your browser settings" :
-    isUnsupported ? "Add app to Home Screen to enable on iPhone" :
+    supported === false ? "Tap to see how to enable on iPhone" :
     loading ? (enabled ? "Turning on…" : "Turning off…") :
     enabled ? "You'll be notified of new messages" :
     "Tap to get notified when offline";
@@ -33,14 +32,14 @@ export default function PushToggle() {
       style={{
         cursor: isDisabled ? "default" : "pointer",
         userSelect: "none",
-        opacity: isBlocked || isUnsupported ? 0.5 : 1,
+        opacity: isBlocked ? 0.5 : 1,
       }}
       className="flex items-center py-4 touch-manipulation active:opacity-70"
     >
       <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
         <Bell
           size={20}
-          className={`flex-shrink-0 transition-colors ${enabled && !isDisabled ? "text-blue-600" : "text-gray-400"}`}
+          className={`flex-shrink-0 transition-colors ${enabled ? "text-blue-600" : "text-gray-400"}`}
         />
         <div className="flex flex-col min-w-0">
           <span className="text-sm font-semibold text-gray-900 leading-snug">
@@ -54,7 +53,7 @@ export default function PushToggle() {
 
       <div
         style={{
-          backgroundColor: enabled && !isDisabled ? "#2563eb" : "#d1d5db",
+          backgroundColor: enabled ? "#2563eb" : "#d1d5db",
           minWidth: "3.5rem",
           width: "3.5rem",
           height: "2rem",
@@ -77,7 +76,7 @@ export default function PushToggle() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            transform: enabled && !isDisabled ? "translateX(1.375rem)" : "translateX(0)",
+            transform: enabled ? "translateX(1.375rem)" : "translateX(0)",
             transition: "transform 0.2s",
           }}
         >

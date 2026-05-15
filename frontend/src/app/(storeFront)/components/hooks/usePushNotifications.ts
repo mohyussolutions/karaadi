@@ -28,26 +28,33 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    const perm = Notification.permission;
-    setPermission(perm);
+    setPermission(Notification.permission);
 
-    if (perm !== "granted") {
-      localStorage.setItem(SW_KEY, "false");
-      return;
-    }
+    const stored = localStorage.getItem(SW_KEY);
+    if (stored !== "true" || Notification.permission !== "granted") return;
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
     navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
       reg?.pushManager.getSubscription().then((sub) => {
-        const isActive = !!sub;
-        setEnabled(isActive);
-        localStorage.setItem(SW_KEY, isActive ? "true" : "false");
+        if (sub) {
+          setEnabled(true);
+        } else {
+          localStorage.setItem(SW_KEY, "false");
+        }
       });
     });
   }, []);
 
   const subscribe = useCallback(async () => {
     const userId = user?._id || user?.id;
-    if (!userId || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (!userId) return;
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      alert("To enable notifications on iPhone: tap the Share button in Safari and choose Add to Home Screen, then open the app from your Home Screen.");
+      return;
+    }
+
     setLoading(true);
     try {
       const perm = await Notification.requestPermission();
@@ -82,20 +89,21 @@ export function usePushNotifications() {
   }, [user]);
 
   const unsubscribe = useCallback(async () => {
-    if (!("serviceWorker" in navigator)) return;
     setLoading(true);
     try {
-      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-      const sub = await reg?.pushManager.getSubscription();
-      if (sub) {
-        const headers = await getAuthHeaders();
-        await fetch(`${API}/api/push/unsubscribe`, {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ endpoint: sub.endpoint }),
-        });
-        await sub.unsubscribe();
+      if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+        const sub = await reg?.pushManager?.getSubscription();
+        if (sub) {
+          const headers = await getAuthHeaders();
+          await fetch(`${API}/api/push/unsubscribe`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          });
+          await sub.unsubscribe();
+        }
       }
       localStorage.setItem(SW_KEY, "false");
       setEnabled(false);
