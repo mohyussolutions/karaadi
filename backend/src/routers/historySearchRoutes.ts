@@ -14,9 +14,12 @@ import {
   deleteSearchLogByQuery,
   getAdminLogs,
   getPopularSearches,
+  getUserSearchLogs,
 } from "src/controllers/historySearchController.ts";
 
 const historySearchRoutes = Router();
+
+historySearchRoutes.get("/", getUserSearchLogs);
 
 historySearchRoutes.post(
   "/log",

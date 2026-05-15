@@ -77,6 +77,23 @@ export const getPopularSearches = async (req: Request, res: Response) => {
   }
 };
 
+export const getUserSearchLogs = async (req: Request, res: Response) => {
+  try {
+    const { userId, limit } = req.query;
+    if (!userId) return res.status(400).json({ message: "userId is required" });
+    const take = Math.min(Number(limit) || 10, 50);
+    const logs = await prisma.searchLog.findMany({
+      where: { userId: String(userId) },
+      orderBy: { createdAt: "desc" },
+      take,
+      select: { id: true, query: true, category: true, createdAt: true },
+    });
+    res.status(200).json(logs);
+  } catch {
+    res.status(500).json({ message: "Error fetching search logs" });
+  }
+};
+
 export const deleteSearchLogByQuery = async (req: Request, res: Response) => {
   try {
     const { q } = req.query;
