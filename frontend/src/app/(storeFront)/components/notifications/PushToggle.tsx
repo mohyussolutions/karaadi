@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Bell, Loader2, X, Share } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 
 function IOSModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div
       style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.4)" }}
@@ -15,28 +17,30 @@ function IOSModal({ onClose }: { onClose: () => void }) {
         style={{ backgroundColor: "white", borderRadius: "1.25rem 1.25rem 0 0", width: "100%", maxWidth: "28rem", padding: "1.5rem", paddingBottom: "2.5rem" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#111827" }}>Enable notifications</span>
+          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#111827" }}>
+            {t("notifications.push.iosModal.title")}
+          </span>
           <button onClick={onClose} style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <X size={20} />
           </button>
         </div>
 
         <p style={{ fontSize: "0.875rem", color: "#4b5563", lineHeight: 1.6, marginBottom: "1.25rem" }}>
-          iPhone notifications require adding Karaadi to your Home Screen first.
+          {t("notifications.push.iosModal.body")}
         </p>
 
         <ol style={{ fontSize: "0.875rem", color: "#374151", lineHeight: 2, paddingLeft: "1.25rem", marginBottom: "1.5rem" }}>
-          <li>Tap the <strong>Share</strong> button (<Share size={13} style={{ display: "inline", verticalAlign: "middle" }} />) in Safari</li>
-          <li>Choose <strong>Add to Home Screen</strong></li>
-          <li>Open the app from your Home Screen</li>
-          <li>Come back to Settings and turn on notifications</li>
+          <li>{t("notifications.push.iosModal.step1")} (<Share size={13} style={{ display: "inline", verticalAlign: "middle" }} />)</li>
+          <li><strong>{t("notifications.push.iosModal.step2")}</strong></li>
+          <li>{t("notifications.push.iosModal.step3")}</li>
+          <li>{t("notifications.push.iosModal.step4")}</li>
         </ol>
 
         <button
           onClick={onClose}
           style={{ width: "100%", padding: "0.875rem", backgroundColor: "#2563eb", color: "white", borderRadius: "0.75rem", fontWeight: 600, fontSize: "0.9rem", border: "none", cursor: "pointer" }}
         >
-          Got it
+          {t("notifications.push.iosModal.confirm")}
         </button>
       </div>
     </div>
@@ -44,6 +48,7 @@ function IOSModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function PushToggle() {
+  const { t } = useTranslation();
   const { enabled, permission, loading, toggle } = usePushNotifications();
   const [supported, setSupported] = useState<boolean | null>(null);
   const [showIOSModal, setShowIOSModal] = useState(false);
@@ -61,19 +66,16 @@ export default function PushToggle() {
 
   const handleClick = () => {
     if (isDisabled) return;
-    if (supported === false) {
-      setShowIOSModal(true);
-      return;
-    }
+    if (supported === false) { setShowIOSModal(true); return; }
     toggle();
   };
 
   const subtitle =
-    isBlocked ? "Blocked — allow in your browser settings" :
-    supported === false ? "Tap to see how to enable on iPhone" :
-    loading ? (enabled ? "Turning on…" : "Turning off…") :
-    enabled ? "You'll be notified of new messages" :
-    "Tap to get notified when offline";
+    isBlocked ? t("notifications.push.blocked") :
+    supported === false ? t("notifications.push.iphoneHint") :
+    loading ? t(enabled ? "notifications.push.turningOn" : "notifications.push.turningOff") :
+    enabled ? t("notifications.push.enabled") :
+    t("notifications.push.disabled");
 
   return (
     <>
@@ -87,7 +89,9 @@ export default function PushToggle() {
         <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
           <Bell size={20} className={`flex-shrink-0 transition-colors ${enabled ? "text-blue-600" : "text-gray-400"}`} />
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold text-gray-900 leading-snug">Message notifications</span>
+            <span className="text-sm font-semibold text-gray-900 leading-snug">
+              {t("notifications.push.title")}
+            </span>
             <span className="text-xs text-gray-400 mt-0.5 leading-relaxed">{subtitle}</span>
           </div>
         </div>

@@ -159,6 +159,24 @@ export const notifications = {
     "viewDetail": "Eeg Faahfaahin",
     "markRead": "Akhri",
     "delete": "Tirtir"
+  },
+  "push": {
+    "title": "Ogeysiisyada fariimaha",
+    "blocked": "Xidhan — u ogolow browser-kaaga",
+    "iphoneHint": "Taabo si aad u ogaato sida iPhone logu shido",
+    "turningOn": "Waa la shidayaa…",
+    "turningOff": "Waa la daminayaa…",
+    "enabled": "Waxa lagugu ogeysiinayaa farriimaha cusub",
+    "disabled": "Taabo si aad ogeysiis u hesho marka aadan online ahayn",
+    "iosModal": {
+      "title": "Ogeysiisyada shid",
+      "body": "Ogeysiisyada iPhone waxay u baahan yihiin inaad Karaadi ku darto shaashadda guriga.",
+      "step1": "Taabo badhanka Share-ka Safari",
+      "step2": "Dooro Add to Home Screen",
+      "step3": "Fur abka shaashadda guriga ka",
+      "step4": "Ku soo noqo Goobaha oo ogeysiisyada shid",
+      "confirm": "Fahmay"
+    }
   }
 } as const;
 

@@ -116,6 +116,24 @@ export const notifications = {
     "viewDetail": "View Detail",
     "markRead": "Mark Read",
     "delete": "Delete"
+  },
+  "push": {
+    "title": "Message notifications",
+    "blocked": "Blocked — allow in your browser settings",
+    "iphoneHint": "Tap to see how to enable on iPhone",
+    "turningOn": "Turning on…",
+    "turningOff": "Turning off…",
+    "enabled": "You'll be notified of new messages",
+    "disabled": "Tap to get notified when offline",
+    "iosModal": {
+      "title": "Enable notifications",
+      "body": "iPhone notifications require adding Karaadi to your Home Screen first.",
+      "step1": "Tap the Share button in Safari",
+      "step2": "Choose Add to Home Screen",
+      "step3": "Open the app from your Home Screen",
+      "step4": "Come back to Settings and turn on notifications",
+      "confirm": "Got it"
+    }
   }
 } as const;
 
