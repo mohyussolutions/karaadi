@@ -8,7 +8,7 @@ interface PushNotificationState {
 }
 
 const initialState: PushNotificationState = {
-  enabled: true,
+  enabled: false,
   subscribed: false,
   permission: "default",
   loading: false,

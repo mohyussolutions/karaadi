@@ -85,7 +85,7 @@ export default function PushToggle() {
     subscribed ? t("notifications.push.enabled") :
     t("notifications.push.disabled");
 
-  const pillOn = subscribed || (enabled && !clientReady);
+  const pillOn = subscribed;
 
   return (
     <>

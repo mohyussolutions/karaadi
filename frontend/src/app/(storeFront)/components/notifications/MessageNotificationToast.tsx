@@ -7,10 +7,11 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { socketService } from "@/actions/sockets/socketServiceAction";
 import { SOCKET_EVENTS } from "@/actions/constant/sockets";
+import { browserSupportsPush } from "./usePushNotifications";
 
 type MsgNotif = {
   key: string;
-  chatId: number;
+  href: string;
   senderName: string;
   content: string;
   avatar: string | null;
@@ -43,7 +44,11 @@ export default function MessageNotificationToast() {
   const pathname = usePathname();
   const [queue, setQueue] = useState<MsgNotif[]>([]);
   const seenIds = useRef<Set<number>>(new Set());
+  const recentChats = useRef<Set<number>>(new Set());
   const onMessagesPage = !!pathname?.startsWith("/messages");
+
+  const push = (notif: MsgNotif) =>
+    setQueue((prev) => [...prev.slice(-2), notif]);
 
   useEffect(() => {
     if (!user) return;
@@ -57,21 +62,42 @@ export default function MessageNotificationToast() {
       if (msg.id != null && seenIds.current.has(msg.id)) return;
       if (msg.id != null) seenIds.current.add(msg.id);
 
-      const notif: MsgNotif = {
+      recentChats.current.add(msg.chatId);
+      setTimeout(() => recentChats.current.delete(msg.chatId), 8000);
+
+      push({
         key: `${msg.id ?? Date.now()}-${Math.random()}`,
-        chatId: msg.chatId,
+        href: `/messages/${msg.chatId}`,
         senderName: msg.senderName,
         content: msg.content || "Sent you a message",
         avatar: msg.avatar,
-      };
-
-      setQueue((prev) => [...prev.slice(-2), notif]);
+      });
     };
 
     const offNew = socketService.on(SOCKET_EVENTS.ON.NEW_MESSAGE, handle);
     const offReceive = socketService.on(SOCKET_EVENTS.ON.RECEIVE_MESSAGE, handle);
     return () => { offNew(); offReceive(); };
   }, [user, onMessagesPage]);
+
+  useEffect(() => {
+    if (!browserSupportsPush()) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type !== "push") return;
+      if (onMessagesPage) return;
+      const { title, body, url } = event.data.data as { title?: string; body?: string; url?: string };
+      const chatId = url ? Number(new URLSearchParams(url.split("?")[1] ?? "").get("chatId")) : 0;
+      if (chatId && recentChats.current.has(chatId)) return;
+      push({
+        key: `sw-${Date.now()}-${Math.random()}`,
+        href: url || "/messages",
+        senderName: title || "New message",
+        content: body || "",
+        avatar: null,
+      });
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, [onMessagesPage]);
 
   useEffect(() => {
     if (!queue.length) return;
@@ -89,7 +115,7 @@ export default function MessageNotificationToast() {
       {queue.map((notif) => (
         <Link
           key={notif.key}
-          href={`/messages/${notif.chatId}`}
+          href={notif.href}
           onClick={() => dismiss(notif.key)}
           className="flex items-center gap-3 bg-white rounded-2xl border border-gray-200 shadow-xl p-3 pr-2 animate-in slide-in-from-bottom-4 pointer-events-auto"
         >

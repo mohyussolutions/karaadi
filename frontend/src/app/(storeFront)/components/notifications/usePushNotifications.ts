@@ -20,15 +20,20 @@ export function browserSupportsPush() {
 
 export function isIOSSafariWithoutPWA() {
   if (typeof window === "undefined") return false;
-  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const ios =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (!ios) return false;
-  return !(window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true);
+  return !(
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as any).standalone === true
+  );
 }
 
 async function getVapidKey(): Promise<string> {
   const res = await fetch(`${API}/api/push/vapid-public-key`);
   const data = await res.json();
-  if (!data.publicKey) throw new Error("No VAPID key returned from server");
+  if (!data.publicKey) throw new Error("No VAPID key");
   return data.publicKey;
 }
 
@@ -47,40 +52,31 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!browserSupportsPush()) return;
     dispatch(setPermission(Notification.permission));
-    navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
+    navigator.serviceWorker.getRegistration().then((reg) => {
       reg?.pushManager.getSubscription().then((sub) => {
         const active = !!sub && Notification.permission === "granted";
         dispatch(setSubscribed(active));
-        if (active) dispatch(setEnabled(true));
+        dispatch(setEnabled(active));
       });
     });
   }, [dispatch]);
 
-  useEffect(() => {
-    if (!browserSupportsPush()) return;
-    const handler = (event: MessageEvent) => {
-      if (event.data?.type !== "push") return;
-      const { title, body } = event.data.data as { title?: string; body?: string };
-      toast.info(body || title || "New notification");
-    };
-    navigator.serviceWorker.addEventListener("message", handler);
-    return () => navigator.serviceWorker.removeEventListener("message", handler);
-  }, []);
-
   const subscribe = useCallback(async () => {
     const userId = user?._id || user?.id;
     if (!userId) { toast.error("Please log in first."); return; }
-    if (!browserSupportsPush()) { toast.error("Your browser does not support push notifications."); return; }
+    if (!browserSupportsPush()) { toast.error("Push notifications are not supported in this browser."); return; }
     dispatch(setLoading(true));
     try {
+      await navigator.serviceWorker.register("/sw.js");
+      const reg = await navigator.serviceWorker.ready;
+
       const perm = await Notification.requestPermission();
       dispatch(setPermission(perm));
       if (perm !== "granted") {
         toast.info("Notification permission was not granted.");
         return;
       }
-      await navigator.serviceWorker.register("/sw.js");
-      const reg = await navigator.serviceWorker.ready;
+
       const vapidKey = await getVapidKey();
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -99,6 +95,7 @@ export function usePushNotifications() {
       toast.success("Notifications enabled!");
     } catch {
       dispatch(setSubscribed(false));
+      dispatch(setEnabled(false));
       toast.error("Could not enable notifications. Please try again.");
     } finally {
       dispatch(setLoading(false));
@@ -109,7 +106,7 @@ export function usePushNotifications() {
     dispatch(setLoading(true));
     try {
       if (browserSupportsPush()) {
-        const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+        const reg = await navigator.serviceWorker.getRegistration();
         const sub = await reg?.pushManager?.getSubscription();
         if (sub) {
           const headers = await getAuthHeaders();
