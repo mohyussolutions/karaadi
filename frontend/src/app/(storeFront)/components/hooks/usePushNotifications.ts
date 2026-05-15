@@ -50,10 +50,7 @@ export function usePushNotifications() {
     const userId = user?._id || user?.id;
     if (!userId) return;
 
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      alert("To enable notifications on iPhone: tap the Share button in Safari and choose Add to Home Screen, then open the app from your Home Screen.");
-      return;
-    }
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
     setLoading(true);
     try {
