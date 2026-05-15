@@ -30,7 +30,7 @@ const SEED_DATA = [
   {
     key: "animalAndSupplies",
     nameEn: "Animal & Supplies",
-    nameSo: "Xayawaan & Agab",
+    nameSo: "Xayawaanada",
     subcategories: [
       { key: "camels", nameEn: "Camels", nameSo: "Geel" },
       { key: "goats", nameEn: "Goats", nameSo: "Ari" },

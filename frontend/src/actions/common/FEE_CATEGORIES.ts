@@ -24,7 +24,7 @@ export const FEE_CATEGORIES = [
         label: "Telefoon, TV iyo qalab guri",
         type: LISTING_TYPE.SERVICE,
       },
-      { key: "animal", label: "Xayawaan iyo agabka", type: LISTING_TYPE.FREE },
+      { key: "animal", label: "Xayawaanada", type: LISTING_TYPE.FREE },
       {
         key: "sports",
         label: "Qalabka ciyaaraha & dibadda",

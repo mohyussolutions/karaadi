@@ -2,7 +2,7 @@ export const marketplaceCategories = {
   categories: {
     antiques: "Qadiimi & Farshaxan",
     electronics: "Elektarooniga",
-    animalAndSupplies: "Xayawaan & Agab",
+    animalAndSupplies: "Xayawaanada",
     sportsAndOutdoors: "Ciyaaraha & Dibadda",
     furniture: "Alaabta Guriga",
     fashion: "Dharka & Boorsooyinka",
@@ -981,7 +981,7 @@ export const subcategories = {
   marketplace: {
     antiques: "Qadiimi & Farshaxan",
     electronics: "Elektarooniga",
-    animalAndSupplies: "Xayawaan & Agab",
+    animalAndSupplies: "Xayawaanada",
     sportsAndOutdoors: "Ciyaaraha & Dibadda",
     furniture: "Alaabta Guriga",
     fashion: "Dharka & Boorsooyinka",
