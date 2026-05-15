@@ -5,6 +5,13 @@ export const AUTH_TOKEN_KEY = "auth_token";
 export const PLACEHOLDER_IMAGE =
   "https://placehold.co/80x80/9ca3af/ffffff?text=No+Image";
 export const PLACEHOLDER = "/placeholder.png";
+
+export function normalizeImg(src: string | null | undefined, fallback = PLACEHOLDER_IMAGE): string {
+  if (!src) return fallback;
+  if (src.startsWith("http") || src.startsWith("data:") || src.startsWith("/")) return src;
+  if (src.length > 100) return `data:image/jpeg;base64,${src}`;
+  return fallback;
+}
 export const INITIAL_DISPLAY = 50;
 export const DISPLAY_INCREMENT = 20;
 

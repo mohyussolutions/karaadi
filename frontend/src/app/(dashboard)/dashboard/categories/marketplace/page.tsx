@@ -13,7 +13,7 @@ import {
   marketplaceSubCategories,
   categories,
 } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
-import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
+import { PLACEHOLDER_IMAGE, normalizeImg } from "@/actions/constant/constant";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 import {
   getAdminMarketplaceItems,
@@ -328,7 +328,7 @@ export default function MarketplacePage() {
                         <td className="border-b p-3">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <Image
-                              src={item.user?.profileImage || PLACEHOLDER_IMAGE}
+                              src={normalizeImg(item.user?.profileImage)}
                               alt={item.user?.username || "User"}
                               width={24}
                               height={24}

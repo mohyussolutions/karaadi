@@ -17,53 +17,37 @@ const extractToken = (authHeader?: string, cookies?: any): string | null => {
 
 const getAuthCacheKey = (sub: string) => `auth:session:${sub}`;
 
-const loadUserAndSession = async (sub: string, res: Response) => {
+const loadUserAndSession = async (sub: string, token: string, res: Response) => {
   const cacheKey = getAuthCacheKey(sub);
 
   const cached = await cacheManager
     .get<{ user: any; valid: boolean }>(cacheKey)
     .catch(() => null);
   if (cached) {
-    if (!cached.valid) {
-      res.clearCookie("idToken");
-      res.clearCookie("token");
-      res.clearCookie("accessToken");
-      return null;
-    }
+    if (!cached.valid) return null;
     return cached.user;
   }
 
   const user = await prisma.user.findUnique({ where: { cognitoId: sub } });
   if (!user) {
-    await cacheManager
-      .set(cacheKey, { user: null, valid: false }, AUTH_CACHE_TTL)
-      .catch(() => {});
-    return null;
-  }
-
-  const session = await prisma.cookie.findUnique({
-    where: { userId: user.id },
-  });
-  if (!session || session.expiresAt < new Date()) {
-    if (session)
-      await prisma.cookie.delete({ where: { id: session.id } }).catch(() => {});
-    await cacheManager
-      .set(cacheKey, { user: null, valid: false }, 30)
-      .catch(() => {});
-    res.clearCookie("idToken");
-    res.clearCookie("token");
-    res.clearCookie("accessToken");
+    await cacheManager.set(cacheKey, { user: null, valid: false }, AUTH_CACHE_TTL).catch(() => {});
     return null;
   }
 
   const newExpiry = new Date(Date.now() + SESSION_TIME_MS);
-  await prisma.cookie
-    .update({ where: { userId: user.id }, data: { expiresAt: newExpiry } })
-    .catch(() => {});
+  const session = await prisma.cookie.findUnique({ where: { userId: user.id } });
 
-  await cacheManager
-    .set(cacheKey, { user, valid: true }, AUTH_CACHE_TTL)
-    .catch(() => {});
+  if (!session || session.expiresAt < new Date()) {
+    await prisma.cookie.upsert({
+      where: { userId: user.id },
+      update: { token, expiresAt: newExpiry },
+      create: { userId: user.id, token, expiresAt: newExpiry },
+    }).catch(() => {});
+  } else {
+    await prisma.cookie.update({ where: { userId: user.id }, data: { expiresAt: newExpiry } }).catch(() => {});
+  }
+
+  await cacheManager.set(cacheKey, { user, valid: true }, AUTH_CACHE_TTL).catch(() => {});
   return user;
 };
 
@@ -80,7 +64,7 @@ export const ProtectRoute = async (
     if (!decoded?.sub)
       return res.status(401).json({ message: "Invalid token" });
 
-    const user = await loadUserAndSession(decoded.sub, res);
+    const user = await loadUserAndSession(decoded.sub, token, res);
     if (!user)
       return res.status(401).json({ message: "Session expired or not found" });
 
