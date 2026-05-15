@@ -56,6 +56,17 @@ export function usePushNotifications() {
     });
   }, [dispatch]);
 
+  useEffect(() => {
+    if (!browserSupportsPush()) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type !== "push") return;
+      const { title, body } = event.data.data as { title?: string; body?: string };
+      toast.info(body || title || "New notification");
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, []);
+
   const subscribe = useCallback(async () => {
     const userId = user?._id || user?.id;
     if (!userId) { toast.error("Please log in first."); return; }
@@ -68,8 +79,8 @@ export function usePushNotifications() {
         toast.info("Notification permission was not granted.");
         return;
       }
-      const reg = await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
+      await navigator.serviceWorker.register("/sw.js");
+      const reg = await navigator.serviceWorker.ready;
       const vapidKey = await getVapidKey();
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,

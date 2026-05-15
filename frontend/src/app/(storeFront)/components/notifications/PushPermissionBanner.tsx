@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Bell, BellOff, X } from "lucide-react";
-import { usePushNotifications } from "./usePushNotifications";
+import { usePushNotifications, browserSupportsPush } from "./usePushNotifications";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PushPermissionBanner() {
@@ -19,7 +19,7 @@ export default function PushPermissionBanner() {
   if (dismissed) return null;
   if (enabled) return null;
   if (permission === "denied") return null;
-  if (typeof window === "undefined" || !("Notification" in window)) return null;
+  if (!browserSupportsPush()) return null;
 
   const dismiss = () => {
     localStorage.setItem("karaadi:push:dismissed", "true");
