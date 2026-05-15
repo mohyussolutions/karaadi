@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
+import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
+import { setEnabled, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const SW_KEY = "karaadi:push:enabled";
@@ -22,42 +24,41 @@ function urlB64ToUint8Array(base64String: string) {
 
 export function usePushNotifications() {
   const { user } = useAuth();
-  const [enabled, setEnabled] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>("default");
-  const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
+  const { enabled, permission, loading } = useAppSelector((s) => s.pushNotification);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     const perm = Notification.permission;
-    setPermission(perm);
+    dispatch(setPermission(perm));
 
     const stored = localStorage.getItem(SW_KEY);
-    if (stored !== "true" || perm !== "granted") return;
+    if (stored !== "true" || perm !== "granted") {
+      dispatch(setEnabled(false));
+      return;
+    }
 
-    setEnabled(true);
+    dispatch(setEnabled(true));
 
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
     navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
       reg?.pushManager.getSubscription().then((sub) => {
         if (!sub) {
-          setEnabled(false);
+          dispatch(setEnabled(false));
           localStorage.setItem(SW_KEY, "false");
         }
       });
     });
-  }, []);
+  }, [dispatch]);
 
   const subscribe = useCallback(async () => {
     const userId = user?._id || user?.id;
-    if (!userId) return;
-
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-
-    setLoading(true);
+    if (!userId || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    dispatch(setLoading(true));
     try {
       const perm = await Notification.requestPermission();
-      setPermission(perm);
+      dispatch(setPermission(perm));
       if (perm !== "granted") return;
 
       const reg = await navigator.serviceWorker.register("/sw.js");
@@ -78,17 +79,17 @@ export function usePushNotifications() {
       });
 
       localStorage.setItem(SW_KEY, "true");
-      setEnabled(true);
+      dispatch(setEnabled(true));
     } catch {
-      setEnabled(false);
+      dispatch(setEnabled(false));
       localStorage.setItem(SW_KEY, "false");
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
-  }, [user]);
+  }, [user, dispatch]);
 
   const unsubscribe = useCallback(async () => {
-    setLoading(true);
+    dispatch(setLoading(true));
     try {
       if ("serviceWorker" in navigator) {
         const reg = await navigator.serviceWorker.getRegistration("/sw.js");
@@ -105,13 +106,13 @@ export function usePushNotifications() {
         }
       }
       localStorage.setItem(SW_KEY, "false");
-      setEnabled(false);
+      dispatch(setEnabled(false));
     } catch {
-      setEnabled(true);
+      dispatch(setEnabled(true));
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
-  }, []);
+  }, [dispatch]);
 
   const toggle = useCallback(() => {
     if (enabled) unsubscribe();

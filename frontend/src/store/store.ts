@@ -5,6 +5,7 @@ import notificationsReducer from "./slices/reducers/notificationsSlice";
 import wantedReducer from "./slices/reducers/wantedSlice";
 import themeReducer from "./slices/reducers/themeSlice";
 import dashboardReducer from "./slices/reducers/dashboardSlice";
+import pushNotificationReducer from "./slices/reducers/pushNotificationSlice";
 
 import {
   persistStore,
@@ -35,7 +36,7 @@ const storage =
 const persistConfig = {
   key: "karaadi-root-v4",
   storage,
-  whitelist: ["listingDraft", "language", "theme"],
+  whitelist: ["listingDraft", "language", "theme", "pushNotification"],
   transforms: [listingDraftTransform],
 };
 
@@ -46,6 +47,7 @@ const rootReducer = combineReducers({
   wanted: wantedReducer,
   theme: themeReducer,
   dashboard: dashboardReducer,
+  pushNotification: pushNotificationReducer,
 });
 
 type RootReducerState = ReturnType<typeof rootReducer>;
