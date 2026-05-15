@@ -8,7 +8,7 @@ export default function PersistWrapper({
   children: React.ReactNode;
 }) {
   return (
-    <PersistGate loading={<>{children}</>} persistor={persistor}>
+    <PersistGate loading={null} persistor={persistor}>
       {children}
     </PersistGate>
   );

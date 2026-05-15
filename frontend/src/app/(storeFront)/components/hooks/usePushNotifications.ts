@@ -60,8 +60,9 @@ export function usePushNotifications() {
       });
       dispatch(setEnabled(true));
       dispatch(setSubscribed(true));
-    } catch {
+    } catch (err) {
       dispatch(setSubscribed(false));
+      console.error("[push] subscribe failed:", err);
     } finally {
       dispatch(setLoading(false));
     }
