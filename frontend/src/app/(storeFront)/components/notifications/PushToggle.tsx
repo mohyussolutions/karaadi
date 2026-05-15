@@ -44,14 +44,9 @@ function IOSModal({ onClose }: { onClose: () => void }) {
           <li>{t("notifications.push.iosModal.step3")}</li>
           <li>{t("notifications.push.iosModal.step4")}</li>
         </ol>
-        <div style={{ display: "flex", gap: "0.75rem" }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "0.875rem", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: "0.75rem", fontWeight: 600, fontSize: "0.9rem", border: "none", cursor: "pointer" }}>
-            {t("notifications.push.cancel")}
-          </button>
-          <button onClick={onClose} style={{ flex: 1, padding: "0.875rem", backgroundColor: "#2563eb", color: "white", borderRadius: "0.75rem", fontWeight: 600, fontSize: "0.9rem", border: "none", cursor: "pointer" }}>
-            {t("notifications.push.iosModal.confirm")}
-          </button>
-        </div>
+        <button onClick={onClose} style={{ width: "100%", padding: "0.875rem", backgroundColor: "#2563eb", color: "white", borderRadius: "0.75rem", fontWeight: 600, fontSize: "0.9rem", border: "none", cursor: "pointer" }}>
+          {t("notifications.push.yes")}
+        </button>
       </div>
     </div>
   );

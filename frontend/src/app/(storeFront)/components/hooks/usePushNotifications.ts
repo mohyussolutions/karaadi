@@ -56,7 +56,11 @@ export function usePushNotifications() {
     try {
       const perm = await Notification.requestPermission();
       dispatch(setPermission(perm));
-      if (perm !== "granted") return;
+      if (perm !== "granted") {
+        localStorage.setItem(SW_KEY, "false");
+        dispatch(setEnabled(false));
+        return;
+      }
 
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
@@ -80,7 +84,6 @@ export function usePushNotifications() {
       dispatch(setSubscribed(true));
     } catch {
       dispatch(setSubscribed(false));
-      localStorage.setItem(SW_KEY, "false");
     } finally {
       dispatch(setLoading(false));
     }
