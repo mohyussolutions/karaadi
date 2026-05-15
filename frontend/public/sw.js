@@ -7,8 +7,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || "Karaadi", {
       body: data.body || "",
-      icon: data.icon || "/icons/icon-192x192.png",
-      badge: "/icons/icon-96x96.png",
+      icon: data.icon || "/logo.jpg",
       data: { url: data.url || "/messages" },
       vibrate: [200, 100, 200],
       requireInteraction: false,
