@@ -38,7 +38,6 @@ model User {
   feeChangeLogs     FeeChangeLog[]
   views             UserView[]
   reports           Report[]        @relation("UserReports")
-  pushSubscriptions PushSubscription[] @relation("UserPushSubscriptions")
   loginHistories    LoginHistory[]     @relation("UserLoginHistories")
 
   @@index([email])

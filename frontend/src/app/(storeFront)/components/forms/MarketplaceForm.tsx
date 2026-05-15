@@ -112,12 +112,12 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
   const isSo = activeLanguage === "so";
   const getNestedSubcategories = (): { value: string; label: string }[] => {
     if (!formData.category) return [];
-    const hardcoded = (nesCategories.marketplaceNestedMap as any)[formData.category];
-    if (hardcoded?.length) {
-      return hardcoded.map((s: any) => ({ value: s.key, label: t(s.labelKey, { defaultValue: s.name || s.key }) }));
+    const dbCat = customCats.find(c => c.key === formData.category);
+    if (dbCat?.subcategories.length) {
+      return dbCat.subcategories.map(s => ({ value: s.key, label: isSo ? s.nameSo : s.nameEn }));
     }
-    const custom = customCats.find(c => c.key === formData.category);
-    return (custom?.subcategories || []).map(s => ({ value: s.key, label: isSo ? s.nameSo : s.nameEn }));
+    const hardcoded = (nesCategories.marketplaceNestedMap as any)[formData.category];
+    return (hardcoded || []).map((s: any) => ({ value: s.key, label: t(s.labelKey, { defaultValue: s.name || s.key }) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

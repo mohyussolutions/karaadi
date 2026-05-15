@@ -6,7 +6,6 @@ model PushSubscription {
   auth      String
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
-  user      User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

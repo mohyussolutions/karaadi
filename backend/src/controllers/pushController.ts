@@ -11,29 +11,42 @@ export const subscribe = async (req: Request, res: Response) => {
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
   };
 
-  if (!userId || !subscription?.endpoint || !subscription?.keys) {
+  if (!userId || !subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
     return res.status(400).json({ error: "Missing fields" });
   }
 
-  await prisma.pushSubscription.upsert({
-    where: { endpoint: subscription.endpoint },
-    update: { userId, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, enabled: true },
-    create: { userId, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth },
-  });
-
-  res.json({ ok: true });
+  try {
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: subscription.endpoint },
+      update: { userId, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, enabled: true },
+      create: { userId, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth },
+    });
+    return res.json({ ok: true });
+  } catch (err: any) {
+    if (err?.code === "P2003") {
+      return res.status(422).json({ error: "User account not found in database" });
+    }
+    console.error("[push] subscribe error:", err?.message ?? err);
+    return res.status(500).json({ error: "Failed to save subscription" });
+  }
 };
 
 export const unsubscribe = async (req: Request, res: Response) => {
   const { endpoint } = req.body as { endpoint: string };
   if (!endpoint) return res.status(400).json({ error: "Missing endpoint" });
-  await prisma.pushSubscription.deleteMany({ where: { endpoint } }).catch(() => {});
+  try {
+    await prisma.pushSubscription.deleteMany({ where: { endpoint } });
+  } catch {}
   res.json({ ok: true });
 };
 
 export const toggleNotifications = async (req: Request, res: Response) => {
   const { userId, enabled } = req.body as { userId: string; enabled: boolean };
   if (!userId) return res.status(400).json({ error: "Missing userId" });
-  await prisma.pushSubscription.updateMany({ where: { userId }, data: { enabled } });
-  res.json({ ok: true });
+  try {
+    await prisma.pushSubscription.updateMany({ where: { userId }, data: { enabled } });
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Failed to toggle notifications" });
+  }
 };
