@@ -1,4 +1,15 @@
 export type ID = string | number;
+
+export type AdView = {
+  id: string;
+  image: string;
+  title: string;
+  type: string;
+  description: string;
+  price: number;
+  isPaid: boolean;
+  maGaday: boolean;
+};
 export type Timestamp = string;
 export type Status = "active" | "inactive" | "pending" | "archived";
 export type PaidStatus = "paid" | "unpaid" | "pending" | "failed";

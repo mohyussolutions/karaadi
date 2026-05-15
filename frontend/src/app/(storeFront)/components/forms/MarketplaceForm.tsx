@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { BASE_API_URL } from "@/actions/constant/BASE_API_URL";
+import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { MdAttachMoney } from "@/app/utils/icons";
@@ -51,6 +53,7 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
+  const { activeLanguage } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const savedItem = useAppSelector((state) => state.listingDraft.item) ?? {};
 
@@ -59,6 +62,7 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
   const [descTouched, setDescTouched] = useState(false);
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
+  const [customCats, setCustomCats] = useState<{ key: string; nameEn: string; nameSo: string; subcategories: { key: string; nameEn: string; nameSo: string }[] }[]>([]);
   const { images, addImages, removeImage, toBase64 } = useImageUpload();
   const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
 
@@ -80,10 +84,16 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
   useEffect(() => {
     const load = async () => {
       try {
-        const [regs, cits, feeRes] = await Promise.all([getAllRegions(), getAllCities(), getMarketplaceFees()]);
+        const [regs, cits, feeRes, catsRes] = await Promise.all([
+          getAllRegions(),
+          getAllCities(),
+          getMarketplaceFees(),
+          fetch(`${BASE_API_URL}/api/marketplace-categories`).then(r => r.ok ? r.json() : []).catch(() => []),
+        ]);
         setRegions(regs || []);
         setAllCities(cits || []);
         setActiveFeeConfig(Array.isArray(feeRes) ? feeRes[0] || {} : feeRes || {});
+        setCustomCats(Array.isArray(catsRes) ? catsRes : []);
       } catch {} finally { setDataLoading(false); }
     };
     load();
@@ -99,7 +109,16 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
     : null;
 
   const getFee = useCallback((cat: string) => activeFeeConfig ? Number(activeFeeConfig[MARKETPLACE_FEE_MAPPING[cat]] || 0) : 0, [activeFeeConfig]);
-  const getNestedSubcategories = () => formData.category ? (nesCategories.marketplaceNestedMap as any)[formData.category] || [] : [];
+  const isSo = activeLanguage === "so";
+  const getNestedSubcategories = (): { value: string; label: string }[] => {
+    if (!formData.category) return [];
+    const hardcoded = (nesCategories.marketplaceNestedMap as any)[formData.category];
+    if (hardcoded?.length) {
+      return hardcoded.map((s: any) => ({ value: s.key, label: t(s.labelKey, { defaultValue: s.name || s.key }) }));
+    }
+    const custom = customCats.find(c => c.key === formData.category);
+    return (custom?.subcategories || []).map(s => ({ value: s.key, label: isSo ? s.nameSo : s.nameEn }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,11 +159,14 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
 
   if (authLoading || dataLoading) return <div className="h-screen flex items-center justify-center"><Loading /></div>;
 
-  const catOptions = (mainCategory === "Schools" ? SCHOOL_CATEGORIES : MARKETPLACE_CATEGORIES).map((c) => ({
-    value: c.key,
-    label: t(c.labelKey, { defaultValue: c.key }),
-  }));
-  const subCatOptions = getNestedSubcategories().map((s: any) => ({ value: s.labelKey || s.key || s, label: t(s.labelKey || s.name || s) }));
+  const catOptions = [
+    ...(mainCategory === "Schools" ? SCHOOL_CATEGORIES : MARKETPLACE_CATEGORIES).map(c => ({
+      value: c.key,
+      label: t(c.labelKey, { defaultValue: c.key }),
+    })),
+    ...customCats.map(c => ({ value: c.key, label: isSo ? c.nameSo : c.nameEn })),
+  ];
+  const subCatOptions = getNestedSubcategories();
   const conditionOptions = CONDITION_KEYS.map((c) => ({ value: c.value, label: t(c.key, { defaultValue: c.value }) }));
   const regionOptions = regions.map((r) => ({ value: r.id, label: r.name }));
 

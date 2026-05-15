@@ -443,4 +443,13 @@ export const settingLinks: SettingLink[] = [
     ],
     actionButton: { text: "Manage Cities", href: "/dashboard/settings/cities" },
   },
+  {
+    title: "Marketplace Categories",
+    items: [
+      "Add custom categories",
+      "Add subcategories (Qayb-hoosaadka)",
+      "Edit or delete custom categories",
+    ],
+    actionButton: { text: "Manage Categories", href: "/dashboard/settings/categories" },
+  },
 ];
