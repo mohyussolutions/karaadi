@@ -40,7 +40,7 @@ export const createCategory = async (req: Request, res: Response) => {
 };
 
 export const updateCategory = async (req: Request, res: Response) => {
-  const { key } = req.params;
+  const key = req.params.key as string;
   const { nameEn, nameSo } = req.body as { nameEn?: string; nameSo?: string };
   try {
     const cat = await prisma.marketplaceCategory.update({
@@ -58,7 +58,7 @@ export const updateCategory = async (req: Request, res: Response) => {
 };
 
 export const deleteCategory = async (req: Request, res: Response) => {
-  const { key } = req.params;
+  const key = req.params.key as string;
   try {
     await prisma.marketplaceCategory.delete({ where: { key } });
     res.json({ ok: true });
@@ -68,7 +68,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
 };
 
 export const createSubcategory = async (req: Request, res: Response) => {
-  const { key: categoryKey } = req.params;
+  const categoryKey = req.params.key as string;
   const { nameEn, nameSo } = req.body as { nameEn: string; nameSo: string };
   if (!nameEn?.trim() || !nameSo?.trim())
     return res.status(400).json({ error: "nameEn and nameSo are required" });
@@ -86,7 +86,7 @@ export const createSubcategory = async (req: Request, res: Response) => {
 };
 
 export const updateSubcategory = async (req: Request, res: Response) => {
-  const { subKey } = req.params;
+  const subKey = req.params.subKey as string;
   const { nameEn, nameSo } = req.body as { nameEn?: string; nameSo?: string };
   try {
     const sub = await prisma.marketplaceSubcategory.update({
@@ -103,7 +103,7 @@ export const updateSubcategory = async (req: Request, res: Response) => {
 };
 
 export const deleteSubcategory = async (req: Request, res: Response) => {
-  const { subKey } = req.params;
+  const subKey = req.params.subKey as string;
   try {
     await prisma.marketplaceSubcategory.delete({ where: { id: subKey } });
     res.json({ ok: true });

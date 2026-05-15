@@ -461,6 +461,8 @@ export const loginUser = async (req: Request, res: Response) => {
       data: { userId: userData.id, ipAddress: ip, userAgent: ua.slice(0, 300), browser, device },
     }).catch(() => {});
 
+    recordSession(userData.id, userData.accessToken || token, req).catch(() => {});
+
     res.json({ token, user: userData });
   } catch (err: any) {
     console.error("[AUTH] signIn failed:", err?.name, err?.message ?? err);
@@ -522,5 +524,71 @@ export const getLoginHistory = async (req: Request, res: Response) => {
     res.json(history);
   } catch (error: any) {
     serverError(res, error);
+  }
+};
+
+function tokenHash(token: string): string {
+  return token.slice(-40);
+}
+
+export async function recordSession(userId: string, accessToken: string, req: any) {
+  const hash = tokenHash(accessToken);
+  const ua = (req.headers?.["user-agent"] as string) || "";
+  const ip = ((req.headers?.["x-forwarded-for"] as string)?.split(",")[0].trim()) || req.socket?.remoteAddress || null;
+  const { browser, device } = parseUserAgent(ua);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await prisma.session.upsert({
+    where: { tokenHash: hash },
+    update: { isActive: true, expiresAt },
+    create: { userId, tokenHash: hash, device, browser, ipAddress: ip, userAgent: ua.slice(0, 300), expiresAt },
+  }).catch(() => {});
+}
+
+export const getActiveSessions = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const rawToken = (req.headers.authorization?.replace("Bearer ", "") || "").trim();
+    const currentHash = rawToken ? tokenHash(rawToken) : "";
+
+    const sessions = await prisma.session.findMany({
+      where: { userId, isActive: true, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(sessions.map((s) => ({
+      id: s.id,
+      device: s.device,
+      browser: s.browser,
+      ipAddress: s.ipAddress,
+      lastActive: s.createdAt,
+      active: currentHash ? s.tokenHash === currentHash : false,
+    })));
+  } catch (err: any) {
+    serverError(res, err);
+  }
+};
+
+export const revokeSession = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const id = req.params.id as string;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    await prisma.session.updateMany({ where: { id, userId }, data: { isActive: false } });
+    res.json({ ok: true });
+  } catch (err: any) {
+    serverError(res, err);
+  }
+};
+
+export const revokeAllSessions = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    await prisma.session.updateMany({ where: { userId }, data: { isActive: false } });
+    res.json({ ok: true });
+  } catch (err: any) {
+    serverError(res, err);
   }
 };

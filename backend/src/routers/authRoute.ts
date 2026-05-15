@@ -18,6 +18,9 @@ import {
   deleteUserByAdmin,
   userSignupsByMonth,
   getLoginHistory,
+  getActiveSessions,
+  revokeSession,
+  revokeAllSessions,
 } from "src/controllers/authController.ts";
 
 import {
@@ -118,5 +121,8 @@ authRouters.get("/total-users", ProtectRoute, adminAndManager, getUsersCount);
 
 authRouters.get("/me", ProtectRoute, getUserProfile);
 authRouters.get("/login-history", ProtectRoute, getLoginHistory);
+authRouters.get("/sessions", ProtectRoute, getActiveSessions);
+authRouters.post("/sessions/logout-all", ProtectRoute, revokeAllSessions);
+authRouters.post("/sessions/:id/logout", ProtectRoute, revokeSession);
 
 export default authRouters;
