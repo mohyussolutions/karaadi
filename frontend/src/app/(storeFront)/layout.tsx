@@ -5,6 +5,7 @@ import AdFetcher from "./components/Advertisement/AdFetcher";
 import Container from "./components/Cards/containerCards/ContainerCard";
 import TrackVisitor from "../ui/invoices/TrackUniqueVisitorOnce";
 import LanguageSync from "@/i18n/LanguageContext";
+import StoreFrontThemeReset from "./components/StoreFrontThemeReset";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 
@@ -18,6 +19,7 @@ export default async function StoreFrontLayout({
 
   return (
     <>
+      <StoreFrontThemeReset />
       <LanguageSync />
       <Navbar initialIsAuthenticated={initialIsAuthenticated} />
       <main className="flex-grow pt-14 bg-[#FEFDFD]">
