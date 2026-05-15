@@ -1,3 +1,61 @@
+export const marketplaceCategories = {
+  "categories": {
+    "antiques": "Antiques & Art",
+    "electronics": "Electronics",
+    "animalAndSupplies": "Animal & Supplies",
+    "sportsAndOutdoors": "Sports & Outdoors",
+    "furniture": "Furniture",
+    "fashion": "Fashion"
+  },
+  "subcategories": {
+    "antiques": {
+      "bowls": "Bowls",
+      "parts": "Parts / Pieces",
+      "coffeeService": "Coffee Service",
+      "porcelain": "Porcelain",
+      "vintage": "Vintage",
+      "other": "Other"
+    },
+    "electronics": {
+      "mobilePhones": "Mobile Phones",
+      "laptopsComputers": "Laptops & Computers",
+      "tvsAccessories": "TVs & Accessories",
+      "camerasPhotography": "Cameras & Photography",
+      "homeAppliances": "Home Appliances",
+      "other": "Other"
+    },
+    "animalAndSupplies": {
+      "livestock": "Livestock (Goats, Cattle)",
+      "pets": "Pets (Dogs, Cats)",
+      "feed": "Animal Feed & Hay",
+      "accessories": "Pet Accessories",
+      "other": "Other"
+    },
+    "sportsAndOutdoors": {
+      "gymEquipment": "Gym Equipment",
+      "bicycles": "Bicycles",
+      "sportingGoods": "Sporting Goods",
+      "campingGear": "Camping & Hiking Gear",
+      "toys": "Toys",
+      "other": "Other"
+    },
+    "furniture": {
+      "sofasCouches": "Sofas & Couches",
+      "bedsMattresses": "Beds & Mattresses",
+      "tablesDesks": "Tables & Desks",
+      "kitchenFurnishings": "Kitchen Furnishings",
+      "other": "Other"
+    },
+    "fashion": {
+      "mensClothing": "Men's Clothing",
+      "womensClothing": "Women's Clothing",
+      "shoesFootwear": "Shoes & Footwear",
+      "bagsWallets": "Bags & Wallets",
+      "other": "Other"
+    }
+  }
+} as const;
+
 export const about = {
   "title": "About Karaadi",
   "heading": "About Karaadi",
@@ -1599,7 +1657,8 @@ export const realEstateDetail = {
 
 
 const en = {
-  about, 
+  marketplaceCategories,
+  about,
   terms, 
   contact, 
   nav, 

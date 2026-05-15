@@ -1,3 +1,61 @@
+export const marketplaceCategories = {
+  "categories": {
+    "antiques": "Qadiimi & Farshaxan",
+    "electronics": "Elektarooniga",
+    "animalAndSupplies": "Xayawaan & Agab",
+    "sportsAndOutdoors": "Ciyaaraha & Dibadda",
+    "furniture": "Alaabta Guriga",
+    "fashion": "Dharka & Boorsooyinka"
+  },
+  "subcategories": {
+    "antiques": {
+      "bowls": "Baaquli",
+      "parts": "Qaybo",
+      "coffeeService": "Adeegga Bunka",
+      "porcelain": "Fooraan",
+      "vintage": "Duug",
+      "other": "Kale"
+    },
+    "electronics": {
+      "mobilePhones": "Telefoonada",
+      "laptopsComputers": "Kumbuyuutarada",
+      "tvsAccessories": "TV-yada",
+      "camerasPhotography": "Kamaradaha",
+      "homeAppliances": "Qalabka Guriga",
+      "other": "Kale"
+    },
+    "animalAndSupplies": {
+      "livestock": "Xoolaha",
+      "pets": "Xayawaanka",
+      "feed": "Quudinta",
+      "accessories": "Agabka",
+      "other": "Kale"
+    },
+    "sportsAndOutdoors": {
+      "gymEquipment": "Qalabka Jimicsiga",
+      "bicycles": "Baaskiilada",
+      "sportingGoods": "Qalabka Ciyaaraha",
+      "campingGear": "Qalabka Safarka",
+      "toys": "Ciyaaraha",
+      "other": "Kale"
+    },
+    "furniture": {
+      "sofasCouches": "Fadhiyada",
+      "bedsMattresses": "Sariiraha",
+      "tablesDesks": "Miisaska",
+      "kitchenFurnishings": "Qalabka Jikada",
+      "other": "Kale"
+    },
+    "fashion": {
+      "mensClothing": "Dharka Ragga",
+      "womensClothing": "Dharka Haweenka",
+      "shoesFootwear": "Kabaha",
+      "bagsWallets": "Boorsooyinka",
+      "other": "Kale"
+    }
+  }
+} as const;
+
 export const checkout = {
   "title": "Bixinta",
   "description": "Dhameystir habka bixintaada",
@@ -1669,7 +1727,8 @@ export const realEstateDetail = {
 
 
 const so = {
-  checkout, 
+  marketplaceCategories,
+  checkout,
   plan, 
   common, 
   summary, 
@@ -1696,9 +1755,9 @@ const so = {
   createBoats, 
   mohyusLogoAlt, 
   sidebar, 
-  settings, 
-  subcategories, 
-  marketplace, 
+  settings,
+  subcategories,
+  marketplace,
   mine, 
   descriptions, 
   messages, 
