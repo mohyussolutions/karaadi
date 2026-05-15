@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_OPTIONS=--no-experimental-webstorage next dev --turbopack",
-    "build": "next build",
+    "build:sw": "node scripts/build-sw.mjs",
+    "build": "npm run build:sw && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "NODE_OPTIONS='--experimental-vm-modules' npx jest --config jest.config.cjs",

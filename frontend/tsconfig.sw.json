@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["ES2017", "WebWorker"],
+    "module": "none",
+    "strict": true,
+    "outDir": "public",
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "noEmit": false
+  },
+  "include": ["src/sw.ts"],
+  "exclude": ["node_modules"]
+}
