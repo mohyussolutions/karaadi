@@ -51,6 +51,13 @@ const loadUserAndSession = async (sub: string, token: string, res: Response) => 
   return user;
 };
 
+const COOKIE_OPTS = (isProd: boolean) => ({
+  httpOnly: true,
+  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+  secure: isProd,
+  maxAge: SESSION_TIME_MS,
+});
+
 export const ProtectRoute = async (
   req: AuthRequest,
   res: Response,
@@ -68,6 +75,11 @@ export const ProtectRoute = async (
     if (!user)
       return res.status(401).json({ message: "Session expired or not found" });
 
+    const isProd = process.env.NODE_ENV === "production";
+    const opts = COOKIE_OPTS(isProd);
+    res.cookie("idToken", token, opts);
+    res.cookie("accessToken", token, opts);
+
     req.user = {
       ...user,
       id: user.id,
@@ -83,9 +95,6 @@ export const ProtectRoute = async (
 
     next();
   } catch {
-    res.clearCookie("idToken");
-    res.clearCookie("token");
-    res.clearCookie("accessToken");
     res.status(401).json({ message: "Unauthorized" });
   }
 };
