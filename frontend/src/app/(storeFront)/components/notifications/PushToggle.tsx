@@ -8,8 +8,8 @@ import { usePushNotifications, isIOSSafariWithoutPWA, browserSupportsPush } from
 function ConfirmModal({ title, body, onConfirm, onCancel }: { title: string; body: string; onConfirm: () => void; onCancel: () => void }) {
   const { t } = useTranslation();
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.4)" }} onClick={onCancel}>
-      <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "white", borderRadius: "1.25rem 1.25rem 0 0", width: "100%", maxWidth: "28rem", padding: "1.5rem", paddingBottom: "2.5rem" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.4)", padding: "1rem" }} onClick={onCancel}>
+      <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "white", borderRadius: "1.25rem", width: "100%", maxWidth: "28rem", padding: "1.5rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
           <span style={{ fontWeight: 700, fontSize: "1rem", color: "#111827" }}>{title}</span>
           <button onClick={onCancel} style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>
@@ -31,8 +31,8 @@ function ConfirmModal({ title, body, onConfirm, onCancel }: { title: string; bod
 function IOSModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.4)" }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "white", borderRadius: "1.25rem 1.25rem 0 0", width: "100%", maxWidth: "28rem", padding: "1.5rem", paddingBottom: "2.5rem" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.4)", padding: "1rem" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "white", borderRadius: "1.25rem", width: "100%", maxWidth: "28rem", padding: "1.5rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
           <span style={{ fontWeight: 700, fontSize: "1rem", color: "#111827" }}>{t("notifications.push.iosModal.title")}</span>
           <button onClick={onClose} style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>

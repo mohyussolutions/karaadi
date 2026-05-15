@@ -6,6 +6,9 @@ import Link from "next/link";
 import { AiOutlineCheckCircle } from "react-icons/ai";
 import { getCategoryRoute } from "../../hooks/useGetRoute";
 
+const BLUR_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4=";
+
 interface Subscription {
   id: string;
   title: string;
@@ -49,6 +52,8 @@ export default function SubscriptionCard({
                 alt={sub.title}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
               <div className="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-lg flex items-center gap-1">
                 <AiOutlineCheckCircle size={14} />
