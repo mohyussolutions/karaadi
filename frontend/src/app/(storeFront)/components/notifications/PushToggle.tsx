@@ -66,7 +66,10 @@ export default function PushToggle() {
   const [modal, setModal] = useState<Modal>(null);
 
   useEffect(() => {
-    setSupported("Notification" in window && "serviceWorker" in navigator && "PushManager" in window);
+    const hasAPIs = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isPWA = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+    setSupported(hasAPIs && (!isIOS || isPWA));
   }, []);
 
   const isBlocked = permission === "denied";
