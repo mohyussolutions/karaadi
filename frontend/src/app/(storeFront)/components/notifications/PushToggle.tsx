@@ -16,14 +16,7 @@ export default function PushToggle() {
     );
   }, []);
 
-  if (supported === null) {
-    return (
-      <div className="flex items-center justify-between gap-4 py-4 opacity-0 pointer-events-none" aria-hidden>
-        <div className="h-4 w-40 bg-gray-100 rounded" />
-        <div className="h-8 w-14 bg-gray-100 rounded-full" />
-      </div>
-    );
-  }
+  if (supported === null) return null;
 
   if (!supported) {
     return (
@@ -52,14 +45,12 @@ export default function PushToggle() {
   }
 
   return (
-    <button
-      onClick={toggle}
-      disabled={loading}
-      role="switch"
-      aria-checked={enabled}
-      className="w-full flex items-center justify-between gap-4 py-4 touch-manipulation text-left disabled:cursor-wait active:opacity-80"
+    <div
+      onClick={loading ? undefined : toggle}
+      style={{ cursor: loading ? "wait" : "pointer", userSelect: "none" }}
+      className="flex items-center py-4 touch-manipulation active:opacity-70"
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
         <Bell size={20} className={`flex-shrink-0 transition-colors ${enabled ? "text-blue-600" : "text-gray-400"}`} />
         <div className="flex flex-col min-w-0">
           <span className="text-sm font-semibold text-gray-900">Message notifications</span>
@@ -72,16 +63,40 @@ export default function PushToggle() {
       </div>
 
       <div
-        style={{ backgroundColor: enabled ? "#2563eb" : "#d1d5db", flexShrink: 0 }}
-        className="relative inline-flex h-8 w-14 rounded-full border-2 border-transparent transition-colors duration-200"
+        role="switch"
+        aria-checked={enabled}
+        style={{
+          backgroundColor: enabled ? "#2563eb" : "#d1d5db",
+          minWidth: "3.5rem",
+          width: "3.5rem",
+          height: "2rem",
+          borderRadius: "9999px",
+          border: "2px solid transparent",
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          flexShrink: 0,
+          transition: "background-color 0.2s",
+        }}
       >
         <span
-          className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-white shadow-md transition-transform duration-200"
-          style={{ transform: enabled ? "translateX(1.5rem)" : "translateX(0)" }}
+          style={{
+            width: "1.75rem",
+            height: "1.75rem",
+            borderRadius: "9999px",
+            backgroundColor: "white",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transform: enabled ? "translateX(1.5rem)" : "translateX(0)",
+            transition: "transform 0.2s",
+            flexShrink: 0,
+          }}
         >
           {loading && <Loader2 size={12} className="animate-spin text-gray-400" />}
         </span>
       </div>
-    </button>
+    </div>
   );
 }
