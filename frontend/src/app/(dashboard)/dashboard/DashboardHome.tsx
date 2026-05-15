@@ -65,6 +65,15 @@ function ChartSkeleton() {
   );
 }
 
+function RegionCitySkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+      <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+    </div>
+  );
+}
+
 export default function DashboardHome() {
   const dispatch = useAppDispatch();
   const { data, status } = useAppSelector((s) => s.dashboard);
@@ -169,7 +178,7 @@ export default function DashboardHome() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-200">
             <BarChartBlock
               title="User Signups by Month"
-              subtitle="All time"
+              subtitle="New registrations per month + cumulative total"
               data={signups}
               dataKey="users"
               barColor="#0ea5e9"
@@ -177,6 +186,59 @@ export default function DashboardHome() {
               secondaryLabel="Total Users"
               secondaryColor="#f59e0b"
             />
+          </div>
+        </div>
+      )}
+
+      {loading ? <RegionCitySkeleton /> : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Top Regions by Listings</p>
+            <p className="text-xs text-slate-300 mb-4">Where most listings are posted</p>
+            {(data?.regionListings ?? []).length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
+            ) : (
+              <div className="space-y-2.5">
+                {(data?.regionListings ?? []).slice(0, 8).map((r, i) => {
+                  const max = data!.regionListings[0]?.buyers || 1;
+                  const pct = Math.round((r.buyers / max) * 100);
+                  return (
+                    <div key={r.name} className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-gray-400 w-4 text-right flex-shrink-0">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{r.name}</span>
+                          <span className="text-xs font-bold text-indigo-600 ml-2 flex-shrink-0">{r.buyers.toLocaleString()}</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Top Cities by Listings</p>
+            <p className="text-xs text-slate-300 mb-4">Cities with the most active listings</p>
+            {(data?.cityListings ?? []).length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {(data?.cityListings ?? []).slice(0, 10).map((c, i) => (
+                  <div key={c.name} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl px-3 py-2">
+                    <span className="text-xs font-black text-gray-300 dark:text-gray-500 w-4 flex-shrink-0">#{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate">{c.name}</p>
+                      <p className="text-sm font-black text-emerald-600">{c.buyers.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
