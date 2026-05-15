@@ -68,6 +68,7 @@ export default function PushToggle() {
   const { enabled, subscribed, permission, loading, subscribe, unsubscribe } = usePushNotifications();
   const [modal, setModal] = useState<Modal>(null);
   const iosRef = useRef<boolean | null>(null);
+  const [showIOSHint, setShowIOSHint] = useState(false);
 
   useEffect(() => {
     iosRef.current = isIOSWithoutPWA();
@@ -84,6 +85,7 @@ export default function PushToggle() {
 
   const subtitle =
     isBlocked ? t("notifications.push.blocked") :
+    showIOSHint ? t("notifications.push.iphoneHint") :
     loading ? t(subscribed ? "notifications.push.turningOff" : "notifications.push.turningOn") :
     subscribed ? t("notifications.push.enabled") :
     t("notifications.push.disabled");
@@ -106,7 +108,7 @@ export default function PushToggle() {
           onCancel={() => setModal(null)}
         />
       )}
-      {modal === "ios" && <IOSModal onClose={() => setModal(null)} />}
+      {modal === "ios" && <IOSModal onClose={() => { setModal(null); setShowIOSHint(true); }} />}
 
       <div
         onClick={handleClick}

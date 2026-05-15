@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { setEnabled, setSubscribed, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
+import { toast } from "react-toastify";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -62,7 +63,7 @@ export function usePushNotifications() {
       dispatch(setSubscribed(true));
     } catch (err) {
       dispatch(setSubscribed(false));
-      console.error("[push] subscribe failed:", err);
+      toast.error("Could not enable notifications. Please try again.");
     } finally {
       dispatch(setLoading(false));
     }
