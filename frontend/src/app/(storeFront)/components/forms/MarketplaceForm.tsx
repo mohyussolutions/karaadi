@@ -159,13 +159,11 @@ export default function MarketplaceForm({ onNext, businessId, mainCategory = "Ma
 
   if (authLoading || dataLoading) return <div className="h-screen flex items-center justify-center"><Loading /></div>;
 
-  const catOptions = [
-    ...(mainCategory === "Schools" ? SCHOOL_CATEGORIES : MARKETPLACE_CATEGORIES).map(c => ({
-      value: c.key,
-      label: t(c.labelKey, { defaultValue: c.key }),
-    })),
-    ...customCats.map(c => ({ value: c.key, label: isSo ? c.nameSo : c.nameEn })),
-  ];
+  const catOptions = mainCategory === "Schools"
+    ? SCHOOL_CATEGORIES.map(c => ({ value: c.key, label: t(c.labelKey, { defaultValue: c.key }) }))
+    : customCats.length > 0
+      ? customCats.map(c => ({ value: c.key, label: isSo ? c.nameSo : c.nameEn }))
+      : MARKETPLACE_CATEGORIES.map(c => ({ value: c.key, label: t(c.labelKey, { defaultValue: c.key }) }));
   const subCatOptions = getNestedSubcategories();
   const conditionOptions = CONDITION_KEYS.map((c) => ({ value: c.value, label: t(c.key, { defaultValue: c.value }) }));
   const regionOptions = regions.map((r) => ({ value: r.id, label: r.name }));
