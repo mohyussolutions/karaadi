@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import { CACHE_TTL } from "src/config/config.constants.ts";
+import { CACHE_TTL, CACHE_KEYS } from "src/config/config.constants.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
-
-const POPULAR_SEARCH_CACHE_KEY = "search:popular";
-const ADMIN_LOGS_CACHE_KEY = "search:admin_logs";
 
 export const createSearchLog = async (req: Request, res: Response) => {
   try {
@@ -19,8 +16,8 @@ export const createSearchLog = async (req: Request, res: Response) => {
       },
     });
 
-    await cacheManager.delete(POPULAR_SEARCH_CACHE_KEY);
-    await cacheManager.delete(ADMIN_LOGS_CACHE_KEY);
+    await cacheManager.delete(CACHE_KEYS.SEARCH_POPULAR);
+    await cacheManager.delete(CACHE_KEYS.SEARCH_ADMIN_LOGS);
 
     res.status(201).json(newLog);
   } catch (error) {
@@ -31,7 +28,7 @@ export const createSearchLog = async (req: Request, res: Response) => {
 export const getAdminLogs = async (req: Request, res: Response) => {
   try {
     const logs = await cacheManager.withCache(
-      ADMIN_LOGS_CACHE_KEY,
+      CACHE_KEYS.SEARCH_ADMIN_LOGS,
       async () => {
         return await prisma.searchLog.findMany({
           orderBy: { createdAt: "desc" },
@@ -59,7 +56,7 @@ export const getAdminLogs = async (req: Request, res: Response) => {
 export const getPopularSearches = async (req: Request, res: Response) => {
   try {
     const popular = await cacheManager.withCache(
-      POPULAR_SEARCH_CACHE_KEY,
+      CACHE_KEYS.SEARCH_POPULAR,
       async () => {
         return await prisma.searchLog.groupBy({
           by: ["query"],
@@ -106,8 +103,8 @@ export const deleteSearchLogByQuery = async (req: Request, res: Response) => {
       where: { query: String(q) },
     });
 
-    await cacheManager.delete(POPULAR_SEARCH_CACHE_KEY);
-    await cacheManager.delete(ADMIN_LOGS_CACHE_KEY);
+    await cacheManager.delete(CACHE_KEYS.SEARCH_POPULAR);
+    await cacheManager.delete(CACHE_KEYS.SEARCH_ADMIN_LOGS);
 
     res.status(200).json({ message: "Deleted successfully" });
   } catch (error) {

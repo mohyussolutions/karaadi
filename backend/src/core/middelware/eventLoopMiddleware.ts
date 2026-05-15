@@ -1,16 +1,15 @@
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import type { Request, Response, NextFunction } from "express";
+import { EVENT_LOOP } from "src/config/config.constants.ts";
 
 const histogram = monitorEventLoopDelay({ resolution: 20 });
 histogram.enable();
 
-const THRESHOLD_MS = 300;
-const CONSECUTIVE_LIMIT = 10;
 let consecutiveHighDelay = 0;
 
 setInterval(() => {
   const meanMs = histogram.mean / 1e6;
-  if (meanMs > THRESHOLD_MS) {
+  if (meanMs > EVENT_LOOP.THRESHOLD_MS) {
     consecutiveHighDelay++;
   } else {
     consecutiveHighDelay = Math.max(0, consecutiveHighDelay - 1);
@@ -23,7 +22,7 @@ export const eventLoopMiddleware = (
   res: Response,
   next: NextFunction,
 ) => {
-  if (consecutiveHighDelay >= CONSECUTIVE_LIMIT) {
+  if (consecutiveHighDelay >= EVENT_LOOP.CONSECUTIVE_LIMIT) {
     res.setHeader("Retry-After", "5");
     return res.status(503).json({
       error: "Service Temporarily Busy",

@@ -1,8 +1,7 @@
 import cacheManager from "src/services/redis/cacheManager.ts";
 import prisma from "../core/utils/db.ts";
 import { Request, Response } from "express";
-
-const FEED_TTL = 300;
+import { CACHE_TTL } from "src/config/config.constants.ts";
 const BASE_SELECT = {
   id: true,
   title: true,
@@ -133,7 +132,7 @@ export const getFeed = async (req: Request, res: Response) => {
       .sort((a, b) => a.score - b.score)
       .map((x) => x.item);
 
-    await cacheManager.set(cacheKey, sorted, FEED_TTL);
+    await cacheManager.set(cacheKey, sorted, CACHE_TTL.FEED);
     res.json(sorted);
   } catch (err) {
     console.error("Feed error:", err);

@@ -76,6 +76,9 @@ export const CACHE_KEYS = {
   USER_NOTIFICATIONS: (userId: string) => `notifications:${userId}`,
   JOBS_ALL_PAID: "jobs:all:paid",
   JOBS_TOTAL_COUNT: "jobs:total:count",
+  SEARCH_POPULAR: "search:popular",
+  SEARCH_ADMIN_LOGS: "search:admin_logs",
+  BUSINESS_PLANS_ALL: "business-plans:all",
 } as const;
 
 export const CACHE_TTL = {
@@ -95,6 +98,20 @@ export const CACHE_TTL = {
   SEARCH: 120,
   DETAIL: 300,
   DEFAULT: 3600,
+  AUTH: 120,
+  FEED: 300,
+  CHAT: 20,
+} as const;
+
+export const EVENT_LOOP = {
+  THRESHOLD_MS: 300,
+  CONSECUTIVE_LIMIT: 10,
+} as const;
+
+export const ENCRYPTION = {
+  ALGORITHM: "aes-256-gcm",
+  IV_LENGTH: 12,
+  KEY_LENGTH: 32,
 } as const;
 
 export const ERROR_MESSAGES = {

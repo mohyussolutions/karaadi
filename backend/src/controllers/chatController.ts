@@ -2,8 +2,7 @@ import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import { EncryptionController } from "./encryptionController.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
-
-const USER_CHATS_TTL = 20;
+import { CACHE_TTL } from "src/config/config.constants.ts";
 const chatCacheKey = (userId: string) => `chats:user:${userId}`;
 
 export const createChat = async (req: Request, res: Response) => {
@@ -215,7 +214,7 @@ export const getUserChats = async (req: Request, res: Response) => {
       };
     });
 
-    await cacheManager.set(cacheKey, decryptedChats, USER_CHATS_TTL);
+    await cacheManager.set(cacheKey, decryptedChats, CACHE_TTL.CHAT);
     res.json(decryptedChats);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });

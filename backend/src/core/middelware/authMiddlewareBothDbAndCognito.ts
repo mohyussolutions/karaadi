@@ -4,8 +4,7 @@ import prisma from "../utils/db.ts";
 import { AuthRequest, DecodedToken } from "../../types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { SESSION_TIME_MS } from "src/config/session-time.ts";
-
-const AUTH_CACHE_TTL = 120;
+import { CACHE_TTL } from "src/config/config.constants.ts";
 
 const extractToken = (authHeader?: string, cookies?: any): string | null => {
   const fromHeader = authHeader?.startsWith("Bearer ")
@@ -17,7 +16,7 @@ const extractToken = (authHeader?: string, cookies?: any): string | null => {
 
 const getAuthCacheKey = (sub: string) => `auth:session:${sub}`;
 
-const loadUserAndSession = async (sub: string, token: string, res: Response) => {
+const loadUserAndSession = async (sub: string, token: string) => {
   const cacheKey = getAuthCacheKey(sub);
 
   const cached = await cacheManager
@@ -30,7 +29,7 @@ const loadUserAndSession = async (sub: string, token: string, res: Response) => 
 
   const user = await prisma.user.findUnique({ where: { cognitoId: sub } });
   if (!user) {
-    await cacheManager.set(cacheKey, { user: null, valid: false }, AUTH_CACHE_TTL).catch(() => {});
+    await cacheManager.set(cacheKey, { user: null, valid: false }, CACHE_TTL.AUTH).catch(() => {});
     return null;
   }
 
@@ -47,7 +46,7 @@ const loadUserAndSession = async (sub: string, token: string, res: Response) => 
     await prisma.cookie.update({ where: { userId: user.id }, data: { expiresAt: newExpiry } }).catch(() => {});
   }
 
-  await cacheManager.set(cacheKey, { user, valid: true }, AUTH_CACHE_TTL).catch(() => {});
+  await cacheManager.set(cacheKey, { user, valid: true }, CACHE_TTL.AUTH).catch(() => {});
   return user;
 };
 
@@ -71,7 +70,7 @@ export const ProtectRoute = async (
     if (!decoded?.sub)
       return res.status(401).json({ message: "Invalid token" });
 
-    const user = await loadUserAndSession(decoded.sub, token, res);
+    const user = await loadUserAndSession(decoded.sub, token);
     if (!user)
       return res.status(401).json({ message: "Session expired or not found" });
 

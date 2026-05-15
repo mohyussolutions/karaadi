@@ -1,14 +1,12 @@
 import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
-import { CACHE_TTL } from "src/config/config.constants.ts";
+import { CACHE_TTL, CACHE_KEYS } from "src/config/config.constants.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
-
-const CACHE_KEY = "business-plans:all";
 
 export const getAllBusinessPlans = async (_req: Request, res: Response) => {
   try {
     const plans = await cacheManager.withCache(
-      CACHE_KEY,
+      CACHE_KEYS.BUSINESS_PLANS_ALL,
       () =>
         (prisma as any).businessPlan.findMany({ orderBy: { price: "asc" } }),
       CACHE_TTL.LIST,
@@ -53,7 +51,7 @@ export const createBusinessPlan = async (req: Request, res: Response) => {
       },
     });
 
-    await cacheManager.delete(CACHE_KEY).catch(() => {});
+    await cacheManager.delete(CACHE_KEYS.BUSINESS_PLANS_ALL).catch(() => {});
     res.status(201).json({ success: true, plan });
   } catch {
     res.status(500).json({ error: "Failed to create plan" });
@@ -87,7 +85,7 @@ export const updateBusinessPlan = async (req: Request, res: Response) => {
       },
     });
 
-    await cacheManager.delete(CACHE_KEY).catch(() => {});
+    await cacheManager.delete(CACHE_KEYS.BUSINESS_PLANS_ALL).catch(() => {});
     res.json({ success: true, plan });
   } catch {
     res.status(500).json({ error: "Failed to update plan" });
@@ -97,7 +95,7 @@ export const updateBusinessPlan = async (req: Request, res: Response) => {
 export const deleteBusinessPlan = async (req: Request, res: Response) => {
   try {
     await (prisma as any).businessPlan.delete({ where: { id: req.params.id } });
-    await cacheManager.delete(CACHE_KEY).catch(() => {});
+    await cacheManager.delete(CACHE_KEYS.BUSINESS_PLANS_ALL).catch(() => {});
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Failed to delete plan" });

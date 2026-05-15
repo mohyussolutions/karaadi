@@ -2,8 +2,7 @@ import { Request, Response } from "express";
 import prisma from "src/core/utils/db.ts";
 import type { Prisma } from "@prisma/client";
 import cacheManager from "src/services/redis/cacheManager.ts";
-
-const BUSINESS_PLANS_CACHE_KEY = "business-plans:all";
+import { CACHE_KEYS } from "src/config/config.constants.ts";
 
 const MARKETPLACE_FEE_KEYS = [
   "art",
@@ -894,7 +893,7 @@ export const createBusinessPlanFees = async (req: Request, res: Response) => {
       upsertStandardPlan("60-Day Plan", 60, Number(bp60)),
       upsertStandardPlan("90-Day Plan", 90, Number(bp90)),
     ]);
-    cacheManager.delete(BUSINESS_PLANS_CACHE_KEY).catch(() => {});
+    cacheManager.delete(CACHE_KEYS.BUSINESS_PLANS_ALL).catch(() => {});
     res
       .status(201)
       .json({ id: "bp-fee-config", bp30, bp60, bp90, isActive: true });
@@ -917,7 +916,7 @@ export const updateBusinessPlanFees = async (req: Request, res: Response) => {
         ? [upsertStandardPlan("90-Day Plan", 90, Number(bp90))]
         : []),
     ]);
-    cacheManager.delete(BUSINESS_PLANS_CACHE_KEY).catch(() => {});
+    cacheManager.delete(CACHE_KEYS.BUSINESS_PLANS_ALL).catch(() => {});
     res.json({ id: "bp-fee-config", bp30, bp60, bp90, isActive: true });
   } catch (e: unknown) {
     res.status(500).json({ error: (e as Error).message });
