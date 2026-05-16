@@ -177,6 +177,11 @@ export const getUserChats = async (req: Request, res: Response) => {
           select: { id: true, username: true, profileImage: true, email: true },
         },
         messages: { orderBy: { timestamp: "desc" }, take: 1 },
+        _count: {
+          select: {
+            messages: { where: { receiverId: userIdValue, read: false } },
+          },
+        },
         marketplace: {
           select: { id: true, title: true, price: true, images: true },
         },
@@ -207,6 +212,7 @@ export const getUserChats = async (req: Request, res: Response) => {
       return {
         ...chat,
         item,
+        unreadCount: chat._count?.messages ?? 0,
         messages: chat.messages.map((m) => ({
           ...m,
           content: EncryptionController.decrypt(m.content),

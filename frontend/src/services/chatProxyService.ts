@@ -32,7 +32,7 @@ function mapChat(chat: any): Chatroom {
     receiverAvatar: chat.receiver?.profileImage || null,
     lastMessage: chat.messages?.[0]?.content || null,
     lastMessageAt: chat.messages?.[0]?.timestamp || chat.updatedAt || null,
-    unreadCount: 0,
+    unreadCount: chat.unreadCount || 0,
     updatedAt: chat.updatedAt,
     itemTitle: item?.title || null,
     itemImage: item?.images?.[0] || null,

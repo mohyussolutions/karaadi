@@ -147,7 +147,7 @@ export const sendMessage = async (req: Request, res: Response) => {
       body: decryptedMessage.content.slice(0, 100),
       icon: "/logo.jpg",
       url: `/messages/${chatId}`,
-      tag: `chat-${chatId}`,
+      tag: `msg-${message.id}`,
     }).catch(() => {});
 
     res.status(201).json(decryptedMessage);
