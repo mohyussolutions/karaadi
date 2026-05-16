@@ -8,7 +8,7 @@ import { vehicleSubCategories } from "@/app/(links)/storeFrontLinks/mainCategoty
 import PathSegmentsDisplay from "../../(details)/historyPath/pathSegmentsDisplay";
 import SearchInput from "@/app/ui/search/SearchInput";
 import WantSell from "@/app/(storeFront)/components/shared/WantToSell/page";
-import Loading from "@/app/ui/loading/Loading";
+import { FeedGridSkeleton } from "@/app/ui/loading";
 import UniversalCard from "@/app/(storeFront)/components/Cards/categoriesCards/UniversalCard";
 import ContainerLinks from "@/app/(storeFront)/components/Cards/containerCards/conainerLinks";
 import { useError } from "@/app/(storeFront)/components/hooks/useError";
@@ -89,7 +89,7 @@ function CarLinks() {
         <WantSell />
       </ContainerLinks>
       {isLoading || !mounted ? (
-        <Loading />
+        <FeedGridSkeleton />
       ) : (
         <div className="space-y-4">
           <ContainerLinks>

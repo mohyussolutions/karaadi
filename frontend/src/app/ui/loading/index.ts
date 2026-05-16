@@ -6,6 +6,7 @@ export { default as Skeleton } from "./Skeleton";
 export {
   StoreFrontSkeleton,
   SubNavbarSkeleton,
+  FeedGridSkeleton,
   CategoriesTableSkeleton,
   PaymentsSkeleton,
   UsersSkeleton,

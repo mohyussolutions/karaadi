@@ -1,6 +1,21 @@
 const bars = (n: number, cls: string) =>
   Array.from({ length: n }, (_, i) => <div key={i} className={cls} />);
 
+export const FeedGridSkeleton = ({ count = 8 }: { count?: number }) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-3 animate-pulse">
+    {Array.from({ length: count }, (_, i) => (
+      <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="aspect-[4/3] bg-gray-200" />
+        <div className="p-2.5 space-y-2">
+          <div className="h-3 bg-gray-200 rounded w-3/4" />
+          <div className="h-4 bg-gray-200 rounded w-1/2" />
+          <div className="h-3 bg-gray-100 rounded w-1/3" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 export const StoreFrontSkeleton = () => (
   <div className="space-y-2 py-1 px-3 min-h-screen animate-pulse">
     <div className="w-full p-2 border border-gray-300 rounded-xl">
