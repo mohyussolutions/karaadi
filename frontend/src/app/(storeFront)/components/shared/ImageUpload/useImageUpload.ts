@@ -1,15 +1,12 @@
 "use client";
 import { useState } from "react";
-
-const MAX_IMAGES = 10;
-const MAX_FILE_SIZE_MB = 15;
-const MAX_SAFE_CHARS = 1_500_000;
-
-const PASSES = [
-  { maxPx: 1200, quality: 0.82 },
-  { maxPx: 900, quality: 0.72 },
-  { maxPx: 700, quality: 0.65 },
-];
+import {
+  IMAGE_MAX_COUNT,
+  IMAGE_MIN_COUNT,
+  IMAGE_MAX_FILE_SIZE_MB,
+  IMAGE_MAX_SAFE_CHARS,
+  IMAGE_COMPRESS_PASSES,
+} from "./image.constants";
 
 function drawToCanvas(img: HTMLImageElement, maxPx: number): HTMLCanvasElement {
   const longest = Math.max(img.width, img.height);
@@ -17,8 +14,8 @@ function drawToCanvas(img: HTMLImageElement, maxPx: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(img.width * scale);
   canvas.height = Math.round(img.height * scale);
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const ctx = canvas.getContext("2d");
+  if (ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
 
@@ -35,13 +32,16 @@ function compressImage(file: File): Promise<string> {
     };
 
     img.onload = () => {
+      URL.revokeObjectURL(url);
       try {
-        URL.revokeObjectURL(url);
-        for (const { maxPx, quality } of PASSES) {
+        for (const { maxPx, quality } of IMAGE_COMPRESS_PASSES) {
           const canvas = drawToCanvas(img, maxPx);
           if (canvas.width === 0 || canvas.height === 0) break;
           const data = canvas.toDataURL("image/jpeg", quality);
-          if (data.length <= MAX_SAFE_CHARS) { resolve(data); return; }
+          if (data.length <= IMAGE_MAX_SAFE_CHARS) {
+            resolve(data);
+            return;
+          }
         }
         fallback();
       } catch {
@@ -53,15 +53,24 @@ function compressImage(file: File): Promise<string> {
   });
 }
 
+async function compressAll(files: File[]): Promise<string[]> {
+  const results: string[] = [];
+  for (const file of files) {
+    results.push(await compressImage(file));
+  }
+  return results;
+}
+
 export function useImageUpload() {
   const [images, setImages] = useState<File[]>([]);
 
   function addImages(files: FileList | null) {
     if (!files) return;
+    const maxBytes = IMAGE_MAX_FILE_SIZE_MB * 1024 * 1024;
     const valid = Array.from(files).filter(
-      (f) => f.type.startsWith("image/") && f.size <= MAX_FILE_SIZE_MB * 1024 * 1024,
+      (f) => f.type.startsWith("image/") && f.size <= maxBytes,
     );
-    setImages((prev) => [...prev, ...valid].slice(0, MAX_IMAGES));
+    setImages((prev) => [...prev, ...valid].slice(0, IMAGE_MAX_COUNT));
   }
 
   function removeImage(index: number) {
@@ -69,12 +78,23 @@ export function useImageUpload() {
   }
 
   async function toBase64(): Promise<string[]> {
-    return Promise.all(images.map(compressImage));
+    return compressAll(images);
   }
 
   function resetImages() {
     setImages([]);
   }
 
-  return { images, addImages, removeImage, resetImages, toBase64, MAX_IMAGES };
+  const hasMinImages = images.length >= IMAGE_MIN_COUNT;
+
+  return {
+    images,
+    addImages,
+    removeImage,
+    resetImages,
+    toBase64,
+    hasMinImages,
+    IMAGE_MAX_COUNT,
+    IMAGE_MIN_COUNT,
+  };
 }

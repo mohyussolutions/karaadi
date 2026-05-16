@@ -225,7 +225,7 @@ export default function MotorcyclesForm({ onNext, businessId }: { onNext: () => 
         </div>
 
         <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
-          <ImageUpload images={images} onAdd={addImages} onRemove={removeImage} maxImages={10} label={t("createMotorcycle.upload")} />
+          <ImageUpload images={images} onAdd={addImages} onRemove={removeImage} label={t("createMotorcycle.upload")} />
           <p className="text-xs text-gray-400 mt-3 text-center">{t("createMotorcycle.imageNote")}</p>
         </div>
 
