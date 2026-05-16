@@ -142,8 +142,8 @@ async function getCityListings() {
 }
 
 export const getDashboardSummary = async (_req: Request, res: Response) => {
-  const CACHE_KEY = "dashboard:summary:v2";
-  const CACHE_TTL = 60;
+  const CACHE_KEY = "dashboard:summary:v3";
+  const CACHE_TTL = 300;
 
   try {
     const cached = await cacheManager.get(CACHE_KEY);
@@ -152,45 +152,45 @@ export const getDashboardSummary = async (_req: Request, res: Response) => {
       return res.json(cached);
     }
 
-    const since = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth() - 11,
-      1,
-    );
+    const since = new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1);
 
-    const [
-      categoryTotals,
-      stats,
-      revenue,
-      signups,
-      regionListings,
-      cityListings,
-    ] = await Promise.all([
+    const [categoryTotals, stats, revenue, signups] = await Promise.all([
       fetchCategoryTotals(),
       fetchStatTotals(),
       getRevenue(since),
       getSignups(since),
-      getRegionListings(),
-      getCityListings(),
     ]);
 
-    const payload = {
-      categoryTotals,
-      stats,
-      revenue,
-      signups,
-      regionListings,
-      cityListings,
-    };
+    const payload = { categoryTotals, stats, revenue, signups };
     await cacheManager.set(CACHE_KEY, payload, CACHE_TTL);
     res.setHeader("X-Cache", "MISS");
     res.json(payload);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        error: "Failed to fetch dashboard summary",
-        message: error.message,
-      });
+    res.status(500).json({ error: "Failed to fetch dashboard summary", message: error.message });
+  }
+};
+
+export const getDashboardGeo = async (_req: Request, res: Response) => {
+  const CACHE_KEY = "dashboard:geo:v1";
+  const CACHE_TTL = 600;
+
+  try {
+    const cached = await cacheManager.get(CACHE_KEY);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
+
+    const [regionListings, cityListings] = await Promise.all([
+      getRegionListings(),
+      getCityListings(),
+    ]);
+
+    const payload = { regionListings, cityListings };
+    await cacheManager.set(CACHE_KEY, payload, CACHE_TTL);
+    res.setHeader("X-Cache", "MISS");
+    res.json(payload);
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch geo data", message: error.message });
   }
 };

@@ -24,6 +24,9 @@ export interface DashboardSummaryData {
   };
   revenue: { month: string; revenue: number }[];
   signups: { month: string; users: number; totalUsers: number }[];
+}
+
+export interface DashboardGeoData {
   regionListings: { name: string; buyers: number }[];
   cityListings: { name: string; buyers: number }[];
 }
@@ -33,9 +36,9 @@ const EMPTY: DashboardSummaryData = {
   stats: { users: 0, visitors: 0, messages: 0, ads: 0, subscriptions: 0, regions: 0, cities: 0 },
   revenue: [],
   signups: [],
-  regionListings: [],
-  cityListings: [],
 };
+
+const EMPTY_GEO: DashboardGeoData = { regionListings: [], cityListings: [] };
 
 export const getDashboardSummary = cache(async function getDashboardSummary(): Promise<DashboardSummaryData> {
   try {
@@ -49,3 +52,16 @@ export const getDashboardSummary = cache(async function getDashboardSummary(): P
     return EMPTY;
   }
 });
+
+export async function getDashboardGeo(): Promise<DashboardGeoData> {
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${BASE_API_URL}/api/dashboard/geo`, {
+      headers: headers as HeadersInit,
+      cache: "no-store",
+    });
+    return res.ok ? await res.json() : EMPTY_GEO;
+  } catch {
+    return EMPTY_GEO;
+  }
+}

@@ -1,4 +1,4 @@
-import { getDashboardSummary } from "@/actions/categories/getDashboardSummary";
+import { getDashboardSummary, getDashboardGeo } from "@/actions/categories/getDashboardSummary";
 import CategoryTotals from "./total/CategoryTotals";
 import { LineChartBlock } from "./analytics/LineChartBlock";
 import { BarChartBlock } from "./analytics/BarChartBlock";
@@ -13,7 +13,7 @@ function fmtMonth(monthStr: string) {
 }
 
 export default async function DashboardSummary() {
-  const data = await getDashboardSummary();
+  const [data, geo] = await Promise.all([getDashboardSummary(), getDashboardGeo()]);
 
   const revenue = data.revenue.map((d) => ({ ...d, month: fmtMonth(d.month) }));
   const signups = data.signups.map((d) => ({ ...d, month: fmtMonth(d.month) }));
@@ -50,8 +50,8 @@ export default async function DashboardSummary() {
       </div>
 
       <RegionsAndCityCharts
-        regionData={data.regionListings}
-        cityData={data.cityListings}
+        regionData={geo.regionListings}
+        cityData={geo.cityListings}
       />
     </div>
   );

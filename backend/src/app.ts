@@ -59,7 +59,7 @@ app.use(overloadMiddleware);
 const apiRouter = express.Router();
 
 import prisma from "./core/utils/db.ts";
-import { getDashboardSummary } from "./controllers/dashboardController.ts";
+import { getDashboardSummary, getDashboardGeo } from "./controllers/dashboardController.ts";
 import { setupServerUtils } from "./core/utils/serverUtils.ts";
 import { SESSION_TIME_MS } from "./config/session-time.ts";
 import { overloadMiddleware } from "./core/middelware/overloadMiddleware.ts";
@@ -198,6 +198,7 @@ apiRouter.get("/items/:id", async (req, res) => {
 apiRouter.use("/social", socialRouter);
 apiRouter.use("/hage", hageRouter);
 apiRouter.get("/dashboard/summary", getDashboardSummary);
+apiRouter.get("/dashboard/geo", getDashboardGeo);
 
 app.use("/api", apiRouter);
 

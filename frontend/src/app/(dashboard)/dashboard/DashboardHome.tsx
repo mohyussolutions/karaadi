@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
-import { fetchDashboard } from "@/store/slices/reducers/dashboardSlice";
+import { fetchDashboard, fetchDashboardGeo } from "@/store/slices/reducers/dashboardSlice";
 import { LineChartBlock } from "./analytics/LineChartBlock";
 import { BarChartBlock } from "./analytics/BarChartBlock";
 import {
@@ -76,13 +76,18 @@ function RegionCitySkeleton() {
 
 export default function DashboardHome() {
   const dispatch = useAppDispatch();
-  const { data, status } = useAppSelector((s) => s.dashboard);
+  const { data, status, geo, geoStatus } = useAppSelector((s) => s.dashboard);
 
   useEffect(() => {
     if (status === "idle") dispatch(fetchDashboard());
   }, [dispatch, status]);
 
+  useEffect(() => {
+    if (geoStatus === "idle") dispatch(fetchDashboardGeo());
+  }, [dispatch, geoStatus]);
+
   const loading = status === "idle" || status === "loading";
+  const geoLoading = geoStatus === "idle" || geoStatus === "loading";
 
   const revenue = (data?.revenue ?? []).map((d) => ({ ...d, month: fmtMonth(d.month) }));
   const signups = (data?.signups ?? []).map((d) => ({ ...d, month: fmtMonth(d.month) }));
@@ -190,17 +195,17 @@ export default function DashboardHome() {
         </div>
       )}
 
-      {loading ? <RegionCitySkeleton /> : (
+      {geoLoading ? <RegionCitySkeleton /> : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Top Regions by Listings</p>
             <p className="text-xs text-slate-300 mb-4">Where most listings are posted</p>
-            {(data?.regionListings ?? []).length === 0 ? (
+            {(geo?.regionListings ?? []).length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
             ) : (
               <div className="space-y-2.5">
-                {(data?.regionListings ?? []).slice(0, 8).map((r, i) => {
-                  const max = data!.regionListings[0]?.buyers || 1;
+                {(geo?.regionListings ?? []).slice(0, 8).map((r, i) => {
+                  const max = geo!.regionListings[0]?.buyers || 1;
                   const pct = Math.round((r.buyers / max) * 100);
                   return (
                     <div key={r.name} className="flex items-center gap-3">
@@ -224,11 +229,11 @@ export default function DashboardHome() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Top Cities by Listings</p>
             <p className="text-xs text-slate-300 mb-4">Cities with the most active listings</p>
-            {(data?.cityListings ?? []).length === 0 ? (
+            {(geo?.cityListings ?? []).length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                {(data?.cityListings ?? []).slice(0, 10).map((c, i) => (
+                {(geo?.cityListings ?? []).slice(0, 10).map((c, i) => (
                   <div key={c.name} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl px-3 py-2">
                     <span className="text-xs font-black text-gray-300 dark:text-gray-500 w-4 flex-shrink-0">#{i + 1}</span>
                     <div className="min-w-0 flex-1">
