@@ -212,17 +212,17 @@ export default function MarketplacePage() {
                       </div>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-gray-50 p-2 rounded">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                         <span className="text-gray-400 dark:text-gray-500">{t("adminTable.city")}</span>
                         <p className="font-medium truncate">{item.city}</p>
                       </div>
-                      <div className="bg-gray-50 p-2 rounded">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                         <span className="text-gray-400 dark:text-gray-500">{t("adminTable.status")}</span>
                         <p className={`font-medium ${item.isPaid ? "text-green-600" : "text-red-600"}`}>
                           {item.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                         </p>
                       </div>
-                      <div className="bg-gray-50 p-2 rounded">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                         <span className="text-gray-400 dark:text-gray-500">Plan</span>
                         <p className="font-medium text-blue-700">{getPlan(item)}</p>
                       </div>

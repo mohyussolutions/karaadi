@@ -198,8 +198,8 @@ export default function DashboardHome() {
       {geoLoading ? <RegionCitySkeleton /> : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Top Regions by Listings</p>
-            <p className="text-xs text-slate-300 mb-4">Where most listings are posted</p>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Top Regions by Listings</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Where most listings are posted</p>
             {(geo?.regionListings ?? []).length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
             ) : (
@@ -212,8 +212,8 @@ export default function DashboardHome() {
                       <span className="text-xs font-bold text-gray-400 w-4 text-right flex-shrink-0">{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{r.name}</span>
-                          <span className="text-xs font-bold text-indigo-600 ml-2 flex-shrink-0">{r.buyers.toLocaleString()}</span>
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">{r.name}</span>
+                          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 ml-2 flex-shrink-0">{r.buyers.toLocaleString()}</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${pct}%` }} />
@@ -227,8 +227,8 @@ export default function DashboardHome() {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Top Cities by Listings</p>
-            <p className="text-xs text-slate-300 mb-4">Cities with the most active listings</p>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Top Cities by Listings</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Cities with the most active listings</p>
             {(geo?.cityListings ?? []).length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
             ) : (

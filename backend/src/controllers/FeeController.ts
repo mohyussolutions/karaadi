@@ -3,17 +3,16 @@ import prisma from "src/core/utils/db.ts";
 import type { Prisma } from "@prisma/client";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { CACHE_KEYS } from "src/config/config.constants.ts";
-
-const MARKETPLACE_FEE_KEYS = [
-  "art",
-  "electronics",
-  "animal",
-  "sports",
-  "furniture",
-  "fashion",
-  "other",
-  "isActive",
-];
+import {
+  MARKETPLACE_FEE_KEYS,
+  REAL_ESTATE_FEE_KEYS,
+  CAR_FEE_KEYS,
+  MOTORCYCLE_FEE_KEYS,
+  BOAT_FEE_KEYS,
+  EQUIPMENT_FEE_KEYS,
+  SUB_PLAN_KEYS,
+  SYSTEM_CONFIG_KEYS,
+} from "src/config/constants/fee.constants.ts";
 
 export const getAllFeeConfigs = async (_req: Request, res: Response) => {
   try {
@@ -176,9 +175,8 @@ export const deleteMarketplaceFee = async (req: Request, res: Response) => {
 
 export const createRealEstateFee = async (req: Request, res: Response) => {
   try {
-    const keys = ["rent", "sale", "land", "farm", "business", "other"];
     const data: Prisma.RealEstateFeeCreateInput = req.body;
-    if (!data || !keys.some((k) => k in data)) {
+    if (!data || !REAL_ESTATE_FEE_KEYS.some((k) => k in data)) {
       return res.status(400).json({ error: "Missing fee fields" });
     }
     const result = await prisma.realEstateFee.create({ data });
@@ -228,9 +226,8 @@ export const updateRealEstateFee = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...rawData } = req.body;
-    const keys = ["rent", "sale", "land", "farm", "business", "other", "isActive"];
     const data: Prisma.RealEstateFeeUpdateInput = {};
-    keys.forEach((k) => {
+    REAL_ESTATE_FEE_KEYS.forEach((k) => {
       if (k in rawData && rawData[k] !== undefined && rawData[k] !== null) {
         (data as any)[k] = rawData[k];
       }
@@ -308,17 +305,8 @@ export const getCarFeeById = async (req: Request, res: Response) => {
 
 export const createCarFee = async (req: Request, res: Response) => {
   try {
-    const keys = [
-      "carSale",
-      "carRent",
-      "trailer",
-      "carParts",
-      "truck",
-      "electricCar",
-      "other",
-    ];
     const data: Prisma.CarFeeCreateInput = req.body;
-    if (!data || !keys.some((k) => k in data)) {
+    if (!data || !CAR_FEE_KEYS.some((k) => k in data)) {
       return res.status(400).json({ error: "Missing car fee fields" });
     }
     const result = await prisma.carFee.create({ data });
@@ -332,19 +320,9 @@ export const updateCarFee = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...data } = req.body;
-    const keys = [
-      "carSale",
-      "carRent",
-      "trailer",
-      "carParts",
-      "truck",
-      "electricCar",
-      "other",
-      "isActive",
-    ];
     const filtered: Prisma.CarFeeUpdateInput = Object.fromEntries(
       Object.entries(data).filter(
-        ([k, v]) => keys.includes(k) && v !== null && v !== undefined,
+        ([k, v]) => (CAR_FEE_KEYS as readonly string[]).includes(k) && v !== null && v !== undefined,
       ),
     );
     if (!Object.keys(filtered).length) {
@@ -420,9 +398,8 @@ export const getMotorcycleFeeById = async (req: Request, res: Response) => {
 
 export const createMotorcycleFee = async (req: Request, res: Response) => {
   try {
-    const keys = ["motoSale", "motoRent", "motoParts", "other"];
     const data: Prisma.MotorcycleFeeCreateInput = req.body;
-    if (!data || !keys.some((k) => k in data)) {
+    if (!data || !MOTORCYCLE_FEE_KEYS.some((k) => k in data)) {
       return res.status(400).json({ error: "Missing motorcycle fee fields" });
     }
     const result = await prisma.motorcycleFee.create({ data });
@@ -436,10 +413,9 @@ export const updateMotorcycleFee = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...data } = req.body;
-    const keys = ["motoSale", "motoRent", "motoParts", "other", "isActive"];
     const filtered: Prisma.MotorcycleFeeUpdateInput = Object.fromEntries(
       Object.entries(data).filter(
-        ([k, v]) => keys.includes(k) && v !== null && v !== undefined,
+        ([k, v]) => (MOTORCYCLE_FEE_KEYS as readonly string[]).includes(k) && v !== null && v !== undefined,
       ),
     );
     if (!Object.keys(filtered).length) {
@@ -481,9 +457,8 @@ export const deleteMotorcycleFee = async (req: Request, res: Response) => {
 
 export const createBoatFee = async (req: Request, res: Response) => {
   try {
-    const keys = ["boatSale", "boatRent", "boatEngine", "boatParts", "other"];
     const data: Prisma.BoatFeeCreateInput = req.body;
-    if (!data || !keys.some((k) => k in data)) {
+    if (!data || !BOAT_FEE_KEYS.some((k) => k in data)) {
       return res.status(400).json({ error: "Missing fee fields" });
     }
     const result = await prisma.boatFee.create({ data });
@@ -532,16 +507,8 @@ export const updateBoatFee = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...rawData } = req.body;
-    const keys = [
-      "boatSale",
-      "boatRent",
-      "boatEngine",
-      "boatParts",
-      "other",
-      "isActive",
-    ];
     const data: Prisma.BoatFeeUpdateInput = {};
-    keys.forEach((k) => {
+    BOAT_FEE_KEYS.forEach((k) => {
       if (k in rawData && rawData[k] !== undefined && rawData[k] !== null) {
         (data as any)[k] = rawData[k];
       }
@@ -627,15 +594,8 @@ export const updateEquipmentFee = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...rawData } = req.body;
-    const keys = [
-      "tractorSale",
-      "agriTool",
-      "harvester",
-      "other",
-      "isActive",
-    ];
     const data: Prisma.EquipmentFeeConfigUpdateInput = {};
-    keys.forEach((k) => {
+    EQUIPMENT_FEE_KEYS.forEach((k) => {
       if (k in rawData && rawData[k] !== undefined && rawData[k] !== null) {
         (data as any)[k] = rawData[k];
       }
@@ -707,9 +667,8 @@ export const updateSystemConfig = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...rawData } = req.body;
-    const keys = ["taxRate", "platformFee", "waafiFee", "currency"];
     const data: Prisma.SystemConfigUpdateInput = {};
-    for (const k of keys) {
+    for (const k of SYSTEM_CONFIG_KEYS) {
       const value = rawData[k];
       if (value !== undefined && value !== null) {
         if (k === "currency") {
@@ -755,9 +714,8 @@ export const deleteSystemConfig = async (req: Request, res: Response) => {
 };
 export const createSubPlan = async (req: Request, res: Response) => {
   try {
-    const keys = ["basic30", "standard60", "premium90", "isActive"];
     const data: Prisma.SubPlanCreateInput = req.body;
-    if (!data || !keys.some((k) => k in data)) {
+    if (!data || !SUB_PLAN_KEYS.some((k) => k in data)) {
       return res
         .status(400)
         .json({ error: "Missing subscription plan fields" });
@@ -794,10 +752,8 @@ export const updateSubPlan = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...rawData } = req.body;
-    const keys = ["basic30", "standard60", "premium90", "isActive"];
     const data: Prisma.SubPlanUpdateInput = {};
-
-    keys.forEach((k) => {
+    SUB_PLAN_KEYS.forEach((k) => {
       if (k in rawData && rawData[k] !== undefined && rawData[k] !== null) {
         (data as Record<string, unknown>)[k] = rawData[k];
       }

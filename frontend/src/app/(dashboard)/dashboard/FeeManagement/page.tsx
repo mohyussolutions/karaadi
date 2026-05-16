@@ -206,13 +206,13 @@ const FeeManagement = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 bg-gray-50 min-h-screen">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 sm:mb-8 lg:mb-10">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
             {t("adminTable.feeDashboard", "Fee Dashboard")}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Setting <span className="font-bold">0</span> marks as{" "}
             <span className="text-emerald-600 font-bold">FREE</span>.
           </p>
@@ -242,12 +242,12 @@ const FeeManagement = () => {
             className="bg-white dark:bg-gray-800 rounded-2xl lg:rounded-3xl border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 shadow-sm hover:shadow-md transition-all group"
           >
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">
+              <h3 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
                 {cat.title}
               </h3>
               <button
                 onClick={() => setIsOpen(true)}
-                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg"
+                className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-lg"
               >
                 EDIT
               </button>
@@ -259,17 +259,17 @@ const FeeManagement = () => {
                 return (
                   <div
                     key={fee.key}
-                    className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0"
+                    className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"
                   >
-                    <span className="text-sm text-gray-600 font-medium">
+                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                       {fee.label}
                     </span>
                     {val <= 0 ? (
-                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2.5 py-1 rounded-lg">
                         FREE
                       </span>
                     ) : (
-                      <span className="text-sm font-bold text-gray-900 bg-gray-50 px-2 py-1 rounded-md">
+                      <span className="text-sm font-bold text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded-md">
                         ${val.toFixed(2)}
                       </span>
                     )}

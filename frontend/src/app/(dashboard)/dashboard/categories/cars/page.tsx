@@ -105,7 +105,7 @@ export default function CarManagement() {
 
   if (error && items.length === 0) {
     return (
-      <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
         <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 sm:px-6 py-4 rounded-xl">
             <p className="font-bold text-base sm:text-lg">{t("adminTable.error")}</p>
@@ -123,7 +123,7 @@ export default function CarManagement() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="w-full max-w-full">
           <DashboardSubNav
@@ -169,11 +169,11 @@ export default function CarManagement() {
                           </div>
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                          <div className="bg-gray-50 p-2 rounded">
+                          <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <span className="text-gray-500">{t("adminTable.city")}</span>
                             <p className="font-medium truncate">{car.city}</p>
                           </div>
-                          <div className="bg-gray-50 p-2 rounded">
+                          <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <span className="text-gray-500">{t("adminTable.status")}</span>
                             <p
                               className={`font-medium truncate ${car.isPaid ? "text-green-600" : "text-red-600"}`}
@@ -181,11 +181,11 @@ export default function CarManagement() {
                               {car.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                             </p>
                           </div>
-                          <div className="bg-gray-50 p-2 rounded">
+                          <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <span className="text-gray-500">Plan</span>
                             <p className="font-medium truncate text-blue-700">{getPlan(car)}</p>
                           </div>
-                          <div className="bg-gray-50 p-2 rounded">
+                          <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <span className="text-gray-500">Expires</span>
                             <p className={`font-medium truncate ${getExpiry(car).expired ? "text-red-600" : "text-gray-700"}`}>{getExpiry(car).label}</p>
                           </div>
@@ -229,7 +229,7 @@ export default function CarManagement() {
               <div className="hidden lg:block w-full">
                 <div className="border border-gray-300 rounded-xl bg-white dark:bg-gray-800 overflow-hidden">
                   <table className="w-full table-fixed">
-                    <thead className="bg-gray-100">
+                    <thead className="bg-gray-100 dark:bg-gray-700 dark:text-gray-200">
                       <tr>
                         <th className="border-b p-3 text-xs font-semibold text-left w-[10%]">{t("adminTable.image")}</th>
                         <th className="border-b p-3 text-xs font-semibold text-left w-[20%]">{t("adminTable.title")}</th>
@@ -248,7 +248,7 @@ export default function CarManagement() {
                         filtered.map((car, idx) => (
                           <tr
                             key={`car-desktop-${car.id || idx}`}
-                            className="hover:bg-gray-50"
+                            className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                           >
                             <td className="border-b p-3">
                               <img
