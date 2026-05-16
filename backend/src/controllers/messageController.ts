@@ -142,10 +142,14 @@ export const sendMessage = async (req: Request, res: Response) => {
       message: decryptedMessage,
     });
 
+    const notifBody = imageUrl && !content?.trim()
+      ? "📷 Sent a photo"
+      : decryptedMessage.content.slice(0, 100) || "📷 Sent a photo";
+
     sendPushToUser(receiverId, {
       title: message.sender?.username || "New message",
-      body: decryptedMessage.content.slice(0, 100),
-      icon: "/logo.jpg",
+      body: notifBody,
+      icon: message.sender?.profileImage || "/logo.jpg",
       url: `/messages/${chatId}`,
       tag: `msg-${message.id}`,
     }).catch(() => {});

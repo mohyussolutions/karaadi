@@ -30,11 +30,14 @@ function extractMessage(data: unknown): {
   const d = data as Record<string, any>;
   const msg = d.message ?? d;
   if (!msg?.chatId) return null;
+  const rawContent: string = msg.content ?? "";
+  const hasImage = !!(msg.imageUrl || msg.image);
+  const content = hasImage && !rawContent.trim() ? "📷 Sent a photo" : rawContent || (hasImage ? "📷 Sent a photo" : "");
   return {
     chatId: msg.chatId,
     senderId: msg.senderId ?? msg.sender?.id ?? "",
     senderName: msg.senderName ?? msg.sender?.username ?? "Someone",
-    content: msg.content ?? "",
+    content,
     avatar: msg.senderAvatar ?? msg.sender?.profileImage ?? null,
     id: msg.id,
   };
@@ -97,7 +100,7 @@ export default function MessageNotificationToast() {
         key: `sw-${Date.now()}-${Math.random()}`,
         href: url || "/messages",
         senderName: title || "New message",
-        content: body || "",
+        content: body || "📷 Sent a photo",
         avatar: null,
       });
     };

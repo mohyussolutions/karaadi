@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 
 import prisma from "../../core/utils/db.ts";
 import { EncryptionController } from "src/controllers/encryptionController.ts";
+import { sendPushToUser } from "src/services/pushNotificationService.ts";
 
 export const messageHandler = (io: Server, socket: Socket, userId: string) => {
   const processedMessageIds = new Set<string>();
@@ -92,6 +93,18 @@ export const messageHandler = (io: Server, socket: Socket, userId: string) => {
         tempId,
         message: decryptedMessage,
       });
+
+      const notifBody = imageUrl && !content?.trim()
+        ? "📷 Sent a photo"
+        : decryptedMessage.content.slice(0, 100) || "📷 Sent a photo";
+
+      sendPushToUser(receiverId, {
+        title: message.sender?.username || "New message",
+        body: notifBody,
+        icon: message.sender?.profileImage || "/logo.jpg",
+        url: `/messages/${chatId}`,
+        tag: `msg-${message.id}`,
+      }).catch(() => {});
 
       setTimeout(() => {
         processedMessageIds.delete(messageKey);
