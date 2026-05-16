@@ -61,6 +61,13 @@ import {
   GiField,
   GiFarmer,
   GiBrickWall,
+  GiCamel,
+  GiCow,
+  GiSheep,
+  GiHorseHead,
+  GiDonkey,
+  GiChicken,
+  GiBirdCage,
 } from "react-icons/gi";
 import { IoBoatSharp } from "react-icons/io5";
 
@@ -140,6 +147,13 @@ export const ICONS = {
   field: () => <GiField />,
   farmer: () => <GiFarmer />,
   brickWall: () => <GiBrickWall />,
+  camel: () => <GiCamel />,
+  cow: () => <GiCow />,
+  sheep: () => <GiSheep />,
+  horseHead: () => <GiHorseHead />,
+  donkey: () => <GiDonkey />,
+  chicken: () => <GiChicken />,
+  birdCage: () => <GiBirdCage />,
   store: () => <FaBuilding />,
   warehouse: () => <FaBuilding />,
   tree: () => <FaTree />,

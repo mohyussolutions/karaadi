@@ -668,14 +668,14 @@ export const ElectronicsNestedSub: MarketplaceSubCategoryItem[] = [
 ];
 
 export const AnimalAndSuppliesNestedSub: MarketplaceSubCategoryItem[] = [
-  { key: "camels", name: "Camels", labelKey: "subcategories.marketplaceNested.animalAndSupplies.camels", icon: ICONS.goat(), href: "/marketplace/animals/camels" },
+  { key: "camels", name: "Camels", labelKey: "subcategories.marketplaceNested.animalAndSupplies.camels", icon: ICONS.camel(), href: "/marketplace/animals/camels" },
   { key: "goats", name: "Goats", labelKey: "subcategories.marketplaceNested.animalAndSupplies.goats", icon: ICONS.goat(), href: "/marketplace/animals/goats" },
-  { key: "cattle", name: "Cattle / Cows", labelKey: "subcategories.marketplaceNested.animalAndSupplies.cattle", icon: ICONS.goat(), href: "/marketplace/animals/cattle" },
-  { key: "sheep", name: "Sheep", labelKey: "subcategories.marketplaceNested.animalAndSupplies.sheep", icon: ICONS.goat(), href: "/marketplace/animals/sheep" },
-  { key: "horses", name: "Horses", labelKey: "subcategories.marketplaceNested.animalAndSupplies.horses", icon: ICONS.goat(), href: "/marketplace/animals/horses" },
-  { key: "donkeys", name: "Donkeys", labelKey: "subcategories.marketplaceNested.animalAndSupplies.donkeys", icon: ICONS.goat(), href: "/marketplace/animals/donkeys" },
-  { key: "poultry", name: "Poultry / Chickens", labelKey: "subcategories.marketplaceNested.animalAndSupplies.poultry", icon: ICONS.goat(), href: "/marketplace/animals/poultry" },
-  { key: "birds", name: "Birds", labelKey: "subcategories.marketplaceNested.animalAndSupplies.birds", icon: ICONS.paw(), href: "/marketplace/animals/birds" },
+  { key: "cattle", name: "Cattle / Cows", labelKey: "subcategories.marketplaceNested.animalAndSupplies.cattle", icon: ICONS.cow(), href: "/marketplace/animals/cattle" },
+  { key: "sheep", name: "Sheep", labelKey: "subcategories.marketplaceNested.animalAndSupplies.sheep", icon: ICONS.sheep(), href: "/marketplace/animals/sheep" },
+  { key: "horses", name: "Horses", labelKey: "subcategories.marketplaceNested.animalAndSupplies.horses", icon: ICONS.horseHead(), href: "/marketplace/animals/horses" },
+  { key: "donkeys", name: "Donkeys", labelKey: "subcategories.marketplaceNested.animalAndSupplies.donkeys", icon: ICONS.donkey(), href: "/marketplace/animals/donkeys" },
+  { key: "poultry", name: "Poultry / Chickens", labelKey: "subcategories.marketplaceNested.animalAndSupplies.poultry", icon: ICONS.chicken(), href: "/marketplace/animals/poultry" },
+  { key: "birds", name: "Birds", labelKey: "subcategories.marketplaceNested.animalAndSupplies.birds", icon: ICONS.birdCage(), href: "/marketplace/animals/birds" },
   { key: "feed", name: "Animal Feed", labelKey: "subcategories.marketplaceNested.animalAndSupplies.feed", icon: ICONS.fertilizerBag(), href: "/marketplace/animals/feed" },
   { key: "vetSupplies", name: "Veterinary Supplies", labelKey: "subcategories.marketplaceNested.animalAndSupplies.vetSupplies", icon: ICONS.toolbox(), href: "/marketplace/animals/vet-supplies" },
   { key: "accessories", name: "Animal Accessories", labelKey: "subcategories.marketplaceNested.animalAndSupplies.accessories", icon: ICONS.toolbox(), href: "/marketplace/animals/accessories" },

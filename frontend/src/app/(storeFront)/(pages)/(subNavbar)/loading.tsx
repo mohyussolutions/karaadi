@@ -1,1 +1,1 @@
-export { SubNavbarSkeleton as default } from "@/app/ui/loading";
+export { default } from "@/app/ui/loading/Loading";
