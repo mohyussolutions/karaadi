@@ -17,7 +17,10 @@ export async function setAuthCookies(idToken: string, accessToken?: string, role
 
 export async function clearAuthCookies() {
   const store = await cookies()
-  ;["idToken", "token", "accessToken", "refreshToken", "user-role"].forEach(
-    (name) => store.delete(name),
-  )
+  const base = { path: "/", secure: isProd, sameSite: "lax" as const, maxAge: 0 }
+  store.set("idToken", "", { ...base, httpOnly: true })
+  store.set("token", "", { ...base, httpOnly: true })
+  store.set("accessToken", "", { ...base, httpOnly: false })
+  store.set("refreshToken", "", { ...base, httpOnly: true })
+  store.set("user-role", "", { ...base, httpOnly: false })
 }

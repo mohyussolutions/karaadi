@@ -15,6 +15,7 @@ export const AUTH_PREFIXES = [
 
 export const PUBLIC_PREFIXES = [
   ...AUTH_PREFIXES,
+  "/logout",
   "/marketplace",
   "/real-estate",
   "/cars",
