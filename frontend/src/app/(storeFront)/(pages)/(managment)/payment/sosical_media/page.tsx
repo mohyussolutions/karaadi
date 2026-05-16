@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import SocialShare, { type ShareData } from "./SocialShare";
-
-const STORAGE_KEY = "karaadi-payment-success";
+import SocialShare from "./SocialShare";
+import type { ShareData } from "./types";
+import { SOCIAL_STORAGE_KEY } from "./constants";
 
 export default function SocialMediaPage() {
   const router = useRouter();
@@ -12,10 +12,10 @@ export default function SocialMediaPage() {
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
+      const raw = sessionStorage.getItem(SOCIAL_STORAGE_KEY);
       if (!raw) { router.replace("/marketplace"); return; }
       const parsed: ShareData = JSON.parse(raw);
-      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(SOCIAL_STORAGE_KEY);
       setData(parsed);
     } catch {
       router.replace("/marketplace");

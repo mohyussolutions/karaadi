@@ -18,8 +18,7 @@ import type { PaymentStatus } from "./constants";
 import { getDetailRoute } from "@/app/utils/getDetailRoute";
 import type { UsePaymentProps } from "@/app/utils/types/payment.types";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
-
-const SOCIAL_STORAGE_KEY = "karaadi-payment-success";
+import { SOCIAL_STORAGE_KEY } from "./sosical_media/constants";
 
 export function usePayment({
   item,

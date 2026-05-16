@@ -2,22 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaCheckCircle, FaFacebook } from "react-icons/fa";
+import { FaCheckCircle, FaFacebook, FaTimesCircle } from "react-icons/fa";
 import { postToFacebook, postToTikTok } from "@/actions/categories/socialPostAction";
 import type { SocialPostPayload } from "@/actions/categories/socialPostAction";
-
-export interface ShareData {
-  isFree: boolean;
-  total: number;
-  shareUrl: string;
-  title: string;
-  description: string;
-  price: number;
-  imageUrl?: string;
-  category?: string;
-}
-
-type PlatformState = "idle" | "loading" | "done" | "error";
+import type { ShareData, PlatformState } from "./types";
+import { COUNTDOWN_SECONDS, FB_MESSAGES, TT_MESSAGES } from "./constants";
 
 const TikTokIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
@@ -25,19 +14,18 @@ const TikTokIcon = () => (
   </svg>
 );
 
-export default function SocialShare({ isFree, total, shareUrl, title, description, price, imageUrl, category }: ShareData) {
-  const [countdown, setCountdown] = useState(30);
+const Spinner = ({ color }: { color: string }) => (
+  <div className={`w-4 h-4 border-2 ${color} border-t-transparent rounded-full animate-spin flex-shrink-0`} />
+);
+
+export default function SocialShare({
+  isFree, total, shareUrl, title, description, price, imageUrl, category,
+}: ShareData) {
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [fbState, setFbState] = useState<PlatformState>("loading");
   const [ttState, setTtState] = useState<PlatformState>("idle");
 
-  const payload: SocialPostPayload = {
-    title,
-    description,
-    price,
-    imageUrl,
-    listingUrl: shareUrl,
-    category,
-  };
+  const payload: SocialPostPayload = { title, description, price, imageUrl, listingUrl: shareUrl, category };
 
   useEffect(() => {
     postToFacebook(payload).then((r) => setFbState(r.success ? "done" : "error"));
@@ -65,9 +53,7 @@ export default function SocialShare({ isFree, total, shareUrl, title, descriptio
             {isFree ? "Listing Confirmed!" : "Payment Successful!"}
           </h1>
           <p className="text-sm text-gray-500 text-center mt-1">
-            {isFree
-              ? "Your listing is now live on Karaadi."
-              : `$${total.toLocaleString()} paid — your listing is live.`}
+            {isFree ? "Your listing is now live on Karaadi." : `$${total.toLocaleString()} paid — your listing is live.`}
           </p>
         </div>
 
@@ -86,9 +72,7 @@ export default function SocialShare({ isFree, total, shareUrl, title, descriptio
 
         <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-5 text-center">
           <p className="text-sm font-bold text-indigo-700">Reach more buyers — share your listing!</p>
-          <p className="text-xs text-indigo-400 mt-0.5">
-            Posting to Karaadi&apos;s official social media pages
-          </p>
+          <p className="text-xs text-indigo-400 mt-0.5">Posting to Karaadi&apos;s official social media pages</p>
         </div>
 
         <div className="space-y-3 mb-6">
@@ -98,15 +82,13 @@ export default function SocialShare({ isFree, total, shareUrl, title, descriptio
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-gray-900 text-sm">Facebook</p>
-              <p className="text-xs text-gray-500">
-                {fbState === "loading" && "Posting to Karaadi Facebook page…"}
-                {fbState === "done" && "✓ Posted to Karaadi Facebook page!"}
-                {fbState === "error" && "❌ Could not post — check page credentials"}
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                {fbState === "loading" && FB_MESSAGES.loading}
+                {fbState === "done" && <><FaCheckCircle className="text-green-500" size={11} />{FB_MESSAGES.done}</>}
+                {fbState === "error" && <><FaTimesCircle className="text-red-500" size={11} />{FB_MESSAGES.error}</>}
               </p>
             </div>
-            {fbState === "loading" && (
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-            )}
+            {fbState === "loading" && <Spinner color="border-blue-500" />}
             {fbState === "done" && <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />}
           </div>
 
@@ -121,16 +103,14 @@ export default function SocialShare({ isFree, total, shareUrl, title, descriptio
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-gray-900 text-sm">TikTok</p>
-              <p className="text-xs text-gray-500">
-                {ttState === "loading" && "Posting to Karaadi TikTok page…"}
-                {ttState === "done" && "✓ Posted to Karaadi TikTok page!"}
-                {ttState === "error" && "❌ Could not post — check credentials"}
-                {ttState === "idle" && "Tap to post on Karaadi's TikTok page"}
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                {ttState === "loading" && TT_MESSAGES.loading}
+                {ttState === "done" && <><FaCheckCircle className="text-green-500" size={11} />{TT_MESSAGES.done}</>}
+                {ttState === "error" && <><FaTimesCircle className="text-red-500" size={11} />{TT_MESSAGES.error}</>}
+                {ttState === "idle" && TT_MESSAGES.idle}
               </p>
             </div>
-            {ttState === "loading" && (
-              <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-            )}
+            {ttState === "loading" && <Spinner color="border-gray-500" />}
             {ttState === "done" && <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />}
           </button>
         </div>
