@@ -63,13 +63,18 @@ export async function login(email: string, password: string): Promise<User> {
 export async function logout(): Promise<void> {
   const headers = await getAuthHeaders();
   clearAuthCache();
-  fetch(apiUrls.LOGOUT, {
+  await fetch(apiUrls.LOGOUT, {
     method: "POST",
     headers: headers as HeadersInit,
     credentials: "include",
     keepalive: true,
   }).catch(() => {});
   await clearCookiesServer();
+  if (typeof document !== "undefined") {
+    for (const name of ["accessToken", "user-role"]) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    }
+  }
 }
 
 export async function register(
