@@ -2,6 +2,25 @@ import { Router, Request, Response } from "express";
 
 const socialRouter = Router();
 
+let cachedPageId: string | null = null;
+
+async function resolveFacebookPageId(accessToken: string): Promise<string | null> {
+  if (cachedPageId) return cachedPageId;
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v19.0/me?fields=id&access_token=${accessToken}`,
+    );
+    const data: any = await res.json();
+    if (data?.id) {
+      cachedPageId = data.id;
+      return data.id;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function postToFacebook(payload: {
   title: string;
   description?: string;
@@ -10,9 +29,10 @@ async function postToFacebook(payload: {
   listingUrl: string;
 }) {
   const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-  const pageId = process.env.FACEBOOK_PAGE_ID;
-  if (!accessToken || !pageId)
-    return { success: false, error: "Facebook credentials not configured" };
+  if (!accessToken) return { success: false, error: "FACEBOOK_PAGE_ACCESS_TOKEN not set" };
+
+  const pageId = process.env.FACEBOOK_PAGE_ID || (await resolveFacebookPageId(accessToken));
+  if (!pageId) return { success: false, error: "Could not resolve Facebook Page ID" };
 
   const message = [
     `🛒 ${payload.title}`,
@@ -49,8 +69,10 @@ async function postToTikTok(payload: {
   listingUrl: string;
 }) {
   const accessToken = process.env.TIKTOK_ACCESS_TOKEN;
-  if (!accessToken) return { success: false, error: "TikTok access token not configured" };
-  if (!payload.imageUrl) return { success: false, error: "No image provided" };
+  if (!accessToken || !accessToken.trim())
+    return { success: false, error: "TIKTOK_ACCESS_TOKEN not set" };
+  if (!payload.imageUrl)
+    return { success: false, error: "No image provided for TikTok" };
 
   const caption = [
     `🛒 ${payload.title}`,
@@ -89,7 +111,6 @@ async function postToTikTok(payload: {
 
 socialRouter.post("/post", async (req: Request, res: Response) => {
   const { title, description, price, imageUrl, listingUrl, platforms } = req.body;
-
   if (!listingUrl) return res.status(400).json({ error: "listingUrl is required" });
 
   const payload = { title, description, price, imageUrl, listingUrl };
@@ -140,7 +161,7 @@ socialRouter.get("/tiktok/callback", async (req: Request, res: Response) => {
     }
     return res.send(`
       <h2>TikTok Connected!</h2>
-      <p>Copy this into your backend <code>.env</code>:</p>
+      <p>Add this to your backend <code>.env</code>:</p>
       <pre style="background:#f4f4f4;padding:16px;border-radius:8px">TIKTOK_ACCESS_TOKEN=${data.access_token}</pre>
       <p style="color:gray;font-size:13px">Expires in ${Math.round(data.expires_in / 3600)} hours</p>
     `);
