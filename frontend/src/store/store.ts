@@ -6,6 +6,7 @@ import wantedReducer from "./slices/reducers/wantedSlice";
 import themeReducer from "./slices/reducers/themeSlice";
 import dashboardReducer from "./slices/reducers/dashboardSlice";
 import pushNotificationReducer from "./slices/reducers/pushNotificationSlice";
+import notificationSettingsReducer from "./slices/reducers/notificationSettingsSlice";
 
 import {
   persistStore,
@@ -48,6 +49,7 @@ const rootReducer = combineReducers({
   theme: themeReducer,
   dashboard: dashboardReducer,
   pushNotification: pushNotificationReducer,
+  notificationSettings: notificationSettingsReducer,
 });
 
 type RootReducerState = ReturnType<typeof rootReducer>;

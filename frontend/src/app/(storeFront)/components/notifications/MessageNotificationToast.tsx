@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { X } from "lucide-react";
+import { FiX } from "react-icons/fi";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +9,7 @@ import { socketService } from "@/actions/sockets/socketServiceAction";
 import { SOCKET_EVENTS } from "@/actions/constant/sockets";
 import { browserSupportsPush } from "./usePushNotifications";
 import { playNotificationSound, initSound } from "./mobile/sound";
+import { useAppSelector } from "@/store/slices/hooks/hooks";
 
 type MsgNotif = {
   key: string;
@@ -32,7 +33,10 @@ function extractMessage(data: unknown): {
   if (!msg?.chatId) return null;
   const rawContent: string = msg.content ?? "";
   const hasImage = !!(msg.imageUrl || msg.image);
-  const content = hasImage && !rawContent.trim() ? "📷 Sent a photo" : rawContent || (hasImage ? "📷 Sent a photo" : "");
+  const content =
+    hasImage && !rawContent.trim()
+      ? "📷 Sent a photo"
+      : rawContent || (hasImage ? "📷 Sent a photo" : "");
   return {
     chatId: msg.chatId,
     senderId: msg.senderId ?? msg.sender?.id ?? "",
@@ -46,6 +50,12 @@ function extractMessage(data: unknown): {
 export default function MessageNotificationToast() {
   const { user } = useAuth();
   const pathname = usePathname();
+  const soundEnabled = useAppSelector(
+    (s) => s.notificationSettings.soundEnabled,
+  );
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
   const [queue, setQueue] = useState<MsgNotif[]>([]);
   const seenIds = useRef<Set<number>>(new Set());
   const recentChats = useRef<Set<number>>(new Set());
@@ -54,14 +64,15 @@ export default function MessageNotificationToast() {
   const push = (notif: MsgNotif) =>
     setQueue((prev) => [...prev.slice(-2), notif]);
 
-  useEffect(() => { initSound(); }, []);
+  useEffect(() => {
+    initSound();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
     const userId: string = user._id ?? user.id ?? "";
 
     const handle = (data: unknown) => {
-      if (onMessagesPage) return;
       const msg = extractMessage(data);
       if (!msg) return;
       if (msg.senderId === userId) return;
@@ -71,38 +82,49 @@ export default function MessageNotificationToast() {
       recentChats.current.add(msg.chatId);
       setTimeout(() => recentChats.current.delete(msg.chatId), 8000);
 
-      playNotificationSound();
-      push({
-        key: `${msg.id ?? Date.now()}-${Math.random()}`,
-        href: `/messages/${msg.chatId}`,
-        senderName: msg.senderName,
-        content: msg.content || "Sent you a message",
-        avatar: msg.avatar,
-      });
+      if (soundEnabledRef.current) playNotificationSound();
+
+      if (!onMessagesPage) {
+        push({
+          key: `${msg.id ?? Date.now()}-${Math.random()}`,
+          href: `/messages/${msg.chatId}`,
+          senderName: msg.senderName,
+          content: msg.content || "Sent you a message",
+          avatar: msg.avatar,
+        });
+      }
     };
 
     const offNew = socketService.on(SOCKET_EVENTS.ON.NEW_MESSAGE, handle);
     const offReceive = socketService.on(SOCKET_EVENTS.ON.RECEIVE_MESSAGE, handle);
-    return () => { offNew(); offReceive(); };
+    return () => {
+      offNew();
+      offReceive();
+    };
   }, [user, onMessagesPage]);
 
   useEffect(() => {
     if (!browserSupportsPush()) return;
     const handler = (event: MessageEvent) => {
       if (event.data?.type !== "push") return;
-      if (onMessagesPage) return;
-      const { title, body, url } = event.data.data as { title?: string; body?: string; url?: string };
+      const { title, body, url } = event.data.data as {
+        title?: string;
+        body?: string;
+        url?: string;
+      };
       const pathMatch = url?.match(/\/messages\/(\d+)/);
       const chatId = pathMatch ? Number(pathMatch[1]) : 0;
       if (chatId && recentChats.current.has(chatId)) return;
-      playNotificationSound();
-      push({
-        key: `sw-${Date.now()}-${Math.random()}`,
-        href: url || "/messages",
-        senderName: title || "New message",
-        content: body || "📷 Sent a photo",
-        avatar: null,
-      });
+      if (soundEnabledRef.current) playNotificationSound();
+      if (!onMessagesPage) {
+        push({
+          key: `sw-${Date.now()}-${Math.random()}`,
+          href: url || "/messages",
+          senderName: title || "New message",
+          content: body || "📷 Sent a photo",
+          avatar: null,
+        });
+      }
     };
     navigator.serviceWorker.addEventListener("message", handler);
     return () => navigator.serviceWorker.removeEventListener("message", handler);
@@ -134,7 +156,9 @@ export default function MessageNotificationToast() {
                 src={notif.avatar}
                 alt={notif.senderName}
                 className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
               />
             ) : (
               <span className="text-blue-600 font-bold text-sm">
@@ -143,14 +167,21 @@ export default function MessageNotificationToast() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm leading-tight">{notif.senderName}</p>
-            <p className="text-xs text-gray-500 mt-0.5 truncate">{notif.content}</p>
+            <p className="font-bold text-gray-900 text-sm leading-tight">
+              {notif.senderName}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">
+              {notif.content}
+            </p>
           </div>
           <button
-            onClick={(e) => { e.preventDefault(); dismiss(notif.key); }}
+            onClick={(e) => {
+              e.preventDefault();
+              dismiss(notif.key);
+            }}
             className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0 touch-manipulation"
           >
-            <X size={16} />
+            <FiX size={16} />
           </button>
         </Link>
       ))}
