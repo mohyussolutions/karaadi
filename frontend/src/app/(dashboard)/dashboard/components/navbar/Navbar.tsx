@@ -7,6 +7,7 @@ import React, { Suspense, useCallback, useState } from "react";
 import { FaUser, FaBars } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 import Lang from "@/i18n/Lang";
 
 interface NavbarProps {
@@ -17,11 +18,12 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const { user, setUser } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   const handleLogged = useCallback(async () => {
     setUser(null);
     await logout();
-    window.location.href = "/login";
-  }, [setUser]);
+    router.push("/marketplace");
+  }, [setUser, router]);
 
   const toggleDropdown = useCallback(() => setShowDropdown((p) => !p), []);
   const closeDropdown = useCallback(() => setShowDropdown(false), []);

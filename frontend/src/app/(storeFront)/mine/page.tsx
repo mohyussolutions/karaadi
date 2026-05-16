@@ -4,6 +4,7 @@ import ProfileCard from "./ProfileCard";
 import AccountOptionsClient from "./AccountOptionsClient";
 import { useAuth } from "@/context/AuthContext";
 import { logout } from "@/actions/core/authAction";
+import { useRouter } from "next/navigation";
 
 function MineSkeleton() {
   return (
@@ -25,9 +26,10 @@ function MineSkeleton() {
 }
 
 function MineError() {
+  const router = useRouter();
   const handleLogout = async () => {
     await logout();
-    window.location.href = "/login";
+    router.push("/marketplace");
   };
 
   return (

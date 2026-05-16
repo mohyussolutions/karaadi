@@ -40,7 +40,7 @@ export default function LoginForm() {
           : "user";
 
         await setAuthCookies(loggedInUser.token, loggedInUser.accessToken, role);
-        router.push("/marketplace");
+        router.push(role === "admin" || role === "manager" || role === "support" ? "/dashboard" : "/marketplace");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("auth.login.failed"));

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
+import { useRouter } from "next/navigation";
 import {
   FiTrash2,
   FiUser,
@@ -60,6 +61,7 @@ const SavedSearchHistory = () => {
   const { t } = useTranslation();
   useLanguage();
   const { user, loading } = useAuth();
+  const router = useRouter();
 
   const [popularSearches, setPopularSearches] = useState<any[]>([]);
   const [itemsMap, setItemsMap] = useState<Record<string, any>>({});
@@ -67,12 +69,12 @@ const SavedSearchHistory = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      window.location.replace("/login");
+      router.push("/marketplace");
     }
     if (user) {
       setLocalLogs((user as any).searchLogs || []);
     }
-  }, [user, loading]);
+  }, [user, loading, router]);
 
   useEffect(() => {
     const queries: string[] = localLogs

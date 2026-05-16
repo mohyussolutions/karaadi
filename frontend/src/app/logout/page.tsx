@@ -6,7 +6,7 @@ import { logout } from "@/actions/core/authAction";
 export default function LogoutPage() {
   useEffect(() => {
     logout().then(() => {
-      window.location.replace("/login");
+      window.location.replace("/marketplace");
     });
   }, []);
 
