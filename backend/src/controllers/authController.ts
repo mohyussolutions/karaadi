@@ -365,8 +365,15 @@ export const logout = async (req: Request, res: Response) => {
       await cognitoSignOut(token).catch(() => {});
     }
 
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieOpts = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+      path: "/",
+    };
     ["token", "idToken", "accessToken", "refreshToken"].forEach((c) =>
-      res.clearCookie(c),
+      res.clearCookie(c, cookieOpts),
     );
     res.status(200).json({ success: true });
   } catch {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   FaUserCircle,
   FaSignOutAlt,
@@ -25,11 +25,13 @@ function isTrue(val: unknown): boolean {
 
 export default function ManagerSidebar({ open, onClose }: ManagerSidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, setUser } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = "/";
+  const handleLogout = async () => {
+    setUser(null);
+    await logout();
+    router.push("/login");
   };
 
   return (

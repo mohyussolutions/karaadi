@@ -21,6 +21,7 @@ import {
   subPlans,
 } from "../seeder/feeSeeder.ts";
 import { seedBusinessPlans } from "../seeder/businessPlans.ts";
+import { seedMarketplaceCategories } from "../seeder/marketplaceCategories.ts";
 import prisma from "../core/utils/db.ts";
 
 const importData = async () => {
@@ -99,6 +100,7 @@ const importData = async () => {
       skipDuplicates: true,
     });
     await seedBusinessPlans();
+    await seedMarketplaceCategories();
 
     await prisma.user.createMany({ data: userItems, skipDuplicates: true });
 

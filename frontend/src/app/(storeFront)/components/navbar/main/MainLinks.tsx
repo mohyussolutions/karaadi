@@ -37,10 +37,11 @@ const NavItems = ({
   const { notificationCount } = useNavNotificationCount(userId);
   const { messageCount } = useMessageCount(userId);
 
-  const navItems = getNavItems(
-    authLoading ? (initialIsAuthenticated ?? false) : isUserValid,
-    notificationCount,
-  );
+  const isAuthenticated = authLoading
+    ? (initialIsAuthenticated ?? false)
+    : (isUserValid || (initialIsAuthenticated === true && user === null));
+
+  const navItems = getNavItems(isAuthenticated, notificationCount);
   const isNewAd = (href: string) => href === ROUTE_NEW_AD;
 
   return (

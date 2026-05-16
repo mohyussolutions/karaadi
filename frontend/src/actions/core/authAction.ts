@@ -4,6 +4,7 @@ import { normalizeUser } from "@/app/(storeFront)/components/hooks/useNormalizeU
 import { apiUrls } from "../constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 import { clearAuthCookies as clearCookiesServer } from "./cookieActions";
+import { clearAuthCache } from "@/context/authCache";
 import {
   NormalizedUser,
   LoginResponse,
@@ -19,10 +20,7 @@ export async function getAuthenticatedUser(): Promise<NormalizedUser | null> {
       cache: "no-store",
       headers: headers as HeadersInit,
     });
-    if (!response.ok) {
-      if (response.status === 401) clearAuthCookies();
-      return null;
-    }
+    if (!response.ok) return null;
     const data = await response.json();
     return data.user;
   } catch {
@@ -65,7 +63,8 @@ export async function login(email: string, password: string): Promise<User> {
 export async function logout(): Promise<void> {
   const headers = await getAuthHeaders();
 
-  clearAuthCookies();
+  clearAuthCache();
+
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -76,12 +75,15 @@ export async function logout(): Promise<void> {
     sessionStorage.removeItem("user");
   }
 
-  fetch(apiUrls.LOGOUT, {
-    method: "POST",
-    headers: headers as HeadersInit,
-    credentials: "include",
-    keepalive: true,
-  }).catch(() => {});
+  await Promise.allSettled([
+    clearCookiesServer(),
+    fetch(apiUrls.LOGOUT, {
+      method: "POST",
+      headers: headers as HeadersInit,
+      credentials: "include",
+      keepalive: true,
+    }),
+  ]);
 }
 
 export async function register(

@@ -94,7 +94,7 @@ export const ProtectRoute = async (
 
     next();
   } catch {
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(503).json({ message: "Service temporarily unavailable" });
   }
 };
 

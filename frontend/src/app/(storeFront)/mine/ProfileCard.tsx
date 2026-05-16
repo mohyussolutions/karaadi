@@ -18,9 +18,9 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = "/";
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
   const handleEditProfile = () => {

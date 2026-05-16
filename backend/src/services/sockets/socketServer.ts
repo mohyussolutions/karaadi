@@ -4,6 +4,7 @@ import chalk from "chalk";
 import prisma from "src/core/utils/db.ts";
 import { chatHandler } from "./chatHandler.ts";
 import { messageHandler } from "./messageHandler.ts";
+import { SECURITY_CONFIG } from "src/config/security.config.ts";
 
 let io: Server;
 
@@ -22,9 +23,22 @@ const scheduleLastSeen = (userId: string) => {
 };
 
 export const socketServer = (server: any, pubClient?: any, subClient?: any) => {
+  const allowedOrigins = [
+    ...(SECURITY_CONFIG.ALLOWED_ORIGINS || []),
+    "http://localhost:3000",
+  ];
+
   io = new Server(server, {
     cors: {
-      origin: [process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"],
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const isAllowed =
+          allowedOrigins.includes(origin) ||
+          /\.vercel\.app$/.test(origin) ||
+          /\.amplifyapp\.com$/.test(origin) ||
+          /^https?:\/\/(www\.)?karaadi\.com$/.test(origin);
+        callback(isAllowed ? null : new Error("Not allowed by CORS"), isAllowed);
+      },
       credentials: true,
     },
     transports: ["websocket", "polling"],

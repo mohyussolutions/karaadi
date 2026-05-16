@@ -1,4 +1,4 @@
-import prisma from "src/core/utils/db.ts";
+import prisma from "../core/utils/db.ts";
 
 const SEED_DATA = [
   {

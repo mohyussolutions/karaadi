@@ -18,9 +18,9 @@ export default function ManagerNavbar({
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
   return (

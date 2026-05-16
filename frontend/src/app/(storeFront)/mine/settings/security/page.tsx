@@ -86,9 +86,9 @@ const Security: React.FC = () => {
     }
   }, [user, authLoading, router, fetchData]);
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = "/";
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
   const handleLogoutAllDevices = async () => {
@@ -97,9 +97,9 @@ const Security: React.FC = () => {
     try {
       const token = user?.accessToken || user?.token;
       await logoutAllSessions(token);
-      logout();
+      await logout();
       setActiveDevices([]);
-      window.location.reload();
+      router.push("/login");
     } catch {
     } finally {
       setIsLoggingOut(false);

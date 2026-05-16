@@ -5,7 +5,7 @@ import Link from "next/link";
 import { SUPPORT_LINKS } from "@/app/(links)/supportLinks/supportLinks";
 import { useRouter, usePathname } from "next/navigation";
 import { FiSearch, FiHeadphones, FiLogOut, FiX } from "react-icons/fi";
-import { logout, clearAuthCookies } from "@/actions/core/authAction";
+import { logout } from "@/actions/core/authAction";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 
@@ -22,9 +22,9 @@ export default function SupportSidebar({ open, onClose }: SupportSidebarProps) {
 
   const isActive = (href: string) => pathname === href;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
     setUser(null);
+    await logout();
     router.push("/login");
   };
 

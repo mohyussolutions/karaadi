@@ -3,6 +3,12 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getAuthenticatedUser } from "@/actions/core/authAction";
 import { RawUserData } from "@/app/utils/types/user.types";
+import {
+  cachedSession,
+  pendingSession,
+  setCachedSession,
+  setPendingSession,
+} from "./authCache";
 
 type AuthContextType = {
   user: RawUserData | null;
@@ -16,46 +22,42 @@ const AuthContext = createContext<AuthContextType>({
   setUser: () => {},
 });
 
-let _cachedSession: { data: any } | null = null;
-let _pendingSession: Promise<RawUserData | null> | null = null;
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<RawUserData | null>(
-    _cachedSession ? _cachedSession.data : null,
+    cachedSession ? cachedSession.data : null,
   );
-  const [loading, setLoading] = useState(!_cachedSession);
+  const [loading, setLoading] = useState(!cachedSession);
   const hasFetched = useRef(false);
 
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    if (_cachedSession) {
-      setUser(_cachedSession.data);
+    if (cachedSession) {
+      setUser(cachedSession.data);
       setLoading(false);
       return;
     }
 
-    if (!_pendingSession) {
-      _pendingSession = getAuthenticatedUser();
+    if (!pendingSession) {
+      setPendingSession(getAuthenticatedUser());
     }
 
-    _pendingSession
+    pendingSession!
       .then((data) => {
-        _cachedSession = { data: data ?? null };
-        _pendingSession = null;
+        setCachedSession(data ?? null);
+        setPendingSession(null);
         setUser(data ?? null);
         setLoading(false);
       })
       .catch(() => {
-        _cachedSession = { data: null };
-        _pendingSession = null;
+        setPendingSession(null);
         setLoading(false);
       });
   }, []);
 
-  const updateUser = (newUser: any) => {
-    _cachedSession = { data: newUser };
+  const updateUser = (newUser: RawUserData | null) => {
+    setCachedSession(newUser);
     setUser(newUser);
   };
 

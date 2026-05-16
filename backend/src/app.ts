@@ -88,7 +88,6 @@ import businessRoute from "./routers/businessRoute.ts";
 import reportRoutes from "./routers/reportRoute.ts";
 import historySearchRoutes from "./routers/historySearchRoutes.ts";
 import marketplaceCategoryRoutes from "./routers/marketplaceCategoryRoutes.ts";
-import { seedMarketplaceCategories } from "./prisma/seed-marketplace-categories.ts";
 import redisStatsRouter from "./routers/redisStatsRouter.ts";
 import locRoutes from "./routers/locRoutes.ts";
 import jobsRouter from "./routers/jobsRouter.ts";
@@ -104,7 +103,6 @@ import redisServer from "./services/redis/redisServer.ts";
 import cacheManager from "./services/redis/cacheManager.ts";
 
 setupServerUtils(app);
-seedMarketplaceCategories().catch(() => {});
 
 apiRouter.use("/marketplace", marketplaceRoutes);
 apiRouter.use("/cars", carsRoutes);
