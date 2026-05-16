@@ -42,7 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!pendingSession) {
-      setPendingSession(getAuthenticatedUser());
+      const fetchWithRetry = () =>
+        getAuthenticatedUser().then((data) => {
+          if (data) return data;
+          return new Promise<null>((r) => setTimeout(r, 3000)).then(getAuthenticatedUser);
+        });
+      setPendingSession(fetchWithRetry());
     }
 
     pendingSession!

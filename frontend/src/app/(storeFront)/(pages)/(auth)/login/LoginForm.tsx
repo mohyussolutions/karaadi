@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { login } from "@/actions/core/authAction";
 import { setAuthCookies } from "@/actions/core/cookieActions";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
@@ -17,6 +18,7 @@ export default function LoginForm() {
 
   const { t } = useTranslation();
   const { setUser } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,15 +40,7 @@ export default function LoginForm() {
           : "user";
 
         await setAuthCookies(loggedInUser.token, loggedInUser.accessToken, role);
-
-        const dest = loggedInUser.isAdmin
-          ? "/dashboard"
-          : loggedInUser.isManager
-          ? "/managers"
-          : loggedInUser.isSupport
-          ? "/support"
-          : "/";
-        window.location.href = dest;
+        router.push("/marketplace");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("auth.login.failed"));

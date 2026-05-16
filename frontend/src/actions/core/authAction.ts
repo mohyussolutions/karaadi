@@ -62,18 +62,14 @@ export async function login(email: string, password: string): Promise<User> {
 
 export async function logout(): Promise<void> {
   const headers = await getAuthHeaders();
-
   clearAuthCache();
-
-  await Promise.allSettled([
-    clearCookiesServer(),
-    fetch(apiUrls.LOGOUT, {
-      method: "POST",
-      headers: headers as HeadersInit,
-      credentials: "include",
-      keepalive: true,
-    }),
-  ]);
+  fetch(apiUrls.LOGOUT, {
+    method: "POST",
+    headers: headers as HeadersInit,
+    credentials: "include",
+    keepalive: true,
+  }).catch(() => {});
+  await clearCookiesServer();
 }
 
 export async function register(
