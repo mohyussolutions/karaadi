@@ -290,99 +290,31 @@ export const signIn = async (
   }
 };
 
-export const verifySession = async (
-  req: Request & { accessToken?: string },
-  res: Response,
-) => {
-  const token = req.headers.authorization?.split(" ")[1] || req.cookies.idToken;
-  const accessToken = req.headers["x-access-token"] || req.cookies.accessToken;
+export const verifySession = (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ message: "Not authenticated" });
 
-  if (!token) return res.status(401).json({ message: "Not authenticated" });
+  const token = req.headers.authorization?.split(" ")[1] || req.cookies.idToken || "";
+  const accessToken = (req.headers["x-access-token"] as string) || req.cookies.accessToken || token;
 
-  const cacheKey = `session:${createHash("sha256").update(token).digest("hex").slice(0, 40)}`;
-  const cached = await cacheManager.get(cacheKey).catch(() => null);
-  if (cached) return res.status(200).json(cached);
+  const clean = (val: any) => (val === "false" || val == null || val === "" ? null : val);
 
-  return new Promise<Response>((resolve) => {
-    jwt.verify(
+  return res.status(200).json({
+    message: "Session valid",
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      phone: clean(user.phone),
+      profileImage: clean(user.profileImage),
+      isAdmin: user.isAdmin,
+      isManager: user.isManager,
+      isSupport: user.isSupport,
       token,
-      getKey,
-      {
-        issuer: `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}`,
-        ignoreExpiration: false,
-      },
-      async (err, decoded) => {
-        if (err || !decoded) {
-          res.clearCookie("idToken");
-          res.clearCookie("refreshToken");
-          res.clearCookie("accessToken");
-          return resolve(
-            res.status(401).json({ message: "Authentication failed" }),
-          );
-        }
-
-        try {
-          const payload = decoded as any;
-          const [userRecord, session] = await Promise.all([
-            prisma.user.findUnique({ where: { cognitoId: payload.sub } }),
-            prisma.cookie.findFirst({
-              where: { user: { cognitoId: payload.sub } },
-            }),
-          ]);
-
-          if (!userRecord) {
-            return resolve(res.status(404).json({ message: "User not found" }));
-          }
-
-          if (!session || session.expiresAt < new Date()) {
-            if (session)
-              prisma.cookie
-                .delete({ where: { id: session.id } })
-                .catch(() => {});
-            res.clearCookie("idToken");
-            res.clearCookie("refreshToken");
-            res.clearCookie("accessToken");
-            return resolve(
-              res.status(401).json({ message: "Session expired" }),
-            );
-          }
-
-          const cleanField = (val: any) =>
-            val === "false" || val == null || val === "" ? null : val;
-
-          const responseUser = {
-            id: userRecord.id,
-            email: userRecord.email,
-            username: userRecord.username,
-            phone: cleanField(userRecord.phone),
-            profileImage: cleanField(userRecord.profileImage),
-            isAdmin: userRecord.isAdmin || payload["custom:isAdmin"] === "true",
-            isManager:
-              userRecord.isManager || payload["custom:isManager"] === "true",
-            isSupport:
-              userRecord.isSupport || payload["custom:isSupport"] === "true",
-            token: token,
-            accessToken: accessToken,
-          };
-
-          const body = {
-            message: "Session valid",
-            user: responseUser,
-            token,
-            accessToken,
-          };
-          cacheManager.set(cacheKey, body, 300).catch(() => {});
-          return resolve(res.status(200).json(body));
-        } catch {
-          res.clearCookie("idToken");
-          res.clearCookie("refreshToken");
-          res.clearCookie("accessToken");
-          return resolve(
-            res.status(401).json({ message: "Authentication failed" }),
-          );
-        }
-      },
-    );
+      accessToken,
+    },
+    token,
+    accessToken,
   });
 };
 
