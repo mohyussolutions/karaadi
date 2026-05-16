@@ -1,17 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { isSoundEnabled, setSoundEnabled, playNotificationSound } from "./mobile/sound";
 
 export default function SoundToggle() {
-  const [enabled, setEnabled] = useState(true);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setEnabled(isSoundEnabled());
-    setMounted(true);
-  }, []);
+  const [enabled, setEnabled] = useState(isSoundEnabled);
 
   const toggle = () => {
     const next = !enabled;
@@ -19,12 +13,6 @@ export default function SoundToggle() {
     setEnabled(next);
     if (next) playNotificationSound();
   };
-
-  const subtitle = !mounted
-    ? ""
-    : enabled
-    ? "Sound plays when a message arrives"
-    : "Sound is off";
 
   return (
     <div
@@ -42,7 +30,9 @@ export default function SoundToggle() {
           <span className="text-sm font-semibold text-gray-900 leading-snug">
             Notification Sound
           </span>
-          <span className="text-xs text-gray-400 mt-0.5 leading-relaxed">{subtitle}</span>
+          <span className="text-xs text-gray-400 mt-0.5 leading-relaxed">
+            {enabled ? "Sound plays when a message arrives" : "Sound is off"}
+          </span>
         </div>
       </div>
 

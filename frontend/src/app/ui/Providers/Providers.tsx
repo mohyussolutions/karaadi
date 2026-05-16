@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { Provider, useSelector, useDispatch } from "react-redux";
 import { store, RootState } from "@/store/store";
@@ -9,19 +10,20 @@ import "react-toastify/dist/ReactToastify.css";
 import ErrorBoundary from "./ErrorBoundary";
 import { hydrateLanguage } from "@/store/slices/reducers/languageSlice";
 import Cookies from "js-cookie";
+import PersistWrapper from "./PersistWrapper";
 
 const COOKIE_NAME = "app_lang";
 
 function I18nSync({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
-  const currentLang = useSelector(
-    (state: RootState) => state.language.currentLanguage,
-  );
+  const currentLang = useSelector((state: RootState) => state.language.currentLanguage);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    localStorage.clear();
+
     const cookie = Cookies.get(COOKIE_NAME) as "en" | "so" | undefined;
-    const saved = (cookie === "so" || cookie === "en") ? cookie : null;
+    const saved = cookie === "so" || cookie === "en" ? cookie : null;
     if (saved && i18n.language !== saved) {
       dispatch(hydrateLanguage(saved));
       i18n.changeLanguage(saved);
@@ -35,14 +37,8 @@ function I18nSync({ children }: { children: React.ReactNode }) {
     }
   }, [currentLang, hydrated]);
 
-  if (!hydrated) {
-    return <>{children}</>;
-  }
-
   return <>{children}</>;
 }
-
-import PersistWrapper from "./PersistWrapper";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (

@@ -1,10 +1,8 @@
 "use client";
 
 import { Howl } from "howler";
-import Cookies from "js-cookie";
 
-const SOUND_KEY = "karaadi_notification_sound";
-
+let soundEnabled = true;
 let howl: Howl | null = null;
 
 function getHowl(): Howl {
@@ -15,15 +13,14 @@ function getHowl(): Howl {
 }
 
 export function isSoundEnabled(): boolean {
-  const val = Cookies.get(SOUND_KEY);
-  return val === undefined ? true : val === "true";
+  return soundEnabled;
 }
 
 export function setSoundEnabled(enabled: boolean): void {
-  Cookies.set(SOUND_KEY, String(enabled), { expires: 365 });
+  soundEnabled = enabled;
 }
 
 export function playNotificationSound(): void {
-  if (!isSoundEnabled()) return;
+  if (!soundEnabled) return;
   try { getHowl().play(); } catch {}
 }
