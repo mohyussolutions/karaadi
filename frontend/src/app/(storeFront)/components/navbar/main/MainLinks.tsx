@@ -9,6 +9,7 @@ import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 import { useMessageCount } from "@/app/(storeFront)/components/hooks/useMessageCount";
 import { useNavNotificationCount } from "@/app/(storeFront)/components/hooks/useNavNotificationCount";
 import { useAuth } from "@/context/AuthContext";
+import { getClientCookie } from "@/app/ui/invoices/slugify";
 import {
   ROUTE_NEW_AD,
   ROUTE_MESSAGES,
@@ -37,9 +38,8 @@ const NavItems = ({
   const { notificationCount } = useNavNotificationCount(userId);
   const { messageCount } = useMessageCount(userId);
 
-  const isAuthenticated = authLoading
-    ? (initialIsAuthenticated ?? false)
-    : (isUserValid || (initialIsAuthenticated === true && user === null));
+  const hasCookie = Boolean(getClientCookie("accessToken"));
+  const isAuthenticated = authLoading ? hasCookie : (isUserValid || hasCookie);
 
   const navItems = getNavItems(isAuthenticated, notificationCount);
   const isNewAd = (href: string) => href === ROUTE_NEW_AD;

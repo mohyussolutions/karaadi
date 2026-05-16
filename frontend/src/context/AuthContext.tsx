@@ -23,18 +23,20 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const hasValidCache = cachedSession !== null && cachedSession.data !== null;
+
   const [user, setUser] = useState<RawUserData | null>(
-    cachedSession ? cachedSession.data : null,
+    hasValidCache ? cachedSession!.data : null,
   );
-  const [loading, setLoading] = useState(!cachedSession);
+  const [loading, setLoading] = useState(!hasValidCache);
   const hasFetched = useRef(false);
 
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    if (cachedSession) {
-      setUser(cachedSession.data);
+    if (hasValidCache) {
+      setUser(cachedSession!.data);
       setLoading(false);
       return;
     }
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     pendingSession!
       .then((data) => {
-        setCachedSession(data ?? null);
+        if (data) setCachedSession(data);
         setPendingSession(null);
         setUser(data ?? null);
         setLoading(false);
@@ -57,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateUser = (newUser: RawUserData | null) => {
-    setCachedSession(newUser);
+    if (newUser) setCachedSession(newUser);
     setUser(newUser);
   };
 
