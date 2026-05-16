@@ -46,6 +46,7 @@ export function usePushNotifications() {
 
   const subscribe = useCallback(async () => {
     const userId = user?._id || user?.id;
+    const userToken = (user as any)?.token || (user as any)?.accessToken;
     if (!userId) { toast.error("Please log in first."); return; }
     if (!browserSupportsPush()) { toast.error("Push notifications are not supported in this browser."); return; }
     dispatch(setLoading(true));
@@ -68,7 +69,7 @@ export function usePushNotifications() {
         applicationServerKey: urlB64ToUint8Array(vapidKey),
       });
 
-      const headers = await getAuthHeaders();
+      const headers = await getAuthHeaders(userToken);
       const res = await fetch(`${API}/api/push/subscribe`, {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
@@ -90,6 +91,8 @@ export function usePushNotifications() {
         toast.error("Push service configuration error. Please contact support.");
       } else if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed")) {
         toast.error("Network error. Please check your connection and try again.");
+      } else if (msg.includes("401")) {
+        toast.error("Session expired. Please log in again, then enable notifications.");
       } else {
         toast.error(`Could not enable notifications: ${msg}`);
       }
@@ -99,13 +102,14 @@ export function usePushNotifications() {
   }, [user, dispatch]);
 
   const unsubscribe = useCallback(async () => {
+    const userToken = (user as any)?.token || (user as any)?.accessToken;
     dispatch(setLoading(true));
     try {
       if (browserSupportsPush()) {
         const reg = await navigator.serviceWorker.getRegistration();
         const sub = await reg?.pushManager?.getSubscription();
         if (sub) {
-          const headers = await getAuthHeaders();
+          const headers = await getAuthHeaders(userToken);
           await fetch(`${API}/api/push/unsubscribe`, {
             method: "POST",
             headers: { ...headers, "Content-Type": "application/json" },
