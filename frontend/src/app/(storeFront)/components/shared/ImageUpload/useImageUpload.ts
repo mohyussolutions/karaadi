@@ -3,9 +3,12 @@ import { useState } from "react";
 import {
   IMAGE_MAX_COUNT,
   IMAGE_MIN_COUNT,
-  IMAGE_MAX_FILE_SIZE_MB,
+  IMAGE_MAX_FILE_SIZE_BYTES,
   IMAGE_MAX_SAFE_CHARS,
   IMAGE_COMPRESS_PASSES,
+  IMAGE_OUTPUT_FORMAT,
+  IMAGE_CANVAS_CONTEXT,
+  IMAGE_MIME_PREFIX,
 } from "./image.constants";
 
 function drawToCanvas(img: HTMLImageElement, maxPx: number): HTMLCanvasElement {
@@ -14,7 +17,7 @@ function drawToCanvas(img: HTMLImageElement, maxPx: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(img.width * scale);
   canvas.height = Math.round(img.height * scale);
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext(IMAGE_CANVAS_CONTEXT);
   if (ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
@@ -27,7 +30,9 @@ function compressImage(file: File): Promise<string> {
     const fallback = () => {
       URL.revokeObjectURL(url);
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+      };
       reader.readAsDataURL(file);
     };
 
@@ -37,7 +42,7 @@ function compressImage(file: File): Promise<string> {
         for (const { maxPx, quality } of IMAGE_COMPRESS_PASSES) {
           const canvas = drawToCanvas(img, maxPx);
           if (canvas.width === 0 || canvas.height === 0) break;
-          const data = canvas.toDataURL("image/jpeg", quality);
+          const data = canvas.toDataURL(IMAGE_OUTPUT_FORMAT, quality);
           if (data.length <= IMAGE_MAX_SAFE_CHARS) {
             resolve(data);
             return;
@@ -66,9 +71,8 @@ export function useImageUpload() {
 
   function addImages(files: FileList | null) {
     if (!files) return;
-    const maxBytes = IMAGE_MAX_FILE_SIZE_MB * 1024 * 1024;
     const valid = Array.from(files).filter(
-      (f) => f.type.startsWith("image/") && f.size <= maxBytes,
+      (f) => f.type.startsWith(IMAGE_MIME_PREFIX) && f.size <= IMAGE_MAX_FILE_SIZE_BYTES,
     );
     setImages((prev) => [...prev, ...valid].slice(0, IMAGE_MAX_COUNT));
   }
