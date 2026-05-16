@@ -195,7 +195,6 @@ const FeeManagement = () => {
 
     setIsOpen(false);
     setLoading((p) => ({ ...p, action: false }));
-    await fetchData();
   };
 
   if (loading.fetch) {
@@ -248,7 +247,7 @@ const FeeManagement = () => {
               </h3>
               <button
                 onClick={() => setIsOpen(true)}
-                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg"
               >
                 EDIT
               </button>

@@ -101,6 +101,7 @@ model RealEstateFee {
   land      Float    @default(0.0)
   farm      Float    @default(0.0)
   business  Float    @default(0.0)
+  other     Float    @default(0.0)
   isActive  Boolean  @default(true)
   updatedAt DateTime @updatedAt
   
@@ -117,6 +118,7 @@ model CarFee {
   carParts    Float    @default(0.0)
   truck       Float    @default(0.0)
   electricCar Float    @default(0.0)
+  other       Float    @default(0.0)
   isActive    Boolean  @default(true)
   updatedAt   DateTime @updatedAt
   
@@ -130,6 +132,7 @@ model MotorcycleFee {
   motoSale    Float    @default(0.0)
   motoRent    Float    @default(0.0)
   motoParts   Float    @default(0.0)
+  other       Float    @default(0.0)
   isActive    Boolean  @default(true)
   updatedAt   DateTime @updatedAt
   
@@ -144,6 +147,7 @@ model BoatFee {
   boatRent   Float    @default(0.0)
   boatEngine Float    @default(0.0)
   boatParts  Float    @default(0.0)
+  other      Float    @default(0.0)
   isActive   Boolean  @default(true)
   updatedAt  DateTime @updatedAt
   
@@ -157,6 +161,7 @@ model EquipmentFeeConfig {
   tractorSale Float    @default(0.0)
   agriTool    Float    @default(0.0)
   harvester   Float    @default(0.0)
+  other       Float    @default(0.0)
   isActive    Boolean  @default(true)
   updatedAt   DateTime @updatedAt
   
@@ -170,6 +175,7 @@ model JobFeeConfig {
   fullTime    Float    @default(0.0)
   partTime    Float    @default(0.0)
   freelance   Float    @default(0.0)
+  other       Float    @default(0.0)
   isActive    Boolean  @default(true)
   updatedAt   DateTime @updatedAt
   

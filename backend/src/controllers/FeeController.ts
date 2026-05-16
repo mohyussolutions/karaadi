@@ -176,7 +176,7 @@ export const deleteMarketplaceFee = async (req: Request, res: Response) => {
 
 export const createRealEstateFee = async (req: Request, res: Response) => {
   try {
-    const keys = ["rent", "sale", "land", "farm", "business"];
+    const keys = ["rent", "sale", "land", "farm", "business", "other"];
     const data: Prisma.RealEstateFeeCreateInput = req.body;
     if (!data || !keys.some((k) => k in data)) {
       return res.status(400).json({ error: "Missing fee fields" });
@@ -198,6 +198,7 @@ export const getAllRealEstateFees = async (req: Request, res: Response) => {
         land: true,
         farm: true,
         business: true,
+        other: true,
         isActive: true,
         updatedAt: true,
       },
@@ -227,7 +228,7 @@ export const updateRealEstateFee = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...rawData } = req.body;
-    const keys = ["rent", "sale", "land", "farm", "business", "isActive"];
+    const keys = ["rent", "sale", "land", "farm", "business", "other", "isActive"];
     const data: Prisma.RealEstateFeeUpdateInput = {};
     keys.forEach((k) => {
       if (k in rawData && rawData[k] !== undefined && rawData[k] !== null) {
@@ -279,6 +280,7 @@ export const getAllCarFees = async (req: Request, res: Response) => {
         carParts: true,
         truck: true,
         electricCar: true,
+        other: true,
         isActive: true,
         updatedAt: true,
       },
@@ -313,6 +315,7 @@ export const createCarFee = async (req: Request, res: Response) => {
       "carParts",
       "truck",
       "electricCar",
+      "other",
     ];
     const data: Prisma.CarFeeCreateInput = req.body;
     if (!data || !keys.some((k) => k in data)) {
@@ -336,6 +339,7 @@ export const updateCarFee = async (req: Request, res: Response) => {
       "carParts",
       "truck",
       "electricCar",
+      "other",
       "isActive",
     ];
     const filtered: Prisma.CarFeeUpdateInput = Object.fromEntries(
@@ -388,6 +392,7 @@ export const getAllMotorcycleFees = async (req: Request, res: Response) => {
         motoSale: true,
         motoRent: true,
         motoParts: true,
+        other: true,
         isActive: true,
         updatedAt: true,
       },
@@ -415,7 +420,7 @@ export const getMotorcycleFeeById = async (req: Request, res: Response) => {
 
 export const createMotorcycleFee = async (req: Request, res: Response) => {
   try {
-    const keys = ["motoSale", "motoRent", "motoParts"];
+    const keys = ["motoSale", "motoRent", "motoParts", "other"];
     const data: Prisma.MotorcycleFeeCreateInput = req.body;
     if (!data || !keys.some((k) => k in data)) {
       return res.status(400).json({ error: "Missing motorcycle fee fields" });
@@ -431,7 +436,7 @@ export const updateMotorcycleFee = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { adminId, reason, ...data } = req.body;
-    const keys = ["motoSale", "motoRent", "motoParts", "isActive"];
+    const keys = ["motoSale", "motoRent", "motoParts", "other", "isActive"];
     const filtered: Prisma.MotorcycleFeeUpdateInput = Object.fromEntries(
       Object.entries(data).filter(
         ([k, v]) => keys.includes(k) && v !== null && v !== undefined,
@@ -476,7 +481,7 @@ export const deleteMotorcycleFee = async (req: Request, res: Response) => {
 
 export const createBoatFee = async (req: Request, res: Response) => {
   try {
-    const keys = ["boatSale", "boatRent", "boatEngine", "boatParts"];
+    const keys = ["boatSale", "boatRent", "boatEngine", "boatParts", "other"];
     const data: Prisma.BoatFeeCreateInput = req.body;
     if (!data || !keys.some((k) => k in data)) {
       return res.status(400).json({ error: "Missing fee fields" });
@@ -497,6 +502,7 @@ export const getAllBoatFees = async (req: Request, res: Response) => {
         boatRent: true,
         boatEngine: true,
         boatParts: true,
+        other: true,
         isActive: true,
         updatedAt: true,
       },
@@ -531,6 +537,7 @@ export const updateBoatFee = async (req: Request, res: Response) => {
       "boatRent",
       "boatEngine",
       "boatParts",
+      "other",
       "isActive",
     ];
     const data: Prisma.BoatFeeUpdateInput = {};
@@ -590,6 +597,7 @@ export const getAllEquipmentFees = async (req: Request, res: Response) => {
         tractorSale: true,
         agriTool: true,
         harvester: true,
+        other: true,
         isActive: true,
         updatedAt: true,
       },
@@ -623,9 +631,7 @@ export const updateEquipmentFee = async (req: Request, res: Response) => {
       "tractorSale",
       "agriTool",
       "harvester",
-      "fullTime",
-      "partTime",
-      "freelance",
+      "other",
       "isActive",
     ];
     const data: Prisma.EquipmentFeeConfigUpdateInput = {};

@@ -184,6 +184,9 @@ export const getAllTractorsIncludingUnpaid = async (
             [FIELD_NAMES.CREATED_AT]: true,
             [FIELD_NAMES.EXPIRY_DATE]: true,
             [FIELD_NAMES.IS_PAID]: true,
+            [FIELD_NAMES.IS_BASIC_30]: true,
+            [FIELD_NAMES.IS_STANDARD_60]: true,
+            [FIELD_NAMES.IS_PREMIUM_90]: true,
             [FIELD_NAMES.USER]: {
               select: {
                 [FIELD_NAMES.USERNAME]: true,

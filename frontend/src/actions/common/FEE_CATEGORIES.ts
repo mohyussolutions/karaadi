@@ -54,11 +54,8 @@ export const FEE_CATEGORIES = [
       { key: "sale", label: "Iib (Sale)", type: LISTING_TYPE.SERVICE },
       { key: "land", label: "Dhul iib ah (Land)", type: LISTING_TYPE.SERVICE },
       { key: "farm", label: "Beer iib ah (Farm)", type: LISTING_TYPE.SERVICE },
-      {
-        key: "business",
-        label: "Ganacsi (Business)",
-        type: LISTING_TYPE.SERVICE,
-      },
+      { key: "business", label: "Ganacsi (Business)", type: LISTING_TYPE.SERVICE },
+      { key: "other", label: "Wax kale (Other)", type: LISTING_TYPE.FREE },
     ],
   },
   {
@@ -69,11 +66,8 @@ export const FEE_CATEGORIES = [
       { key: "trailer", label: "Rimoor", type: LISTING_TYPE.FREE },
       { key: "carParts", label: "Qaybaha gawaarida", type: LISTING_TYPE.FREE },
       { key: "truck", label: "Baabuur xamuul", type: LISTING_TYPE.SERVICE },
-      {
-        key: "electricCar",
-        label: "Gawaari koronto",
-        type: LISTING_TYPE.SERVICE,
-      },
+      { key: "electricCar", label: "Gawaari koronto", type: LISTING_TYPE.SERVICE },
+      { key: "other", label: "Wax kale (Other)", type: LISTING_TYPE.FREE },
     ],
   },
   {
@@ -89,50 +83,27 @@ export const FEE_CATEGORIES = [
         label: "Kiro ah (For Rent)",
         type: LISTING_TYPE.SERVICE,
       },
-      {
-        key: "motoParts",
-        label: "Qaybaha (Spare Parts)",
-        type: LISTING_TYPE.FREE,
-      },
-      { key: "motoOther", label: "Wax kale (Other)", type: LISTING_TYPE.FREE },
+      { key: "motoParts", label: "Qaybaha (Spare Parts)", type: LISTING_TYPE.FREE },
+      { key: "other", label: "Wax kale (Other)", type: LISTING_TYPE.FREE },
     ],
   },
   {
     title: "Boats (Doomo)",
     fees: [
       { key: "boatSale", label: "Doomo iib ah", type: LISTING_TYPE.SERVICE },
-      {
-        key: "boatRent",
-        label: "Doomo kireysi ah",
-        type: LISTING_TYPE.SERVICE,
-      },
-      {
-        key: "boatEngine",
-        label: "Matoorada doomo iib ah",
-        type: LISTING_TYPE.FREE,
-      },
+      { key: "boatRent", label: "Doomo kireysi ah", type: LISTING_TYPE.SERVICE },
+      { key: "boatEngine", label: "Matoorada doomo iib ah", type: LISTING_TYPE.FREE },
       { key: "boatParts", label: "Qaybaha doomo", type: LISTING_TYPE.FREE },
+      { key: "other", label: "Wax kale (Other)", type: LISTING_TYPE.FREE },
     ],
   },
   {
     title: "Traktor (Cagaf Cagaf)",
     fees: [
-      {
-        key: "tractorSale",
-        label: "Cagaf cagaf beec ah",
-        type: LISTING_TYPE.SERVICE,
-      },
+      { key: "tractorSale", label: "Cagaf cagaf beec ah", type: LISTING_TYPE.SERVICE },
       { key: "agriTool", label: "Qalabka beeraha", type: LISTING_TYPE.FREE },
-      {
-        key: "fertilizer",
-        label: "Faafiyaha bacriminta",
-        type: LISTING_TYPE.FREE,
-      },
-      {
-        key: "harvester",
-        label: "Makiinada goosashada",
-        type: LISTING_TYPE.SERVICE,
-      },
+      { key: "harvester", label: "Makiinada goosashada", type: LISTING_TYPE.SERVICE },
+      { key: "other", label: "Wax kale (Other)", type: LISTING_TYPE.FREE },
     ],
   },
   {
@@ -148,11 +119,8 @@ export const FEE_CATEGORIES = [
         label: "Shaqo Waqti Gaaban (Part-Time)",
         type: LISTING_TYPE.SERVICE,
       },
-      {
-        key: "freelance",
-        label: "Shaqo Xor ah (Freelance)",
-        type: LISTING_TYPE.FREE,
-      },
+      { key: "freelance", label: "Shaqo Xor ah (Freelance)", type: LISTING_TYPE.FREE },
+      { key: "other", label: "Wax kale (Other)", type: LISTING_TYPE.FREE },
     ],
   },
   {
