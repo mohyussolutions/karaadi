@@ -1,6 +1,8 @@
 import { getJobById } from "@/actions/categories/jobActions";
 import JobDetailsContent from "./JobDetailsContent";
 
+export const revalidate = 60;
+
 export default async function JobDetailsPage({
   params,
 }: {

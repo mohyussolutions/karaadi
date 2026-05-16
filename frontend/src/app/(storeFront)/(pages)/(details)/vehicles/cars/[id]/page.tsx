@@ -1,13 +1,23 @@
-"use client";
-
 import { Suspense } from "react";
-import Loading from "@/app/ui/loading/Loading";
-import { VehicleDetailsContent } from "../../VehicleDetails";
+import { getCarById } from "@/actions/categories/carActions";
+import { VehicleDetailsContent, VehicleDetailSkeleton } from "../../VehicleDetails";
 
-export default function CarDetailsPage() {
+export const revalidate = 60;
+
+export default async function CarDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  let initialData = null;
+  try {
+    const data = await getCarById(id);
+    if (data) initialData = { data, type: "car" as const };
+  } catch {}
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loading /></div>}>
-      <VehicleDetailsContent forceType="car" />
+    <Suspense fallback={<VehicleDetailSkeleton />}>
+      <VehicleDetailsContent forceType="car" initialData={initialData} />
     </Suspense>
   );
 }

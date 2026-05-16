@@ -56,9 +56,36 @@ const normalise = (data: any, resolvedType: VehicleType): VehicleItem => ({
   vehicleKind: resolvedType,
 });
 
+export function VehicleDetailSkeleton() {
+  return (
+    <div className="my-12 px-4 md:px-6 min-h-screen max-w-7xl mx-auto animate-pulse pb-24">
+      <div className="h-4 w-28 bg-gray-200 rounded mb-5" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+        <div className="bg-gray-200 rounded-2xl h-[400px] md:h-[560px]" />
+        <div className="space-y-5 pt-2">
+          <div className="h-8 bg-gray-200 rounded w-3/4" />
+          <div className="h-10 bg-gray-200 rounded w-1/2" />
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded" />
+            <div className="h-4 bg-gray-200 rounded w-5/6" />
+            <div className="h-4 bg-gray-200 rounded w-4/6" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-16 bg-gray-100 rounded-xl" />
+            ))}
+          </div>
+          <div className="h-12 bg-gray-200 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function VehicleDetailsContent({
   forceType,
-}: { forceType?: VehicleType } = {}) {
+  initialData,
+}: { forceType?: VehicleType; initialData?: { data: any; type: VehicleType } | null } = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const { id } = useParams<{ id: string }>();
@@ -108,6 +135,9 @@ export function VehicleDetailsContent({
       }
     },
     {
+      fallbackData: initialData
+        ? { data: normalise(initialData.data, initialData.type), type: initialData.type }
+        : undefined,
       revalidateOnFocus: false,
       revalidateIfStale: false,
       dedupingInterval: 60_000,
@@ -211,12 +241,7 @@ export function VehicleDetailsContent({
     setShowModal(true);
   }, [user, router, pathname]);
 
-  if (isLoading)
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loading />
-      </div>
-    );
+  if (isLoading) return <VehicleDetailSkeleton />;
 
   if (!vehicle)
     return (

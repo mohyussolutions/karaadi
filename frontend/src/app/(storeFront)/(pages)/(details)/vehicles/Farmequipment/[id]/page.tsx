@@ -1,13 +1,23 @@
-"use client";
-
 import { Suspense } from "react";
-import Loading from "@/app/ui/loading/Loading";
-import { VehicleDetailsContent } from "../../VehicleDetails";
+import { getFarmEquipmentById } from "@/actions/categories/FarmequipmentAction";
+import { VehicleDetailsContent, VehicleDetailSkeleton } from "../../VehicleDetails";
 
-export default function FarmEquipmentDetailsPage() {
+export const revalidate = 60;
+
+export default async function FarmEquipmentDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  let initialData = null;
+  try {
+    const data = await getFarmEquipmentById(id);
+    if (data) initialData = { data, type: "farmequipment" as const };
+  } catch {}
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loading /></div>}>
-      <VehicleDetailsContent forceType="farmequipment" />
+    <Suspense fallback={<VehicleDetailSkeleton />}>
+      <VehicleDetailsContent forceType="farmequipment" initialData={initialData} />
     </Suspense>
   );
 }
