@@ -63,9 +63,8 @@ export function middleware(req: NextRequest) {
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
   const isAuthPage = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
 
-  // Logged-in user visiting an auth page (e.g. /login) → redirect away immediately
   if (isAuthPage) {
-    const c = getTokenClaims(idToken);
+    const c = idToken && !isTokenExpired(idToken) ? getTokenClaims(idToken) : null;
     if (c) {
       const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
       return NextResponse.redirect(

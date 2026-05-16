@@ -12,6 +12,9 @@ export default function MyAccountCards() {
 
   useEffect(() => {
     if (!loading && !user) {
+      for (const name of ["accessToken", "user-role"]) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      }
       router.replace("/login");
     }
   }, [loading, user, router]);

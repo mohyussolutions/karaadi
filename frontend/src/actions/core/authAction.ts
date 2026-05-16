@@ -11,22 +11,9 @@ import {
   User,
 } from "@/app/utils/types/user.types";
 
-function isExpiredToken(token: string): boolean {
-  try {
-    const payload = JSON.parse(
-      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return typeof payload.exp === "number" && payload.exp < Math.floor(Date.now() / 1000);
-  } catch {
-    return false;
-  }
-}
-
 export async function getAuthenticatedUser(): Promise<NormalizedUser | null> {
   try {
     const headers = await getAuthHeaders();
-    const token = (headers as any).Authorization?.replace("Bearer ", "");
-    if (!token || isExpiredToken(token)) return null;
     const response = await fetch(apiUrls.VERIFY_SESSION, {
       method: "POST",
       credentials: "include",
@@ -84,7 +71,7 @@ export async function logout(): Promise<void> {
   }).catch(() => {});
   await clearCookiesServer();
   if (typeof window !== "undefined") {
-    sessionStorage.clear();
+    localStorage.clear();
     for (const name of ["accessToken", "user-role"]) {
       document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
     }
