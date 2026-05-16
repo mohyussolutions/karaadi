@@ -68,7 +68,7 @@ export default function PushToggle() {
 
   const isBlocked = permission === "denied";
   const noSupport = clientReady && !browserSupportsPush() && !isIOS;
-  const isDisabled = loading || isBlocked || noSupport;
+  const isDisabled = isIOS ? false : (loading || isBlocked || noSupport);
 
   const handleClick = () => {
     if (isDisabled) return;
@@ -109,7 +109,7 @@ export default function PushToggle() {
 
       <div
         onClick={handleClick}
-        style={{ cursor: isDisabled ? "default" : "pointer", userSelect: "none", opacity: isBlocked || noSupport ? 0.5 : 1 }}
+        style={{ cursor: isDisabled ? "default" : "pointer", userSelect: "none", opacity: !isIOS && (isBlocked || noSupport) ? 0.5 : 1 }}
         className="flex items-center py-4 touch-manipulation active:opacity-70"
       >
         <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
