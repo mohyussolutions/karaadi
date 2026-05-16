@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "./ui/Providers/Providers";
 import { AuthProvider } from "@/context/AuthContext";
 import ErrorBoundary from "./ui/Providers/ErrorBoundary";
+import IOSInstallPrompt from "./ui/IOSInstallPrompt";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: "/logo.jpg",
-    apple: "/logo.jpg",
+    apple: [
+      { url: "/logo.jpg", sizes: "180x180", type: "image/jpeg" },
+    ],
   },
   appleWebApp: {
     capable: true,
@@ -50,6 +53,7 @@ export default function RootLayout({
             <AuthProvider>{children}</AuthProvider>
           </Providers>
         </ErrorBoundary>
+        <IOSInstallPrompt />
       </body>
     </html>
   );
