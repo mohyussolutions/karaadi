@@ -1,10 +1,9 @@
 "use client";
-import { getPlan, getExpiry } from "../../planUtils";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
 import Image from "next/image";
-
+import { getPlan, getExpiry } from "../../planUtils";
 import {
   FaTrashAlt,
   FaCheckCircle,
@@ -15,20 +14,23 @@ import {
   updatePaidStatus,
   getAllRealEstatesAdmin,
 } from "@/actions/categories/realEstateActions";
+import { RealEstate } from "@/app/utils/types/realestate.types";
 import { realEstateSubCategories } from "@/app/(links)/storeFrontLinks/mainCategotyCategorySubCategory";
 import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 import Loading from "@/app/ui/loading/Loading";
 import Pagination from "../../components/Pagination";
 import DashboardSubNav from "../../components/SubNav/DashboardSubNav";
 
+const PAGE_SIZE = 20;
+
 export default function RealEstateAdminPage() {
   const { t } = useTranslation();
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<RealEstate[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
   const [error, setError] = useState<string | null>(null);
+  const [activeSubKey, setActiveSubKey] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,9 +38,7 @@ export default function RealEstateAdminPage() {
       else setLoadingMore(true);
       try {
         const result = await getAllRealEstatesAdmin(page, PAGE_SIZE);
-        setItems((prev) =>
-          page === 1 ? result.data : [...prev, ...result.data],
-        );
+        setItems((prev) => page === 1 ? result.data : [...prev, ...result.data]);
         setError(null);
       } catch {
         setError("Failed to load real estate data");
@@ -50,87 +50,59 @@ export default function RealEstateAdminPage() {
     fetchData();
   }, [page]);
 
-  const handleDeleteItem = async (item: any) => {
+  const handleDeleteItem = async (item: RealEstate) => {
     if (!confirm("Are you sure you want to delete this listing?")) return;
     const itemId = String(item.id);
-    if (!itemId) {
-      alert("Invalid item: missing ID.");
-      return;
-    }
-
+    if (!itemId) return;
     const originalItems = [...items];
     setItems((prev) => prev.filter((i) => String(i.id) !== itemId));
-
     const result = await deleteRealEstate(itemId);
-
-    if (result.success) {
-      alert("Listing deleted successfully");
-    } else {
+    if (!result.success) {
       setItems(originalItems);
-      alert(result.message || "Failed to delete listing");
     }
   };
 
-  const handleTogglePaidStatus = async (item: any) => {
+  const handleTogglePaidStatus = async (item: RealEstate) => {
     const newStatus = !item.isPaid;
     const itemId = String(item.id);
-    if (!itemId) {
-      alert("Invalid item: missing ID.");
-      return;
-    }
-
+    if (!itemId) return;
     const originalItems = [...items];
     setItems((prev) =>
-      prev.map((i) =>
-        String(i.id) === itemId ? { ...i, isPaid: newStatus } : i,
-      ),
+      prev.map((i) => String(i.id) === itemId ? { ...i, isPaid: newStatus } : i),
     );
-
     const result = await updatePaidStatus(itemId, newStatus);
-
-    if (result.success) {
-      alert(newStatus ? "Marked as paid" : "Marked as unpaid");
-    } else {
-      setItems(originalItems);
-      alert(result.message || "Failed to update paid status");
-    }
+    if (!result.success) setItems(originalItems);
   };
 
-  const [activeSubKey, setActiveSubKey] = React.useState("");
-
-  let filtered = items;
-  if (activeSubKey) {
-    const match = realEstateSubCategories.find((s) => s.key === activeSubKey);
-    if (match) {
-      const name = match.name.toLowerCase();
-      filtered = filtered.filter((i) => {
-        const cat = String(i.category ?? "").toLowerCase();
-        return cat.includes(name) || cat.includes(activeSubKey.toLowerCase());
-      });
-    }
-  }
-  const hasMore = items.length % PAGE_SIZE === 0 && items.length !== 0;
-
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageError = (e: SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.onerror = null;
     e.currentTarget.style.display = "none";
   };
+
+  const match = realEstateSubCategories.find((s) => s.key === activeSubKey);
+  const filtered = activeSubKey && match
+    ? items.filter((i) => {
+        const cat = String(i.category ?? "").toLowerCase();
+        const name = match.name.toLowerCase();
+        return cat.includes(name) || cat.includes(activeSubKey.toLowerCase());
+      })
+    : items;
+
+  const hasMore = items.length % PAGE_SIZE === 0 && items.length !== 0;
 
   if (error && items.length === 0 && !loading) {
     return (
       <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
         <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
-          <div className="w-full max-w-full">
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 sm:px-6 py-4 rounded-xl">
-              <p className="font-bold text-base sm:text-lg">{t("adminTable.error")}</p>
-              <p className="text-sm sm:text-base mt-1">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-3 sm:mt-4 bg-red-600 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base hover:bg-red-700 transition w-full sm:w-auto"
-              >
-                {t("adminTable.tryAgain")}
-              </button>
-            </div>
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 sm:px-6 py-4 rounded-xl">
+            <p className="font-bold text-base sm:text-lg">{t("adminTable.error")}</p>
+            <p className="text-sm sm:text-base mt-1">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-3 sm:mt-4 bg-red-600 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base hover:bg-red-700 transition w-full sm:w-auto"
+            >
+              {t("adminTable.tryAgain")}
+            </button>
           </div>
         </div>
       </div>
@@ -175,15 +147,9 @@ export default function RealEstateAdminPage() {
                             unoptimized
                           />
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-gray-900 mb-1 truncate">
-                              {item.title}
-                            </h3>
-                            <p className="text-xs text-gray-500 mb-1 truncate">
-                              {item.category} • {item.subCategory || "N/A"}
-                            </p>
-                            <p className="text-lg font-bold text-blue-600">
-                              ${item.price?.toLocaleString()}
-                            </p>
+                            <h3 className="font-bold text-gray-900 mb-1 truncate">{item.title}</h3>
+                            <p className="text-xs text-gray-500 mb-1 truncate">{item.category}</p>
+                            <p className="text-lg font-bold text-blue-600">${item.price?.toLocaleString()}</p>
                           </div>
                         </div>
 
@@ -194,9 +160,7 @@ export default function RealEstateAdminPage() {
                           </div>
                           <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <span className="text-gray-500">{t("adminTable.status")}</span>
-                            <p
-                              className={`font-medium truncate ${item.isPaid ? "text-green-600" : "text-red-600"}`}
-                            >
+                            <p className={`font-medium truncate ${item.isPaid ? "text-green-600" : "text-red-600"}`}>
                               {item.isPaid ? t("adminTable.paid") : t("adminTable.unpaid")}
                             </p>
                           </div>
@@ -206,42 +170,31 @@ export default function RealEstateAdminPage() {
                           </div>
                           <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <span className="text-gray-500">Expires</span>
-                            <p className={`font-medium truncate ${getExpiry(item).expired ? "text-red-600" : "text-gray-700"}`}>{getExpiry(item).label}</p>
+                            <p className={`font-medium truncate ${getExpiry(item).expired ? "text-red-600" : "text-gray-700"}`}>
+                              {getExpiry(item).label}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="mt-3 bg-gray-50 p-3 rounded-lg">
+                        <div className="mt-3 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                           <p className="text-xs text-gray-500 mb-1">{t("adminTable.seller")}</p>
-                          <p className="font-medium text-sm truncate">
-                            {item.user?.username || "N/A"}
-                          </p>
-                          <p className="text-xs text-gray-600 truncate">
-                            {item.user?.email}
-                          </p>
-                          <p className="text-xs text-gray-600 truncate">
-                            {item.user?.phone}
-                          </p>
+                          <p className="font-medium text-sm truncate">{item.user?.username || "N/A"}</p>
+                          <p className="text-xs text-gray-600 truncate">{item.user?.email}</p>
+                          <p className="text-xs text-gray-600 truncate">{item.user?.phone}</p>
                         </div>
 
                         <div className="mt-4 flex gap-2">
                           <button
                             onClick={() => handleTogglePaidStatus(item)}
                             className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1 ${
-                              item.isPaid
-                                ? "bg-yellow-500 text-white hover:bg-yellow-600"
-                                : "bg-green-600 text-white hover:bg-green-700"
+                              item.isPaid ? "bg-yellow-500 text-white hover:bg-yellow-600" : "bg-green-600 text-white hover:bg-green-700"
                             }`}
                           >
-                            {item.isPaid ? (
-                              <FaTimesCircle size={12} />
-                            ) : (
-                              <FaCheckCircle size={12} />
-                            )}
+                            {item.isPaid ? <FaTimesCircle size={12} /> : <FaCheckCircle size={12} />}
                             <span className="truncate">
                               {item.isPaid ? t("adminTable.markUnpaid") : t("adminTable.markPaid")}
                             </span>
                           </button>
-
                           <button
                             onClick={() => handleDeleteItem(item)}
                             className="flex-1 py-2 px-2 bg-red-500 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-red-600 transition"
@@ -281,10 +234,7 @@ export default function RealEstateAdminPage() {
                     <tbody>
                       {filtered.length > 0 ? (
                         filtered.map((item, idx) => (
-                          <tr
-                            key={`item-${item.id}-${idx}`}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                          >
+                          <tr key={`item-${item.id}-${idx}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <td className="border-b p-3">
                               <Image
                                 src={item.images?.[0] || PLACEHOLDER_IMAGE}
@@ -297,62 +247,25 @@ export default function RealEstateAdminPage() {
                               />
                             </td>
                             <td className="border-b p-3">
-                              <span
-                                className="text-sm font-medium block truncate"
-                                title={item.title}
-                              >
-                                {item.title}
-                              </span>
+                              <span className="text-sm font-medium block truncate" title={item.title}>{item.title}</span>
                             </td>
                             <td className="border-b p-3">
-                              <span
-                                className="text-sm block truncate"
-                                title={item.category}
-                              >
-                                {item.category}
-                              </span>
+                              <span className="text-sm block truncate" title={item.category}>{item.category}</span>
                             </td>
                             <td className="border-b p-3">
-                              <span
-                                className="text-sm block truncate"
-                                title={item.subCategory}
-                              >
-                                {item.subCategory || "N/A"}
-                              </span>
+                              <span className="text-sm block truncate">{item.subCategory || "N/A"}</span>
                             </td>
                             <td className="border-b p-3">
-                              <span className="text-sm font-semibold">
-                                ${item.price?.toLocaleString()}
-                              </span>
+                              <span className="text-sm font-semibold">${item.price?.toLocaleString()}</span>
                             </td>
                             <td className="border-b p-3">
-                              <span
-                                className="text-sm block truncate"
-                                title={item.city}
-                              >
-                                {item.city}
-                              </span>
+                              <span className="text-sm block truncate" title={item.city}>{item.city}</span>
                             </td>
                             <td className="border-b p-3">
                               <div className="flex flex-col text-xs">
-                                <span
-                                  className="font-semibold truncate"
-                                  title={item.user?.username}
-                                >
-                                  {item.user?.username}
-                                </span>
-                                <span
-                                  className="text-gray-600 truncate"
-                                  title={item.user?.email}
-                                >
-                                  {item.user?.email}
-                                </span>
-                                <span
-                                  className="text-gray-600 truncate"
-                                  title={item.user?.phone}
-                                >
-                                  {item.user?.phone}
-                                </span>
+                                <span className="font-semibold truncate">{item.user?.username}</span>
+                                <span className="text-gray-600 truncate">{item.user?.email}</span>
+                                <span className="text-gray-600 truncate">{item.user?.phone}</span>
                               </div>
                             </td>
                             <td className="border-b p-3">
@@ -385,27 +298,14 @@ export default function RealEstateAdminPage() {
                                 <button
                                   onClick={() => handleTogglePaidStatus(item)}
                                   className={`p-1.5 rounded text-white text-xs transition flex items-center justify-center ${
-                                    item.isPaid
-                                      ? "bg-yellow-500 hover:bg-yellow-600"
-                                      : "bg-green-600 hover:bg-green-700"
+                                    item.isPaid ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
                                   }`}
-                                  title={
-                                    item.isPaid
-                                      ? "Mark as Unpaid"
-                                      : "Mark as Paid"
-                                  }
                                 >
-                                  {item.isPaid ? (
-                                    <FaTimesCircle size={12} />
-                                  ) : (
-                                    <FaCheckCircle size={12} />
-                                  )}
+                                  {item.isPaid ? <FaTimesCircle size={12} /> : <FaCheckCircle size={12} />}
                                 </button>
-
                                 <button
                                   onClick={() => handleDeleteItem(item)}
                                   className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                                  title="Delete"
                                 >
                                   <FaTrashAlt size={12} />
                                 </button>
