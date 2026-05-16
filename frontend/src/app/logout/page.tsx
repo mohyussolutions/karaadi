@@ -8,7 +8,7 @@ export default function LogoutPage() {
   useEffect(() => {
     socketService.disconnect();
     logout().then(() => {
-      window.location.replace("/marketplace");
+      window.location.replace("/");
     });
   }, []);
 

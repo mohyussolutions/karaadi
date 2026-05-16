@@ -29,6 +29,8 @@ export default function SocialShare({
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [fbState, setFbState] = useState<PlatformState>("loading");
   const [ttState, setTtState] = useState<PlatformState>("idle");
+  const [fbError, setFbError] = useState<string | null>(null);
+  const [ttError, setTtError] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
 
   const displayImage = isHttpUrl(imageUrl) && !imgError ? imageUrl : null;
@@ -43,7 +45,10 @@ export default function SocialShare({
   };
 
   useEffect(() => {
-    postToFacebook(payload).then((r) => setFbState(r.success ? "done" : "error"));
+    postToFacebook(payload).then((r) => {
+      setFbState(r.success ? "done" : "error");
+      if (!r.success && r.error) setFbError(r.error);
+    });
   }, []);
 
   useEffect(() => {
@@ -55,6 +60,7 @@ export default function SocialShare({
     setTtState("loading");
     const r = await postToTikTok(payload);
     setTtState(r.success ? "done" : "error");
+    if (!r.success && r.error) setTtError(r.error);
   };
 
   return (
@@ -119,7 +125,7 @@ export default function SocialShare({
               <p className="text-xs text-gray-500 flex items-center gap-1">
                 {fbState === "loading" && FB_MESSAGES.loading}
                 {fbState === "done" && <><FaCheckCircle className="text-green-500" size={11} />{FB_MESSAGES.done}</>}
-                {fbState === "error" && <><FaTimesCircle className="text-red-500" size={11} />{FB_MESSAGES.error}</>}
+                {fbState === "error" && <><FaTimesCircle className="text-red-500" size={11} />{fbError || FB_MESSAGES.error}</>}
               </p>
             </div>
             {fbState === "loading" && <Spinner color="border-blue-500" />}
@@ -140,7 +146,7 @@ export default function SocialShare({
               <p className="text-xs text-gray-500 flex items-center gap-1">
                 {ttState === "loading" && TT_MESSAGES.loading}
                 {ttState === "done" && <><FaCheckCircle className="text-green-500" size={11} />{TT_MESSAGES.done}</>}
-                {ttState === "error" && <><FaTimesCircle className="text-red-500" size={11} />{TT_MESSAGES.error}</>}
+                {ttState === "error" && <><FaTimesCircle className="text-red-500" size={11} />{ttError || TT_MESSAGES.error}</>}
                 {ttState === "idle" && TT_MESSAGES.idle}
               </p>
             </div>
