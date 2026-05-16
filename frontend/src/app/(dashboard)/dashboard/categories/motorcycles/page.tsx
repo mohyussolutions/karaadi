@@ -1,5 +1,6 @@
 "use client";
 import { getPlan, getExpiry } from "../../planUtils";
+import type { AdminMotorcycle } from "@/app/utils/types/dashboard.types";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,25 +23,6 @@ import { PLACEHOLDER_IMAGE } from "@/actions/constant/constant";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-interface AdminMotorcycle {
-  _id?: string;
-  id?: string;
-  title?: string;
-  price?: number;
-  category?: string;
-  subCategory?: string;
-  city?: string;
-  images?: string[];
-  isPaid?: boolean;
-  isBasic30?: boolean;
-  isStandard60?: boolean;
-  isPremium90?: boolean;
-  expiryDate?: string | null;
-  planId?: string | null;
-  planAmount?: number;
-  plan?: { basic30?: number; standard60?: number; premium90?: number } | null;
-  user?: { username?: string; email?: string; phone?: string } | string;
-}
 
 export default function MotorcyclesPage() {
   const { t } = useTranslation();

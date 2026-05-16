@@ -4,7 +4,7 @@ import { notifyMatchingSubscribers } from "./subscriptionController.ts";
 import { convertImages } from "src/core/utils/imageUtils.ts";
 import { CACHE_TTL } from "src/config/config.constants.ts";
 import { getPageAndSkip } from "src/hooks/usePagination.ts";
-import { getDaysUntilExpiry, formatExpiryDate, isExpired } from "src/hooks/useExpire.ts";
+import { getDaysUntilExpiry, formatExpiryDate, isExpired, getDefaultExpiryDate } from "src/hooks/useExpire.ts";
 import { AuthRequest } from "src/types/index.ts";
 import cacheManager from "src/services/redis/cacheManager.ts";
 import { checkBusinessListingLimit } from "src/core/utils/businessListingFlags.ts";
@@ -82,9 +82,24 @@ export const updateTractor = async (req: AuthRequest, res: Response) => {
     });
     let updatedTractor;
     if (Object.keys(req.body).length === 1 && req.body.isPaid !== undefined) {
+      const activating = Boolean(req.body.isPaid);
       updatedTractor = await prisma.farmequipment.update({
         where: { [FIELD_NAMES.ID]: id },
-        data: { [FIELD_NAMES.IS_PAID]: req.body.isPaid },
+        data: activating
+          ? {
+              [FIELD_NAMES.IS_PAID]: true,
+              [FIELD_NAMES.IS_BASIC_30]: true,
+              [FIELD_NAMES.IS_STANDARD_60]: false,
+              [FIELD_NAMES.IS_PREMIUM_90]: false,
+              [FIELD_NAMES.EXPIRY_DATE]: getDefaultExpiryDate(),
+            }
+          : {
+              [FIELD_NAMES.IS_PAID]: false,
+              [FIELD_NAMES.IS_BASIC_30]: false,
+              [FIELD_NAMES.IS_STANDARD_60]: false,
+              [FIELD_NAMES.IS_PREMIUM_90]: false,
+              [FIELD_NAMES.EXPIRY_DATE]: null,
+            },
         include: { [FIELD_NAMES.USER]: selectUserBasic },
       });
     } else {

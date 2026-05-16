@@ -10,66 +10,13 @@ import {
   deleteReport,
 } from "@/actions/categories/reportAction";
 import { format, formatDistanceToNow, subDays } from "date-fns";
-
-interface Report {
-  id: string;
-  reason: string;
-  details: string | null;
-  description: string | null;
-  status: string;
-  itemType: string;
-  itemId: string;
-  reporterId: string;
-  reviewedBy: string | null;
-  reviewedAt: string | null;
-  resolution: string | null;
-  createdAt: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    profileImage: string | null;
-  };
-  item?: {
-    id: string;
-    title: string;
-    price?: number;
-    images?: string[];
-  } | null;
-}
-
-interface Stats {
-  total: number;
-  new: number;
-  inProgress: number;
-  done: number;
-  resolved: number;
-  closed: number;
-  byItemType: Array<{ itemType: string; _count: number }>;
-  topReasons: Array<{ reason: string; _count: number }>;
-}
-
-interface DailyReport {
-  date: string;
-  count: number;
-  reports: Report[];
-}
-
-interface ReportParams {
-  page: number;
-  limit: number;
-  status?: string;
-  itemType?: string;
-  search?: string;
-  fromDate?: string;
-  toDate?: string;
-}
+import type { Report, ReportStats, DailyReport, ReportParams } from "@/app/utils/types/dashboard.types";
 
 export default function AdminReportsPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<ReportStats | null>(null);
   const [totalReports, setTotalReports] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

@@ -39,7 +39,21 @@ export const patchBoatIsPaid = async (req: Request, res: Response) => {
     }
     const updated = await prisma.boat.update({
       where: { [FIELD_NAMES.ID]: id },
-      data: { [FIELD_NAMES.IS_PAID]: isPaid },
+      data: isPaid
+        ? {
+            [FIELD_NAMES.IS_PAID]: true,
+            [FIELD_NAMES.IS_BASIC_30]: true,
+            [FIELD_NAMES.IS_STANDARD_60]: false,
+            [FIELD_NAMES.IS_PREMIUM_90]: false,
+            [FIELD_NAMES.EXPIRY_DATE]: getDefaultExpiryDate(),
+          }
+        : {
+            [FIELD_NAMES.IS_PAID]: false,
+            [FIELD_NAMES.IS_BASIC_30]: false,
+            [FIELD_NAMES.IS_STANDARD_60]: false,
+            [FIELD_NAMES.IS_PREMIUM_90]: false,
+            [FIELD_NAMES.EXPIRY_DATE]: null,
+          },
     });
     await cacheManager.delete(CACHE_KEYS.DETAIL(id));
     await cacheManager.delete(CACHE_KEYS.ALL_ADMIN);

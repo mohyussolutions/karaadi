@@ -23,9 +23,15 @@ export interface FarmEquipment {
   images: string[];
   isPaid: boolean;
   isActive: boolean;
+  isBasic30?: boolean;
+  isStandard60?: boolean;
+  isPremium90?: boolean;
+  expiryDate?: string | null;
+  planId?: string | null;
+  planAmount?: number;
+  plan?: { basic30?: number; standard60?: number; premium90?: number } | null;
   createdAt: string;
   updatedAt: string;
-  expiryDate?: string | null;
   user?: {
     username: string;
     email: string;

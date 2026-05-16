@@ -12,18 +12,7 @@ import {
   FiBarChart2,
   FiRefreshCw,
 } from "react-icons/fi";
-
-interface SearchItem {
-  query: string;
-  _count: { query: number };
-}
-
-interface ApiResponse {
-  data?: SearchItem[];
-  items?: SearchItem[];
-  results?: SearchItem[];
-  [key: string]: unknown;
-}
+import type { SearchItem, SearchApiResponse } from "@/app/utils/types/dashboard.types";
 
 const MostSavedSearch = () => {
   const { t } = useTranslation();
@@ -42,7 +31,7 @@ const MostSavedSearch = () => {
       if (Array.isArray(data)) {
         setPopularSearches(data);
       } else if (data && typeof data === "object") {
-        const apiData = data as ApiResponse;
+        const apiData = data as SearchApiResponse;
         if (apiData.data && Array.isArray(apiData.data)) {
           setPopularSearches(apiData.data);
         } else if (apiData.items && Array.isArray(apiData.items)) {

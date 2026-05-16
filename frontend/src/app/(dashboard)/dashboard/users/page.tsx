@@ -6,6 +6,7 @@ import {
   updateUserAction,
   User,
 } from "@/actions/categories/usersAction";
+import type { ExtendedUser } from "@/app/utils/types/dashboard.types";
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import Loading from "@/app/ui/loading/Loading";
@@ -22,11 +23,6 @@ import {
 
 const PLACEHOLDER_IMAGE = "/placeholder.png";
 
-interface ExtendedUser extends User {
-  profileImage?: string | null;
-  phone?: string | null;
-  createdAt: string;
-}
 
 const PAGE_SIZE = 20;
 
