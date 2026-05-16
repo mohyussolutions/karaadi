@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { login } from "@/actions/core/authAction";
 import { setAuthCookies } from "@/actions/core/cookieActions";
+import { getRoleHome } from "@/middleware.constants";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { useAuth } from "@/context/AuthContext";
 import { inputCls } from "@/app/utils/style/main.style";
@@ -40,7 +41,7 @@ export default function LoginForm() {
           : "user";
 
         await setAuthCookies(loggedInUser.token, loggedInUser.accessToken, role);
-        router.push(role === "admin" || role === "manager" || role === "support" ? "/dashboard" : "/marketplace");
+        router.push(getRoleHome(role));
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("auth.login.failed"));

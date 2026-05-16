@@ -5,6 +5,16 @@ export const ROLE_ROUTES = [
   { pattern: "/support", claim: "custom:isSupport" },
 ] as const;
 
+const ROLE_HOME: Record<string, string> = {
+  admin: "/dashboard",
+  manager: "/dashboard",
+  support: "/dashboard",
+};
+
+export function getRoleHome(role: string): string {
+  return ROLE_HOME[role] ?? "/marketplace";
+}
+
 export const AUTH_PREFIXES = [
   "/login",
   "/register",
