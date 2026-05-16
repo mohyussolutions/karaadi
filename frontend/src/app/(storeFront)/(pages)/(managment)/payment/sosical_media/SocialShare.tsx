@@ -43,7 +43,7 @@ export default function SocialShare({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
+    <div className="flex items-center justify-center py-10 px-2">
       <div className="w-full max-w-md bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
         <div className="flex flex-col items-center mb-6">
           <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-3">
