@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { socketService } from "@/actions/sockets/socketServiceAction";
 import { SOCKET_EVENTS } from "@/actions/constant/sockets";
 import { browserSupportsPush } from "./usePushNotifications";
-import { playNotificationSound } from "./mobile/sound";
+import { playNotificationSound, initSound } from "./mobile/sound";
 
 type MsgNotif = {
   key: string;
@@ -50,6 +50,8 @@ export default function MessageNotificationToast() {
 
   const push = (notif: MsgNotif) =>
     setQueue((prev) => [...prev.slice(-2), notif]);
+
+  useEffect(() => { initSound(); }, []);
 
   useEffect(() => {
     if (!user) return;

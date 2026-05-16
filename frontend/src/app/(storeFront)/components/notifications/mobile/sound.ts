@@ -5,11 +5,14 @@ import { Howl } from "howler";
 let soundEnabled = true;
 let howl: Howl | null = null;
 
-function getHowl(): Howl {
-  if (!howl) {
-    howl = new Howl({ src: ["/sounds/notification.wav"], volume: 0.6, preload: true });
-  }
-  return howl;
+export function initSound(): void {
+  if (howl) return;
+  howl = new Howl({
+    src: ["/sounds/notification.wav"],
+    volume: 0.6,
+    preload: true,
+    html5: true,
+  });
 }
 
 export function isSoundEnabled(): boolean {
@@ -22,5 +25,8 @@ export function setSoundEnabled(enabled: boolean): void {
 
 export function playNotificationSound(): void {
   if (!soundEnabled) return;
-  try { getHowl().play(); } catch {}
+  if (!howl) initSound();
+  try {
+    howl?.play();
+  } catch {}
 }
