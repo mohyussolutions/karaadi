@@ -10,7 +10,6 @@ class SocketService {
   private socket: Socket | null = null;
   private eventListeners: Map<string, Set<EventCallback>> = new Map();
   private isConnecting = false;
-  private userId = "";
   private readonly socketUrl: string;
 
   private constructor() {
@@ -32,7 +31,6 @@ class SocketService {
     if (this.socket?.connected) return;
     if (this.isConnecting) return;
 
-    this.userId = userId;
     this.isConnecting = true;
 
     this.socket = io(this.socketUrl, {
@@ -42,9 +40,9 @@ class SocketService {
       transports: ["polling", "websocket"],
       upgrade: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
+      reconnectionDelayMax: 30000,
       timeout: 20000,
     });
 
@@ -69,16 +67,6 @@ class SocketService {
 
     this.socket.on("reconnect_failed", () => {
       this.isConnecting = false;
-      if (this.socket) {
-        this.socket.disconnect();
-        this.socket = null;
-      }
-      setTimeout(() => {
-        if (this.userId) {
-          this.isConnecting = false;
-          this.connect(this.userId);
-        }
-      }, 5000);
     });
 
     const events = [
@@ -170,7 +158,6 @@ class SocketService {
       this.socket = null;
     }
     this.isConnecting = false;
-    this.userId = "";
     this.eventListeners.clear();
     SocketService.instance = null;
   }

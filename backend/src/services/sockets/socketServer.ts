@@ -72,3 +72,7 @@ export const getIO = () => {
   if (!io) throw new Error("Socket.io not initialized!");
   return io;
 };
+
+export const setSocketAdapter = (pubClient: any, subClient: any) => {
+  if (io) io.adapter(createAdapter(pubClient, subClient));
+};

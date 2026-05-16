@@ -7,7 +7,7 @@ import cron from "node-cron";
 
 import app from "./app.js";
 import prisma from "./core/utils/db.js";
-import { socketServer } from "./services/sockets/socketServer.js";
+import { socketServer, setSocketAdapter } from "./services/sockets/socketServer.js";
 import setupGracefulShutdown from "./core/utils/gracefulShutdown.js";
 import redisServer from "./services/redis/redisServer.ts";
 import { runBackup } from "./services/backup/dbBackup.js";
@@ -17,6 +17,7 @@ const execAsync = promisify(exec);
 const PORT = Number(process.env.PORT) || 8080;
 
 const server = http.createServer(app);
+socketServer(server);
 
 async function runMigrations() {
   try {
@@ -45,21 +46,16 @@ async function initServer() {
       const pub = redisServer.getClient();
       const sub = pub.duplicate();
       await sub.connect();
-      socketServer(server, pub, sub);
+      setSocketAdapter(pub, sub);
+      console.log(chalk.blue("[socket] Redis adapter attached"));
     } catch (redisErr: unknown) {
       const host =
         (redisErr as { socketError?: { hostname?: string }; hostname?: string })
           ?.socketError?.hostname ??
         (redisErr as { hostname?: string })?.hostname ??
         "unknown";
-      console.warn(
-        chalk.yellow(`Redis unavailable (${host}) — sockets without Redis adapter`),
-      );
-      socketServer(server);
+      console.warn(chalk.yellow(`Redis unavailable (${host}) — using in-memory adapter`));
     }
-  } else {
-    console.warn(chalk.yellow("No valid REDIS_URL — sockets without Redis adapter"));
-    socketServer(server);
   }
 
   setupGracefulShutdown({ server, prisma, redisServer });
