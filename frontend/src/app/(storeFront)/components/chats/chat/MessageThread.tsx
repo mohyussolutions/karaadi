@@ -5,6 +5,7 @@ import { Send, Loader2, ChevronLeft } from "lucide-react"
 import MessageBubble from "./MessageBubble"
 import { getChatroomMessages, sendChatMessage } from "@/services/chatProxyService"
 import { socketService } from "@/actions/sockets/socketServiceAction"
+import { playNotificationSound, initSound } from "@/app/(storeFront)/components/notifications/mobile/sound"
 import type { ChatMessage, Chatroom } from "@/app/utils/types/chat.types"
 
 interface Props {
@@ -63,6 +64,8 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     }
   }, [])
 
+  useEffect(() => { initSound() }, [])
+
   useEffect(() => {
     setLoading(true)
     getChatroomMessages(chatId, currentUserId)
@@ -116,6 +119,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
         if (prev.some((m) => m.id === mapped.id)) return prev
         return [...prev, mapped]
       })
+      if (msg.senderId !== currentUserId) playNotificationSound()
       setTimeout(() => scrollToBottom(false), 50)
       onNewMessage?.(chatId, msg.content, mapped.timestamp)
     }
@@ -189,23 +193,44 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
     }
   }, [input, sending, chatId, currentUserId, otherUserId, onNewMessage, scrollToBottom])
 
+  const emitTyping = useCallback((typing: boolean) => {
+    socketService.sendTyping(chatId, typing)
+  }, [chatId])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSend()
-      return
-    }
-    if (!typingEmitRef.current) {
-      socketService.sendTyping(chatId, true)
-      typingEmitRef.current = setTimeout(() => { typingEmitRef.current = null }, 1000)
     }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
+    const val = e.target.value
+    setInput(val)
     const ta = e.target
     ta.style.height = "auto"
     ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`
+
+    if (val) {
+      if (!typingEmitRef.current) {
+        emitTyping(true)
+      }
+      if (typingEmitRef.current) clearTimeout(typingEmitRef.current)
+      typingEmitRef.current = setTimeout(() => {
+        typingEmitRef.current = null
+        emitTyping(false)
+      }, 1500)
+    } else {
+      if (typingEmitRef.current) clearTimeout(typingEmitRef.current)
+      typingEmitRef.current = null
+      emitTyping(false)
+    }
+  }
+
+  const handleBlur = () => {
+    if (typingEmitRef.current) clearTimeout(typingEmitRef.current)
+    typingEmitRef.current = null
+    emitTyping(false)
   }
 
   return (
@@ -298,6 +323,7 @@ export default function MessageThread({ chatId, chatroom, currentUserId, onBack,
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
             placeholder="Write a message…"
             disabled={sending}
             rows={2}
