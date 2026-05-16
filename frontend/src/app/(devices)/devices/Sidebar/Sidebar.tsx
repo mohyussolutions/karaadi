@@ -1,4 +1,4 @@
-import { navItems } from "@/app/(links)/devicesLinks/devicesLinks";
+import { navItems } from "../config/links";
 import Link from "next/link";
 import { FaTimes, FaSignOutAlt } from "react-icons/fa";
 

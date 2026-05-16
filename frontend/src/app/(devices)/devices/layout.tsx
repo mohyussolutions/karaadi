@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { FaBell, FaBars, FaCog, FaUserCircle } from "react-icons/fa";
 import Sidebar from "./Sidebar/Sidebar";
-import { backToDashboard } from "@/app/(links)/devicesLinks/devicesLinks";
+import { backToDashboard } from "./config/links";
 import { useAuth } from "@/context/AuthContext";
 
 interface DevicesLayoutProps {
