@@ -41,7 +41,6 @@ export default function SummaryPaymentPage() {
     processing,
     pollAttempt,
     paymentStatus,
-    shareUrl,
     total,
     planPrice,
     itemFee,
@@ -93,12 +92,6 @@ export default function SummaryPaymentPage() {
             paymentStatus={paymentStatus}
             pollAttempt={pollAttempt}
             total={total}
-            shareUrl={shareUrl}
-            title={item.title || ""}
-            description={item.description || ""}
-            price={Number(item.price) || 0}
-            imageUrl={Array.isArray(item.images) && item.images[0] ? String(item.images[0]) : undefined}
-            category={item.mainCategory || String(item.category || "")}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
             phoneNumber={phoneNumber}

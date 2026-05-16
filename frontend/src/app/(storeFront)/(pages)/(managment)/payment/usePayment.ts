@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useIsValidPhone } from "@/app/(storeFront)/components/hooks/useIsValidPhone";
@@ -18,6 +19,8 @@ import { getDetailRoute } from "@/app/utils/getDetailRoute";
 import type { UsePaymentProps } from "@/app/utils/types/payment.types";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 
+const SOCIAL_STORAGE_KEY = "karaadi-payment-success";
+
 export function usePayment({
   item,
   plan,
@@ -26,16 +29,31 @@ export function usePayment({
   setPhoneError,
 }: UsePaymentProps) {
   const { t } = useTranslation();
-
-  const [processing, setProcessing] = useState(false);
-  const [pollAttempt, setPollAttempt] = useState(0);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
-  const [shareUrl, setShareUrl] = useState("");
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const router = useRouter();
 
   const planPrice = plan?.price || 0;
   const itemFee = item.feeAmount || 0;
   const total = itemFee + planPrice;
+
+  const [processing, setProcessing] = useState(false);
+  const [pollAttempt, setPollAttempt] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const redirectToSocial = useCallback((listingUrl: string) => {
+    const shareData = {
+      isFree: total === 0,
+      total,
+      shareUrl: listingUrl,
+      title: item.title || "",
+      description: item.description || "",
+      price: Number(item.price) || 0,
+      imageUrl: Array.isArray(item.images) && item.images[0] ? String(item.images[0]) : undefined,
+      category: item.mainCategory || String(item.category || ""),
+    };
+    sessionStorage.setItem(SOCIAL_STORAGE_KEY, JSON.stringify(shareData));
+    router.push("/payment/sosical_media");
+  }, [item, total, router]);
 
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current) {
@@ -65,9 +83,8 @@ export function usePayment({
         const origin = typeof window !== "undefined" ? window.location.origin : "";
         const itemPath = getDetailRoute({ mainCategory: item.mainCategory, id: item.id || "", category: item.category || "" } as any);
         const listingUrl = `${origin}${itemPath}`;
-        setShareUrl(listingUrl);
-        setPaymentStatus("success");
         toast.success(t("payment.success", "Payment successful! Your listing is now live."));
+        redirectToSocial(listingUrl);
       } catch {
         setProcessing(false);
         setPaymentStatus("failed");
@@ -163,9 +180,8 @@ export function usePayment({
               typeof window !== "undefined" ? window.location.origin : "";
             const itemPath2 = getDetailRoute({ mainCategory: item.mainCategory, id: item.id || "", category: item.category || "" } as any);
             const listingUrl2 = `${origin}${itemPath2}`;
-            setShareUrl(listingUrl2);
-            setPaymentStatus("success");
             toast.success(t("payment.success", "Payment successful! Your listing is now live."));
+            redirectToSocial(listingUrl2);
           } else if (statusData.status === "failed") {
             stopPolling();
             setPaymentStatus("failed");
@@ -192,7 +208,6 @@ export function usePayment({
     processing,
     pollAttempt,
     paymentStatus,
-    shareUrl,
     total,
     planPrice,
     itemFee,

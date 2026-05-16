@@ -6,19 +6,12 @@ import { FaMobileAlt } from "react-icons/fa";
 import { PAYMENT_METHODS, MAX_POLL_ATTEMPTS } from "./constants";
 import type { PaymentMethod, PaymentStatus } from "./constants";
 import { useIsFree } from "@/app/(storeFront)/components/hooks/useIsFree";
-import SocialShareSuccess from "./SocialShareSuccess";
 
 interface Props {
   processing: boolean;
   paymentStatus: PaymentStatus;
   pollAttempt: number;
   total: number;
-  shareUrl: string;
-  title: string;
-  description: string;
-  price: number;
-  imageUrl?: string;
-  category?: string;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
   phoneNumber: string;
@@ -35,12 +28,6 @@ export default function PaymentPanel({
   paymentStatus,
   pollAttempt,
   total,
-  shareUrl,
-  title,
-  description,
-  price,
-  imageUrl,
-  category,
   paymentMethod,
   setPaymentMethod,
   phoneNumber,
@@ -59,17 +46,6 @@ export default function PaymentPanel({
         paymentStatus={paymentStatus}
         pollAttempt={pollAttempt}
         handleRetry={handleRetry}
-      />
-      <SuccessOverlay
-        paymentStatus={paymentStatus}
-        isFree={isFree}
-        shareUrl={shareUrl}
-        total={total}
-        title={title}
-        description={description}
-        price={price}
-        imageUrl={imageUrl}
-        category={category}
       />
       <PanelHeader isFree={isFree} />
       <div className="p-5 space-y-5">
@@ -136,23 +112,6 @@ function PollingOverlay({
       </button>
     </div>
   );
-}
-
-function SuccessOverlay({
-  paymentStatus, isFree, shareUrl, total, title, description, price, imageUrl, category,
-}: {
-  paymentStatus: PaymentStatus;
-  isFree: boolean;
-  shareUrl: string;
-  total: number;
-  title: string;
-  description: string;
-  price: number;
-  imageUrl?: string;
-  category?: string;
-}) {
-  if (paymentStatus !== "success") return null;
-  return <SocialShareSuccess isFree={isFree} total={total} shareUrl={shareUrl} title={title} description={description} price={price} imageUrl={imageUrl} category={category} />;
 }
 
 function PanelHeader({ isFree }: { isFree: boolean }) {
@@ -226,9 +185,7 @@ function PaymentMethodSelector({
               className="w-4 h-4 accent-blue-600"
             />
             <FaMobileAlt
-              className={
-                paymentMethod === method.key ? "text-blue-500" : "text-gray-300"
-              }
+              className={paymentMethod === method.key ? "text-blue-500" : "text-gray-300"}
               size={14}
             />
             <span
@@ -279,8 +236,7 @@ function PhoneInput({
       <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
         Waafi / EVC: <strong className="text-gray-500">61</strong>XXXXXXX
         &nbsp;·&nbsp; Zaad: <strong className="text-gray-500">63</strong>XXXXXXX
-        &nbsp;·&nbsp; E-Dahab: <strong className="text-gray-500">68</strong>
-        XXXXXXX
+        &nbsp;·&nbsp; E-Dahab: <strong className="text-gray-500">68</strong>XXXXXXX
       </p>
       {phoneError && (
         <p className="text-red-500 text-xs font-medium mt-1.5">{phoneError}</p>
@@ -304,22 +260,14 @@ function FailedRetry({
     <div className="bg-red-50 border border-red-200 rounded-xl p-4">
       <p className="text-red-700 font-semibold text-sm mb-3">
         {isFree
-          ? t(
-              "payment.freeFailedMessage",
-              "Failed to confirm your listing. Please try again.",
-            )
-          : t(
-              "payment.failedMessage",
-              "Payment failed. Please check your phone and try again.",
-            )}
+          ? t("payment.freeFailedMessage", "Failed to confirm your listing. Please try again.")
+          : t("payment.failedMessage", "Payment failed. Please check your phone and try again.")}
       </p>
       <button
         onClick={handleRetry}
         className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-lg transition touch-manipulation"
       >
-        {isFree
-          ? t("payment.tryAgain", "Try Again")
-          : t("payment.retry", "Retry Payment")}
+        {isFree ? t("payment.tryAgain", "Try Again") : t("payment.retry", "Retry Payment")}
       </button>
     </div>
   );
@@ -352,9 +300,7 @@ function PaymentActions({
           onClick={handlePayment}
           disabled={processing || paymentStatus === "success"}
           className={`flex-1 py-2.5 active:scale-[0.98] text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed text-sm touch-manipulation ${
-            total === 0
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-blue-600 hover:bg-blue-700"
+            total === 0 ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
           {processing ? (

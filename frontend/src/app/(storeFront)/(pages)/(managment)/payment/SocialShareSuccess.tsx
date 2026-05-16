@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { FaCheckCircle } from "react-icons/fa";
-import { useAppDispatch } from "@/store/slices/hooks/hooks";
-import { resetFlow } from "@/store/slices/reducers/listingDraftSlice";
-import { postToFacebook, postToTikTok } from "@/actions/categories/socialPostAction";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { FaCheckCircle, FaFacebook } from "react-icons/fa";
+import {
+  postToFacebook,
+  postToTikTok,
+} from "@/actions/categories/socialPostAction";
 
 interface Props {
   isFree: boolean;
@@ -20,120 +21,166 @@ interface Props {
 
 type PlatformState = "idle" | "loading" | "done" | "error";
 
-export default function SocialShareSuccess({ isFree, total, shareUrl, title, description, price, imageUrl, category }: Props) {
-  const { t } = useTranslation();
-  const dispatch = useAppDispatch();
+const TikTokIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.12 8.12 0 0 0 4.74 1.51V6.75a4.85 4.85 0 0 1-.97-.06z" />
+  </svg>
+);
+
+export default function SocialShareSuccess({
+  isFree,
+  total,
+  shareUrl,
+  title,
+  description,
+  price,
+  imageUrl,
+  category,
+}: Props) {
   const [countdown, setCountdown] = useState(30);
   const [fbState, setFbState] = useState<PlatformState>("idle");
   const [ttState, setTtState] = useState<PlatformState>("idle");
 
+  const payload = {
+    title,
+    description,
+    price,
+    imageUrl,
+    listingUrl: shareUrl,
+    category,
+  };
+
   useEffect(() => {
-    const id = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
-    return () => clearInterval(id);
+    setFbState("loading");
+    postToFacebook(payload).then((r) =>
+      setFbState(r.success ? "done" : "error"),
+    );
   }, []);
 
   useEffect(() => {
-    if (countdown === 0) {
-      dispatch(resetFlow());
-      window.location.href = "/";
-    }
-  }, [countdown, dispatch]);
-
-  const payload = { title, description, price, imageUrl, listingUrl: shareUrl, category };
-
-  const handleFacebook = async () => {
-    setFbState("loading");
-    const result = await postToFacebook(payload);
-    setFbState(result.success ? "done" : "error");
-  };
+    const id = setInterval(
+      () => setCountdown((c) => (c > 0 ? c - 1 : 0)),
+      1000,
+    );
+    return () => clearInterval(id);
+  }, []);
 
   const handleTikTok = async () => {
     setTtState("loading");
-    const result = await postToTikTok(payload);
-    setTtState(result.success ? "done" : "error");
+    const r = await postToTikTok(payload);
+    setTtState(r.success ? "done" : "error");
   };
 
   return (
-    <div className="absolute inset-0 bg-white flex flex-col items-center justify-center rounded-2xl z-50 px-5 py-6 overflow-y-auto">
-      <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-3">
-        <FaCheckCircle className="text-green-500" size={36} />
+    <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 py-10 max-w-lg mx-auto">
+      <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4">
+        <FaCheckCircle className="text-green-500" size={38} />
       </div>
 
-      <p className="font-bold text-green-600 text-lg text-center mb-1">
-        {isFree ? t("payment.confirmedTitle", "Listing Confirmed!") : t("payment.successTitle", "Payment Successful!")}
+      <h1 className="text-2xl font-extrabold text-gray-900 text-center mb-1">
+        {isFree ? "Listing Confirmed!" : "Payment Successful!"}
+      </h1>
+      <p className="text-sm text-gray-500 text-center mb-6">
+        {isFree
+          ? "Your listing is now live."
+          : `$${total.toLocaleString()} paid — your listing is live.`}
       </p>
 
-      <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 mb-4 text-center w-full">
-        <p className="text-xs font-bold text-indigo-700 mb-0.5">
-          {t("payment.sharePrompt", "Reach more buyers — share your listing!")}
-        </p>
-        <p className="text-[10px] text-indigo-400">
-          {t("payment.shareSubPrompt", "Post to Karaadi's official social media pages")}
-        </p>
-      </div>
-
-      <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 mb-4 text-center w-full">
-        <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 mb-1">
-          {t("payment.totalAmount", "Total Amount")}
-        </p>
-        <p className={`text-2xl font-extrabold ${isFree ? "text-green-600" : "text-blue-600"}`}>
-          {isFree ? t("payment.free", "Free") : `$${total.toLocaleString()}`}
-        </p>
-      </div>
-
-      <div className="w-full space-y-3 mb-4">
-        <button
-          type="button"
-          onClick={handleFacebook}
-          disabled={fbState === "loading" || fbState === "done"}
-          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-blue-50 hover:border-blue-300 active:scale-[0.99] transition-all touch-manipulation select-none disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#1877F2]">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-              <path d="M24 12.073C24 5.445 18.627 0 12 0S0 5.445 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm">Post to Facebook</p>
-            <p className="text-xs text-gray-400">
-              {fbState === "loading" ? "Posting..." : fbState === "done" ? "✓ Posted to Karaadi Facebook page!" : fbState === "error" ? "❌ Failed — try again" : "Post on Karaadi's Facebook page"}
+      {imageUrl && (
+        <div className="w-full rounded-2xl overflow-hidden border border-gray-100 mb-6 bg-gray-50">
+          <img
+            src={imageUrl}
+            alt={title}
+            className="w-full h-44 object-cover"
+          />
+          <div className="px-4 py-3">
+            <p className="font-bold text-gray-900 text-sm truncate">{title}</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {category && <span className="capitalize">{category} · </span>}
+              {price > 0 ? `$${price.toLocaleString()}` : "Free"}
             </p>
           </div>
-          {fbState === "loading" && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />}
-          {fbState === "done" && <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />}
-        </button>
+        </div>
+      )}
+
+      <div className="w-full bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-5 text-center">
+        <p className="text-sm font-bold text-indigo-700">
+          Reach more buyers — share your listing!
+        </p>
+        <p className="text-xs text-indigo-400 mt-0.5">
+          Posted to Karaadi&apos;s official social media pages
+        </p>
+      </div>
+
+      <div className="w-full space-y-3 mb-6">
+        <div className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 bg-gray-50">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#1877F2]">
+            <FaFacebook className="text-white" size={20} />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 text-sm">Facebook</p>
+            <p className="text-xs text-gray-500">
+              {fbState === "loading" && "Posting to Karaadi Facebook page…"}
+              {fbState === "done" && "✓ Posted to Karaadi Facebook page!"}
+              {fbState === "error" &&
+                "❌ Could not post — check page credentials"}
+              {fbState === "idle" && "Karaadi Facebook page"}
+            </p>
+          </div>
+          {fbState === "loading" && (
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          )}
+          {fbState === "done" && (
+            <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />
+          )}
+        </div>
 
         <button
           type="button"
           onClick={handleTikTok}
           disabled={ttState === "loading" || ttState === "done"}
-          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-gray-50 active:scale-[0.99] transition-all touch-manipulation select-none text-left disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 hover:bg-gray-50 active:scale-[0.99] transition-all touch-manipulation disabled:opacity-60 disabled:cursor-not-allowed text-left"
         >
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-black">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.12 8.12 0 0 0 4.74 1.51V6.75a4.85 4.85 0 0 1-.97-.06z" />
-            </svg>
+            <TikTokIcon />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900 text-sm">Post to TikTok</p>
-            <p className="text-xs text-gray-400">
-              {ttState === "loading" ? "Posting..." : ttState === "done" ? "✓ Posted to Karaadi TikTok page!" : ttState === "error" ? "❌ Failed — try again" : "Post on Karaadi's TikTok page"}
+            <p className="font-bold text-gray-900 text-sm">TikTok</p>
+            <p className="text-xs text-gray-500">
+              {ttState === "loading" && "Posting to Karaadi TikTok page…"}
+              {ttState === "done" && "✓ Posted to Karaadi TikTok page!"}
+              {ttState === "error" && "❌ Could not post — check credentials"}
+              {ttState === "idle" && "Tap to post on Karaadi's TikTok page"}
             </p>
           </div>
-          {ttState === "loading" && <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />}
-          {ttState === "done" && <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />}
+          {ttState === "loading" && (
+            <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          )}
+          {ttState === "done" && (
+            <FaCheckCircle className="text-green-500 flex-shrink-0" size={16} />
+          )}
         </button>
       </div>
 
-      <a
-        href="/"
-        onClick={() => dispatch(resetFlow())}
-        className="w-full text-center py-2.5 text-sm font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition touch-manipulation"
-      >
-        {countdown > 0
-          ? t("payment.skipWithCountdown", `Skip — going home in ${countdown}s`)
-          : t("payment.goHome", "Go to homepage")}
-      </a>
+      <div className="w-full space-y-2">
+        {shareUrl && (
+          <Link
+            href={shareUrl}
+            className="flex items-center justify-center w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition touch-manipulation"
+          >
+            View My Listing
+          </Link>
+        )}
+        <Link
+          href="/marketplace"
+          className="flex items-center justify-center w-full py-2.5 border border-gray-200 text-gray-500 font-semibold rounded-xl text-sm hover:bg-gray-50 transition touch-manipulation"
+        >
+          {countdown > 0
+            ? `Go to Marketplace (${countdown}s)`
+            : "Go to Marketplace"}
+        </Link>
+      </div>
     </div>
   );
 }
