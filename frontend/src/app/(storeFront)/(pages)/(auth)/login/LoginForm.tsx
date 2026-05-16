@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { login } from "@/actions/core/authAction";
 import { setAuthCookies } from "@/actions/core/cookieActions";
-import { getRoleHome } from "@/middleware.constants";
+import { resolveRole, getRoleHome } from "./constants.login";
 import PasswordToggle from "../PasswordVisibility/PasswordToggle";
 import { useAuth } from "@/context/AuthContext";
 import { inputCls } from "@/app/utils/style/main.style";
@@ -31,15 +31,7 @@ export default function LoginForm() {
 
       if (loggedInUser) {
         setUser(loggedInUser);
-
-        const role = loggedInUser.isAdmin
-          ? "admin"
-          : loggedInUser.isManager
-          ? "manager"
-          : loggedInUser.isSupport
-          ? "support"
-          : "user";
-
+        const role = resolveRole(loggedInUser);
         await setAuthCookies(loggedInUser.token, loggedInUser.accessToken, role);
         router.push(getRoleHome(role));
       }
