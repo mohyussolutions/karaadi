@@ -10,8 +10,10 @@ import {
   logoutAllSessions,
   logoutSession,
   getLoginHistory,
+  deleteLoginHistoryEntry,
+  clearLoginHistory,
 } from "@/actions/categories/session";
-import { Monitor, Smartphone, Tablet, Globe, Clock } from "lucide-react";
+import { Monitor, Smartphone, Tablet, Globe, Clock, Trash2 } from "lucide-react";
 
 interface Device {
   id: string;
@@ -112,6 +114,19 @@ const Security: React.FC = () => {
     } catch {}
   };
 
+  const handleDeleteHistoryEntry = async (id: number) => {
+    setLoginHistory((prev) => prev.filter((e) => e.id !== id));
+    const token = user?.accessToken || user?.token;
+    await deleteLoginHistoryEntry(id, token);
+  };
+
+  const handleClearHistory = async () => {
+    if (!confirm("Clear all sign-in history?")) return;
+    setLoginHistory([]);
+    const token = user?.accessToken || user?.token;
+    await clearLoginHistory(token);
+  };
+
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear === 2025 ? "2025" : `2025–${currentYear}`;
 
@@ -179,9 +194,19 @@ const Security: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
-          <p className="font-bold text-gray-900 text-sm">Recent sign-in activity</p>
-          <p className="text-xs text-gray-400 mt-0.5">Last 20 logins to your account</p>
+        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
+          <div>
+            <p className="font-bold text-gray-900 text-sm">Recent sign-in activity</p>
+            <p className="text-xs text-gray-400 mt-0.5">Last 20 logins to your account</p>
+          </div>
+          {loginHistory.length > 0 && (
+            <button
+              onClick={handleClearHistory}
+              className="px-3 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition"
+            >
+              Clear all
+            </button>
+          )}
         </div>
 
         <div className="divide-y divide-gray-50">
@@ -206,6 +231,13 @@ const Security: React.FC = () => {
                     </span>
                   </div>
                 </div>
+                <button
+                  onClick={() => handleDeleteHistoryEntry(entry.id)}
+                  className="p-1.5 text-gray-300 hover:text-red-500 transition flex-shrink-0"
+                  aria-label="Delete record"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))
           ) : (

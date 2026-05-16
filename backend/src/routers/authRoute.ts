@@ -18,6 +18,8 @@ import {
   deleteUserByAdmin,
   userSignupsByMonth,
   getLoginHistory,
+  deleteLoginHistoryEntry,
+  clearLoginHistory,
   getActiveSessions,
   revokeSession,
   revokeAllSessions,
@@ -121,6 +123,8 @@ authRouters.get("/total-users", ProtectRoute, adminAndManager, getUsersCount);
 
 authRouters.get("/me", ProtectRoute, getUserProfile);
 authRouters.get("/login-history", ProtectRoute, getLoginHistory);
+authRouters.delete("/login-history/:id", ProtectRoute, deleteLoginHistoryEntry);
+authRouters.delete("/login-history", ProtectRoute, clearLoginHistory);
 authRouters.get("/sessions", ProtectRoute, getActiveSessions);
 authRouters.post("/sessions/logout-all", ProtectRoute, revokeAllSessions);
 authRouters.post("/sessions/:id/logout", ProtectRoute, revokeSession);

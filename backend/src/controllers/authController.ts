@@ -527,6 +527,30 @@ export const getLoginHistory = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteLoginHistoryEntry = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid id" });
+    await prisma.loginHistory.deleteMany({ where: { id, userId } });
+    res.json({ ok: true });
+  } catch (error: any) {
+    serverError(res, error);
+  }
+};
+
+export const clearLoginHistory = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    await prisma.loginHistory.deleteMany({ where: { userId } });
+    res.json({ ok: true });
+  } catch (error: any) {
+    serverError(res, error);
+  }
+};
+
 function tokenHash(token: string): string {
   return token.slice(-40);
 }

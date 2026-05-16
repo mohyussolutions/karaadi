@@ -45,6 +45,34 @@ export async function logoutAllSessions(accessToken?: string) {
   }
 }
 
+export async function deleteLoginHistoryEntry(id: number, accessToken?: string) {
+  try {
+    const headers = await getAuthHeaders(accessToken);
+    const res = await fetch(`${AUTH_ENDPOINTS.LOGIN_HISTORY}/${id}`, {
+      method: "DELETE",
+      headers: headers as HeadersInit,
+      cache: "no-store",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function clearLoginHistory(accessToken?: string) {
+  try {
+    const headers = await getAuthHeaders(accessToken);
+    const res = await fetch(AUTH_ENDPOINTS.LOGIN_HISTORY, {
+      method: "DELETE",
+      headers: headers as HeadersInit,
+      cache: "no-store",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function getLoginHistory(accessToken?: string) {
   try {
     const headers = await getAuthHeaders(accessToken);
