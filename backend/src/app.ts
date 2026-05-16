@@ -201,6 +201,7 @@ apiRouter.get("/dashboard/geo", getDashboardGeo);
 app.use("/api", apiRouter);
 
 app.use((req: express.Request, res: express.Response) => {
+  if (res.headersSent || (req.url || "").startsWith("/socket.io")) return;
   const msg =
     typeof (req as any).t === "function"
       ? (req as any).t("api_errors.not_found")

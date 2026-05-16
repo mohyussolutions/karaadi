@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import { getNavItems } from "@/app/(links)/storeFrontLinks/MainLinks";
 import Lang from "@/i18n/Lang";
 import { useTranslation } from "react-i18next";
@@ -9,6 +10,7 @@ import { useLanguage } from "@/app/(storeFront)/components/hooks/useLanguage";
 import { useMessageCount } from "@/app/(storeFront)/components/hooks/useMessageCount";
 import { useNavNotificationCount } from "@/app/(storeFront)/components/hooks/useNavNotificationCount";
 import { useAuth } from "@/context/AuthContext";
+import { getClientCookie } from "@/app/ui/invoices/slugify";
 import {
   ROUTE_NEW_AD,
   ROUTE_MESSAGES,
@@ -34,10 +36,17 @@ const NavItems = ({
   const userId = user?.id || user?._id || user?.sub;
   const isUserValid = Boolean(userId);
 
+  const [hasCookie, setHasCookie] = useState(false);
+  useEffect(() => {
+    setHasCookie(Boolean(getClientCookie("accessToken")));
+  }, [user]);
+
   const { notificationCount } = useNavNotificationCount(userId);
   const { messageCount } = useMessageCount(userId);
 
-  const isAuthenticated = authLoading ? (initialIsAuthenticated ?? false) : isUserValid;
+  const isAuthenticated = authLoading
+    ? (initialIsAuthenticated ?? false)
+    : (isUserValid || hasCookie);
 
   const navItems = getNavItems(isAuthenticated, notificationCount);
   const isNewAd = (href: string) => href === ROUTE_NEW_AD;
