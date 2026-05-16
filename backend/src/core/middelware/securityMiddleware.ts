@@ -16,6 +16,7 @@ export const setupSecurity = (app: express.Application) => {
           SECURITY_CONFIG.ALLOWED_ORIGINS.includes(origin) ||
           /\.vercel\.app$/.test(origin) ||
           /\.amplifyapp\.com$/.test(origin) ||
+          /\.onrender\.com$/.test(origin) ||
           /^https?:\/\/(www\.)?karaadi\.com$/.test(origin);
         if (isAllowed) {
           callback(null, true);

@@ -12,7 +12,7 @@ export const SECURITY_CONFIG = {
 
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",")
-    : ["http://localhost:3000", "http://localhost:3001"],
+    : ["http://localhost:3000", "http://localhost:3000"],
 
   GLOBAL_LIMIT_WINDOW: getEnvNumber("GLOBAL_LIMIT_WINDOW", 15 * 60 * 1000),
   GLOBAL_LIMIT_MAX: getEnvNumber("GLOBAL_LIMIT_MAX", 500),

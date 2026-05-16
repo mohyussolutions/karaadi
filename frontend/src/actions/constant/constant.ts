@@ -81,9 +81,11 @@ const API_PATHS = {
   CONTACT_US: "/api/contactUs",
   BUSINESSES: "/api/businesses",
   BUSINESS_PLANS: "/api/business-plans",
+  VISITORS: "/api/visitors",
 } as const;
 
 export const SEARCH_ENDPOINT = createEndpoint("/api/search");
+export const TRACK_VISITOR_ENDPOINT = createEndpoint(`${API_PATHS.VISITORS}/track-user`);
 
 export const AUTH_ENDPOINTS = {
   USERS_BASE: createEndpoint(API_PATHS.USERS),

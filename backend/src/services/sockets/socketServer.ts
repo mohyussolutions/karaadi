@@ -36,6 +36,7 @@ export const socketServer = (server: any, pubClient?: any, subClient?: any) => {
           allowedOrigins.includes(origin) ||
           /\.vercel\.app$/.test(origin) ||
           /\.amplifyapp\.com$/.test(origin) ||
+          /\.onrender\.com$/.test(origin) ||
           /^https?:\/\/(www\.)?karaadi\.com$/.test(origin);
         callback(isAllowed ? null : new Error("Not allowed by CORS"), isAllowed);
       },
