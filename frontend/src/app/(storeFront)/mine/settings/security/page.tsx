@@ -121,7 +121,6 @@ const Security: React.FC = () => {
   };
 
   const handleClearHistory = async () => {
-    if (!confirm("Clear all sign-in history?")) return;
     setLoginHistory([]);
     const token = user?.accessToken || user?.token;
     await clearLoginHistory(token);

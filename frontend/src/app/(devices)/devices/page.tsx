@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   fetchVisitors,
   deleteVisitor,
@@ -148,7 +148,6 @@ export default function DevicesPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this visitor record?")) return;
     const prev = [...visitors];
     setVisitors((v) => v.filter((x) => x.id !== id));
     const ok = await deleteVisitor(id);
