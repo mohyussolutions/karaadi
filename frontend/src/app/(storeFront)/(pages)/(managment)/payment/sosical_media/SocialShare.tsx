@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaCheckCircle, FaFacebook, FaTimesCircle } from "react-icons/fa";
+import { FaCheckCircle, FaFacebook, FaTimesCircle, FaTag } from "react-icons/fa";
+import { MdImageNotSupported } from "react-icons/md";
 import { postToFacebook, postToTikTok } from "@/actions/categories/socialPostAction";
 import type { SocialPostPayload } from "@/actions/categories/socialPostAction";
 import type { ShareData, PlatformState } from "./types";
@@ -18,14 +19,28 @@ const Spinner = ({ color }: { color: string }) => (
   <div className={`w-4 h-4 border-2 ${color} border-t-transparent rounded-full animate-spin flex-shrink-0`} />
 );
 
+function isHttpUrl(url?: string): boolean {
+  return !!url && (url.startsWith("http://") || url.startsWith("https://"));
+}
+
 export default function SocialShare({
   isFree, total, shareUrl, title, description, price, imageUrl, category,
 }: ShareData) {
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [fbState, setFbState] = useState<PlatformState>("loading");
   const [ttState, setTtState] = useState<PlatformState>("idle");
+  const [imgError, setImgError] = useState(false);
 
-  const payload: SocialPostPayload = { title, description, price, imageUrl, listingUrl: shareUrl, category };
+  const displayImage = isHttpUrl(imageUrl) && !imgError ? imageUrl : null;
+
+  const payload: SocialPostPayload = {
+    title,
+    description,
+    price,
+    imageUrl: isHttpUrl(imageUrl) ? imageUrl : undefined,
+    listingUrl: shareUrl,
+    category,
+  };
 
   useEffect(() => {
     postToFacebook(payload).then((r) => setFbState(r.success ? "done" : "error"));
@@ -43,39 +58,58 @@ export default function SocialShare({
   };
 
   return (
-    <div className="flex items-center justify-center py-10 px-2">
+    <div className="flex items-center justify-center py-8 px-2">
       <div className="w-full max-w-md bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-3">
-            <FaCheckCircle className="text-green-500" size={38} />
+
+        <div className="flex flex-col items-center mb-5">
+          <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-3">
+            <FaCheckCircle className="text-green-500" size={32} />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 text-center">
+          <h1 className="text-xl font-extrabold text-gray-900 text-center">
             {isFree ? "Listing Confirmed!" : "Payment Successful!"}
           </h1>
-          <p className="text-sm text-gray-500 text-center mt-1">
-            {isFree ? "Your listing is now live on Karaadi." : `$${total.toLocaleString()} paid — your listing is live.`}
+          <p className="text-xs text-gray-500 text-center mt-1">
+            {isFree ? "Your listing is live on Karaadi." : `$${total.toLocaleString()} paid — your listing is live.`}
           </p>
         </div>
 
-        {imageUrl && (
-          <div className="w-full rounded-2xl overflow-hidden border border-gray-100 mb-5">
-            <img src={imageUrl} alt={title} className="w-full h-44 object-cover" />
-            <div className="px-4 py-3 bg-gray-50">
-              <p className="font-bold text-gray-900 text-sm truncate">{title}</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {category && <span className="capitalize">{category} · </span>}
+        <div className="w-full rounded-2xl overflow-hidden border border-gray-100 mb-5 bg-gray-50">
+          {displayImage ? (
+            <img
+              src={displayImage}
+              alt={title}
+              className="w-full h-44 object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="w-full h-36 flex items-center justify-center bg-gray-100">
+              <MdImageNotSupported size={36} className="text-gray-300" />
+            </div>
+          )}
+          <div className="px-4 py-3">
+            <p className="font-bold text-gray-900 text-sm leading-snug">
+              {title || "Your Listing"}
+            </p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {category && (
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full capitalize">
+                  {category}
+                </span>
+              )}
+              <span className="flex items-center gap-1 text-xs font-bold text-gray-700">
+                <FaTag size={10} className="text-gray-400" />
                 {price > 0 ? `$${price.toLocaleString()}` : "Free"}
-              </p>
+              </span>
             </div>
           </div>
-        )}
+        </div>
 
         <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-5 text-center">
           <p className="text-sm font-bold text-indigo-700">Reach more buyers — share your listing!</p>
           <p className="text-xs text-indigo-400 mt-0.5">Posting to Karaadi&apos;s official social media pages</p>
         </div>
 
-        <div className="space-y-3 mb-6">
+        <div className="space-y-3 mb-5">
           <div className="flex items-center gap-3 w-full border border-gray-200 rounded-xl p-4 bg-gray-50/60">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#1877F2]">
               <FaFacebook className="text-white" size={20} />
