@@ -12,7 +12,7 @@ const COOKIE_EXPIRY = 365;
 
 const getSavedLanguage = (): LanguageCode => {
   if (typeof window === "undefined") return "so";
-  const saved = localStorage.getItem(COOKIE_NAME) || Cookies.get(COOKIE_NAME);
+  const saved = Cookies.get(COOKIE_NAME);
   if (saved === "en" || saved === "so") return saved;
   return "so";
 };
@@ -29,7 +29,6 @@ export const languageSlice = createSlice({
       state.currentLanguage = action.payload;
       if (typeof window !== "undefined") {
         Cookies.set(COOKIE_NAME, action.payload, { expires: COOKIE_EXPIRY });
-        localStorage.setItem(COOKIE_NAME, action.payload);
       }
     },
     toggleLanguage: (state) => {

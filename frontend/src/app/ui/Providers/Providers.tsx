@@ -21,10 +21,7 @@ function I18nSync({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const cookie = Cookies.get(COOKIE_NAME) as "en" | "so" | undefined;
-    const ls = (() => { try { return localStorage.getItem(COOKIE_NAME) } catch { return null } })();
-    const saved = (cookie === "so" || cookie === "en") ? cookie
-      : (ls === "so" || ls === "en") ? ls as "en" | "so"
-      : null;
+    const saved = (cookie === "so" || cookie === "en") ? cookie : null;
     if (saved && i18n.language !== saved) {
       dispatch(hydrateLanguage(saved));
       i18n.changeLanguage(saved);

@@ -11,7 +11,7 @@ export default function PushPermissionBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const d = localStorage.getItem("karaadi:push:dismissed");
+    const d = sessionStorage.getItem("karaadi:push:dismissed");
     if (d === "true") setDismissed(true);
   }, []);
 
@@ -22,7 +22,7 @@ export default function PushPermissionBanner() {
   if (!browserSupportsPush()) return null;
 
   const dismiss = () => {
-    localStorage.setItem("karaadi:push:dismissed", "true");
+    sessionStorage.setItem("karaadi:push:dismissed", "true");
     setDismissed(true);
   };
 

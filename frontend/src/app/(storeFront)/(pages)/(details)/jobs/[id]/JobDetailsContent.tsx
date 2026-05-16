@@ -69,14 +69,9 @@ export default function JobDetailsContent({ initialData }: Props) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
-  const [userEmail, setUserEmail] = useState<string>("");
+  const userEmail = user?.email || "";
   const [showModal, setShowModal] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
-
-  useEffect(() => {
-    const email = localStorage.getItem("userEmail") || "";
-    setUserEmail(email);
-  }, []);
 
   useEffect(() => {
     if (!job?.salary) return;
@@ -93,7 +88,7 @@ export default function JobDetailsContent({ initialData }: Props) {
   }, [job]);
 
   const handleApplyClick = useCallback(() => {
-    const email = userEmail || localStorage.getItem("userEmail") || "";
+    const email = userEmail;
     const baseUrl = `/jobs/application/${id}`;
     const url = email ? `${baseUrl}?email=${encodeURIComponent(email)}` : baseUrl;
     router.push(url);

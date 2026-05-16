@@ -43,27 +43,19 @@ interface LocationSelectorProps {
   desktopOnly?: boolean;
 }
 
-const CACHE_KEY = "geo_data_cache";
 const CACHE_DURATION = 30 * 60 * 1000;
 
+let geoMemCache: { regions: Region[]; cities: City[]; timestamp: number } | null = null;
+
 const getCachedData = () => {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) {
-      const { regions, cities, timestamp } = JSON.parse(raw);
-      if (Date.now() - timestamp < CACHE_DURATION) return { regions, cities };
-    }
-  } catch {}
+  if (geoMemCache && Date.now() - geoMemCache.timestamp < CACHE_DURATION) {
+    return { regions: geoMemCache.regions, cities: geoMemCache.cities };
+  }
   return null;
 };
 
 const setCachedData = (regions: Region[], cities: City[]) => {
-  try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ regions, cities, timestamp: Date.now() }),
-    );
-  } catch {}
+  geoMemCache = { regions, cities, timestamp: Date.now() };
 };
 
 export default function LocationSelector({

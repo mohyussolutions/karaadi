@@ -1,10 +1,12 @@
+import Cookies from "js-cookie";
+
 export const VISITOR_ID_KEY = "karaadi_vid";
 
 export function getVisitorId(): string {
-  let id = localStorage.getItem(VISITOR_ID_KEY);
+  let id = Cookies.get(VISITOR_ID_KEY);
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem(VISITOR_ID_KEY, id);
+    Cookies.set(VISITOR_ID_KEY, id, { expires: 365 });
   }
   return id;
 }

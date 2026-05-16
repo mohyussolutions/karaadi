@@ -34,7 +34,7 @@ const CarPolicy = (state: PolicyState): PolicyState => {
     Number(state.baseFee) + Number(state.planPrice) + Number(state.taxPrice),
   );
 
-  localStorage.setItem("carCart", JSON.stringify(state));
+  sessionStorage.setItem("carCart", JSON.stringify(state));
 
   return state;
 };

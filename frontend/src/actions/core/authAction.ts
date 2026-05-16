@@ -65,16 +65,6 @@ export async function logout(): Promise<void> {
 
   clearAuthCache();
 
-  if (typeof localStorage !== "undefined") {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-  }
-  if (typeof sessionStorage !== "undefined") {
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("refreshToken");
-    sessionStorage.removeItem("user");
-  }
-
   await Promise.allSettled([
     clearCookiesServer(),
     fetch(apiUrls.LOGOUT, {

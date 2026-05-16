@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import Cookies from "js-cookie";
 
 export type ThemeMode = "light" | "dark";
 
@@ -6,12 +7,12 @@ interface ThemeState {
   mode: ThemeMode;
 }
 
+const THEME_KEY = "dashboard-theme";
+
 const getInitialTheme = (): ThemeMode => {
   if (typeof window === "undefined") return "light";
-  try {
-    const saved = localStorage.getItem("dashboard-theme");
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {}
+  const saved = Cookies.get(THEME_KEY);
+  if (saved === "light" || saved === "dark") return saved;
   return "light";
 };
 
@@ -21,15 +22,11 @@ const themeSlice = createSlice({
   reducers: {
     toggleTheme: (state) => {
       state.mode = state.mode === "light" ? "dark" : "light";
-      if (typeof window !== "undefined") {
-        localStorage.setItem("dashboard-theme", state.mode);
-      }
+      Cookies.set(THEME_KEY, state.mode, { expires: 365 });
     },
     setTheme: (state, action: PayloadAction<ThemeMode>) => {
       state.mode = action.payload;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("dashboard-theme", state.mode);
-      }
+      Cookies.set(THEME_KEY, action.payload, { expires: 365 });
     },
   },
 });

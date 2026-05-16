@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSans.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var m=localStorage.getItem('dashboard-theme');if(m==='dark')document.documentElement.classList.add('dark');}catch(e){}})();` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var m=document.cookie.match(/dashboard-theme=([^;]+)/);if(m&&m[1]==='dark')document.documentElement.classList.add('dark');}catch(e){}})();` }} />
       </head>
       <body
         className="antialiased min-h-screen flex flex-col text-[#1A1A1A]"
