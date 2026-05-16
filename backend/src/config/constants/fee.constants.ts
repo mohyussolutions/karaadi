@@ -76,3 +76,30 @@ export const SYSTEM_CONFIG_KEYS = [
   "waafiFee",
   "currency",
 ] as const;
+
+export const SYSTEM_CONFIG_FIELD = {
+  TAX_RATE: "taxRate",
+  PLATFORM_FEE: "platformFee",
+  WAAFI_FEE: "waafiFee",
+  CURRENCY: "currency",
+} as const;
+
+export const SYSTEM_CONFIG_NUMERIC_FIELDS = new Set<string>([
+  "taxRate",
+  "platformFee",
+  "waafiFee",
+]);
+
+export const BP_DURATIONS = {
+  BASIC: 30,
+  STANDARD: 60,
+  PREMIUM: 90,
+} as const;
+
+export const BP_NAMES = {
+  BASIC: "30-Day Plan",
+  STANDARD: "60-Day Plan",
+  PREMIUM: "90-Day Plan",
+} as const;
+
+export const FEE_TAKE = 20;
