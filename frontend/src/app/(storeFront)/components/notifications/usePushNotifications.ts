@@ -7,27 +7,9 @@ import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { setEnabled, setSubscribed, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
 import { toast } from "react-toastify";
 import { BASE_API_URL as API } from "@/actions/constant/BASE_API_URL";
+import { browserSupportsPush, needsIOSInstallPrompt } from "./config/platforms";
 
-export function browserSupportsPush() {
-  return (
-    typeof window !== "undefined" &&
-    "Notification" in window &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window
-  );
-}
-
-export function isIOSSafariWithoutPWA() {
-  if (typeof window === "undefined") return false;
-  const ios =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  if (!ios) return false;
-  return !(
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as any).standalone === true
-  );
-}
+export { browserSupportsPush, needsIOSInstallPrompt as isIOSSafariWithoutPWA };
 
 async function getVapidKey(): Promise<string> {
   const res = await fetch(`${API}/api/push/vapid-public-key`);
@@ -37,7 +19,7 @@ async function getVapidKey(): Promise<string> {
   return data.publicKey;
 }
 
-function urlB64ToUint8Array(base64String: string) {
+function urlB64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(base64);
@@ -76,7 +58,6 @@ export function usePushNotifications() {
 
       await navigator.serviceWorker.register("/sw.js");
       const reg = await navigator.serviceWorker.ready;
-
       const existingSub = await reg.pushManager.getSubscription();
       if (existingSub) await existingSub.unsubscribe();
 
@@ -98,7 +79,6 @@ export function usePushNotifications() {
       dispatch(setSubscribed(true));
       toast.success("Notifications enabled!");
     } catch (err) {
-      console.error("[push] subscribe failed:", err);
       dispatch(setSubscribed(false));
       dispatch(setEnabled(false));
       const msg = err instanceof Error ? err.message : String(err);
@@ -136,8 +116,7 @@ export function usePushNotifications() {
       dispatch(setEnabled(false));
       dispatch(setSubscribed(false));
       toast.success("Notifications turned off.");
-    } catch (err) {
-      console.error("[push] unsubscribe failed:", err);
+    } catch {
       dispatch(setEnabled(true));
       toast.error("Could not turn off notifications. Please try again.");
     } finally {
