@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
 import { setEnabled, setSubscribed, setPermission, setLoading } from "@/store/slices/reducers/pushNotificationSlice";
 import { toast } from "react-toastify";
 import { BASE_API_URL as API } from "@/actions/constant/BASE_API_URL";
-import { browserSupportsPush, needsIOSInstallPrompt } from "./config/platforms";
+import { browserSupportsPush, needsIOSInstallPrompt } from "./mobile/platforms";
 import { registerSW, resubscribeOnRenewal } from "./config/sw-registration";
 
 export { browserSupportsPush, needsIOSInstallPrompt as isIOSSafariWithoutPWA };

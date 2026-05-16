@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { socketService } from "@/actions/sockets/socketServiceAction";
 import { SOCKET_EVENTS } from "@/actions/constant/sockets";
 import { browserSupportsPush } from "./usePushNotifications";
+import { playNotificationSound } from "./mobile/sound";
 
 type MsgNotif = {
   key: string;
@@ -65,6 +66,7 @@ export default function MessageNotificationToast() {
       recentChats.current.add(msg.chatId);
       setTimeout(() => recentChats.current.delete(msg.chatId), 8000);
 
+      playNotificationSound();
       push({
         key: `${msg.id ?? Date.now()}-${Math.random()}`,
         href: `/messages/${msg.chatId}`,
@@ -88,6 +90,7 @@ export default function MessageNotificationToast() {
       const pathMatch = url?.match(/\/messages\/(\d+)/);
       const chatId = pathMatch ? Number(pathMatch[1]) : 0;
       if (chatId && recentChats.current.has(chatId)) return;
+      playNotificationSound();
       push({
         key: `sw-${Date.now()}-${Math.random()}`,
         href: url || "/messages",

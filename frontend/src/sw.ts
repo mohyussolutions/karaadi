@@ -8,7 +8,7 @@ type PushData = {
   tag?: string;
 };
 
-const sw = self as ServiceWorkerGlobalScope;
+const sw = self as unknown as ServiceWorkerGlobalScope;
 
 sw.addEventListener("install", () => sw.skipWaiting());
 
