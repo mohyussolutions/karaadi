@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import { useAppDispatch, useAppSelector } from "@/store/slices/hooks/hooks";
-import {
-  toggleSound,
-  hydrateFromStorage,
-} from "@/store/slices/reducers/notificationSettingsSlice";
+import { toggleSound } from "@/store/slices/reducers/notificationSettingsSlice";
 import { playNotificationSound, initSound } from "./mobile/sound";
+import { useEffect } from "react";
 
 export default function SoundToggle() {
   const dispatch = useAppDispatch();
@@ -16,13 +13,12 @@ export default function SoundToggle() {
   );
 
   useEffect(() => {
-    dispatch(hydrateFromStorage());
     initSound();
-  }, [dispatch]);
+  }, []);
 
   const handleToggle = () => {
-    dispatch(toggleSound());
     const willBeEnabled = !soundEnabled;
+    dispatch(toggleSound());
     if (willBeEnabled) playNotificationSound();
   };
 

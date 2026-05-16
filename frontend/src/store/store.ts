@@ -31,13 +31,13 @@ function createNoopStorage() {
 
 const storage =
   typeof window !== "undefined"
-    ? createWebStorage("session")
+    ? createWebStorage("local")
     : createNoopStorage();
 
 const persistConfig = {
   key: "karaadi-root-v4",
   storage,
-  whitelist: ["listingDraft"],
+  whitelist: ["listingDraft", "notificationSettings"],
   transforms: [listingDraftTransform],
 };
 

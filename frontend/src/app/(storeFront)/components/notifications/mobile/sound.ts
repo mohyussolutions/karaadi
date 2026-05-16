@@ -1,7 +1,6 @@
 "use client";
 
 import { Howl } from "howler";
-import { soundStorage } from "@/store/slices/reducers/notificationSettingsSlice";
 
 let howl: Howl | null = null;
 
@@ -15,8 +14,17 @@ export function initSound(): void {
   });
 }
 
+function isSoundEnabled(): boolean {
+  try {
+    const { store } = require("@/store/store");
+    return store.getState().notificationSettings.soundEnabled;
+  } catch {
+    return true;
+  }
+}
+
 export function playNotificationSound(): void {
-  if (!soundStorage.get()) return;
+  if (!isSoundEnabled()) return;
   if (!howl) initSound();
   try {
     howl?.play();
