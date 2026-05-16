@@ -3,6 +3,7 @@
 import ProfileCard from "./ProfileCard";
 import AccountOptionsClient from "./AccountOptionsClient";
 import { useAuth } from "@/context/AuthContext";
+import { logout } from "@/actions/core/authAction";
 
 function MineSkeleton() {
   return (
@@ -23,11 +24,38 @@ function MineSkeleton() {
   );
 }
 
+function MineError() {
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/login";
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4 text-center">
+      <p className="text-gray-500 text-sm">Could not load your profile. Try refreshing.</p>
+      <div className="flex gap-3">
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+        >
+          Refresh
+        </button>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 text-sm rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MyAccountCards() {
   const { user, loading } = useAuth();
 
   if (loading) return <MineSkeleton />;
-  if (!user) return <MineSkeleton />;
+  if (!user) return <MineError />;
 
   return (
     <>

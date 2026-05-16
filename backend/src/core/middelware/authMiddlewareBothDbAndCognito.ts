@@ -28,10 +28,7 @@ const loadUserAndSession = async (sub: string, token: string) => {
   }
 
   const user = await prisma.user.findUnique({ where: { cognitoId: sub } });
-  if (!user) {
-    await cacheManager.set(cacheKey, { user: null, valid: false }, CACHE_TTL.AUTH).catch(() => {});
-    return null;
-  }
+  if (!user) return null;
 
   const newExpiry = new Date(Date.now() + SESSION_TIME_MS);
   const session = await prisma.cookie.findUnique({ where: { userId: user.id } });
