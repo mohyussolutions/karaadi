@@ -39,11 +39,12 @@ class SocketService {
       auth: { userId },
       withCredentials: true,
       path: "/socket.io/",
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      upgrade: true,
       reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 8000,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
       timeout: 20000,
     });
 
