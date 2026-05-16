@@ -19,22 +19,38 @@ sw.addEventListener("activate", (event) =>
 sw.addEventListener("push", (event) => {
   const e = event as PushEvent;
   if (!e.data) return;
-  const data = e.data.json() as PushData;
+
+  let data: PushData = {};
+  try {
+    data = e.data.json() as PushData;
+  } catch {
+    data = { title: "Karaadi", body: e.data.text() };
+  }
+
+  const options: NotificationOptions = {
+    body: data.body || "",
+    icon: data.icon || "/logo.jpg",
+    data: { url: data.url || "/messages" },
+    tag: data.tag || "karaadi",
+  };
 
   (e as ExtendableEvent).waitUntil(
     sw.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       clients.forEach((c) => c.postMessage({ type: "push", data }));
-      return sw.registration.showNotification(data.title || "Karaadi", {
-        body: data.body || "",
-        icon: data.icon || "/logo.jpg",
-        badge: "/logo.jpg",
-        data: { url: data.url || "/messages" },
-        tag: data.tag || "karaadi",
-        renotify: true,
-        vibrate: [200, 100, 200],
-        requireInteraction: false,
-      } as NotificationOptions & { vibrate: number[]; badge: string; renotify: boolean });
+      return sw.registration.showNotification(data.title || "Karaadi", options);
     }),
+  );
+});
+
+sw.addEventListener("pushsubscriptionchange", (event) => {
+  const e = event as ExtendableEvent & {
+    oldSubscription?: PushSubscription;
+    newSubscription?: PushSubscription;
+  };
+  e.waitUntil(
+    sw.registration.pushManager
+      .subscribe({ userVisibleOnly: true, applicationServerKey: e.oldSubscription?.options?.applicationServerKey })
+      .catch(() => {}),
   );
 });
 
@@ -48,8 +64,7 @@ sw.addEventListener("notificationclick", (event) => {
       .then((list) => {
         const existing = list.find((c) => {
           try {
-            const clientUrl = new URL(c.url);
-            return clientUrl.pathname.startsWith(url.split("?")[0]);
+            return new URL(c.url).pathname.startsWith(url.split("?")[0]);
           } catch {
             return c.url.includes(url);
           }

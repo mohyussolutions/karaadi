@@ -8,6 +8,7 @@ import { setEnabled, setSubscribed, setPermission, setLoading } from "@/store/sl
 import { toast } from "react-toastify";
 import { BASE_API_URL as API } from "@/actions/constant/BASE_API_URL";
 import { browserSupportsPush, needsIOSInstallPrompt } from "./config/platforms";
+import { registerSW, resubscribeOnRenewal } from "./config/sw-registration";
 
 export { browserSupportsPush, needsIOSInstallPrompt as isIOSSafariWithoutPWA };
 
@@ -34,7 +35,7 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!browserSupportsPush()) return;
     dispatch(setPermission(Notification.permission));
-    navigator.serviceWorker.getRegistration().then((reg) => {
+    registerSW().then((reg) => {
       reg?.pushManager.getSubscription().then((sub) => {
         const active = !!sub && Notification.permission === "granted";
         dispatch(setSubscribed(active));
@@ -56,7 +57,7 @@ export function usePushNotifications() {
         return;
       }
 
-      await navigator.serviceWorker.register("/sw.js");
+      await registerSW();
       const reg = await navigator.serviceWorker.ready;
       const existingSub = await reg.pushManager.getSubscription();
       if (existingSub) await existingSub.unsubscribe();
@@ -78,6 +79,7 @@ export function usePushNotifications() {
       dispatch(setEnabled(true));
       dispatch(setSubscribed(true));
       toast.success("Notifications enabled!");
+      resubscribeOnRenewal(String(userId), headers as Record<string, string>);
     } catch (err) {
       dispatch(setSubscribed(false));
       dispatch(setEnabled(false));

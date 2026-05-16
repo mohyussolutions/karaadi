@@ -14,7 +14,16 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Karaadi",
   description: "iska gad ama soo gado alaabo",
-  icons: { icon: "/logo.jpg" },
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Karaadi",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
