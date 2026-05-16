@@ -1,4 +1,5 @@
 "use client";
+import { getPlan, getExpiry } from "../../planUtils";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,6 +32,13 @@ interface AdminMotorcycle {
   city?: string;
   images?: string[];
   isPaid?: boolean;
+  isBasic30?: boolean;
+  isStandard60?: boolean;
+  isPremium90?: boolean;
+  expiryDate?: string | null;
+  planId?: string | null;
+  planAmount?: number;
+  plan?: { basic30?: number; standard60?: number; premium90?: number } | null;
   user?: { username?: string; email?: string; phone?: string } | string;
 }
 
@@ -128,15 +136,6 @@ export default function MotorcyclesPage() {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.onerror = null;
     e.currentTarget.style.display = "none";
-  };
-
-  const getPlan = (item: any) =>
-    item.isPremium90 ? "Premium 90" : item.isStandard60 ? "Standard 60" : item.isBasic30 ? "Basic 30" : "—";
-
-  const getExpiry = (item: any) => {
-    if (!item.expiryDate) return { label: "—", expired: false };
-    const d = new Date(item.expiryDate);
-    return { label: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), expired: d < new Date() };
   };
 
   if (error && items.length === 0) {

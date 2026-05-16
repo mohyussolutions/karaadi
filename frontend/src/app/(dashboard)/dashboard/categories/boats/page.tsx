@@ -1,4 +1,5 @@
 "use client";
+import { getPlan, getExpiry } from "../../planUtils";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -104,15 +105,6 @@ export default function BoatPages() {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.onerror = null;
     e.currentTarget.style.display = "none";
-  };
-
-  const getPlan = (item: any) =>
-    item.isPremium90 ? "Premium 90" : item.isStandard60 ? "Standard 60" : item.isBasic30 ? "Basic 30" : "—";
-
-  const getExpiry = (item: any) => {
-    if (!item.expiryDate) return { label: "—", expired: false };
-    const d = new Date(item.expiryDate);
-    return { label: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), expired: d < new Date() };
   };
 
   if (error && boats.length === 0) {
