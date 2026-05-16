@@ -6,6 +6,7 @@ import Link from "next/link";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import PushToggle from "@/app/(storeFront)/components/notifications/PushToggle";
+import SoundToggle from "@/app/(storeFront)/components/notifications/SoundToggle";
 
 const Settings: React.FC = () => {
   const { t } = useTranslation();
@@ -16,8 +17,9 @@ const Settings: React.FC = () => {
         <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
           <p className="font-bold text-gray-900 text-sm">Notifications</p>
         </div>
-        <div className="px-5">
+        <div className="px-5 divide-y divide-gray-100">
           <PushToggle />
+          <SoundToggle />
         </div>
       </div>
 

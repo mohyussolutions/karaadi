@@ -2,8 +2,6 @@
 
 import ProfileCard from "./ProfileCard";
 import AccountOptionsClient from "./AccountOptionsClient";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 function MineSkeleton() {
@@ -27,16 +25,9 @@ function MineSkeleton() {
 
 export default function MyAccountCards() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-    }
-  }, [user, loading, router]);
 
   if (loading) return <MineSkeleton />;
-  if (!user) return null;
+  if (!user) return <MineSkeleton />;
 
   return (
     <>

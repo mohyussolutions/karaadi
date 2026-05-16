@@ -1,3 +1,5 @@
+const SOUND_KEY = "karaadi_notification_sound";
+
 let ctx: AudioContext | null = null;
 
 function getContext(): AudioContext | null {
@@ -6,7 +8,20 @@ function getContext(): AudioContext | null {
   return ctx;
 }
 
+export function isSoundEnabled(): boolean {
+  if (typeof localStorage === "undefined") return true;
+  const val = localStorage.getItem(SOUND_KEY);
+  return val === null ? true : val === "true";
+}
+
+export function setSoundEnabled(enabled: boolean): void {
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(SOUND_KEY, String(enabled));
+  }
+}
+
 export function playNotificationSound(): void {
+  if (!isSoundEnabled()) return;
   try {
     const context = getContext();
     if (!context) return;

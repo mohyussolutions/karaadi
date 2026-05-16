@@ -75,9 +75,9 @@ export const ProtectRoute = async (
       return res.status(401).json({ message: "Session expired or not found" });
 
     const isProd = process.env.NODE_ENV === "production";
-    const opts = COOKIE_OPTS(isProd);
-    res.cookie("idToken", token, opts);
-    res.cookie("accessToken", token, opts);
+    const base = { sameSite: (isProd ? "none" : "lax") as "none" | "lax", secure: isProd, maxAge: SESSION_TIME_MS };
+    res.cookie("idToken", token, { ...base, httpOnly: true });
+    res.cookie("accessToken", token, { ...base, httpOnly: false });
 
     req.user = {
       ...user,
