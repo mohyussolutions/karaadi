@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data) setCachedSession(data);
         setPendingSession(null);
-        setUser(data ?? null);
+        setUser((prev) => (prev !== null ? prev : (data ?? null)));
         setLoading(false);
       })
       .catch(() => {
