@@ -20,7 +20,7 @@ const ProfileCard = ({ user, accessToken }: ProfileCardProps) => {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    window.location.replace("/");
   };
 
   const handleEditProfile = () => {

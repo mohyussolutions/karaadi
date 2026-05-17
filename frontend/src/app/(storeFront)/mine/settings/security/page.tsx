@@ -88,7 +88,7 @@ const Security: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    window.location.replace("/");
   };
 
   const handleLogoutAllDevices = async () => {
@@ -99,7 +99,7 @@ const Security: React.FC = () => {
       await logoutAllSessions(token);
       await logout();
       setActiveDevices([]);
-      router.push("/login");
+      window.location.replace("/");
     } catch {
     } finally {
       setIsLoggingOut(false);
