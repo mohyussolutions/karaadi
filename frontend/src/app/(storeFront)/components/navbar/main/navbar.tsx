@@ -6,7 +6,10 @@ import NavItems from "./MainLinks";
 
 const Navbar = ({ initialIsAuthenticated }: { initialIsAuthenticated?: boolean }) => {
   return (
-    <nav className="fixed top-0 left-0 w-full z-[9999] bg-white border-b border-gray-200 pointer-events-auto">
+    <nav
+      className="fixed top-0 left-0 w-full z-[9999] bg-white border-b border-gray-200 pointer-events-auto"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
       <div
         className="flex justify-between items-center max-w-[64.5rem] w-full mx-auto px-3 sm:px-4 md:px-6 h-12"
       >

@@ -26,7 +26,7 @@ export default async function StoreFrontLayout({
       <StoreFrontThemeReset />
       <LanguageSync />
       <Navbar initialIsAuthenticated={initialIsAuthenticated} />
-      <main className="flex-grow pt-14 bg-[#FEFDFD]">
+      <main className="flex-grow bg-[#FEFDFD]" style={{ paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }}>
         <Suspense fallback={null}>
           <TrackVisitor />
         </Suspense>
