@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ROLE_ROUTES, AUTH_PREFIXES, PUBLIC_PREFIXES } from "./middleware.constants";
+import {
+  ROLE_ROUTES,
+  AUTH_PREFIXES,
+  PUBLIC_PREFIXES,
+} from "./middleware.constants";
 
 function decodeJwt(token: string): Record<string, unknown> {
   const base64Url = token.split(".")[1];
@@ -8,7 +12,9 @@ function decodeJwt(token: string): Record<string, unknown> {
   return JSON.parse(atob(base64));
 }
 
-function getTokenClaims(token: string | undefined): Record<string, unknown> | null {
+function getTokenClaims(
+  token: string | undefined,
+): Record<string, unknown> | null {
   if (!token) return null;
   try {
     return decodeJwt(token);
@@ -51,7 +57,9 @@ export function middleware(req: NextRequest) {
       const c = getClaims();
       if (!c) return NextResponse.redirect(loginUrl);
       if (c[route.claim as string] !== "true") {
-        const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
+        const ownRoute = ROLE_ROUTES.find(
+          (r) => c[r.claim as string] === "true",
+        );
         return NextResponse.redirect(
           new URL(ownRoute ? ownRoute.pattern : "/login", req.url),
         );
@@ -64,11 +72,17 @@ export function middleware(req: NextRequest) {
   const isAuthPage = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isAuthPage) {
-    const c = idToken && !isTokenExpired(idToken) ? getTokenClaims(idToken) : null;
+    const c =
+      idToken && !isTokenExpired(idToken) ? getTokenClaims(idToken) : null;
     if (c) {
       const ownRoute = ROLE_ROUTES.find((r) => c[r.claim as string] === "true");
+      const nextParam = req.nextUrl.searchParams.get("next");
+      const safeNext =
+        nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+          ? nextParam
+          : null;
       return NextResponse.redirect(
-        new URL(ownRoute ? ownRoute.pattern : "/marketplace", req.url),
+        new URL(ownRoute ? ownRoute.pattern : (safeNext ?? "/"), req.url),
       );
     }
   }
@@ -85,5 +99,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api|.*\\..*|_next/data).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api|.*\\..*|_next/data).*)",
+  ],
 };

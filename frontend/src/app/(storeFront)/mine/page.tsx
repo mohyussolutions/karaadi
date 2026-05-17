@@ -15,7 +15,7 @@ export default function MyAccountCards() {
       for (const name of ["accessToken", "user-role"]) {
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
       }
-      router.replace("/login");
+      router.replace("/login?next=/mine");
     }
   }, [loading, user, router]);
 
