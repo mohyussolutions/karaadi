@@ -7,7 +7,7 @@ export const LIMITS = {
   URL: 2000,
   PRICE_MAX: 100_000_000,
   IMAGE_BYTES: 2_097_152,
-  IMAGES_COUNT: 10,
+  IMAGES_COUNT: 15,
 } as const;
 
 const STRIP_TAGS = /<[^>]*>/g;
@@ -31,7 +31,10 @@ export const title = z
 export const description = z
   .string()
   .min(5, "Description must be at least 5 characters")
-  .max(LIMITS.DESCRIPTION, `Description must be at most ${LIMITS.DESCRIPTION} characters`)
+  .max(
+    LIMITS.DESCRIPTION,
+    `Description must be at most ${LIMITS.DESCRIPTION} characters`,
+  )
   .transform(strip);
 
 export const shortStr = (label = "Field") =>
@@ -42,11 +45,7 @@ export const shortStr = (label = "Field") =>
     .transform(strip);
 
 export const optShortStr = () =>
-  z
-    .string()
-    .max(LIMITS.SHORT)
-    .transform(strip)
-    .optional();
+  z.string().max(LIMITS.SHORT).transform(strip).optional();
 
 export const price = (min = 0) =>
   z
@@ -67,4 +66,6 @@ export const safeImage = z
     "Invalid image format — only JPEG, PNG, WebP, GIF or HTTPS URLs are allowed",
   );
 
-export const images = z.array(safeImage).max(LIMITS.IMAGES_COUNT, "Maximum 10 images allowed");
+export const images = z
+  .array(safeImage)
+  .max(LIMITS.IMAGES_COUNT, "Maximum 15 images allowed");

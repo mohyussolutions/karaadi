@@ -59,7 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateUser = (newUser: RawUserData | null) => {
-    if (newUser) setCachedSession(newUser);
+    if (newUser) {
+      setCachedSession(newUser);
+      setLoading(false);
+    }
     setUser(newUser);
   };
 

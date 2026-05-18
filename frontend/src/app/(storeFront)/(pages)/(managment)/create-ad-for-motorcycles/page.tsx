@@ -4,5 +4,5 @@ import MotorcyclesForm from "@/app/(storeFront)/components/forms/MotorcyclesForm
 
 export default function CreateAdForMotorcyclesPage() {
   const router = useRouter();
-  return <MotorcyclesForm onNext={() => router.push("/plan")} />;
+  return <MotorcyclesForm onNext={() => router.push("/plan")} maxCount={8} />;
 }

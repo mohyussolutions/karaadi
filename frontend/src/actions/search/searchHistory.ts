@@ -1,5 +1,3 @@
-"use client";
-
 import { SEARCH_HISTORY_ENDPOINTS } from "@/actions/constant/constant";
 import { getAuthHeaders } from "@/app/(storeFront)/components/hooks/useAuthheaders";
 

@@ -4,5 +4,5 @@ import FarmEquipmentForm from "@/app/(storeFront)/components/forms/FarmEquipment
 
 export default function CreateAdForFarmEquipmentPage() {
   const router = useRouter();
-  return <FarmEquipmentForm onNext={() => router.push("/plan")} />;
+  return <FarmEquipmentForm onNext={() => router.push("/plan")} maxCount={8} />;
 }

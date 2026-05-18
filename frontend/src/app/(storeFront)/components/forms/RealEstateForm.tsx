@@ -40,7 +40,10 @@ const RE_FEE_MAPPING: Record<string, string> = {
 const PROPERTY_TYPES = [
   { key: "apartment", tKey: "createRealEstate.propertyTypes.apartment" },
   { key: "houseVilla", tKey: "createRealEstate.propertyTypes.houseVilla" },
-  { key: "commercialSpace", tKey: "createRealEstate.propertyTypes.commercialSpace" },
+  {
+    key: "commercialSpace",
+    tKey: "createRealEstate.propertyTypes.commercialSpace",
+  },
   { key: "land", tKey: "createRealEstate.propertyTypes.land" },
   { key: "warehouse", tKey: "createRealEstate.propertyTypes.warehouse" },
   { key: "farm", tKey: "createRealEstate.propertyTypes.farm" },
@@ -60,7 +63,15 @@ const AMENITIES_LIST = [
   { key: "Parking", tKey: "createRealEstate.parkingLabel" },
 ];
 
-export default function RealEstateForm({ onNext, businessId }: { onNext: () => void; businessId?: string }) {
+export default function RealEstateForm({
+  onNext,
+  businessId,
+  maxCount,
+}: {
+  onNext: () => void;
+  businessId?: string;
+  maxCount?: number;
+}) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
@@ -71,13 +82,24 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
   const [dataLoading, setDataLoading] = useState(true);
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
-  const { images, addImages, removeImage, toBase64 } = useImageUpload();
+  const { images, addImages, removeImage, toBase64 } = useImageUpload(maxCount);
   const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     mainCategory: "Real Estate",
-    category: typeof savedItem.category === "string" ? savedItem.category : Array.isArray(savedItem.category) && savedItem.category.length > 0 ? savedItem.category[0] : "",
-    subCategory: typeof savedItem.subCategory === "string" ? savedItem.subCategory : Array.isArray(savedItem.subCategory) && savedItem.subCategory.length > 0 ? savedItem.subCategory[0] : "",
+    category:
+      typeof savedItem.category === "string"
+        ? savedItem.category
+        : Array.isArray(savedItem.category) && savedItem.category.length > 0
+          ? savedItem.category[0]
+          : "",
+    subCategory:
+      typeof savedItem.subCategory === "string"
+        ? savedItem.subCategory
+        : Array.isArray(savedItem.subCategory) &&
+            savedItem.subCategory.length > 0
+          ? savedItem.subCategory[0]
+          : "",
     title: savedItem.title || "",
     description: savedItem.description || "",
     price: savedItem.price || "",
@@ -105,34 +127,54 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
   useEffect(() => {
     const load = async () => {
       try {
-        const [regs, cits, feeRes] = await Promise.all([getAllRegions(), getAllCities(), getRealEstateFees()]);
+        const [regs, cits, feeRes] = await Promise.all([
+          getAllRegions(),
+          getAllCities(),
+          getRealEstateFees(),
+        ]);
         setRegions(regs || []);
         setAllCities(cits || []);
-        setActiveFeeConfig(Array.isArray(feeRes) ? feeRes[0] || {} : feeRes || {});
-      } catch {} finally { setDataLoading(false); }
+        setActiveFeeConfig(
+          Array.isArray(feeRes) ? feeRes[0] || {} : feeRes || {},
+        );
+      } catch {
+      } finally {
+        setDataLoading(false);
+      }
     };
     load();
   }, []);
 
-  const getFee = useCallback((cat: string) => {
-    if (!activeFeeConfig) return 0;
-    return Number(activeFeeConfig[RE_FEE_MAPPING[cat]] || 0);
-  }, [activeFeeConfig]);
+  const getFee = useCallback(
+    (cat: string) => {
+      if (!activeFeeConfig) return 0;
+      return Number(activeFeeConfig[RE_FEE_MAPPING[cat]] || 0);
+    },
+    [activeFeeConfig],
+  );
 
   const getNestedSubcategories = () => {
     if (!formData.category) return [];
     return (nesCategories.categoryNestedMap as any)[formData.category] || [];
   };
 
-  const toggleAmenity = (a: string) => setFormData((p) => ({
-    ...p,
-    amenities: p.amenities.includes(a) ? p.amenities.filter((x) => x !== a) : [...p.amenities, a],
-  }));
+  const toggleAmenity = (a: string) =>
+    setFormData((p) => ({
+      ...p,
+      amenities: p.amenities.includes(a)
+        ? p.amenities.filter((x) => x !== a)
+        : [...p.amenities, a],
+    }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || isLoading) return;
-    if (["category", "title", "description", "price", "region", "city"].some((k) => !(formData as any)[k]) || images.length === 0) {
+    if (
+      ["category", "title", "description", "price", "region", "city"].some(
+        (k) => !(formData as any)[k],
+      ) ||
+      images.length === 0
+    ) {
       return toast.error(t("createRealEstate.fillRequired"));
     }
     setIsLoading(true);
@@ -155,7 +197,9 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
         bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
         bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
         floor: formData.floor ? Number(formData.floor) : undefined,
-        totalFloors: formData.totalFloors ? Number(formData.totalFloors) : undefined,
+        totalFloors: formData.totalFloors
+          ? Number(formData.totalFloors)
+          : undefined,
         furnished: formData.furnished,
         parking: formData.parking,
         hasGarage: formData.hasGarage,
@@ -171,25 +215,59 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
         feeAmount: fee,
         businessId: businessId || undefined,
       };
-      const result: any = await createRealEstate(payload as any, user.token || (user as any).accessToken);
+      const result: any = await createRealEstate(
+        payload as any,
+        user.token || (user as any).accessToken,
+      );
       const createdId = result.id || result._id;
       if (result.success && createdId) {
-        toast.update(toastId, { render: t("createRealEstate.submittedSuccess"), type: "success", isLoading: false, autoClose: 2000 });
+        toast.update(toastId, {
+          render: t("createRealEstate.submittedSuccess"),
+          type: "success",
+          isLoading: false,
+          autoClose: 2000,
+        });
         dispatch(updateItem({ ...payload, id: String(createdId) }));
         setTimeout(() => onNext(), 1200);
       } else {
-        toast.update(toastId, { render: result.message || t("createRealEstate.submitError"), type: "error", isLoading: false, autoClose: 3000 });
+        toast.update(toastId, {
+          render: result.message || t("createRealEstate.submitError"),
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
       }
     } catch {
-      toast.update(toastId, { render: t("createRealEstate.submitError"), type: "error", isLoading: false, autoClose: 3000 });
-    } finally { setIsLoading(false); }
+      toast.update(toastId, {
+        render: t("createRealEstate.submitError"),
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (authLoading || dataLoading) return <div className="h-screen flex items-center justify-center"><Loading /></div>;
+  if (authLoading || dataLoading)
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
 
-  const reCatOptions = RE_CATEGORIES.map((c) => ({ value: c.key, label: t(c.tKey) }));
-  const subCatOptions = getNestedSubcategories().map((s: any) => ({ value: s.labelKey || s.key || s, label: t(s.labelKey || s.name || s) }));
-  const propTypeOptions = PROPERTY_TYPES.map((p) => ({ value: p.key, label: t(p.tKey) }));
+  const reCatOptions = RE_CATEGORIES.map((c) => ({
+    value: c.key,
+    label: t(c.tKey),
+  }));
+  const subCatOptions = getNestedSubcategories().map((s: any) => ({
+    value: s.labelKey || s.key || s,
+    label: t(s.labelKey || s.name || s),
+  }));
+  const propTypeOptions = PROPERTY_TYPES.map((p) => ({
+    value: p.key,
+    label: t(p.tKey),
+  }));
   const regionOptions = regions.map((r) => ({ value: r.id, label: r.name }));
 
   return (
@@ -199,30 +277,45 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
         <div className="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <FaHome className="text-4xl text-blue-600" />
         </div>
-        <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">{t("createRealEstate.pageTitle")}</h1>
+        <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
+          {t("createRealEstate.pageTitle")}
+        </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.mainCategory")}</label>
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            {t("createRealEstate.mainCategory")}
+          </label>
           <div className="flex items-center gap-3 w-full border-2 border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
             <FaHome className="text-blue-500" />
-            <input type="text" readOnly value={t("createRealEstate.title")} className="bg-transparent outline-none font-black text-blue-700 w-full" />
+            <input
+              type="text"
+              readOnly
+              value={t("createRealEstate.title")}
+              className="bg-transparent outline-none font-black text-blue-700 w-full"
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.category")}</label>
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              {t("createRealEstate.category")}
+            </label>
             <SelectField
               value={formData.category}
-              onChange={(v) => setFormData({ ...formData, category: v, subCategory: "" })}
+              onChange={(v) =>
+                setFormData({ ...formData, category: v, subCategory: "" })
+              }
               options={reCatOptions}
               placeholder={t("createRealEstate.selectCategory")}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.subcategoryLabel")}</label>
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              {t("createRealEstate.subcategoryLabel")}
+            </label>
             <SelectField
               value={formData.subCategory}
               onChange={(v) => setFormData({ ...formData, subCategory: v })}
@@ -234,40 +327,104 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.titleLabel")}</label>
-          <input placeholder={t("createRealEstate.titleInputPlaceholder")} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} maxLength={200} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" required />
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            {t("createRealEstate.titleLabel")}
+          </label>
+          <input
+            placeholder={t("createRealEstate.titleInputPlaceholder")}
+            value={formData.title}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
+            maxLength={200}
+            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+            required
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.propertyTypeLabel")}</label>
-            <SelectField value={formData.propertyType} onChange={(v) => setFormData({ ...formData, propertyType: v })} options={propTypeOptions} placeholder={t("createRealEstate.selectPropertyType")} />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              {t("createRealEstate.propertyTypeLabel")}
+            </label>
+            <SelectField
+              value={formData.propertyType}
+              onChange={(v) => setFormData({ ...formData, propertyType: v })}
+              options={propTypeOptions}
+              placeholder={t("createRealEstate.selectPropertyType")}
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.sizeSqmLabel")}</label>
-            <input type="number" placeholder={t("createRealEstate.sizeSqmPlaceholder")} value={formData.sizeSqm} onChange={(e) => setFormData({ ...formData, sizeSqm: e.target.value })} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              {t("createRealEstate.sizeSqmLabel")}
+            </label>
+            <input
+              type="number"
+              placeholder={t("createRealEstate.sizeSqmPlaceholder")}
+              value={formData.sizeSqm}
+              onChange={(e) =>
+                setFormData({ ...formData, sizeSqm: e.target.value })
+              }
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {(["bedrooms", "bathrooms", "floor", "totalFloors"] as const).map((k) => (
-            <div key={k} className="space-y-1">
-              <label className="text-[10px] font-black text-gray-400 uppercase">{t(`createRealEstate.${k}Label`)}</label>
-              <input type="number" placeholder={t(`createRealEstate.${k}Placeholder`)} value={(formData as any)[k]} onChange={(e) => setFormData({ ...formData, [k]: e.target.value })} className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500" />
-            </div>
-          ))}
+          {(["bedrooms", "bathrooms", "floor", "totalFloors"] as const).map(
+            (k) => (
+              <div key={k} className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase">
+                  {t(`createRealEstate.${k}Label`)}
+                </label>
+                <input
+                  type="number"
+                  placeholder={t(`createRealEstate.${k}Placeholder`)}
+                  value={(formData as any)[k]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [k]: e.target.value })
+                  }
+                  className="w-full border-2 border-gray-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500"
+                />
+              </div>
+            ),
+          )}
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-gray-400 uppercase tracking-wider">{t("createRealEstate.furnishedLabel")} · {t("createRealEstate.parkingLabel")} · {t("createRealEstate.garageLabel")} · {t("createRealEstate.gardenLabel")}</span>
-            <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">{t("createRealEstate.optional")}</span>
+            <span className="text-xs font-black text-gray-400 uppercase tracking-wider">
+              {t("createRealEstate.furnishedLabel")} ·{" "}
+              {t("createRealEstate.parkingLabel")} ·{" "}
+              {t("createRealEstate.garageLabel")} ·{" "}
+              {t("createRealEstate.gardenLabel")}
+            </span>
+            <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">
+              {t("createRealEstate.optional")}
+            </span>
           </div>
           <div className="flex flex-wrap gap-6">
-            {[{ key: "furnished", tKey: "createRealEstate.furnishedLabel" }, { key: "parking", tKey: "createRealEstate.parkingLabel" }, { key: "hasGarage", tKey: "createRealEstate.garageLabel" }, { key: "hasGarden", tKey: "createRealEstate.gardenLabel" }].map(({ key, tKey }) => (
-              <label key={key} className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={(formData as any)[key]} onChange={(e) => setFormData({ ...formData, [key]: e.target.checked })} className="w-5 h-5 accent-blue-600" />
-                <span className="font-black text-gray-700 text-sm uppercase tracking-wide">{t(tKey)}</span>
+            {[
+              { key: "furnished", tKey: "createRealEstate.furnishedLabel" },
+              { key: "parking", tKey: "createRealEstate.parkingLabel" },
+              { key: "hasGarage", tKey: "createRealEstate.garageLabel" },
+              { key: "hasGarden", tKey: "createRealEstate.gardenLabel" },
+            ].map(({ key, tKey }) => (
+              <label
+                key={key}
+                className="flex items-center gap-3 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={(formData as any)[key]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [key]: e.target.checked })
+                  }
+                  className="w-5 h-5 accent-blue-600"
+                />
+                <span className="font-black text-gray-700 text-sm uppercase tracking-wide">
+                  {t(tKey)}
+                </span>
               </label>
             ))}
           </div>
@@ -275,14 +432,28 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
 
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider">{t("createRealEstate.amenitiesLabel")}</label>
-            <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">{t("createRealEstate.optional")}</span>
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider">
+              {t("createRealEstate.amenitiesLabel")}
+            </label>
+            <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">
+              {t("createRealEstate.optional")}
+            </span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {AMENITIES_LIST.map(({ key, tKey }) => (
-              <label key={key} className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.amenities.includes(key) ? "border-blue-500 bg-blue-50" : "border-gray-100 bg-gray-50 hover:border-blue-200"}`}>
-                <input type="checkbox" checked={formData.amenities.includes(key)} onChange={() => toggleAmenity(key)} className="w-4 h-4 accent-blue-600" />
-                <span className="text-xs font-bold text-gray-700">{t(tKey)}</span>
+              <label
+                key={key}
+                className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.amenities.includes(key) ? "border-blue-500 bg-blue-50" : "border-gray-100 bg-gray-50 hover:border-blue-200"}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.amenities.includes(key)}
+                  onChange={() => toggleAmenity(key)}
+                  className="w-4 h-4 accent-blue-600"
+                />
+                <span className="text-xs font-bold text-gray-700">
+                  {t(tKey)}
+                </span>
               </label>
             ))}
           </div>
@@ -290,46 +461,124 @@ export default function RealEstateForm({ onNext, businessId }: { onNext: () => v
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.descriptionLabel")}</label>
-            <textarea placeholder={t("createRealEstate.descriptionPlaceholder")} rows={5} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} maxLength={5000} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold" required />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              {t("createRealEstate.descriptionLabel")}
+            </label>
+            <textarea
+              placeholder={t("createRealEstate.descriptionPlaceholder")}
+              rows={5}
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              maxLength={5000}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none font-bold"
+              required
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.regionLabel")}</label>
-            <SelectField value={formData.region} onChange={(v) => setFormData({ ...formData, region: v, city: "" })} options={regionOptions} placeholder={t("createRealEstate.selectRegion")} />
+            <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+              {t("createRealEstate.regionLabel")}
+            </label>
+            <SelectField
+              value={formData.region}
+              onChange={(v) =>
+                setFormData({ ...formData, region: v, city: "" })
+              }
+              options={regionOptions}
+              placeholder={t("createRealEstate.selectRegion")}
+            />
           </div>
         </div>
 
-        <CitySelect regionId={formData.region} cities={allCities} value={formData.city} onChange={(name) => setFormData({ ...formData, city: name })} onCitiesUpdate={(u) => setAllCities(u)} disabled={!formData.region} label={t("createRealEstate.cityLabel")} />
+        <CitySelect
+          regionId={formData.region}
+          cities={allCities}
+          value={formData.city}
+          onChange={(name) => setFormData({ ...formData, city: name })}
+          onCitiesUpdate={(u) => setAllCities(u)}
+          disabled={!formData.region}
+          label={t("createRealEstate.cityLabel")}
+        />
 
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">{t("createRealEstate.addressLabel")}</label>
-          <input placeholder={t("createRealEstate.addressPlaceholder")} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} maxLength={100} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" />
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+            {t("createRealEstate.addressLabel")}
+          </label>
+          <input
+            placeholder={t("createRealEstate.addressPlaceholder")}
+            value={formData.address}
+            onChange={(e) =>
+              setFormData({ ...formData, address: e.target.value })
+            }
+            maxLength={100}
+            className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+          />
         </div>
 
         {businessId && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Website</label>
-              <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">Optional</span>
+              <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+                Website
+              </label>
+              <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">
+                Optional
+              </span>
             </div>
-            <input type="url" placeholder="https://yourwebsite.com" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} maxLength={512} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" />
+            <input
+              type="url"
+              placeholder="https://yourwebsite.com"
+              value={formData.website}
+              onChange={(e) =>
+                setFormData({ ...formData, website: e.target.value })
+              }
+              maxLength={512}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+            />
           </div>
         )}
 
         <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t("createRealEstate.priceLabel")}</label>
+          <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+            {t("createRealEstate.priceLabel")}
+          </label>
           <div className="relative">
             <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 text-xl" />
-            <input type="number" placeholder={t("createRealEstate.pricePlaceholder")} value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} min={0} max={100000000} className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500" required />
+            <input
+              type="number"
+              placeholder={t("createRealEstate.pricePlaceholder")}
+              value={formData.price}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
+              min={0}
+              max={100000000}
+              className="w-full border-2 border-gray-100 bg-gray-50 pl-12 pr-4 py-4 rounded-2xl font-bold text-blue-600 outline-none focus:border-blue-500"
+              required
+            />
           </div>
         </div>
 
         <div className="p-6 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
-          <ImageUpload images={images} onAdd={addImages} onRemove={removeImage} label={t("createRealEstate.upload")} />
+          <ImageUpload
+            images={images}
+            onAdd={addImages}
+            onRemove={removeImage}
+            label={t("createRealEstate.upload")}
+          />
         </div>
 
-        <button type="submit" disabled={isLoading} className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-gray-200 flex items-center justify-center">
-          {isLoading ? <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" /> : t("createRealEstate.submit")}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-gray-200 flex items-center justify-center"
+        >
+          {isLoading ? (
+            <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full" />
+          ) : (
+            t("createRealEstate.submit")
+          )}
         </button>
       </form>
     </div>

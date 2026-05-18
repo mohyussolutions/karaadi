@@ -5,5 +5,5 @@ import MarketplaceForm from "@/app/(storeFront)/components/forms/MarketplaceForm
 
 export default function MarketplaceFormWrapper() {
   const router = useRouter();
-  return <MarketplaceForm onNext={() => router.push("/plan")} />;
+  return <MarketplaceForm onNext={() => router.push("/plan")} maxCount={8} />;
 }

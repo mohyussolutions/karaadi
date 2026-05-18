@@ -51,9 +51,11 @@ const CONDITION_VALUES: Record<string, string> = {
 export default function CarsForm({
   onNext,
   businessId,
+  maxCount,
 }: {
   onNext: () => void;
   businessId?: string;
+  maxCount?: number;
 }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -65,7 +67,7 @@ export default function CarsForm({
   const [dataLoading, setDataLoading] = useState(true);
   const [regions, setRegions] = useState<any[]>([]);
   const [allCities, setAllCities] = useState<any[]>([]);
-  const { images, addImages, removeImage, toBase64 } = useImageUpload();
+  const { images, addImages, removeImage, toBase64 } = useImageUpload(maxCount);
   const [activeFeeConfig, setActiveFeeConfig] = useState<any>(null);
 
   const [formData, setFormData] = useState({
@@ -514,10 +516,23 @@ export default function CarsForm({
         {businessId && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">Website</label>
-              <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">Optional</span>
+              <label className="text-xs font-black text-gray-400 uppercase tracking-wider ml-1">
+                Website
+              </label>
+              <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-50 px-2 py-0.5 rounded-full">
+                Optional
+              </span>
             </div>
-            <input type="url" placeholder="https://yourwebsite.com" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} maxLength={512} className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold" />
+            <input
+              type="url"
+              placeholder="https://yourwebsite.com"
+              value={formData.website}
+              onChange={(e) =>
+                setFormData({ ...formData, website: e.target.value })
+              }
+              maxLength={512}
+              className="w-full border-2 border-gray-100 bg-gray-50 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+            />
           </div>
         )}
 

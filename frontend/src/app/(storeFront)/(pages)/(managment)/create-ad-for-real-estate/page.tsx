@@ -4,5 +4,5 @@ import RealEstateForm from "@/app/(storeFront)/components/forms/RealEstateForm";
 
 export default function CreateAdForRealEstatePage() {
   const router = useRouter();
-  return <RealEstateForm onNext={() => router.push("/plan")} />;
+  return <RealEstateForm onNext={() => router.push("/plan")} maxCount={8} />;
 }

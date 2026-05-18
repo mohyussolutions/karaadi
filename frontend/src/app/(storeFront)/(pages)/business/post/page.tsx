@@ -27,11 +27,21 @@ export default function PostPage() {
   const businessIdParam = searchParams.get("businessId") ?? "";
   const categoryParam = searchParams.get("category") as CategoryKey | null;
 
-  const VALID_CATEGORIES: CategoryKey[] = ["realestate", "motor", "motorcycles", "boats", "farmequipment", "marketplace", "schools"];
+  const VALID_CATEGORIES: CategoryKey[] = [
+    "realestate",
+    "motor",
+    "motorcycles",
+    "boats",
+    "farmequipment",
+    "marketplace",
+    "schools",
+  ];
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(
+    null,
+  );
   const [isExpired, setIsExpired] = useState(false);
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [listingCount, setListingCount] = useState({ current: 0, max: 0 });
@@ -39,21 +49,33 @@ export default function PostPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.replace("/login"); return; }
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
     getMyBusinesses().then((data: any) => {
       const businesses: Business[] = data?.businesses ?? [];
       const found = businessIdParam
         ? businesses.find((b) => b.id === businessIdParam)
-        : businesses.find((b) => b.status === "active" && b.isVerified && b.planId);
-      if (found?.expiryDate) setIsExpired(new Date(found.expiryDate) < new Date());
+        : businesses.find(
+            (b) => b.status === "active" && b.isVerified && b.planId,
+          );
+      if (found?.expiryDate)
+        setIsExpired(new Date(found.expiryDate) < new Date());
       setBusiness(found ?? null);
       if (found) {
-        const max: number = (found as any).maxListingsOverride ?? (found as any).plan?.maxListings ?? Infinity;
+        const max: number =
+          (found as any).maxListingsOverride ??
+          (found as any).plan?.maxListings ??
+          Infinity;
         const current: number = (found as any).currentListings ?? 0;
         setListingCount({ current, max: isFinite(max) ? max : 0 });
         setIsLimitReached(isFinite(max) && current >= max);
       }
-      const initial = categoryParam && VALID_CATEGORIES.includes(categoryParam) ? categoryParam : "realestate";
+      const initial =
+        categoryParam && VALID_CATEGORIES.includes(categoryParam)
+          ? categoryParam
+          : "realestate";
       setSelectedCategory(initial);
       setLoading(false);
     });
@@ -81,12 +103,21 @@ export default function PostPage() {
         <div className="text-center space-y-4 py-8">
           <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto" />
           <p className="font-semibold text-gray-700">
-            {t("mine.businesses.noActiveBusiness", "No active business with a plan found.")}
+            {t(
+              "mine.businesses.noActiveBusiness",
+              "No active business with a plan found.",
+            )}
           </p>
           <p className="text-sm text-gray-400">
-            {t("mine.businesses.completeSteps", "Complete the previous steps to get here.")}
+            {t(
+              "mine.businesses.completeSteps",
+              "Complete the previous steps to get here.",
+            )}
           </p>
-          <button onClick={() => router.push("/business/Apply")} className="text-blue-600 text-sm font-semibold hover:underline">
+          <button
+            onClick={() => router.push("/business/Apply")}
+            className="text-blue-600 text-sm font-semibold hover:underline"
+          >
             {t("mine.businesses.goApply", "← Go to Apply")}
           </button>
         </div>
@@ -97,10 +128,19 @@ export default function PostPage() {
       return (
         <div className="text-center space-y-4 py-8">
           <AlertTriangle className="w-12 h-12 text-red-400 mx-auto" />
-          <p className="font-semibold text-gray-700">{t("mine.businesses.planExpired", "Your plan has expired.")}</p>
-          <p className="text-sm text-gray-400">{t("mine.businesses.renewToPost", "Renew your plan to continue posting ads.")}</p>
+          <p className="font-semibold text-gray-700">
+            {t("mine.businesses.planExpired", "Your plan has expired.")}
+          </p>
+          <p className="text-sm text-gray-400">
+            {t(
+              "mine.businesses.renewToPost",
+              "Renew your plan to continue posting ads.",
+            )}
+          </p>
           <button
-            onClick={() => router.push(`/business/plan?businessId=${business.id}&extend=1`)}
+            onClick={() =>
+              router.push(`/business/plan?businessId=${business.id}&extend=1`)
+            }
             className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
           >
             {t("mine.businesses.renewPlan", "Renew Plan →")}
@@ -114,13 +154,19 @@ export default function PostPage() {
         <div className="text-center space-y-4 py-8">
           <AlertTriangle className="w-12 h-12 text-orange-400 mx-auto" />
           <p className="font-semibold text-gray-700">
-            {t("mine.businesses.limitReached", "You have reached your listing limit.")}
+            {t(
+              "mine.businesses.limitReached",
+              "You have reached your listing limit.",
+            )}
           </p>
           <p className="text-sm text-gray-400">
-            {listingCount.current} / {listingCount.max} {t("mine.businesses.listingsUsed", "listings used")}
+            {listingCount.current} / {listingCount.max}{" "}
+            {t("mine.businesses.listingsUsed", "listings used")}
           </p>
           <button
-            onClick={() => router.push(`/business/plan?businessId=${business.id}&extend=1`)}
+            onClick={() =>
+              router.push(`/business/plan?businessId=${business.id}&extend=1`)
+            }
             className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
           >
             {t("mine.businesses.upgradePlan", "Upgrade Plan →")}
@@ -131,17 +177,37 @@ export default function PostPage() {
 
     if (!selectedCategory) return null;
 
-    const shared = { businessId: business.id, onNext: handleSuccess };
+    const shared = {
+      businessId: business.id,
+      onNext: handleSuccess,
+      maxCount: 15,
+    };
 
     switch (selectedCategory) {
-      case "realestate":    return <RealEstateForm key={formKey} {...shared} />;
-      case "motor":         return <CarsForm key={formKey} {...shared} />;
-      case "motorcycles":   return <MotorcyclesForm key={formKey} {...shared} />;
-      case "boats":         return <BoatsForm key={formKey} {...shared} />;
-      case "farmequipment": return <FarmEquipmentForm key={formKey} {...shared} />;
-      case "marketplace":   return <MarketplaceForm key={formKey} {...shared} mainCategory="Marketplace" />;
-      case "schools":       return <MarketplaceForm key={formKey} {...shared} mainCategory="Schools" />;
-      default:              return null;
+      case "realestate":
+        return <RealEstateForm key={formKey} {...shared} />;
+      case "motor":
+        return <CarsForm key={formKey} {...shared} />;
+      case "motorcycles":
+        return <MotorcyclesForm key={formKey} {...shared} />;
+      case "boats":
+        return <BoatsForm key={formKey} {...shared} />;
+      case "farmequipment":
+        return <FarmEquipmentForm key={formKey} {...shared} />;
+      case "marketplace":
+        return (
+          <MarketplaceForm
+            key={formKey}
+            {...shared}
+            mainCategory="Marketplace"
+          />
+        );
+      case "schools":
+        return (
+          <MarketplaceForm key={formKey} {...shared} mainCategory="Schools" />
+        );
+      default:
+        return null;
     }
   };
 
@@ -153,20 +219,28 @@ export default function PostPage() {
         <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-black text-gray-400 uppercase tracking-wider">Listings</span>
-              <span className={`text-xs font-black ${isLimitReached ? "text-red-500" : "text-gray-600"}`}>
+              <span className="text-xs font-black text-gray-400 uppercase tracking-wider">
+                Listings
+              </span>
+              <span
+                className={`text-xs font-black ${isLimitReached ? "text-red-500" : "text-gray-600"}`}
+              >
                 {listingCount.current} / {listingCount.max}
               </span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all ${isLimitReached ? "bg-red-500" : listingCount.current / listingCount.max >= 0.8 ? "bg-amber-400" : "bg-blue-500"}`}
-                style={{ width: `${Math.min(100, (listingCount.current / listingCount.max) * 100)}%` }}
+                style={{
+                  width: `${Math.min(100, (listingCount.current / listingCount.max) * 100)}%`,
+                }}
               />
             </div>
           </div>
           {isLimitReached && (
-            <span className="text-[10px] font-black text-red-500 uppercase bg-red-50 px-2 py-1 rounded-full whitespace-nowrap">Limit Reached</span>
+            <span className="text-[10px] font-black text-red-500 uppercase bg-red-50 px-2 py-1 rounded-full whitespace-nowrap">
+              Limit Reached
+            </span>
           )}
         </div>
       )}

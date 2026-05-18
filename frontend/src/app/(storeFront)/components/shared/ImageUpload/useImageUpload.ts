@@ -66,15 +66,17 @@ async function compressAll(files: File[]): Promise<string[]> {
   return results;
 }
 
-export function useImageUpload() {
+export function useImageUpload(maxCount: number = IMAGE_MAX_COUNT) {
   const [images, setImages] = useState<File[]>([]);
 
   function addImages(files: FileList | null) {
     if (!files) return;
     const valid = Array.from(files).filter(
-      (f) => f.type.startsWith(IMAGE_MIME_PREFIX) && f.size <= IMAGE_MAX_FILE_SIZE_BYTES,
+      (f) =>
+        f.type.startsWith(IMAGE_MIME_PREFIX) &&
+        f.size <= IMAGE_MAX_FILE_SIZE_BYTES,
     );
-    setImages((prev) => [...prev, ...valid].slice(0, IMAGE_MAX_COUNT));
+    setImages((prev) => [...prev, ...valid].slice(0, maxCount));
   }
 
   function removeImage(index: number) {
@@ -98,7 +100,7 @@ export function useImageUpload() {
     resetImages,
     toBase64,
     hasMinImages,
-    IMAGE_MAX_COUNT,
+    IMAGE_MAX_COUNT: maxCount,
     IMAGE_MIN_COUNT,
   };
 }
